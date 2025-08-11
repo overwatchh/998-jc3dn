@@ -1,0 +1,27 @@
+👩‍🎓 Student Endpoints
+| Method | Endpoint                           | Description                               |
+| ------ | ---------------------------------- | ----------------------------------------- |
+| `GET`  | `/api/student/courses`             | List enrolled courses                     |
+| `GET`  | `/api/student/course/:id/sessions` | View sessions for a course                |
+| `POST` | `/api/student/attendance/checkin`  | Check in attendance using scanned QR code |
+| `GET`  | `/api/student/attendance/history`  | Get student’s attendance history          |
+
+👨‍🏫 Lecturer Endpoints
+| Method | Endpoint                                | Description                                     |
+| ------ | --------------------------------------- | ----------------------------------------------- |
+| `GET`  | `/api/lecturer/courses`                 | List courses assigned to the lecturer           |
+| `GET`  | `/api/lecturer/course/:id/sessions`     | View all sessions under a course                |
+| `POST` | `/api/lecturer/session/:id/generate-qr` | Generate QR code for a session                  |
+| `GET`  | `/api/lecturer/session/:id/attendance`  | View student attendance for a session           |
+| `GET`  | `/api/lecturer/attendance/course/list`  | Grouped session info by course (with filtering) |
+
+🧑‍💼 Admin Endpoints
+
+| Method | Endpoint                                | Description                                 |
+| ------ | --------------------------------------- | ------------------------------------------- |
+| `POST` | `/api/admin/user/create`                | Create a user (student, lecturer, admin)    |
+| `GET`  | `/api/admin/users`                      | List all users                              |
+| `GET`  | `/api/admin/courses`                    | List all courses                            |
+| `POST` | `/api/admin/course/create`              | Create new course                           |
+| `POST` | `/api/admin/course/:id/assign-lecturer` | Assign lecturer to course                   |
+| `GET`  | `/api/admin/attendance/overview`        | Get full attendance stats across the system |
