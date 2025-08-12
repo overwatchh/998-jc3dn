@@ -21,13 +21,7 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
-      - name: Debug secrets (length only)
-        run: |
-          if [ -z "${{ secrets.GCP_SA_KEY }}" ]; then
-            echo "❌ GCP_SA_KEY is empty!"
-          else
-            echo "✅ GCP_SA_KEY is set. Length: $(echo "${{ secrets.GCP_SA_KEY }}" | wc -c)"
-          fi
+
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v1
         with:
@@ -36,18 +30,23 @@ jobs:
       - name: Configure gcloud
         run: gcloud config set project ${{ secrets.GCP_PROJECT_ID }}
 
-      - name: Install MySQL client & Cloud SQL Proxy
+      - name: Install MySQL client & Cloud SQL Auth Proxy
         run: |
-          sudo apt-get update && sudo apt-get install -y mysql-client
-          curl -o cloud_sql_proxy https://dl.google.com/cloudsql/cloud_sql_proxy.linux.amd64
-          chmod +x cloud_sql_proxy
+          sudo apt-get update && sudo apt-get install -y mysql-client netcat
+          wget https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.11.4/cloud-sql-proxy.linux.amd64 -O cloud-sql-proxy
+          chmod +x cloud-sql-proxy
 
-      - name: Start Cloud SQL Proxy
+      - name: Start Cloud SQL Proxy (TCP mode)
         run: |
-          ./cloud_sql_proxy -dir=/cloudsql \
-            -instances=$DB_INSTANCE_CONNECTION_NAME \
-            -credential_file=<(echo '${{ secrets.GCP_SA_KEY }}') &
-          sleep 5
+          ./cloud-sql-proxy $DB_INSTANCE_CONNECTION_NAME=tcp:3306 \
+            --credentials-file=<(echo '${{ secrets.GCP_SA_KEY }}') &
+          
+          # Wait for port 3306 to be ready
+          for i in {1..10}; do
+            nc -z 127.0.0.1 3306 && break
+            echo "⏳ Waiting for Cloud SQL Proxy..."
+            sleep 2
+          done
 
       - name: Check if DB schema changed
         id: db_changed
