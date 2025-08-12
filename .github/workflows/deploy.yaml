@@ -32,7 +32,7 @@ jobs:
 
       - name: Install MySQL client & Cloud SQL Auth Proxy
         run: |
-          sudo apt-get update && sudo apt-get install -y mysql-client netcat
+          sudo apt-get update && sudo apt-get install -y mysql-client netcat-openbsd
           wget https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.11.4/cloud-sql-proxy.linux.amd64 -O cloud-sql-proxy
           chmod +x cloud-sql-proxy
 
