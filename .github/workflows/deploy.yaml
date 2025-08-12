@@ -21,7 +21,13 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
-
+      - name: Debug secrets (length only)
+        run: |
+          if [ -z "${{ secrets.GCP_SA_KEY }}" ]; then
+            echo "❌ GCP_SA_KEY is empty!"
+          else
+            echo "✅ GCP_SA_KEY is set. Length: $(echo "${{ secrets.GCP_SA_KEY }}" | wc -c)"
+          fi
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v1
         with:
