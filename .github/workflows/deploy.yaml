@@ -1,0 +1,85 @@
+name: Deploy to Cloud Run
+
+on:
+  push:
+    branches:
+      - deployment
+  workflow_dispatch:
+    inputs:
+      init_db:
+        description: "Force run DB initialization?"
+        required: false
+        default: "false"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    env:
+      DB_INSTANCE_CONNECTION_NAME: "${{ secrets.GCP_PROJECT_ID }}:${{ secrets.GCP_REGION }}:${{ secrets.DB_INSTANCE }}"
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Configure gcloud
+        run: gcloud config set project ${{ secrets.GCP_PROJECT_ID }}
+
+      - name: Install MySQL client & Cloud SQL Proxy
+        run: |
+          sudo apt-get update && sudo apt-get install -y mysql-client
+          curl -o cloud_sql_proxy https://dl.google.com/cloudsql/cloud_sql_proxy.linux.amd64
+          chmod +x cloud_sql_proxy
+
+      - name: Start Cloud SQL Proxy
+        run: |
+          ./cloud_sql_proxy -dir=/cloudsql \
+            -instances=$DB_INSTANCE_CONNECTION_NAME \
+            -credential_file=<(echo '${{ secrets.GCP_SA_KEY }}') &
+          sleep 5
+
+      - name: Check if DB schema changed
+        id: db_changed
+        run: |
+          if git diff --quiet HEAD^ HEAD -- src/app/lib/server/db_schema/; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Initialize MySQL database
+        if: steps.db_changed.outputs.changed == 'true' || github.event.inputs.init_db == 'true'
+        run: |
+          echo "Running DB initialization..."
+          mysql -u"${{ secrets.DB_USER }}" \
+                -p"${{ secrets.DB_PASSWORD }}" \
+                --host 127.0.0.1 \
+                --database="${{ secrets.DB_NAME }}" <<'EOSQL'
+          START TRANSACTION;
+          SOURCE src/app/lib/server/db_schema/db_drop.sql;
+          SOURCE src/app/lib/server/db_schema/db_create.sql;
+          SOURCE src/app/lib/server/db_schema/db_load.sql;
+          COMMIT;
+          EOSQL
+
+      - name: Build & Push Docker image
+        run: |
+          gcloud builds submit \
+            --tag gcr.io/${{ secrets.GCP_PROJECT_ID }}/nextjs-app \
+            --project ${{ secrets.GCP_PROJECT_ID }} \
+            --timeout=900 \
+            --substitutions=_DB_HOST=/cloudsql/$DB_INSTANCE_CONNECTION_NAME,_DB_USER=${{ secrets.DB_USER }},_DB_PASS=${{ secrets.DB_PASSWORD }},_DB_NAME=${{ secrets.DB_NAME }},_BETTER_AUTH_SECRET=${{ secrets.BETTER_AUTH_SECRET }},_BETTER_AUTH_URL=${{ secrets.BETTER_AUTH_URL }},_GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }},_GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }},_BASE_URL=${{ secrets.BASE_URL }}
+
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy nextjs-app \
+            --image gcr.io/${{ secrets.GCP_PROJECT_ID }}/nextjs-app \
+            --region ${{ secrets.GCP_REGION }} \
+            --platform managed \
+            --allow-unauthenticated \
+            --set-env-vars DB_HOST=/cloudsql/$DB_INSTANCE_CONNECTION_NAME,DB_USER=${{ secrets.DB_USER }},DB_PASS=${{ secrets.DB_PASSWORD }},DB_NAME=${{ secrets.DB_NAME }},BETTER_AUTH_SECRET=${{ secrets.BETTER_AUTH_SECRET }},BETTER_AUTH_URL=${{ secrets.BETTER_AUTH_URL }},GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }},GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }},BASE_URL=${{ secrets.BASE_URL }}
