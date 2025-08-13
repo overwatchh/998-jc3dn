@@ -18,6 +18,12 @@ jobs:
         with:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
           project_id: ${{ secrets.GCP_PROJECT_ID }}
+      - name: Start Cloud SQL Proxy
+        uses: ahmadnassri/action-google-cloud-sql-proxy@v1
+        with:
+          key: ${{ secrets.GCP_SA_KEY }}
+          connection: project-capstone-468109:australia-southeast1:jc3dn-998-db
+          port: 3306
 
       - name: Configure Docker for GCR
         run: gcloud auth configure-docker gcr.io

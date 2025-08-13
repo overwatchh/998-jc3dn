@@ -1,8 +1,8 @@
 import mysql from "mysql2/promise";
 
-export const db = mysql.createPool({  
-  host: '35.197.171.70',
-  user: 'root',
-  password: 'JC3DNstrong@Password',
-  database: 'qr_attendance_app',  
+export const db = mysql.createPool({    
+  host: process.env.DB_HOST!,
+  user: process.env.DB_USER!,
+  password: process.env.DB_PASS!,
+  database: process.env.DB_NAME!,
 });
