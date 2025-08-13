@@ -65,11 +65,11 @@ jobs:
           ls -la
           cd ${{ github.workspace }}
           ls -la
-          gcloud builds submit \
+          gcloud builds submit . \
           --project ${{ secrets.GCP_PROJECT_ID }} \
           --timeout=900 \
           --config cloudbuild.yaml \          
-          .
+          
 
       - name: Deploy to Cloud Run
         run: |
