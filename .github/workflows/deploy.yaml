@@ -30,15 +30,19 @@ jobs:
       - name: Install gcloud cli
         uses: google-github-actions/setup-gcloud@v2
       
-      - name: Start Cloud SQL Auth Proxy using gcloud CLI
+      - name: Install Cloud SQL Auth Proxy
         run: |
-          gcloud auth activate-service-account --key-file=<(echo "${{ secrets.GCP_SA_KEY }}")
-          gcloud sql connect $INSTANCE_CONNECTION_NAME \
-            --user=$DB_USER \
-            --quiet &
+          curl -o cloud-sql-proxy https://dl.google.com/cloudsql/cloud-sql-proxy.linux.amd64
+          chmod +x cloud-sql-proxy
+
+      - name: Start Cloud SQL Proxy
+        run: |
+          echo '${{ secrets.GCP_SA_KEY }}' > sa-key.json
+          ./cloud-sql-proxy \
+            --credentials-file=sa-key.json \
+            $INSTANCE_CONNECTION_NAME &
         env:
           INSTANCE_CONNECTION_NAME: project-capstone-468109:australia-southeast1:jc3dn-998-db
-          DB_USER: ${{ secrets.DB_USER }}
 
       - name: Install MySQL Client
         run: sudo apt-get install -y mysql-client
