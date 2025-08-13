@@ -20,6 +20,10 @@ jobs:
         uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+      - name: Configure Docker for GCR
+        run: |
+          gcloud auth configure-docker
 
       - name: Start Cloud SQL Proxy
         uses: ahmadnassri/action-google-cloud-sql-proxy@v1
@@ -59,23 +63,43 @@ jobs:
       #     COMMIT;
       #     EOSQL
 
-      - name: Build & Push Docker image      
+      - name: Build Docker image
         run: |
-          pwd
-          ls -la
-          cd ${{ github.workspace }}
-          ls -la
-          gcloud builds submit . \
-          --project ${{ secrets.GCP_PROJECT_ID }} \
-          --timeout=900 \
-          --config cloudbuild.yaml \          
+          docker build \
+          --build-arg DB_HOST=${{ secrets.DB_HOST }} \
+          --build-arg DB_USER=${{ secrets.DB_USER }} \
+          --build-arg DB_PASS=${{ secrets.DB_PASS }} \
+          --build-arg DB_NAME=${{ secrets.DB_NAME }} \
+          --build-arg BETTER_AUTH_SECRET=${{ secrets.BETTER_AUTH_SECRET }} \
+          --build-arg BETTER_AUTH_URL=${{ secrets.BETTER_AUTH_URL }} \
+          --build-arg GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }} \
+          --build-arg GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }} \
+          --build-arg BASE_URL="" \  # Empty now, will update on deploy
+          -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/jc3dn-nextjs-app:latest .
+      
+      - name: Push Docker image to GCR
+        run: |
+          docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/jc3dn-nextjs-app:latest
           
-
       - name: Deploy to Cloud Run
+        id: deploy
         run: |
-          gcloud run deploy nextjs-app \
-            --image gcr.io/${{ secrets.GCP_PROJECT_ID }}/nextjs-app \
+          SERVICE_NAME=jc3dn-nextjs-app
+          REGION=us-central1  # change to your region
+
+          # Deploy the service, update BASE_URL env var with the service URL
+          gcloud run deploy $SERVICE_NAME \
+            --image gcr.io/${{ secrets.GCP_PROJECT_ID }}/jc3dn-nextjs-app:latest \
             --region ${{ secrets.GCP_REGION }} \
             --platform managed \
             --allow-unauthenticated \
-            --set-env-vars DB_HOST=/cloudsql/$DB_INSTANCE_CONNECTION_NAME,DB_USER=${{ secrets.DB_USER }},DB_PASS=${{ secrets.DB_PASSWORD }},DB_NAME=${{ secrets.DB_NAME }},BETTER_AUTH_SECRET=${{ secrets.BETTER_AUTH_SECRET }},BETTER_AUTH_URL=${{ secrets.BETTER_AUTH_URL }},GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }},GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }},BASE_URL=${{ secrets.BASE_URL }}
+            --set-env-vars BASE_URL=https://$SERVICE_NAME-${{ secrets.GCP_REGION }}.a.run.app
+
+          # Get the service URL
+          URL=$(gcloud run services describe $SERVICE_NAME --region ${{ secrets.GCP_REGION }} --format 'value(status.url)')
+          echo "service_url=$URL" >> $GITHUB_OUTPUT
+
+      - name: Use the deployed BASE_URL
+        run: |
+          echo "Deployed app is accessible at ${{ steps.deploy.outputs.service_url }}"
+          
