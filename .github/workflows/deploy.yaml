@@ -43,8 +43,13 @@ jobs:
                 --password=${{ secrets.DB_PASS }} \
                 --host=127.0.0.1 \
                 --port=3306 \
-                ${{ secrets.DB_NAME }} \
-                -e "SELECT * FROM user"
+                --database="${{ secrets.DB_NAME }}" <<'EOSQL'
+          START TRANSACTION;
+          SOURCE src/app/lib/server/db_schema/db_drop.sql;
+          SOURCE src/app/lib/server/db_schema/db_create.sql;
+          SOURCE src/app/lib/server/db_schema/db_load.sql;
+          COMMIT;
+          EOSQL
 
       - name: Build & Push Docker image
         run: |
