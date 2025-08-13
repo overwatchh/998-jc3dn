@@ -27,6 +27,7 @@ export function groupByCourse(rows: RawSessionRow[]): GroupedCourse[] {
             location_id: row.location_id,
             building_name: row.building_name!,
             room_number: row.room_number!,
+            description: row.description,
             latitude: row.latitude!,
             longitude: row.longitude!,
           }

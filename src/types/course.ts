@@ -13,6 +13,7 @@ export type RawSessionRow = {
   location_id: number | null;
   building_name: string | null;
   room_number: string | null;
+  description: string;
   latitude: string | null;
   longitude: string | null;
 };

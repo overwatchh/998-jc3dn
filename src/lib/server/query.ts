@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { db } from "./db";
 
 export async function rawQuery<T>(sql: string, values?: any[]): Promise<T[]> {
