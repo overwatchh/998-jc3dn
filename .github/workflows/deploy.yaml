@@ -38,13 +38,13 @@ jobs:
             --platform managed \
             --region ${{ secrets.GCP_REGION }} \
             --allow-unauthenticated \
-            --set-env-vars DB_USER=${{ secrets.DB_USER}},DB_PASSWORD=${{ secrets.DB_PASSWORD}},DB_NAME=${{ secrets.DB_NAME}},BETTER_AUTH_SECRET=${{ secrets.BETTER_AUTH_SECRET}}
+            --set-env-vars DB_USER=${{ secrets.DB_USER}},DB_PASS=${{ secrets.DB_PASS}},DB_NAME=${{ secrets.DB_NAME}},BETTER_AUTH_SECRET=${{ secrets.BETTER_AUTH_SECRET}},GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID}},GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET}},BASE_URL=${{secrets.BASE_URL}} 
 
       # Step 3: Get deployed app info
       - name: Get Deployed Service URL
         run: |
           URL=$(gcloud run services describe jc3dn-nextjs-app \
             --platform managed \
-            --region ${{ secrets.GCP_REGION }} \            
+            --region ${{ secrets.GCP_REGION }} \
             --format 'value(status.url)')
           echo "Deployed URL: $URL"
