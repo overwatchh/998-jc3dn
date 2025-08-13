@@ -5,7 +5,7 @@ WORKDIR /app
 
 # Copy package files and install dependencies
 COPY package*.json ./
-RUN npm install
+RUN NODE_ENV=development npm i
 
 # Copy all source files
 COPY . .
