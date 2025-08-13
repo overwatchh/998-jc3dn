@@ -30,6 +30,20 @@ jobs:
             --tag gcr.io/${{ secrets.GCP_PROJECT_ID }}/jc3dn-nextjs-app
 
       # Step 2: Deploy to Cloud Run
+      - name: Write env file that load value from github actions secrets
+        run: |
+          cat <<EOF > env.yaml
+          DB_USER=${{ secrets.DB_USER }}
+          DB_PASS=${{ secrets.DB_PASS }}
+          DB_NAME=${{ secrets.DB_NAME }}
+          BETTER_AUTH_SECRET=${{ secrets.BETTER_AUTH_SECRET }}
+          GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
+          BASE_URL=${{ secrets.BASE_URL }}
+          GCP_PROJECT_ID=${{ secrets.GCP_PROJECT_ID }}
+          GCP_REGION=${{ secrets.GCP_REGION }}
+          DB_INSTANCE=${{ secrets.DB_INSTANCE }}
+          EOF
       - name: Deploy to Cloud Run
         run: |
           gcloud run deploy jc3dn-nextjs-app \
@@ -38,7 +52,7 @@ jobs:
             --platform managed \
             --region ${{ secrets.GCP_REGION }} \
             --allow-unauthenticated \
-            --set-env-vars DB_USER=${{ secrets.DB_USER}},DB_PASS=${{ secrets.DB_PASS}},DB_NAME=${{ secrets.DB_NAME}},BETTER_AUTH_SECRET=${{ secrets.BETTER_AUTH_SECRET}},GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID}},GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET}},BASE_URL=${{secrets.BASE_URL}} 
+            --env-vars-file env.yaml
 
       # Step 3: Get deployed app info
       - name: Get Deployed Service URL
