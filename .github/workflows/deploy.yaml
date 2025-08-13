@@ -27,31 +27,15 @@ jobs:
         with:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
 
-      - name: Start Cloud SQL Auth Proxy
-        uses: google-github-actions/cloud-sql-proxy@v2
-        with:
-          instance_connection_name: project-capstone-468109:australia-southeast1:jc3dn-998-db
-          credentials_json: ${{ secrets.GCP_SA_KEY }}
-      
-      - name: Install Cloud SQL Auth Proxy
-        run: |
-          curl -sSfL -o cloud-sql-proxy https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.11.3/cloud-sql-proxy.linux.amd64
-          chmod +x cloud-sql-proxy
-
       - name: Start Cloud SQL Proxy
-        run: |
-          echo '${{ secrets.GCP_SA_KEY }}' > sa-key.json
-          ./cloud-sql-proxy \
-            --credentials-file=sa-key.json \
-            $INSTANCE_CONNECTION_NAME &
-        env:
-          INSTANCE_CONNECTION_NAME: project-capstone-468109:australia-southeast1:jc3dn-998-db
-
+        uses: ahmadnassri/action-google-cloud-sql-proxy@v1
+        with:
+          key: ${{ secrets.GCP_SA_KEY }}
+          connection: project-capstone-468109:australia-southeast1:jc3dn-998-db
+          port: 3306
+            
       - name: Install MySQL Client
-        run: sudo apt-get install -y mysql-client
-      
-      - name: Wait for proxy
-        run: sleep 5
+        run: sudo apt-get install -y mysql-client            
       
       - name: Test DB Connection
         run: |
