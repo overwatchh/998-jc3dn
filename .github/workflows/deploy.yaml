@@ -25,9 +25,21 @@ jobs:
         uses: ahmadnassri/action-google-cloud-sql-proxy@v1
         with:
           key: ${{ secrets.GCP_SA_KEY }}
-          connection: project-capstone-468109:australia-southeast1:jc3dn-998-db
-          sleep: 10
+          connection: project-capstone-468109:australia-southeast1:jc3dn-998-db          
           port: 3306
+      - name: Wait for Cloud SQL Proxy to be ready
+        run: |
+          for i in {1..20}; do
+            if nc -z 127.0.0.1 3306; then
+              echo "Cloud SQL Proxy is ready"
+              exit 0
+            else
+              echo "Waiting for Cloud SQL Proxy..."
+              sleep 2
+            fi
+          done
+          echo "Timeout waiting for Cloud SQL Proxy"
+          exit 1
             
       - name: Install MySQL Client
         run: sudo apt-get install -y mysql-client            
