@@ -1,47 +1,38 @@
-# 1️⃣ Use official Node.js image for building
+# ----------------------------
+# 1️⃣ Build stage
+# ----------------------------
 FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Copy package files and install dependencies
+# Install dependencies first (better cache)
 COPY package*.json ./
-RUN NODE_ENV=development npm i
+RUN npm ci
 
-# Copy all source files
+# Copy all source code
 COPY . .
 
-# Pass build-time env variables from GitHub Actions
-ARG DB_HOST
-ARG DB_USER
-ARG DB_PASS
-ARG DB_NAME
-ARG BETTER_AUTH_SECRET
-ARG BETTER_AUTH_URL
-ARG GOOGLE_CLIENT_ID
-ARG GOOGLE_CLIENT_SECRET
-ARG BASE_URL
-
-ENV DB_HOST=$DB_HOST \
-    DB_USER=$DB_USER \
-    DB_PASS=$DB_PASS \
-    DB_NAME=$DB_NAME \
-    BETTER_AUTH_SECRET=$BETTER_AUTH_SECRET \
-    BETTER_AUTH_URL=$BETTER_AUTH_URL \
-    GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID \
-    GOOGLE_CLIENT_SECRET=$GOOGLE_CLIENT_SECRET \
-    BASE_URL=$BASE_URL
-
-# Build Next.js
+# Build the Next.js app
 RUN npm run build
 
-# 2️⃣ Production image
+
+# ----------------------------
+# 2️⃣ Production stage
+# ----------------------------
 FROM node:20-alpine AS runner
+
 WORKDIR /app
 
 ENV NODE_ENV=production
-
-# Copy built app
-COPY --from=builder /app ./
-
+ENV PORT=8080
 EXPOSE 8080
+
+# Copy only the production build output & necessary files
+COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/next.config.ts ./next.config.ts
+
+# Start the app (Cloud Run will listen on $PORT)
 CMD ["npm", "start"]

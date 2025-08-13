@@ -3,15 +3,11 @@ name: Deploy to Cloud Run
 on:
   push:
     branches:
-      - deployment  
+      - deployment
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment: GCP_PROJECT_ID
-    env:
-      DB_INSTANCE_CONNECTION_NAME: "${{ secrets.GCP_PROJECT_ID }}:${{ secrets.GCP_REGION }}:${{ secrets.DB_INSTANCE }}"
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -20,85 +16,30 @@ jobs:
         uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
-          project_id: ${{ secrets.GCP_PROJECT_ID }}      
 
-      - name: Start Cloud SQL Proxy
-        uses: ahmadnassri/action-google-cloud-sql-proxy@v1
-        with:
-          key: ${{ secrets.GCP_SA_KEY }}
-          connection: project-capstone-468109:australia-southeast1:jc3dn-998-db          
-          port: 3306
-      - name: Wait for Cloud SQL Proxy to be ready
-        run: |
-          for i in {1..20}; do
-            if nc -z 127.0.0.1 3306; then
-              echo "Cloud SQL Proxy is ready"
-              exit 0
-            else
-              echo "Waiting for Cloud SQL Proxy..."
-              sleep 2
-            fi
-          done
-          echo "Timeout waiting for Cloud SQL Proxy"
-          exit 1
-            
-      - name: Install MySQL Client
-        run: sudo apt-get install -y mysql-client            
-      
-      # - name: Initialize MySQL database
-      #   working-directory: ${{ github.workspace }}
-      #   run: |
-      #     mysql --user=${{ secrets.DB_USER }} \
-      #           --password=${{ secrets.DB_PASS }} \
-      #           --host=127.0.0.1 \
-      #           --port=3306 \
-      #           --database="${{ secrets.DB_NAME }}" <<'EOSQL'
-      #     START TRANSACTION;
-      #     SOURCE src/lib/server/db_schema/db_drop.sql;
-      #     SOURCE src/lib/server/db_schema/db_create.sql;
-      #     SOURCE src/lib/server/db_schema/db_load.sql;
-      #     COMMIT;
-      #     EOSQL
       - name: Configure Docker for GCR
+        run: gcloud auth configure-docker gcr.io
+
+      # Step 1: Build image (same as your manual `gcloud builds submit`)
+      - name: Build and Submit Image
         run: |
-          gcloud auth configure-docker
-      - name: Build Docker image
-        run: |
-          docker build \
-          --build-arg DB_HOST=${{ secrets.DB_HOST }} \
-          --build-arg DB_USER=${{ secrets.DB_USER }} \
-          --build-arg DB_PASS=${{ secrets.DB_PASS }} \
-          --build-arg DB_NAME=${{ secrets.DB_NAME }} \
-          --build-arg BETTER_AUTH_SECRET=${{ secrets.BETTER_AUTH_SECRET }} \
-          --build-arg BETTER_AUTH_URL=${{ secrets.BETTER_AUTH_URL }} \
-          --build-arg GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }} \
-          --build-arg GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }} \
-          --build-arg BASE_URL="" \
-          -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/jc3dn-nextjs-app:latest .
-      
-      - name: Push Docker image to GCR
-        run: |
-          docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/jc3dn-nextjs-app:latest
-          
+          gcloud builds submit \
+            --tag gcr.io/${{ secrets.GCP_PROJECT_ID }}/jc3dn-nextjs-app
+
+      # Step 2: Deploy to Cloud Run
       - name: Deploy to Cloud Run
-        id: deploy
         run: |
-          SERVICE_NAME=jc3dn-nextjs-app
-          REGION=us-central1  # change to your region
-
-          # Deploy the service, update BASE_URL env var with the service URL
-          gcloud run deploy $SERVICE_NAME \
-            --image gcr.io/${{ secrets.GCP_PROJECT_ID }}/jc3dn-nextjs-app:latest \
-            --region ${{ secrets.GCP_REGION }} \
+          gcloud run deploy jc3dn-nextjs-app \
+            --image gcr.io/${{ secrets.GCP_PROJECT_ID }}/jc3dn-nextjs-app \
             --platform managed \
-            --allow-unauthenticated \
-            --set-env-vars BASE_URL=https://$SERVICE_NAME-${{ secrets.GCP_REGION }}.a.run.app
+            --region ${{ secrets.GCP_REGION }} \
+            --allow-unauthenticated
 
-          # Get the service URL
-          URL=$(gcloud run services describe $SERVICE_NAME --region ${{ secrets.GCP_REGION }} --format 'value(status.url)')
-          echo "service_url=$URL" >> $GITHUB_OUTPUT
-
-      - name: Use the deployed BASE_URL
+      # Step 3: Get deployed app info
+      - name: Get Deployed Service URL
         run: |
-          echo "Deployed app is accessible at ${{ steps.deploy.outputs.service_url }}"
-          
+          URL=$(gcloud run services describe jc3dn-nextjs-app \
+            --platform managed \
+            --region ${{ secrets.GCP_REGION }} \
+            --format 'value(status.url)')
+          echo "Deployed URL: $URL"
