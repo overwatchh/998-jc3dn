@@ -65,8 +65,7 @@ jobs:
           gcloud builds submit \          
           --project ${{ secrets.GCP_PROJECT_ID }} \
           --timeout=900 \
-          --config .github/docker/cloudbuild.yaml \
-          --file .github/docker/Dockerfile \
+          --config \          
           .
 
       - name: Deploy to Cloud Run
