@@ -37,7 +37,8 @@ jobs:
       - name: Install MySQL Client
         run: sudo apt-get install -y mysql-client            
       
-      - name: Test DB Connection
+      - name: Initialize MySQL database
+        working-directory: ${{ github.workspace }}
         run: |
           mysql --user=${{ secrets.DB_USER }} \
                 --password=${{ secrets.DB_PASS }} \
@@ -45,9 +46,9 @@ jobs:
                 --port=3306 \
                 --database="${{ secrets.DB_NAME }}" <<'EOSQL'
           START TRANSACTION;
-          SOURCE src/app/lib/server/db_schema/db_drop.sql;
-          SOURCE src/app/lib/server/db_schema/db_create.sql;
-          SOURCE src/app/lib/server/db_schema/db_load.sql;
+          SOURCE src/lib/server/db_schema/db_drop.sql;
+          SOURCE src/lib/server/db_schema/db_create.sql;
+          SOURCE src/lib/server/db_schema/db_load.sql;
           COMMIT;
           EOSQL
 
