@@ -30,9 +30,9 @@ jobs:
             --tag gcr.io/${{ secrets.GCP_PROJECT_ID }}/jc3dn-nextjs-app
 
       # Step 2: Deploy to Cloud Run
-      - name: Write env file that load value from github actions secrets
+      - name: Write env file for reading values from github action secrets
         run: |
-          cat <<EOF > env.yaml
+          cat <<EOF > env.env
           DB_USER=${{ secrets.DB_USER }}
           DB_PASS=${{ secrets.DB_PASS }}
           DB_NAME=${{ secrets.DB_NAME }}
@@ -52,7 +52,7 @@ jobs:
             --platform managed \
             --region ${{ secrets.GCP_REGION }} \
             --allow-unauthenticated \
-            --env-vars-file env.yaml
+            --env-vars-file env.env
 
       # Step 3: Get deployed app info
       - name: Get Deployed Service URL
