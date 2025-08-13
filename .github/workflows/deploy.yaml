@@ -60,6 +60,7 @@ jobs:
           EOSQL
 
       - name: Build & Push Docker image
+        working-directory: ${{ github.workspace }}
         run: |
           gcloud builds submit \          
           --project ${{ secrets.GCP_PROJECT_ID }} \
