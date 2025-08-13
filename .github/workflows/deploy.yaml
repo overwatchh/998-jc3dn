@@ -61,8 +61,7 @@ jobs:
 
       - name: Build & Push Docker image
         run: |
-          gcloud builds submit \
-          --tag gcr.io/${{ secrets.GCP_PROJECT_ID }}/nextjs-app \
+          gcloud builds submit \          
           --project ${{ secrets.GCP_PROJECT_ID }} \
           --timeout=900 \
           --config cloudbuild.yaml
