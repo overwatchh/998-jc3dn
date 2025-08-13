@@ -3,13 +3,7 @@ name: Deploy to Cloud Run
 on:
   push:
     branches:
-      - deployment
-  workflow_dispatch:
-    inputs:
-      init_db:
-        description: "Force run DB initialization?"
-        required: false
-        default: "false"
+      - deployment  
 
 jobs:
   deploy:
