@@ -44,7 +44,7 @@ jobs:
                 --host=127.0.0.1 \
                 --port=3306 \
                 ${{ secrets.DB_NAME }} \
-                -e "SELECT NOW();"
+                -e "SELECT * FROM user"
 
       - name: Build & Push Docker image
         run: |
