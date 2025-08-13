@@ -61,7 +61,11 @@ jobs:
 
       - name: Build & Push Docker image      
         run: |
-          gcloud builds submit \          
+          pwd
+          ls -la
+          cd ${{ github.workspace }}
+          ls -la
+          gcloud builds submit \
           --project ${{ secrets.GCP_PROJECT_ID }} \
           --timeout=900 \
           --config cloudbuild.yaml \          
