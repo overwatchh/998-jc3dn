@@ -22,10 +22,11 @@ jobs:
       - name: Configure Docker for GCR
         run: gcloud auth configure-docker gcr.io
 
-      # Step 1: Build image (same as your manual `gcloud builds submit`)
-      - name: Build and Submit Image
+      # Step 1: Build image 
+      - name: Build and Submit Image (with VPC-SC log bucket)
         run: |
           gcloud builds submit \
+            --gcs-log-dir=gs://${{ secrets.GCP_LOG_BUCKET }}/cloud-build-logs \
             --tag gcr.io/${{ secrets.GCP_PROJECT_ID }}/jc3dn-nextjs-app
 
       # Step 2: Deploy to Cloud Run
