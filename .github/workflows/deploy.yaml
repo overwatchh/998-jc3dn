@@ -26,7 +26,7 @@ jobs:
         with:
           key: ${{ secrets.GCP_SA_KEY }}
           connection: project-capstone-468109:australia-southeast1:jc3dn-998-db
-          sleep: 5
+          sleep: 10
           port: 3306
             
       - name: Install MySQL Client
