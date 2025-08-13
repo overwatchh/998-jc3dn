@@ -34,15 +34,11 @@ jobs:
         run: |
           gcloud run deploy jc3dn-nextjs-app \
             --image gcr.io/${{ secrets.GCP_PROJECT_ID }}/jc3dn-nextjs-app \
-            --add-cloudsql-instances=project-capstone-468109:australia-southeast1:jc3dn-998-db \
+            --set-cloudsql-instances=project-capstone-468109:australia-southeast1:jc3dn-998-db \
             --platform managed \
             --region ${{ secrets.GCP_REGION }} \
             --allow-unauthenticated \
-            --set-env-vars DB_USER=${{ secrets.DB_USER }},\              
-              DB_PASSWORD=${{ secrets.DB_PASSWORD }}, \
-              DB_NAME=${{ secrets.DB_NAME }}, \
-              BETTER_AUTH_SECRET=${{ secrets.BETTER_AUTH_SECRET }}
-
+            --set-env-vars DB_USER=${{ secrets.DB_USER}},DB_PASSWORD=${{ secrets.DB_PASSWORD}},DB_NAME=${{ secrets.DB_NAME}},BETTER_AUTH_SECRET=${{ secrets.BETTER_AUTH_SECRET}}
 
       # Step 3: Get deployed app info
       - name: Get Deployed Service URL
