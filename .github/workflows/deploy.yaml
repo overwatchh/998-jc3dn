@@ -74,7 +74,7 @@ jobs:
           --build-arg BETTER_AUTH_URL=${{ secrets.BETTER_AUTH_URL }} \
           --build-arg GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }} \
           --build-arg GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }} \
-          --build-arg BASE_URL="" \  # Empty now, will update on deploy
+          --build-arg BASE_URL="" \
           -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/jc3dn-nextjs-app:latest .
       
       - name: Push Docker image to GCR
