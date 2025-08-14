@@ -24,8 +24,7 @@ FROM node:20-alpine AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
-ENV PORT=8080
-EXPOSE 8080
+EXPOSE 3000
 
 # Copy only the production build output & necessary files
 COPY --from=builder /app/package*.json ./
