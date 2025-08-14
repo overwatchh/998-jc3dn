@@ -1,10 +1,10 @@
-import { useQuery } from '@tanstack/react-query';
-import apiClient from '@/lib/api/apiClient';
+import { useQuery } from "@tanstack/react-query";
+import apiClient from "@/lib/api/apiClient";
 
 // Get attendance statistics for a course
 export const useCourseAttendanceStats = (courseId: string) => {
   return useQuery({
-    queryKey: ['reports', 'course', courseId],
+    queryKey: ["reports", "course", courseId],
     queryFn: async () => {
       const response = await apiClient.get(`/reports/course/${courseId}`);
       return response.data;
@@ -16,7 +16,7 @@ export const useCourseAttendanceStats = (courseId: string) => {
 // Get attendance statistics for a student
 export const useStudentAttendanceStats = (studentId: string) => {
   return useQuery({
-    queryKey: ['reports', 'student', studentId],
+    queryKey: ["reports", "student", studentId],
     queryFn: async () => {
       const response = await apiClient.get(`/reports/student/${studentId}`);
       return response.data;

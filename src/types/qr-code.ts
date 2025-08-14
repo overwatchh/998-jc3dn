@@ -11,7 +11,7 @@ export type AttendanceCheckinRequestBody = {
   lat: number;
   long: number;
   verify_distance: boolean;
-}
+};
 
 export type GenerateQrResponse = BaseApiResponse & {
   qr_url: string; // base64 image
@@ -23,10 +23,10 @@ export type GenerateQrResponse = BaseApiResponse & {
 
 export type QRCodeInfoRow = {
   qr_code_id: number;
-  course_session_id:number;
+  course_session_id: number;
   generated_at: string;
-  radius:number;
-  valid_until:string;
-  course_id:number;
-  location_id:number;
-}
+  radius: number;
+  valid_until: string;
+  course_id: number;
+  location_id: number;
+};

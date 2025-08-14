@@ -29,7 +29,7 @@ const QRCodeScannerWrapper = ({
       if (scannerRef.current && isScanning) {
         scannerRef.current
           .stop()
-          .catch((err) => console.error("Error stopping scanner:", err));
+          .catch(err => console.error("Error stopping scanner:", err));
       }
     };
   }, [isScanning]);
@@ -47,13 +47,13 @@ const QRCodeScannerWrapper = ({
       .start(
         { facingMode: "environment" },
         config,
-        (decodedText) => {
+        decodedText => {
           setScanError(null);
           onScanSuccess(decodedText);
           // Optionally stop scanning after successful scan
           // stopScanner();
         },
-        (errorMessage) => {
+        errorMessage => {
           let userFriendlyError = errorMessage;
           if (errorMessage.includes("NotFoundException")) {
             userFriendlyError =
@@ -68,7 +68,7 @@ const QRCodeScannerWrapper = ({
       .then(() => {
         setIsScanning(true);
       })
-      .catch((err) => {
+      .catch(err => {
         console.error("Error starting scanner:", err);
       });
   };
@@ -81,7 +81,7 @@ const QRCodeScannerWrapper = ({
           setIsScanning(false);
           setScanError(null);
         })
-        .catch((err) => {
+        .catch(err => {
           console.error("Error stopping scanner:", err);
           setScanError("Failed to stop scanner.");
         });
