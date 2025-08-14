@@ -9,14 +9,10 @@ export const getApiDocs = async () => {
         title: "Attendance checking APIs",
         version: "1.0.0",
       },
-      servers: [
-        {
-          url: "http://localhost:3000",
-          description: "Local development server",
-        },
+      servers: [        
         {
           url: process.env.BASE_URL!,
-          description: "Production server",
+          description: "Server URL",
         },
       ],
       components: {
