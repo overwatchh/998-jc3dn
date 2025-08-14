@@ -1,8 +1,6 @@
 import mysql from "mysql2/promise";
 
 const isProd = process.env.NODE_ENV === "production";
-console.log('socket path', `${process.env.GCP_PROJECT_ID}:${process.env.GCP_REGION}:${process.env.DB_INSTANCE}`);
-console.log('db credentials', process.env.DB_USER,process.env.DB_PASS,process.env.DB_NAME);
 export const db = mysql.createPool(
   isProd
     ? {

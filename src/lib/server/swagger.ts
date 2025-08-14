@@ -1,4 +1,6 @@
+import path from "path";
 import swaggerJSDoc from "swagger-jsdoc";
+const isProd = process.env.NODE_ENV === "production";
 
 export const swaggerSpec = swaggerJSDoc({
   definition: {
@@ -75,5 +77,7 @@ export const swaggerSpec = swaggerJSDoc({
       },
     ],
   },
-  apis: ["src/app/api/**/*.ts"],
+  apis: isProd
+    ? [path.join(process.cwd(), ".next/server/app/api/**/*.js")] // production
+    : ["./src/app/api/**/*.ts"], // development
 });
