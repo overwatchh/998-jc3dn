@@ -11,35 +11,35 @@ jobs:
     environment: GCP_PROJECT_ID
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4      
+        uses: actions/checkout@v4  
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+          project_id: ${{ secrets.GCP_PROJECT_ID }}    
 
       - name: Download Cloud SQL Auth Proxy
         run: |
           curl -o cloud-sql-proxy https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.18.0/cloud-sql-proxy.linux.amd64
           chmod +x cloud-sql-proxy       
 
-      - name: Cloud SQL Proxy Help
+      - name: Generate sa-key
         run: |
-          ./cloud-sql-proxy --help   
+          gcloud iam service-accounts keys create key.json --iam-account=github-actions-deployer@project-capstone-468109.iam.gserviceaccount.com
 
       - name: Start Cloud SQL Auth Proxy
-        run: |
-          # Save the service account JSON key from secrets to a file
-          echo "${{ secrets.GCP_SA_KEY }}" > sa-key.json
-
+        run: |          
           # list files to verify the key is saved
           echo "Listing files in the current directory:"          
-          ls -la
-          
-          echo "Contents of sa-key.json:"
-          cat sa-key.json
+          ls -la                    
 
           # Build the connection name from secrets
           INSTANCE_CONNECTION_NAME="${{ secrets.GCP_PROJECT_ID }}:${{ secrets.GCP_REGION }}:${{ secrets.DB_INSTANCE }}"          
 
           # Start the Cloud SQL Auth Proxy with credentials file
           ./cloud-sql-proxy \
-            --credentials-file ./sa-key.json \
+            --credentials-file ./key.json \
             "$INSTANCE_CONNECTION_NAME" &
           echo $! > proxy.pid
 
