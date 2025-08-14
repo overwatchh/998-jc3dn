@@ -83,6 +83,8 @@ import { groupByCourse } from "@/lib/server/process-data";
 
 export async function GET(req: NextRequest) {
   //Parse query param from URL
+  console.log("process env base_url", process.env.BASE_URL);
+  console.log("is production", process.env.NODE_ENV === "production");
   const { searchParams } = new URL(req.url);
   const courseStatus = searchParams.get("course_status");
 

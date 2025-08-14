@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/server/auth";
 import { rawQuery } from "@/lib/server/query"; // Replace with your DB access method (e.g., mysql2)
@@ -84,10 +85,10 @@ const APP_URL = process.env.BASE_URL!;
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await params;
+    const { id } = await context.params;
     const courseSessionId = parseInt(id); // lecture or lab id
     const body = (await req.json()) as GenerateQrRequestBody;
     const { week_number, redirect_url, radius } = body;

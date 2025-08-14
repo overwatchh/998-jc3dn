@@ -3,7 +3,11 @@ import { auth } from "@/lib/server/auth";
 import { rawQuery } from "@/lib/server/query";
 import { z } from "zod";
 import { headers } from "next/headers";
-import { AttendanceCheckinRequestBody, QRCodeInfoRow } from "@/types/qr-code";
+import {
+  AttendanceCheckinRequestBody,
+  QRCodeInfoRow,
+  RowLocation,
+} from "@/types/qr-code";
 import { haversineDistance } from "@/lib/server/util";
 /**
  * @openapi
@@ -152,7 +156,7 @@ export async function POST(req: NextRequest) {
   // 4. check location based on lat and long
   if (verify_distance) {
     //  Get location lat/long
-    const [building] = await rawQuery<{ latitude: number; longitude: number }>(
+    const [building] = await rawQuery<RowLocation>(
       `SELECT latitude, longitude FROM locations WHERE id = ?`,
       [qrCodeRow.location_id]
     );

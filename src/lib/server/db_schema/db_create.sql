@@ -119,7 +119,7 @@ CREATE TABLE enrollments (
 CREATE TABLE session_qr_codes (
     id INT AUTO_INCREMENT PRIMARY KEY,
     course_session_id INT NOT NULL,
-    qr_code TEXT NOT NULL, -- store as encoded text
+    qr_code VARCHAR(12) NOT NULL, -- store as encoded text
     generated_at DATETIME NOT NULL,
     valid_until DATETIME NOT NULL,
     week_number INT NOT NULL,    
