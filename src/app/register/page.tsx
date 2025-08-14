@@ -1,45 +1,45 @@
-"use client"
+"use client";
 
-import { useRegister } from "@/hooks/useAuth"
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import Link from "next/link"
+import { useRegister } from "@/hooks/useAuth";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export default function RegisterPage() {
-  const [name, setName] = useState("")
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [confirmPassword, setConfirmPassword] = useState("")
-  const [role, setRole] = useState("student")
-  const [error, setError] = useState("")
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [role, setRole] = useState("student");
+  const [error, setError] = useState("");
 
-  const router = useRouter()
-  const register = useRegister()
+  const router = useRouter();
+  const register = useRegister();
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError("")
+    e.preventDefault();
+    setError("");
 
     if (password !== confirmPassword) {
-      setError("Passwords do not match")
-      return
+      setError("Passwords do not match");
+      return;
     }
 
     try {
-      await register.mutateAsync({ name, email, password, role })
-      router.push("/dashboard")
+      await register.mutateAsync({ name, email, password, role });
+      router.push("/dashboard");
     } catch (err: unknown) {
-      let errorMessage = "Registration failed. Please try again."
+      let errorMessage = "Registration failed. Please try again.";
       if (typeof err === "object" && err !== null && "response" in err) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const response = (err as any).response // Use 'any' briefly for type casting
+        const response = (err as any).response; // Use 'any' briefly for type casting
         if (response?.data?.message) {
-          errorMessage = response.data.message
+          errorMessage = response.data.message;
         }
       }
-      setError(errorMessage)
+      setError(errorMessage);
     }
-  }
+  };
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center p-4">
@@ -171,5 +171,5 @@ export default function RegisterPage() {
         </form>
       </div>
     </div>
-  )
+  );
 }
