@@ -4,11 +4,12 @@ on:
   push:
     branches:
       - db-deployment
+      - master
 
 jobs:
   execute-sql:
     runs-on: ubuntu-latest
-    environment: GCP_PROJECT_ID
+    environment: Production
     steps:
       - name: Checkout code
         uses: actions/checkout@v4      
