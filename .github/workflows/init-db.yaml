@@ -7,7 +7,7 @@ on:
 
 jobs:
   execute-sql:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-
     environment: GCP_PROJECT_ID
     steps:
       - name: Checkout code
@@ -22,20 +22,30 @@ jobs:
       - name: Install MySQL client
         run: sudo apt-get update && sudo apt-get install -y mysql-client
 
-      - name: Execute SQL scripts on Cloud SQL
-        shell: bash
+      - name: Start Cloud SQL Auth Proxy
         run: |
-          gcloud sql connect ${{ secrets.DB_INSTANCE }} \
-            --user=${{ secrets.DB_USER }} \
-            --quiet \
-            --database=${{ secrets.DB_NAME }} < src/lib/server/db_schema/db_drop.sql
+          INSTANCE_CONNECTION_NAME="${{ secrets.GCP_PROJECT_ID }}:${{ secrets.GCP_REGION }}:${{ secrets.DB_INSTANCE }}"
+          curl -o cloud-sql-proxy https://dl.google.com/cloudsql/cloud-sql-proxy.linux.amd64
+          chmod +x cloud-sql-proxy
+          ./cloud-sql-proxy ${{ secrets.DB_INSTANCE_CONNECTION_NAME }} &
+          sleep 5
 
-          gcloud sql connect ${{ secrets.DB_INSTANCE }} \
-            --user=${{ secrets.DB_USER }} \
-            --quiet \
-            --database=${{ secrets.DB_NAME }} < src/lib/server/db_schema/db_create.sql
+      - name: Run SQL scripts
+        run: |
+          mysql -u ${{ secrets.DB_USER }} \
+                -p${{ secrets.DB_PASS }} \
+                -D ${{ secrets.DB_NAME }} \
+                -h 127.0.0.1 \
+                < src/lib/server/db_schema/db_drop.sql
 
-          gcloud sql connect ${{ secrets.DB_INSTANCE }} \
-            --user=${{ secrets.DB_USER }} \
-            --quiet \
-            --database=${{ secrets.DB_NAME }} < src/lib/server/db_schema/db_load.sql
+          mysql -u ${{ secrets.DB_USER }} \
+                -p${{ secrets.DB_PASS }} \
+                -D ${{ secrets.DB_NAME }} \
+                -h 127.0.0.1 \
+                < src/lib/server/db_schema/db_create.sql
+
+          mysql -u ${{ secrets.DB_USER }} \
+                -p${{ secrets.DB_PASS }} \
+                -D ${{ secrets.DB_NAME }} \
+                -h 127.0.0.1 \
+                < src/lib/server/db_schema/db_load.sql
