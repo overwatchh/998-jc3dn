@@ -7,8 +7,7 @@ on:
 
 jobs:
   execute-sql:
-    runs-on: ubuntu-
-    environment: GCP_PROJECT_ID
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -22,16 +21,24 @@ jobs:
       - name: Install MySQL client
         run: sudo apt-get update && sudo apt-get install -y mysql-client
 
-      - name: Start Cloud SQL Auth Proxy
+      - name: Download Cloud SQL Auth Proxy
         run: |
-          INSTANCE_CONNECTION_NAME="${{ secrets.GCP_PROJECT_ID }}:${{ secrets.GCP_REGION }}:${{ secrets.DB_INSTANCE }}"
           curl -o cloud-sql-proxy https://dl.google.com/cloudsql/cloud-sql-proxy.linux.amd64
           chmod +x cloud-sql-proxy
-          ./cloud-sql-proxy ${{ secrets.DB_INSTANCE_CONNECTION_NAME }} &
+
+      - name: Run SQL scripts on Cloud SQL
+        run: |
+          # Build the connection name: PROJECT_ID:REGION:INSTANCE
+          INSTANCE_CONNECTION_NAME="${{ secrets.GCP_PROJECT_ID }}:${{ secrets.GCP_REGION }}:${{ secrets.DB_INSTANCE }}"
+
+          # Start the proxy in the background
+          ./cloud-sql-proxy "$INSTANCE_CONNECTION_NAME" &
+          PROXY_PID=$!
+
+          # Give the proxy a moment to connect
           sleep 5
 
-      - name: Run SQL scripts
-        run: |
+          # Run SQL scripts in order
           mysql -u ${{ secrets.DB_USER }} \
                 -p${{ secrets.DB_PASS }} \
                 -D ${{ secrets.DB_NAME }} \
@@ -49,3 +56,6 @@ jobs:
                 -D ${{ secrets.DB_NAME }} \
                 -h 127.0.0.1 \
                 < src/lib/server/db_schema/db_load.sql
+
+          # Stop the proxy so the job can finish
+          kill $PROXY_PID
