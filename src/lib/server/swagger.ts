@@ -1,4 +1,3 @@
-import path from "path";
 import swaggerJSDoc from "swagger-jsdoc";
 const isProd = process.env.NODE_ENV === "production";
 
@@ -10,14 +9,15 @@ export const swaggerSpec = swaggerJSDoc({
       version: "1.0.0",
     },
     servers: [
-      {
-        url: "http://localhost:3000",
-        description: "Local development server",
-      },
-      {
-        url: "https://api.example.com",
-        description: "Production server",
-      },
+      isProd
+        ? {
+            url: process.env.BASE_URL,
+            description: "Production server",
+          }
+        : {
+            url: "http://localhost:3000",
+            description: "Local development server",
+          },
     ],
     components: {
       securitySchemes: {
@@ -78,6 +78,6 @@ export const swaggerSpec = swaggerJSDoc({
     ],
   },
   apis: isProd
-    ? [path.join(process.cwd(), ".next/server/app/api/**/*.js")] // production
+    ? [".next/server/app/api/**/*.js"] // production
     : ["./src/app/api/**/*.ts"], // development
 });
