@@ -1,65 +1,65 @@
-import React from "react"
+import React from "react";
 
 // Define interfaces for the data structure
 interface OverallStats {
-  totalStudents?: number
-  totalCourses?: number
-  totalLectures?: number
-  averageAttendanceRate?: number
-  attendanceRate?: number // Added for student report type
+  totalStudents?: number;
+  totalCourses?: number;
+  totalLectures?: number;
+  averageAttendanceRate?: number;
+  attendanceRate?: number; // Added for student report type
 }
 
 interface StudentStat {
-  name: string
-  present: number
-  late: number
-  absent: number
-  attendanceRate: number
+  name: string;
+  present: number;
+  late: number;
+  absent: number;
+  attendanceRate: number;
 }
 
 interface LectureStat {
-  title: string
-  date: string // Assuming date is a string, adjust if it's a Date object
-  present: number
-  late: number
-  absent: number
-  attendanceRate: number
+  title: string;
+  date: string; // Assuming date is a string, adjust if it's a Date object
+  present: number;
+  late: number;
+  absent: number;
+  attendanceRate: number;
 }
 
 interface CourseInfo {
-  name: string
-  code: string
+  name: string;
+  code: string;
 }
 
 interface CourseAggregateStat {
-  totalLectures: number
-  present: number
-  late: number
-  absent: number
-  attendanceRate: number
+  totalLectures: number;
+  present: number;
+  late: number;
+  absent: number;
+  attendanceRate: number;
 }
 
 interface CourseStat {
-  course: CourseInfo
-  stats: CourseAggregateStat
+  course: CourseInfo;
+  stats: CourseAggregateStat;
 }
 
 interface ReportData {
-  overallStats?: OverallStats
-  studentStats?: StudentStat[]
-  lectureStats?: LectureStat[]
-  courseStats?: CourseStat[]
+  overallStats?: OverallStats;
+  studentStats?: StudentStat[];
+  lectureStats?: LectureStat[];
+  courseStats?: CourseStat[];
 }
 
 interface ReportDisplayProps {
-  title: string
-  data: ReportData | null | undefined // Use the defined interface
-  type: "course" | "student"
+  title: string;
+  data: ReportData | null | undefined; // Use the defined interface
+  type: "course" | "student";
 }
 
 const ReportDisplay: React.FC<ReportDisplayProps> = ({ title, data, type }) => {
   if (!data) {
-    return <div className="p-4">Loading report data...</div>
+    return <div className="p-4">Loading report data...</div>;
   }
 
   return (
@@ -238,7 +238,7 @@ const ReportDisplay: React.FC<ReportDisplayProps> = ({ title, data, type }) => {
         </div>
       )}
     </div>
-  )
-}
+  );
+};
 
-export default ReportDisplay
+export default ReportDisplay;

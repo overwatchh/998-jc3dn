@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from "next/server"
-import { GroupedCourse, RawSessionRow } from "@/types/course"
-import { ApiArrayResponse } from "@/types/api"
-import { rawQuery } from "@/lib/server/query"
-import { groupByCourse } from "@/lib/server/process-data"
+import { NextRequest, NextResponse } from "next/server";
+import { GroupedCourse, RawSessionRow } from "@/types/course";
+import { ApiArrayResponse } from "@/types/api";
+import { rawQuery } from "@/lib/server/query";
+import { groupByCourse } from "@/lib/server/process-data";
 /**
  * @openapi
  * /api/admin/courses:
@@ -83,11 +83,11 @@ import { groupByCourse } from "@/lib/server/process-data"
 
 export async function GET(req: NextRequest) {
   //Parse query param from URL
-  const { searchParams } = new URL(req.url)
-  const courseStatus = searchParams.get("course_status")
+  const { searchParams } = new URL(req.url);
+  const courseStatus = searchParams.get("course_status");
 
   //Validate payload
-  const validStatuses = ["active", "finished"]
+  const validStatuses = ["active", "finished"];
 
   if (courseStatus && !validStatuses.includes(courseStatus)) {
     return NextResponse.json(
@@ -98,7 +98,7 @@ export async function GET(req: NextRequest) {
         data: [],
       },
       { status: 400 }
-    )
+    );
   }
 
   const sql = `
@@ -126,19 +126,19 @@ export async function GET(req: NextRequest) {
     LEFT JOIN locations l ON cs.location_id = l.id
     ${courseStatus ? "WHERE c.status = ?" : ""}
     ORDER BY s.year DESC, s.name, c.code, cs.day_of_week, cs.start_time
-  `
+  `;
 
   const rows = await rawQuery<RawSessionRow>(
     sql,
     courseStatus ? [courseStatus] : []
-  )
+  );
 
-  const groupedCourses = groupByCourse(rows)
+  const groupedCourses = groupByCourse(rows);
   const apiResponse: ApiArrayResponse<GroupedCourse[]> = {
     message: "Courses fetched successfully",
     count: groupedCourses.length,
     data: groupedCourses,
-  }
+  };
 
-  return NextResponse.json(apiResponse)
+  return NextResponse.json(apiResponse);
 }

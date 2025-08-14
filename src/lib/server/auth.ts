@@ -1,5 +1,5 @@
-import { betterAuth } from "better-auth"
-import { createPool } from "mysql2/promise"
+import { betterAuth } from "better-auth";
+import { createPool } from "mysql2/promise";
 
 export const auth = betterAuth({
   database: createPool({
@@ -20,7 +20,7 @@ export const auth = betterAuth({
         return {
           firstName: profile.given_name,
           lastName: profile.family_name,
-        }
+        };
       },
     },
   },
@@ -35,4 +35,4 @@ export const auth = betterAuth({
       },
     },
   },
-})
+});

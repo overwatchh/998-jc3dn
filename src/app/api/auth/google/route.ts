@@ -1,6 +1,6 @@
 // src/app/api/auth/google/route.ts
-import { auth } from "@/lib/server/auth"
-import { NextRequest, NextResponse } from "next/server"
+import { auth } from "@/lib/server/auth";
+import { NextRequest, NextResponse } from "next/server";
 /**
  * @openapi
  * /api/auth/google:
@@ -22,8 +22,8 @@ export async function GET(req: NextRequest) {
       callbackURL: "/",
     },
     asResponse: false,
-  })
+  });
 
   // Perform the actual redirect
-  return NextResponse.redirect(response.url as string)
+  return NextResponse.redirect(response.url as string);
 }
