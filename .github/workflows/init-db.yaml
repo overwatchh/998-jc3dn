@@ -36,7 +36,7 @@ jobs:
 
           # Start the Cloud SQL Auth Proxy with credentials file
           ./cloud-sql-proxy \
-            --credentials-file ${{secrets.GCP_SA_KEY}} \
+            --credentials-file ${{ secrets.GCP_SA_KEY }} \
             "$INSTANCE_CONNECTION_NAME" &
           echo $! > proxy.pid
 
@@ -57,7 +57,7 @@ jobs:
           for script in db_drop.sql db_create.sql db_load.sql; do
             echo "▶️ Running $script..."
             mysql -u ${{ secrets.DB_USER }} \
-                  -p${{ secrets.DB_PASS }} \
+                  -p ${{ secrets.DB_PASS }} \
                   -D ${{ secrets.DB_NAME }} \
                   -h 127.0.0.1 \
                   -P 3306 \
