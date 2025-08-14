@@ -16,10 +16,15 @@ jobs:
       - name: Download Cloud SQL Auth Proxy
         run: |
           curl -o cloud-sql-proxy https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.18.0/cloud-sql-proxy.linux.amd64
-          chmod +x cloud-sql-proxy             
+          chmod +x cloud-sql-proxy      
+                 
       - name: Write GCP key to file
         run: |
-          echo "${{ secrets.GCP_SA_KEY }}" | tr -d '\r' > sa-key.json
+              printf "%b" "${{ secrets.GCP_SA_KEY }}" > sa-key.json
+      - name: Validate JSON
+        run: |
+          cat sa-key.json | jq .
+
       - name: Start Cloud SQL Auth Proxy
         run: |          
           # list files to verify the key is saved
