@@ -3,8 +3,7 @@ name: Execute SQL scripts on Cloud SQL
 on:
   push:
     branches:
-      - db-deployment
-      - master
+      - db-deployment      
 
 jobs:
   execute-sql:
