@@ -1,3 +1,4 @@
+import { RowDataPacket } from "mysql2";
 import { BaseApiResponse } from "./api";
 
 export type GenerateQrRequestBody = {
@@ -21,7 +22,7 @@ export type GenerateQrResponse = BaseApiResponse & {
   valid_until: string; // ISO datetime
 };
 
-export type QRCodeInfoRow = {
+export interface QRCodeInfoRow extends RowDataPacket {
   qr_code_id: number;
   course_session_id: number;
   generated_at: string;
@@ -29,4 +30,9 @@ export type QRCodeInfoRow = {
   valid_until: string;
   course_id: number;
   location_id: number;
-};
+}
+
+export interface RowLocation extends RowDataPacket {
+  latitude: number;
+  longitude: number;
+}
