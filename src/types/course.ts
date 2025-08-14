@@ -1,4 +1,5 @@
-export type RawSessionRow = {
+import { RowDataPacket } from "mysql2";
+export interface RawSessionRow extends RowDataPacket {
   session_id: number;
   session_type: string;
   day_of_week: string;
@@ -16,9 +17,9 @@ export type RawSessionRow = {
   description: string;
   latitude: string | null;
   longitude: string | null;
-};
+}
 
-export type GroupedCourse = {
+export interface GroupedCourse extends RowDataPacket {
   course_id: number;
   course_name: string;
   course_code: string;
@@ -40,18 +41,18 @@ export type GroupedCourse = {
       longitude: string;
     };
   }[];
-};
+}
 
-export type EnrolledCourse = {
+export interface EnrolledCourse extends RowDataPacket {
   courseId: number;
   courseName: string;
   courseCode: string;
   status: "active" | "finished";
   semesterName: "autumn" | "spring" | "summer";
   semesterYear: number;
-};
+}
 
-export type RawCourseSessionRow = {
+export interface RawCourseSessionRow extends RowDataPacket {
   course_session_id: number;
   course_id: number;
-};
+}

@@ -1,5 +1,5 @@
 import { betterAuth } from "better-auth";
-import {db} from "./db";
+import { db } from "./db";
 export const auth = betterAuth({
   database: db,
   emailAndPassword: {
@@ -10,7 +10,7 @@ export const auth = betterAuth({
       prompt: "select_account",
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-      mapProfileToUser: (profile) => {
+      mapProfileToUser: profile => {
         return {
           firstName: profile.given_name,
           lastName: profile.family_name,

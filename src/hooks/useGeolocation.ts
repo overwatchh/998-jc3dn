@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { GeolocationCoords } from '@/types';
+import { useState, useEffect } from "react";
+import { GeolocationCoords } from "@/types";
 
 interface UseGeolocationReturn {
   position: GeolocationCoords | null;
@@ -14,7 +14,7 @@ export const useGeolocation = (): UseGeolocationReturn => {
 
   useEffect(() => {
     if (!navigator.geolocation) {
-      setError('Geolocation is not supported by your browser');
+      setError("Geolocation is not supported by your browser");
       setLoading(false);
       return;
     }

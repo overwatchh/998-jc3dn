@@ -1,5 +1,6 @@
 import { createSwaggerSpec } from "next-swagger-doc";
-
+const isProd = process.env.NODE_ENV === "production";
+const productionURL = "https://jc3dn-qr-attendance-kosgs4isma-ts.a.run.app";
 export const getApiDocs = async () => {
   const spec = createSwaggerSpec({
     apiFolder: "src/app/api",
@@ -11,12 +12,8 @@ export const getApiDocs = async () => {
       },
       servers: [
         {
-          url: "http://localhost:3000",
-          description: "Local development server",
-        },
-        {
-          url: process.env.BASE_URL!,
-          description: "Production server",
+          url: isProd ? productionURL : process.env.BASE_URL!,
+          description: "Server URL",
         },
       ],
       components: {

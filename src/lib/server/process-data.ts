@@ -13,7 +13,7 @@ export function groupByCourse(rows: RawSessionRow[]): GroupedCourse[] {
         semester_name: row.semester_name,
         semester_year: row.semester_year,
         sessions: [],
-      };
+      } as GroupedCourse;
     }
 
     grouped[row.course_id].sessions.push({
