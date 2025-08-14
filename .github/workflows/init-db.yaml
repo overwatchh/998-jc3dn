@@ -21,7 +21,7 @@ jobs:
       - name: Start Cloud SQL Auth Proxy
         run: |
           # Save the service account JSON key from secrets to a file
-          echo "${{ secrets.GCP_SA_KEY }}" > sa-key.json
+          printf "%s" "${{ secrets.GCP_SA_KEY }}" > sa-key.json
 
           # list files to verify the key is saved
           echo "Listing files in the current directory:"          
