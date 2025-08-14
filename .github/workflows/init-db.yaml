@@ -16,11 +16,7 @@ jobs:
       - name: Download Cloud SQL Auth Proxy
         run: |
           curl -o cloud-sql-proxy https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.18.0/cloud-sql-proxy.linux.amd64
-          chmod +x cloud-sql-proxy       
-
-      - name: Generate sa-key
-        run: |
-          gcloud iam service-accounts keys create key.json --iam-account=github-actions-deployer@project-capstone-468109.iam.gserviceaccount.com
+          chmod +x cloud-sql-proxy             
 
       - name: Start Cloud SQL Auth Proxy
         run: |
