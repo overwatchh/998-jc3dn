@@ -30,13 +30,16 @@ jobs:
           # list files to verify the key is saved
           echo "Listing files in the current directory:"          
           ls -la
+          
+          echo "Contents of sa-key.json:"
+          cat sa-key.json
 
           # Build the connection name from secrets
           INSTANCE_CONNECTION_NAME="${{ secrets.GCP_PROJECT_ID }}:${{ secrets.GCP_REGION }}:${{ secrets.DB_INSTANCE }}"          
 
           # Start the Cloud SQL Auth Proxy with credentials file
           ./cloud-sql-proxy \
-            --credentials-file ${{ secrets.GCP_SA_KEY }} \
+            --credentials-file sa-key.json \
             "$INSTANCE_CONNECTION_NAME" &
           echo $! > proxy.pid
 
@@ -57,7 +60,7 @@ jobs:
           for script in db_drop.sql db_create.sql db_load.sql; do
             echo "▶️ Running $script..."
             mysql -u ${{ secrets.DB_USER }} \
-                  -p ${{ secrets.DB_PASS }} \
+                  -p${{ secrets.DB_PASS }} \
                   -D ${{ secrets.DB_NAME }} \
                   -h 127.0.0.1 \
                   -P 3306 \
