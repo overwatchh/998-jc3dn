@@ -17,10 +17,10 @@ jobs:
         run: |
           curl -o cloud-sql-proxy https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.18.0/cloud-sql-proxy.linux.amd64
           chmod +x cloud-sql-proxy      
-                 
+
       - name: Write GCP key to file
         run: |
-              printf "%b" "${{ secrets.GCP_SA_KEY }}" > sa-key.json
+          echo "${{ secrets.GCP_SA_KEY_BASE_64 }}" | base64 --decode > sa-key.json
       - name: Validate JSON
         run: |
           cat sa-key.json | jq .
