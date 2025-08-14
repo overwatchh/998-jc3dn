@@ -30,7 +30,7 @@ jobs:
           # list files to verify the key is saved
           echo "Listing files in the current directory:"          
           ls -la
-
+          
           echo "Contents of sa-key.json:"
           cat sa-key.json
 
@@ -39,8 +39,9 @@ jobs:
 
           # Start the Cloud SQL Auth Proxy with credentials file
           ./cloud-sql-proxy \
-            --port 3306 \
-            "$INSTANCE_CONNECTION_NAME"
+            --credentials-file ./sa-key.json \
+            "$INSTANCE_CONNECTION_NAME" &
+          echo $! > proxy.pid
 
           # Wait until the proxy is ready (check if port 3306 is open)
           for i in {1..10}; do
