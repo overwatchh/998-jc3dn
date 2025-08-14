@@ -1,11 +1,11 @@
-import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/server/auth";
-import { rawQuery } from "@/lib/server/query"; // Replace with your DB access method (e.g., mysql2)
-import crypto from "crypto";
-import QRCode from "qrcode";
-import { headers } from "next/headers";
-import { RawCourseSessionRow } from "@/types/course";
-import { GenerateQrRequestBody, GenerateQrResponse } from "@/types/qr-code";
+import { NextRequest, NextResponse } from "next/server"
+import { auth } from "@/lib/server/auth"
+import { rawQuery } from "@/lib/server/query" // Replace with your DB access method (e.g., mysql2)
+import crypto from "crypto"
+import QRCode from "qrcode"
+import { headers } from "next/headers"
+import { RawCourseSessionRow } from "@/types/course"
+import { GenerateQrRequestBody, GenerateQrResponse } from "@/types/qr-code"
 
 /**
  * @openapi
@@ -80,64 +80,64 @@ import { GenerateQrRequestBody, GenerateQrResponse } from "@/types/qr-code";
  *         description: Internal server error
  */
 
-const APP_URL = process.env.BASE_URL!;
+const APP_URL = process.env.BASE_URL!
 
 export async function POST(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const { id } = await params;
-    const courseSessionId = parseInt(id); // lecture or lab id
-    const body = (await req.json()) as GenerateQrRequestBody;
-    const { week_number, redirect_url, radius } = body;
+    const { id } = await params
+    const courseSessionId = parseInt(id) // lecture or lab id
+    const body = (await req.json()) as GenerateQrRequestBody
+    const { week_number, redirect_url, radius } = body
     if (!week_number || typeof week_number !== "number") {
       return NextResponse.json(
         { message: "week_number is required and must be a number" },
         { status: 400 }
-      );
+      )
     }
 
     // Step 1: Authenticate
-    const session = await auth.api.getSession({ headers: await headers() });
+    const session = await auth.api.getSession({ headers: await headers() })
     if (!session || !session.user || session.user.role !== "lecturer") {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
     }
 
-    const lecturerId = session.user.id;
+    const lecturerId = session.user.id
     // Step 2: Check if lecturer is assigned to this session
     const sql = `
      SELECT cs.id AS course_session_id, cs.course_id
       FROM course_sessions cs
       JOIN course_lecturers cl ON cl.course_id = cs.course_id
       WHERE cs.id = ? AND cl.lecturer_id = ?
-    `;
+    `
     const [courseSession] = await rawQuery<RawCourseSessionRow>(sql, [
       courseSessionId,
       lecturerId,
-    ]);
+    ])
     if (!courseSession) {
       return NextResponse.json(
         { message: "You are not assigned to this course session" },
         { status: 403 }
-      );
+      )
     }
     // Step 3: Generate token
     // Generate short secure token
-    const token = crypto.randomBytes(6).toString("hex"); // 12-char token
+    const token = crypto.randomBytes(6).toString("hex") // 12-char token
 
     // Step 4: Generate QR Code
-    const redirectPath = redirect_url || "/scan";
-    const qrUrl = `${APP_URL}${redirectPath}?token=${token}`;
-    const qrDataUrl = await QRCode.toDataURL(qrUrl);
+    const redirectPath = redirect_url || "/scan"
+    const qrUrl = `${APP_URL}${redirectPath}?token=${token}`
+    const qrDataUrl = await QRCode.toDataURL(qrUrl)
     // Step 5: Store in DB
-    const now = new Date();
-    const validUntil = new Date(now.getTime() + 10 * 60 * 1000); // 10 minutes
+    const now = new Date()
+    const validUntil = new Date(now.getTime() + 10 * 60 * 1000) // 10 minutes
 
     const saveQRSql = `
     INSERT INTO session_qr_codes (course_session_id, qr_code, generated_at, valid_until, week_number, radius)
       VALUES (?, ?, ?, ?, ?, ?)
-    `;
+    `
     await rawQuery(saveQRSql, [
       courseSession.course_session_id,
       token,
@@ -145,7 +145,7 @@ export async function POST(
       validUntil,
       week_number,
       radius ?? 100,
-    ]);
+    ])
     const response: GenerateQrResponse = {
       message: "Generate Qr sucessfully",
       qr_url: qrDataUrl,
@@ -153,18 +153,18 @@ export async function POST(
       course_session_id: courseSession.course_session_id,
       week_number,
       valid_until: validUntil.toISOString(),
-    };
-    return NextResponse.json(response);
+    }
+    return NextResponse.json(response)
   } catch (err: any) {
     if (err.message === "DUPLICATE_ENTRY") {
       return NextResponse.json(
         { message: "QR code already exists for this session and week." },
         { status: 409 }
-      );
+      )
     }
     return NextResponse.json(
       { message: "Internal Server Error" },
       { status: 500 }
-    );
+    )
   }
 }

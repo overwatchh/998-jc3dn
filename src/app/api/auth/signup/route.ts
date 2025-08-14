@@ -1,6 +1,6 @@
 // app/api/auth/signup/route.ts
-import { auth } from "@/lib/server/auth";
-import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/lib/server/auth"
+import { NextRequest, NextResponse } from "next/server"
 
 /**
  * @openapi
@@ -42,8 +42,8 @@ import { NextRequest, NextResponse } from "next/server";
  */
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
-    const { email, password, name } = body;
+    const body = await req.json()
+    const { email, password, name } = body
 
     const response = await auth.api.signUpEmail({
       body: {
@@ -52,19 +52,19 @@ export async function POST(req: NextRequest) {
         password,
       },
       asResponse: true,
-    });
+    })
 
-    const data = await response.json();
+    const data = await response.json()
 
     return new NextResponse(JSON.stringify(data), {
       status: response.status,
       headers: Object.fromEntries(response.headers.entries()),
-    });
+    })
   } catch (error) {
-    console.log("error signup", error);
+    console.log("error signup", error)
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
-    );
+    )
   }
 }

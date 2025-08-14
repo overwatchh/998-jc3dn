@@ -1,12 +1,12 @@
-"use client";
-import { ReactNode, useEffect } from "react";
-import { ReactQueryProvider } from "@/lib/queryClient";
-import { useCurrentUser } from "@/hooks/useAuth";
-import useAuthStore from "@/store/authStore";
-import "./globals.css"; // Assuming you have global styles
+"use client"
+import { ReactNode, useEffect } from "react"
+import { ReactQueryProvider } from "@/lib/queryClient"
+import { useCurrentUser } from "@/hooks/useAuth"
+import useAuthStore from "@/store/authStore"
+import "./globals.css" // Assuming you have global styles
 
 interface RootLayoutProps {
-  children: ReactNode;
+  children: ReactNode
 }
 
 export default function RootLayout({ children }: RootLayoutProps) {
@@ -22,23 +22,23 @@ export default function RootLayout({ children }: RootLayoutProps) {
         </ReactQueryProvider>
       </body>
     </html>
-  );
+  )
 }
 
 function AuthProvider({ children }: { children: ReactNode }) {
-  const { data: user, isLoading, isError } = useCurrentUser();
-  const { setUser, setLoading, clearAuth } = useAuthStore();
+  const { data: user, isLoading, isError } = useCurrentUser()
+  const { setUser, setLoading, clearAuth } = useAuthStore()
 
   // Update Zustand store based on React Query results
   useEffect(() => {
     if (isLoading) {
-      setLoading(true);
+      setLoading(true)
     } else if (isError) {
-      clearAuth();
+      clearAuth()
     } else {
-      setUser(user || null);
+      setUser(user || null)
     }
-  }, [user, isLoading, isError, setUser, setLoading, clearAuth]);
+  }, [user, isLoading, isError, setUser, setLoading, clearAuth])
 
-  return <>{children}</>;
+  return <>{children}</>
 }

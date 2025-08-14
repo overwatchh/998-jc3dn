@@ -1,10 +1,10 @@
-import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/server/auth";
-import { rawQuery } from "@/lib/server/query";
-import { z } from "zod";
-import { headers } from "next/headers";
-import { AttendanceCheckinRequestBody, QRCodeInfoRow } from "@/types/qr-code";
-import { haversineDistance } from "@/lib/server/util";
+import { NextRequest, NextResponse } from "next/server"
+import { auth } from "@/lib/server/auth"
+import { rawQuery } from "@/lib/server/query"
+import { z } from "zod"
+import { headers } from "next/headers"
+import { AttendanceCheckinRequestBody, QRCodeInfoRow } from "@/types/qr-code"
+import { haversineDistance } from "@/lib/server/util"
 /**
  * @openapi
  * /api/student/attendance/checkin:
@@ -58,31 +58,31 @@ import { haversineDistance } from "@/lib/server/util";
  */
 
 export async function POST(req: NextRequest) {
-  const session = await auth.api.getSession({ headers: await headers() });
+  const session = await auth.api.getSession({ headers: await headers() })
 
   if (!session || !session.user || session.user.role !== "student") {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
   }
 
-  const studentId = session.user.id;
-  const body = (await req.json()) as AttendanceCheckinRequestBody;
+  const studentId = session.user.id
+  const body = (await req.json()) as AttendanceCheckinRequestBody
 
   const schema = z.object({
     qr_code: z.string(),
     lat: z.number(),
     long: z.number(),
     verify_distance: z.boolean().optional().default(true),
-  });
+  })
 
-  const parsed = schema.safeParse(body);
+  const parsed = schema.safeParse(body)
   if (!parsed.success) {
     return NextResponse.json(
       { message: "Invalid body payload" },
       { status: 400 }
-    );
+    )
   }
 
-  const { qr_code, lat, long, verify_distance } = parsed.data;
+  const { qr_code, lat, long, verify_distance } = parsed.data
 
   // 1. Get session_qr_code and course_session info
   const [qrCodeRow] = await rawQuery<QRCodeInfoRow>(
@@ -100,21 +100,21 @@ export async function POST(req: NextRequest) {
     WHERE sqc.qr_code = ?
     `,
     [qr_code]
-  );
+  )
 
   if (!qrCodeRow) {
-    return NextResponse.json({ message: "Invalid QR code" }, { status: 404 });
+    return NextResponse.json({ message: "Invalid QR code" }, { status: 404 })
   }
 
-  const now = new Date();
-  const validFrom = new Date(qrCodeRow.generated_at);
-  const validUntil = new Date(qrCodeRow.valid_until);
+  const now = new Date()
+  const validFrom = new Date(qrCodeRow.generated_at)
+  const validUntil = new Date(qrCodeRow.valid_until)
 
   if (now < validFrom || now > validUntil) {
     return NextResponse.json(
       { message: "QR code is not valid at this time" },
       { status: 403 }
-    );
+    )
   }
 
   // 2. Check if student is enrolled in the course
@@ -124,13 +124,13 @@ export async function POST(req: NextRequest) {
     WHERE student_id = ? AND course_id = ?
     `,
     [studentId, qrCodeRow.course_id]
-  );
+  )
 
   if (!enrollment) {
     return NextResponse.json(
       { message: "Student not enrolled in this course" },
       { status: 403 }
-    );
+    )
   }
 
   // 3. Prevent duplicate check-in
@@ -140,13 +140,10 @@ export async function POST(req: NextRequest) {
     WHERE student_id = ? AND session_id = ? AND qr_code_id = ?
     `,
     [studentId, qrCodeRow.course_session_id, qrCodeRow.qr_code_id]
-  );
+  )
 
   if (existing) {
-    return NextResponse.json(
-      { message: "Already checked in" },
-      { status: 400 }
-    );
+    return NextResponse.json({ message: "Already checked in" }, { status: 400 })
   }
 
   // 4. check location based on lat and long
@@ -155,13 +152,13 @@ export async function POST(req: NextRequest) {
     const [building] = await rawQuery<{ latitude: number; longitude: number }>(
       `SELECT latitude, longitude FROM locations WHERE id = ?`,
       [qrCodeRow.location_id]
-    );
+    )
 
     if (!building) {
       return NextResponse.json(
         { message: "Course session location not found" },
         { status: 404 }
-      );
+      )
     }
 
     // Check radius (haversine distance)
@@ -170,9 +167,9 @@ export async function POST(req: NextRequest) {
       building.longitude,
       lat, // student's lat
       long // student's long
-    );
+    )
 
-    const allowedRadius = qrCodeRow.radius ?? 100;
+    const allowedRadius = qrCodeRow.radius ?? 100
 
     if (distance > allowedRadius) {
       return NextResponse.json(
@@ -180,7 +177,7 @@ export async function POST(req: NextRequest) {
           message: `You are ${distance} meters far away .You must be within ${allowedRadius} meters to check in`,
         },
         { status: 403 }
-      );
+      )
     }
   }
   // 5. Insert check-in record
@@ -198,9 +195,9 @@ export async function POST(req: NextRequest) {
       long,
       verify_distance,
     ]
-  );
+  )
 
   return NextResponse.json({
     message: `Check-in successful.`,
-  });
+  })
 }

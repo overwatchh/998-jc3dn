@@ -1,6 +1,6 @@
-import { auth } from "@/lib/server/auth";
-import { NextResponse } from "next/server";
-import { headers } from "next/headers";
+import { auth } from "@/lib/server/auth"
+import { NextResponse } from "next/server"
+import { headers } from "next/headers"
 
 /**
  * @openapi
@@ -21,19 +21,19 @@ export async function POST() {
     const response = await auth.api.signOut({
       headers: await headers(),
       asResponse: true,
-    });
+    })
 
-    const data = await response.json();
+    const data = await response.json()
 
     return new NextResponse(JSON.stringify(data), {
       status: response.status,
       headers: Object.fromEntries(response.headers.entries()),
-    });
+    })
   } catch (error) {
-    console.log("error signoutsignout", error);
+    console.log("error signoutsignout", error)
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
-    );
+    )
   }
 }

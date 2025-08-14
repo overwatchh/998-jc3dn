@@ -1,12 +1,12 @@
-import { Html5Qrcode } from "html5-qrcode";
-import { useState, useEffect, useRef } from "react";
-import { Button } from "@/components/ui/button";
+import { Html5Qrcode } from "html5-qrcode"
+import { useState, useEffect, useRef } from "react"
+import { Button } from "@/components/ui/button"
 
 interface QRCodeScannerWrapperProps {
-  onScanSuccess: (decodedText: string) => void;
-  onScanFailure?: (error: string) => void;
-  width?: string;
-  height?: string;
+  onScanSuccess: (decodedText: string) => void
+  onScanFailure?: (error: string) => void
+  width?: string
+  height?: string
 }
 
 const QRCodeScannerWrapper = ({
@@ -15,78 +15,78 @@ const QRCodeScannerWrapper = ({
   width = "100%",
   height = "300px",
 }: QRCodeScannerWrapperProps) => {
-  const [isScanning, setIsScanning] = useState(false);
-  const [scanError, setScanError] = useState<string | null>(null);
-  const scannerRef = useRef<Html5Qrcode | null>(null);
-  const scannerDivId = "qr-reader";
+  const [isScanning, setIsScanning] = useState(false)
+  const [scanError, setScanError] = useState<string | null>(null)
+  const scannerRef = useRef<Html5Qrcode | null>(null)
+  const scannerDivId = "qr-reader"
 
   useEffect(() => {
     // Initialize scanner
-    scannerRef.current = new Html5Qrcode(scannerDivId);
+    scannerRef.current = new Html5Qrcode(scannerDivId)
 
     // Cleanup on unmount
     return () => {
       if (scannerRef.current && isScanning) {
         scannerRef.current
           .stop()
-          .catch((err) => console.error("Error stopping scanner:", err));
+          .catch(err => console.error("Error stopping scanner:", err))
       }
-    };
-  }, [isScanning]);
+    }
+  }, [isScanning])
 
   const startScanner = () => {
-    if (!scannerRef.current) return;
-    setScanError(null);
+    if (!scannerRef.current) return
+    setScanError(null)
 
     const config = {
       fps: 10,
       qrbox: { width: 250, height: 250 },
-    };
+    }
 
     scannerRef.current
       .start(
         { facingMode: "environment" },
         config,
-        (decodedText) => {
-          setScanError(null);
-          onScanSuccess(decodedText);
+        decodedText => {
+          setScanError(null)
+          onScanSuccess(decodedText)
           // Optionally stop scanning after successful scan
           // stopScanner();
         },
-        (errorMessage) => {
-          let userFriendlyError = errorMessage;
+        errorMessage => {
+          let userFriendlyError = errorMessage
           if (errorMessage.includes("NotFoundException")) {
             userFriendlyError =
-              "QR code not detected. Ensure it's clear, well-lit, and centered in the scan area.";
+              "QR code not detected. Ensure it's clear, well-lit, and centered in the scan area."
           }
-          setScanError(userFriendlyError);
+          setScanError(userFriendlyError)
           if (onScanFailure) {
-            onScanFailure(errorMessage);
+            onScanFailure(errorMessage)
           }
         }
       )
       .then(() => {
-        setIsScanning(true);
+        setIsScanning(true)
       })
-      .catch((err) => {
-        console.error("Error starting scanner:", err);
-      });
-  };
+      .catch(err => {
+        console.error("Error starting scanner:", err)
+      })
+  }
 
   const stopScanner = () => {
     if (scannerRef.current && isScanning) {
       scannerRef.current
         .stop()
         .then(() => {
-          setIsScanning(false);
-          setScanError(null);
+          setIsScanning(false)
+          setScanError(null)
         })
-        .catch((err) => {
-          console.error("Error stopping scanner:", err);
-          setScanError("Failed to stop scanner.");
-        });
+        .catch(err => {
+          console.error("Error stopping scanner:", err)
+          setScanError("Failed to stop scanner.")
+        })
     }
-  };
+  }
 
   return (
     <div className="flex flex-col items-center">
@@ -105,7 +105,7 @@ const QRCodeScannerWrapper = ({
         Position the QR code within the scanner area
       </p>
     </div>
-  );
-};
+  )
+}
 
-export default QRCodeScannerWrapper;
+export default QRCodeScannerWrapper

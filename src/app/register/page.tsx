@@ -1,45 +1,45 @@
-"use client";
+"use client"
 
-import { useRegister } from "@/hooks/useAuth";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
+import { useRegister } from "@/hooks/useAuth"
+import { useState } from "react"
+import { useRouter } from "next/navigation"
+import Link from "next/link"
 
 export default function RegisterPage() {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [role, setRole] = useState("student");
-  const [error, setError] = useState("");
+  const [name, setName] = useState("")
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
+  const [role, setRole] = useState("student")
+  const [error, setError] = useState("")
 
-  const router = useRouter();
-  const register = useRegister();
+  const router = useRouter()
+  const register = useRegister()
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
+    e.preventDefault()
+    setError("")
 
     if (password !== confirmPassword) {
-      setError("Passwords do not match");
-      return;
+      setError("Passwords do not match")
+      return
     }
 
     try {
-      await register.mutateAsync({ name, email, password, role });
-      router.push("/dashboard");
+      await register.mutateAsync({ name, email, password, role })
+      router.push("/dashboard")
     } catch (err: unknown) {
-      let errorMessage = "Registration failed. Please try again.";
-      if (typeof err === 'object' && err !== null && 'response' in err) {
+      let errorMessage = "Registration failed. Please try again."
+      if (typeof err === "object" && err !== null && "response" in err) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const response = (err as any).response; // Use 'any' briefly for type casting
+        const response = (err as any).response // Use 'any' briefly for type casting
         if (response?.data?.message) {
-          errorMessage = response.data.message;
+          errorMessage = response.data.message
         }
       }
-      setError(errorMessage);
+      setError(errorMessage)
     }
-  };
+  }
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center p-4">
@@ -70,7 +70,7 @@ export default function RegisterPage() {
                 type="text"
                 required
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={e => setName(e.target.value)}
                 className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
               />
             </div>
@@ -89,7 +89,7 @@ export default function RegisterPage() {
                 autoComplete="email"
                 required
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={e => setEmail(e.target.value)}
                 className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
               />
             </div>
@@ -107,7 +107,7 @@ export default function RegisterPage() {
                 type="password"
                 required
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={e => setPassword(e.target.value)}
                 className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
               />
             </div>
@@ -125,7 +125,7 @@ export default function RegisterPage() {
                 type="password"
                 required
                 value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
+                onChange={e => setConfirmPassword(e.target.value)}
                 className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
               />
             </div>
@@ -141,7 +141,7 @@ export default function RegisterPage() {
                 id="role"
                 name="role"
                 value={role}
-                onChange={(e) => setRole(e.target.value)}
+                onChange={e => setRole(e.target.value)}
                 className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
               >
                 <option value="student">Student</option>
@@ -171,5 +171,5 @@ export default function RegisterPage() {
         </form>
       </div>
     </div>
-  );
+  )
 }

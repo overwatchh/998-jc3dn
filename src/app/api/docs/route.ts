@@ -1,6 +1,6 @@
-import { swaggerSpec } from "@/lib/server/swagger";
+import { swaggerSpec } from "@/lib/server/swagger"
 
-export const dynamic = "force-dynamic";
+export const dynamic = "force-dynamic"
 
 export async function GET() {
   return new Response(JSON.stringify(swaggerSpec), {
@@ -9,5 +9,5 @@ export async function GET() {
       "Content-Type": "application/json",
       "Cache-Control": "no-store",
     },
-  });
+  })
 }

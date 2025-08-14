@@ -1,9 +1,9 @@
-import { auth } from "@/lib/server/auth";
-import { NextResponse } from "next/server";
-import { rawQuery } from "@/lib/server/query"; // Update based on your DB client
-import { headers } from "next/headers";
-import { EnrolledCourse } from "@/types/course";
-import { ApiArrayResponse } from "@/types/api";
+import { auth } from "@/lib/server/auth"
+import { NextResponse } from "next/server"
+import { rawQuery } from "@/lib/server/query" // Update based on your DB client
+import { headers } from "next/headers"
+import { EnrolledCourse } from "@/types/course"
+import { ApiArrayResponse } from "@/types/api"
 /**
  * @openapi
  * /api/student/courses:
@@ -64,21 +64,21 @@ import { ApiArrayResponse } from "@/types/api";
  */
 
 export async function GET() {
-  const session = await auth.api.getSession({ headers: await headers() });
+  const session = await auth.api.getSession({ headers: await headers() })
 
   if (!session || !session.user) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
   }
 
   if (session.user.role !== "student") {
     return NextResponse.json(
       { message: "Forbidden: Only students can access this." },
       { status: 403 }
-    );
+    )
   }
 
   try {
-    const studentId = session.user.id;
+    const studentId = session.user.id
 
     const sql = ` SELECT
       c.id AS courseId,
@@ -90,18 +90,18 @@ export async function GET() {
     FROM enrollments e
     JOIN courses c ON e.course_id = c.id
     JOIN semesters s ON c.semester_id = s.id
-    WHERE e.student_id = ?`;
+    WHERE e.student_id = ?`
 
-    const courses = await rawQuery<EnrolledCourse>(sql, [studentId]);
+    const courses = await rawQuery<EnrolledCourse>(sql, [studentId])
     const response: ApiArrayResponse<EnrolledCourse[]> = {
       message: "Fetched enrolled courses successfully",
       count: courses.length,
       data: courses,
-    };
+    }
 
-    return NextResponse.json(response);
+    return NextResponse.json(response)
   } catch (err) {
-    console.error("[GET_STUDENT_COURSES]", err);
-    return NextResponse.json({ message: "Server Error" }, { status: 500 });
+    console.error("[GET_STUDENT_COURSES]", err)
+    return NextResponse.json({ message: "Server Error" }, { status: 500 })
   }
 }
