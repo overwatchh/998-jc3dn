@@ -17,14 +17,11 @@ jobs:
         run: |
           curl -o cloud-sql-proxy https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.18.0/cloud-sql-proxy.linux.amd64
           chmod +x cloud-sql-proxy             
-      - name: Debug SA key
+      - name: Write GCP key to file
         run: |
-          printf "%s" "${{ secrets.GCP_SA_KEY }}" | head -c 50
+          echo "${{ secrets.GCP_SA_KEY }}" | tr -d '\r' > sa-key.json
       - name: Start Cloud SQL Auth Proxy
-        run: |
-          # Save the service account JSON key from secrets to a file
-          printf "%s" "${{ secrets.GCP_SA_KEY }}" > sa-key.json
-
+        run: |          
           # list files to verify the key is saved
           echo "Listing files in the current directory:"          
           ls -la
@@ -39,7 +36,7 @@ jobs:
 
           # Start the Cloud SQL Auth Proxy with credentials file
           ./cloud-sql-proxy \
-            --credentials-file ./key.json \
+            --credentials-file ./sa-key.json \
             "$INSTANCE_CONNECTION_NAME" &
           echo $! > proxy.pid
 
