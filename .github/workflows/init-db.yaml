@@ -1,0 +1,65 @@
+name: Execute SQL scripts on Cloud SQL
+
+on:
+  push:
+    branches:
+      - db-deployment      
+
+jobs:
+  execute-sql:
+    runs-on: ubuntu-latest
+    environment: Production
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4      
+
+      - name: Download Cloud SQL Auth Proxy
+        run: |
+          curl -o cloud-sql-proxy https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.18.0/cloud-sql-proxy.linux.amd64
+          chmod +x cloud-sql-proxy      
+                 
+      - name: Write GCP key to file
+        run: |
+              echo '${{ secrets.GCP_SA_KEY }}' | tr -d '\r' > sa-key.json
+
+      - name: Start Cloud SQL Auth Proxy
+        run: |                    
+          # Build the connection name from secrets
+          INSTANCE_CONNECTION_NAME="${{ secrets.GCP_PROJECT_ID }}:${{ secrets.GCP_REGION }}:${{ secrets.DB_INSTANCE }}"          
+
+          # Start the Cloud SQL Auth Proxy with credentials file
+          ./cloud-sql-proxy \
+            --credentials-file ./sa-key.json \
+            "$INSTANCE_CONNECTION_NAME" &
+          echo $! > proxy.pid
+
+          # Wait until the proxy is ready (check if port 3306 is open)
+          for i in {1..10}; do
+            if nc -z 127.0.0.1 3306; then
+              echo "Cloud SQL Proxy is ready"
+              break
+            fi
+            echo "⏳ Waiting for Cloud SQL Proxy..."
+            sleep 2
+          done
+
+      - name: Run SQL scripts on Cloud SQL
+        run: |
+          set -e  # Exit immediately if a command fails
+          for script in db_drop.sql db_create.sql db_load.sql; do
+            echo "Running $script..."
+            mysql -u ${{ secrets.DB_USER }} \
+                  -p${{ secrets.DB_PASS }} \
+                  -D ${{ secrets.DB_NAME }} \
+                  -h 127.0.0.1 \
+                  -P 3306 \
+                  < src/lib/server/db_schema/$script
+          done
+
+      - name: Stop Cloud SQL Auth Proxy and clean up
+        run: |
+          if [ -f proxy.pid ]; then
+            kill $(cat proxy.pid) || true
+            echo "Cloud SQL Proxy stopped"
+          fi
+          rm -f proxy.pid sa-key.json
