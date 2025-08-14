@@ -1,6 +1,6 @@
 import { createSwaggerSpec } from "next-swagger-doc";
 const isProd = process.env.NODE_ENV === "production";
-const productionURL = "https://jc3dn-qr-attendance-kosgs4isma-ts.a.run.app";
+//const productionURL = "https://jc3dn-qr-attendance-kosgs4isma-ts.a.run.app";
 console.log("swagger is production", isProd);
 console.log("swagger process env base_url", process.env.BASE_URL);
 export const getApiDocs = async () => {
@@ -14,7 +14,7 @@ export const getApiDocs = async () => {
       },
       servers: [
         {
-          url: isProd ? productionURL : process.env.BASE_URL!,
+          url: isProd ? process.env.DB_NAME! : process.env.BASE_URL!,
           description: "Server URL",
         },
       ],
