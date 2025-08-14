@@ -12,10 +12,12 @@ export const getApiDocs = async () => {
       },
       servers: [
         {
-          url: !isProd ? "http://localhost:3000" : process.env.BASE_URL!,
-          description: !isProd
-            ? "Local development server"
-            : "Production server",
+          url: "http://localhost:3000",
+          description: "Local development server",
+        },
+        {
+          url: process.env.BASE_URL!,
+          description: "Production server",
         },
       ],
       components: {

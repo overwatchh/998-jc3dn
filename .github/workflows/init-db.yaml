@@ -1,7 +1,9 @@
 name: Execute SQL scripts on Cloud SQL
 
 on:
-  workflow_dispatch: # 👈 Allows manual trigger from GitHub UI
+  push:
+    branches:
+      - deployment
 
 jobs:
   execute-sql:
