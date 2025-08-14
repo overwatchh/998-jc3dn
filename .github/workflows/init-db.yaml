@@ -18,6 +18,10 @@ jobs:
         with:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
           project_id: ${{ secrets.GCP_PROJECT_ID }}
+      
+      - name: Authenticate to cloud sql proxy
+        run: |
+          gcloud auth application-default login
 
       - name: Install MySQL client
         run: sudo apt-get update && sudo apt-get install -y mysql-client
@@ -30,35 +34,38 @@ jobs:
       - name: Run SQL scripts on Cloud SQL
         run: |
           set -e  # Exit on any error
-          trap 'kill $PROXY_PID' EXIT  # Always kill proxy when script ends
+          trap 'kill $PROXY_PID' EXIT  # Ensure proxy stops at the end
 
-          # Build connection name: PROJECT_ID:REGION:INSTANCE
+          # Build the connection name: PROJECT_ID:REGION:INSTANCE
           INSTANCE_CONNECTION_NAME="${{ secrets.GCP_PROJECT_ID }}:${{ secrets.GCP_REGION }}:${{ secrets.DB_INSTANCE }}"
 
-          # Start proxy with credentials file in background
+          # Save service account key to a file
           echo "${{ secrets.GCP_SA_KEY }}" > sa-key.json
-          ./cloud-sql-proxy "$INSTANCE_CONNECTION_NAME" \
-              --credentials-file sa-key.json &
+
+          # Start Cloud SQL Auth Proxy on port 3306
+          ./cloud-sql-proxy \
+            --port 3306 \
+            "$INSTANCE_CONNECTION_NAME" \
+            --credentials-file sa-key.json &
           PROXY_PID=$!
 
-          # Give proxy time to start
-          sleep 5
+          # Wait for the proxy to be ready
+          for i in {1..10}; do
+            if nc -z 127.0.0.1 3306; then
+              echo "✅ Cloud SQL Proxy is ready"
+              break
+            fi
+            echo "⏳ Waiting for Cloud SQL Proxy..."
+            sleep 2
+          done
 
-          # Execute SQL scripts in sequence
-          mysql -u ${{ secrets.DB_USER }} \
-                -p${{ secrets.DB_PASS }} \
-                -D ${{ secrets.DB_NAME }} \
-                -h 127.0.0.1 \
-                < src/lib/server/db_schema/db_drop.sql
-
-          mysql -u ${{ secrets.DB_USER }} \
-                -p${{ secrets.DB_PASS }} \
-                -D ${{ secrets.DB_NAME }} \
-                -h 127.0.0.1 \
-                < src/lib/server/db_schema/db_create.sql
-
-          mysql -u ${{ secrets.DB_USER }} \
-                -p${{ secrets.DB_PASS }} \
-                -D ${{ secrets.DB_NAME }} \
-                -h 127.0.0.1 \
-                < src/lib/server/db_schema/db_load.sql
+          # Run SQL scripts in sequence
+          for script in db_drop.sql db_create.sql db_load.sql; do
+            echo "▶️ Running $script..."
+            mysql -u ${{ secrets.DB_USER }} \
+                  -p${{ secrets.DB_PASS }} \
+                  -D ${{ secrets.DB_NAME }} \
+                  -h 127.0.0.1 \
+                  -P 3306 \
+                  < src/lib/server/db_schema/$script
+          done
