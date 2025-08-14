@@ -20,6 +20,7 @@ jobs:
       
       - name: Cloud sql auth proxy help 
         run: |
+          echo "Starting Cloud SQL Proxy..."
           ./cloud-sql-proxy --help
 
       - name: Start Cloud SQL Auth Proxy
