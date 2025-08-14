@@ -20,7 +20,7 @@ jobs:
                  
       - name: Write GCP key to file
         run: |
-              printf "%b" "${{ secrets.GCP_SA_KEY }}" > sa-key.json      
+              echo '${{ secrets.GCP_SA_KEY }}' | tr -d '\r' > sa-key.json
 
       - name: Start Cloud SQL Auth Proxy
         run: |          
