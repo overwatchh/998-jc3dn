@@ -33,10 +33,7 @@ jobs:
           INSTANCE_CONNECTION_NAME="${{ secrets.GCP_PROJECT_ID }}:${{ secrets.GCP_REGION }}:${{ secrets.DB_INSTANCE }}"
 
           # Start the proxy in the background
-          ./cloud-sql-proxy \
-          --credentials-file ${{ secrets.GCP_SA_KEY }} \
-          "$INSTANCE_CONNECTION_NAME" &
-          PROXY_PID=$!
+          ./cloud-sql-proxy --credentials-file ${{ secrets.GCP_SA_KEY }} "$INSTANCE_CONNECTION_NAME" & PROXY_PID=$!
 
           # Give the proxy a moment to connect
           sleep 5
