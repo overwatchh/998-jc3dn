@@ -145,3 +145,26 @@ CREATE TABLE attendance (
     FOREIGN KEY (qr_code_id) REFERENCES session_qr_codes(id)    
 );
 
+
+
+
+
+
+
+
+
+-- Subject enrolment -- details of students enrolling in subjects, shows which subject they are associated with,
+-- also shows which labs they are enrolled in
+
+CREATE TABLE subject_enrolment (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    student_id VARCHAR(36) NOT NULL,
+    subject_id INT NOT NULL,
+    tutorial_enrolment VARCHAR(36),
+    FOREIGN KEY (student_id) REFERENCES `user` (`id`),
+    FOREIGN KEY (subject_id) REFERENCES subject(id),
+    UNIQUE (student_id, subject_id)
+);
+
+-- subject
+
