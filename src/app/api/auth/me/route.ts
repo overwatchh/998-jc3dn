@@ -1,7 +1,7 @@
 // File: src/app/api/auth/me/route.ts
-import { auth } from "@/lib/server/auth"
-import { headers } from "next/headers"
-import { NextRequest, NextResponse } from "next/server"
+import { auth } from "@/lib/server/auth";
+import { headers } from "next/headers";
+import { NextResponse } from "next/server";
 /**
  * @openapi
  * /api/auth/me:
@@ -61,16 +61,16 @@ import { NextRequest, NextResponse } from "next/server"
  *                   type: string
  *                   example: Unauthorized
  */
-export async function GET(req: NextRequest) {
+export async function GET() {
   const session = await auth.api.getSession({
     headers: await headers(),
-  })
+  });
 
   if (!session || !session.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   return NextResponse.json({
     user: session.user,
-  })
+  });
 }

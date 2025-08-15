@@ -1,0 +1,52 @@
+name: Deploy to Cloud Run
+
+on:
+  push:
+    branches:      
+      - master
+    paths-ignore:
+      - src/lib/server/db_schema/db_*.sql
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: Production
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+
+      - name: Configure Docker for GCR
+        run: gcloud auth configure-docker gcr.io
+
+      # Step 1: Build image
+      - name: Build and Submit Image (with VPC-SC log bucket)
+        run: |
+          gcloud builds submit \
+            --gcs-log-dir=gs://${{ secrets.GCP_LOG_BUCKET }}/cloud-build-logs \
+            --tag gcr.io/${{ secrets.GCP_PROJECT_ID }}/jc3dn-nextjs-app
+
+      # Step 2: Deploy to Cloud Run
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy jc3dn-qr-attendance \
+            --image gcr.io/${{ secrets.GCP_PROJECT_ID }}/jc3dn-nextjs-app \
+            --set-cloudsql-instances=project-capstone-468109:australia-southeast1:jc3dn-998-db \
+            --platform managed \
+            --region ${{ secrets.GCP_REGION }} \
+            --allow-unauthenticated \
+            --set-env-vars DB_USER=${{ secrets.DB_USER}},DB_PASS=${{ secrets.DB_PASS}},DB_NAME=${{ secrets.DB_NAME}},BETTER_AUTH_SECRET=${{ secrets.BETTER_AUTH_SECRET}},GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID}},GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET}},BASE_URL=${{secrets.BASE_URL}},GCP_PROJECT_ID=${{ secrets.GCP_PROJECT_ID }},GCP_REGION=${{secrets.GCP_REGION}},DB_INSTANCE=${{secrets.DB_INSTANCE}}
+
+      # Step 3: Get deployed app info
+      - name: Get Deployed Service URL
+        run: |
+          URL=$(gcloud run services describe jc3dn-qr-attendance \
+            --platform managed \
+            --region ${{ secrets.GCP_REGION }} \
+            --format 'value(status.url)')
+          echo "Deployed URL: $URL"

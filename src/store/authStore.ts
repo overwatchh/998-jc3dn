@@ -1,11 +1,11 @@
-import { create } from "zustand"
-import { AuthState, User } from "@/types"
+import { create } from "zustand";
+import { AuthState, User } from "@/types";
 
 interface AuthStore extends AuthState {
   // Actions
-  setUser: (user: User | null) => void
-  setLoading: (isLoading: boolean) => void
-  clearAuth: () => void
+  setUser: (user: User | null) => void;
+  setLoading: (isLoading: boolean) => void;
+  clearAuth: () => void;
 }
 
 const useAuthStore = create<AuthStore>(set => ({
@@ -28,6 +28,6 @@ const useAuthStore = create<AuthStore>(set => ({
       isAuthenticated: false,
       isLoading: false,
     }),
-}))
+}));
 
-export default useAuthStore
+export default useAuthStore;

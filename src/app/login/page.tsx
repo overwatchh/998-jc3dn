@@ -1,39 +1,39 @@
-"use client"
-import { useLogin } from "@/hooks/useAuth"
-import useAuthStore from "@/store/authStore"
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+"use client";
+import { useLogin } from "@/hooks/useAuth";
+import useAuthStore from "@/store/authStore";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [error, setError] = useState("")
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
 
-  const router = useRouter()
-  const { isAuthenticated } = useAuthStore()
-  const login = useLogin()
+  const router = useRouter();
+  const { isAuthenticated } = useAuthStore();
+  const login = useLogin();
 
   // Redirect if already authenticated
   if (isAuthenticated) {
-    router.push("/dashboard")
-    return null
+    router.push("/dashboard");
+    return null;
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError("")
+    e.preventDefault();
+    setError("");
 
     try {
-      await login.mutateAsync({ email, password })
+      await login.mutateAsync({ email, password });
       // No need to manually update Zustand store here
       // The useCurrentUser query will be invalidated and will update the store
-      router.push("/dashboard")
+      router.push("/dashboard");
     } catch (err: unknown) {
       setError(
         err instanceof Error ? err.message : "Login failed. Please try again."
-      )
+      );
     }
-  }
+  };
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center p-4">
@@ -102,5 +102,5 @@ export default function LoginPage() {
         </form>
       </div>
     </div>
-  )
+  );
 }

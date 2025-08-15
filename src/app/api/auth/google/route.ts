@@ -1,6 +1,6 @@
 // src/app/api/auth/google/route.ts
-import { auth } from "@/lib/server/auth"
-import { NextRequest, NextResponse } from "next/server"
+import { auth } from "@/lib/server/auth";
+import { NextResponse } from "next/server";
 /**
  * @openapi
  * /api/auth/google:
@@ -15,15 +15,15 @@ import { NextRequest, NextResponse } from "next/server"
  *       500:
  *         description: Internal Server Error
  */
-export async function GET(req: NextRequest) {
+export async function GET() {
   const response = await auth.api.signInSocial({
     body: {
       provider: "google",
       callbackURL: "/",
     },
     asResponse: false,
-  })
+  });
 
   // Perform the actual redirect
-  return NextResponse.redirect(response.url as string)
+  return NextResponse.redirect(response.url as string);
 }

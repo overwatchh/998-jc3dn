@@ -119,7 +119,7 @@ CREATE TABLE enrollments (
 CREATE TABLE session_qr_codes (
     id INT AUTO_INCREMENT PRIMARY KEY,
     course_session_id INT NOT NULL,
-    qr_code TEXT NOT NULL, -- store as encoded text
+    qr_code VARCHAR(12) NOT NULL, -- store as encoded text
     generated_at DATETIME NOT NULL,
     valid_until DATETIME NOT NULL,
     week_number INT NOT NULL,    
@@ -144,4 +144,27 @@ CREATE TABLE attendance (
     FOREIGN KEY (session_id) REFERENCES course_sessions(id),
     FOREIGN KEY (qr_code_id) REFERENCES session_qr_codes(id)    
 );
+
+
+
+
+
+
+
+
+
+-- Subject enrolment -- details of students enrolling in subjects, shows which subject they are associated with,
+-- also shows which labs they are enrolled in
+
+CREATE TABLE subject_enrolment (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    student_id VARCHAR(36) NOT NULL,
+    subject_id INT NOT NULL,
+    tutorial_enrolment VARCHAR(36),
+    FOREIGN KEY (student_id) REFERENCES `user` (`id`),
+    FOREIGN KEY (subject_id) REFERENCES subject(id),
+    UNIQUE (student_id, subject_id)
+);
+
+-- subject
 
