@@ -58,7 +58,7 @@ INSERT INTO courses (name, code, semester_id, status) VALUES
 ('Project management', 'CSIT883', 1, 'finished'),
 ('Database management', 'CSIT882', 2, 'finished'),
 ('Research methodology', 'CSIT940', 3, 'active'),
-('Web server programming', 'MTS9307', 3, 'active'),
+('Demo webserver', 'MTS9307', 3, 'active'),
 ('Computer vision algorithms and systems', 'CSCI935', 3, 'active');
 
 -- Course Lecturers
