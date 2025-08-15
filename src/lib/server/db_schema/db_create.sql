@@ -218,15 +218,40 @@ CREATE TABLE class (
     id INT AUTO_INCREMENT PRIMARY KEY,
     study_session_id INT NOT NULL,
     enrollable BOOLEAN NOT NULL,
-    location_id INT NOT NULL,
     type ENUM('Lecture', 'Lab', 'Tutorial') NOT NULL,
     day_of_week ENUM('Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday') NOT NULL,
     start_time TIME NOT NULL,
     end_time TIME NOT NULL,
-    total_lectures INT NOT NULL,
+    total_classes INT NOT NULL,
+    room_id INT NOT NULL,
+    teacher_id INT NOT NULL,
+    FOREIGN KEY (study_session_id) REFERENCES study_session(id),
+    FOREIGN KEY (teacher_id) REFERENCES `user`(id),
+    FOREIGN KEY (room_id) REFERENCES room(id)
 );
 
+-- each individual event or istance of a class element (lecture, lab, tutorial) being taughts, e.g. one for each week
+CREATE TABLE event (
+  token VARCHAR(128) PRIMARY KEY,
+  class_id INT NOT NULL,
+  created_at
+--series number, most events are one in a sequence for a class (e.g. weekly lectures), each gets their own number within that series
+  series INT NOT NULL,
+  valid_until
+  valid_radius
+  date
+  FOREIGN KEY (class_id) REFERENCES class(id)
+  
+);
 
+--checkin
+
+
+
+-- room
+
+
+--campus
 
 
 
