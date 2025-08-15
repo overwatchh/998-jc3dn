@@ -2,9 +2,10 @@ name: Deploy to Cloud Run
 
 on:
   push:
-    branches:
-      - deployment
+    branches:      
       - master
+    paths-ignore:
+      - src/lib/server/db_schema/db_*.sql
 
 jobs:
   deploy:
