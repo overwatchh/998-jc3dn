@@ -3,7 +3,9 @@ name: Execute SQL scripts on Cloud SQL
 on:
   push:
     branches:
-      - db-deployment      
+      - db-deployment
+    paths:
+      - src/lib/server/db_schema/db_*.sql            
 
 jobs:
   execute-sql:
