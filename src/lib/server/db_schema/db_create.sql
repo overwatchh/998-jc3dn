@@ -4,16 +4,7 @@ USE qr_attendance_app;
 
 -- tables for better-auth
 
-CREATE TABLE `user` (
-  `id` VARCHAR(36) NOT NULL PRIMARY KEY,
-  `name` TEXT NOT NULL,
-  `email` VARCHAR(255) NOT NULL UNIQUE,
-  `emailVerified` BOOLEAN NOT NULL,
-  `image` TEXT,
-  `createdAt` DATETIME NOT NULL,
-  `updatedAt` DATETIME NOT NULL,
-  `role` TEXT
-);
+
 
 CREATE TABLE `session` (
   `id` VARCHAR(36) NOT NULL PRIMARY KEY,
@@ -53,13 +44,7 @@ CREATE TABLE `verification` (
   `updatedAt` DATETIME
 );
 
--- Semester definitions
-CREATE TABLE semesters (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    name ENUM('autumn', 'spring', 'summer') NOT NULL,
-    year YEAR NOT NULL,
-    UNIQUE(name, year)
-);
+
 
 -- Courses linked to semester
 CREATE TABLE courses (
@@ -153,18 +138,101 @@ CREATE TABLE attendance (
 
 
 
+
+
+
+
+
+
+
+
+CREATE TABLE `user` (
+  `id` VARCHAR(36) NOT NULL PRIMARY KEY,
+  `name` TEXT NOT NULL,
+  `email` VARCHAR(255) NOT NULL UNIQUE,
+  `emailVerified` BOOLEAN NOT NULL,
+  `image` TEXT,
+  `username` VARCHAR(36) NOT NULL,
+  `password` VARCHAR(36) NOT NULL,
+  `day_of_week` ENUM('Lecturer', 'Student', 'Admin') NOT NULL,
+  `createdAt` DATETIME NOT NULL,
+  `updatedAt` DATETIME NOT NULL,
+  `role` TEXT
+);
+
+-- Semester definitions
+CREATE TABLE semester (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name ENUM('autumn', 'spring', 'summer', 'annual') NOT NULL,
+    year YEAR NOT NULL,
+    UNIQUE(name, year)
+);
+
+-- Subject details (these are the individual subjects that students enrol into)
+CREATE TABLE subject (
+    id INT PRIMARY KEY,
+    code VARCHAR(36) NOT NULL,
+    name VARCHAR(36) NOT NULL,
+    attendance_thresh INT NOT NULL,
+    semester_id INT NOT NULL,
+    FOREIGN KEY (semester_id) REFERENCES semester(id),
+);
+
 -- Subject enrolment -- details of students enrolling in subjects, shows which subject they are associated with,
 -- also shows which labs they are enrolled in
-
 CREATE TABLE subject_enrolment (
     id INT AUTO_INCREMENT PRIMARY KEY,
     student_id VARCHAR(36) NOT NULL,
     subject_id INT NOT NULL,
-    tutorial_enrolment VARCHAR(36),
+    tutorial_enrolment_id INT, -- which tutorial, if any, they are enrolled in
     FOREIGN KEY (student_id) REFERENCES `user` (`id`),
     FOREIGN KEY (subject_id) REFERENCES subject(id),
+    FOREIGN KEY (tutorial_enrolment_id) REFERENCES class(id),
     UNIQUE (student_id, subject_id)
 );
 
--- subject
+--study session the actual subject session the users enrol into, consists of multiple subjects that attend the same lectures
+--all lectures tutorials and labs are for this study_session
+CREATE TABLE study_session (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(36) NOT NULL,
+    coordinator_id VARCHAR(36),
+    FOREIGN KEY (coordinator_id) REFERENCES `user`(id)
+);
+
+
+--session enrolment, contains the details of which study_sessions each subject is part of
+--more than one subject can be enroled in each study session
+CREATE TABLE session_enrolment (
+    enrolment_id INT AUTO_INCREMENT PRIMARY KEY,
+    subject_id INT NOT NULL,
+    study_session_id INT NOT NULL,
+    FOREIGN KEY (subject_id) REFERENCES subject(id),
+    FOREIGN KEY (study_session_id) REFERENCES study_session(id),
+    UNIQUE (subject_id, study_session_id)
+);
+
+
+-- class -- locations are the default locations, copies of these information are in the event table, and can be updated for individual events by admins
+CREATE TABLE class (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    study_session_id INT NOT NULL,
+    enrollable BOOLEAN NOT NULL,
+    location_id INT NOT NULL,
+    type ENUM('Lecture', 'Lab', 'Tutorial') NOT NULL,
+    day_of_week ENUM('Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday') NOT NULL,
+    start_time TIME NOT NULL,
+    end_time TIME NOT NULL,
+    total_lectures INT NOT NULL,
+);
+
+
+
+
+
+
+
+
+
+
 
