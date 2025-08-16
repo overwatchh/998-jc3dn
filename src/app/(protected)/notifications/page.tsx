@@ -1,7 +1,7 @@
-import { NotificationsScreen } from "./_components/notificationsScreen"
+import { NotificationsScreen } from "./_components/notificationsScreen";
 
 const NotificationPage = () => {
-  return <NotificationsScreen />
-}
+  return <NotificationsScreen />;
+};
 
-export default NotificationPage
+export default NotificationPage;

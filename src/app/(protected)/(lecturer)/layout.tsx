@@ -1,19 +1,19 @@
-import { auth } from "@/lib/auth/auth"
-import { Roles } from "@/lib/auth/permission"
-import { headers } from "next/headers"
-import { redirect } from "next/navigation"
+import { auth } from "@/lib/server/auth";
+import { Roles } from "@/types";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 
 const Layout = async ({ children }: { children: React.ReactNode }) => {
   const session = await auth.api.getSession({
     headers: await headers(),
-  })
+  });
   if (!session) {
-    redirect("/login")
+    redirect("/login");
   }
-  if (session.user.role !== Roles.LECTURER) {
-    redirect("/dashboard")
+  if (session.user.role !== Roles.INSTRUCTOR) {
+    redirect("/dashboard");
   }
-  return <div>{children}</div>
-}
+  return <div>{children}</div>;
+};
 
-export default Layout
+export default Layout;

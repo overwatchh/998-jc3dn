@@ -1,9 +1,9 @@
-"use client"
+"use client";
 
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Progress } from "@/components/ui/progress"
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 import {
   AlertTriangle,
   ArrowLeft,
@@ -13,13 +13,13 @@ import {
   MapPin,
   QrCode,
   User,
-} from "lucide-react"
-import { CourseStatusBadge } from "./_components/CourseStatusBadge"
-import { CourseStatusIcon } from "./_components/CourseStatusIcon"
-import { courseData } from "./mockdata"
+} from "lucide-react";
+import { CourseStatusBadge } from "./_components/CourseStatusBadge";
+import { CourseStatusIcon } from "./_components/CourseStatusIcon";
+import { courseData } from "./mockdata";
 
 export default function CourseDetailScreen() {
-  const course = courseData.cs101
+  const course = courseData.cs101;
 
   if (!course) {
     return (
@@ -33,7 +33,7 @@ export default function CourseDetailScreen() {
           </h1>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -223,5 +223,5 @@ export default function CourseDetailScreen() {
         </div>
       </div>
     </div>
-  )
+  );
 }

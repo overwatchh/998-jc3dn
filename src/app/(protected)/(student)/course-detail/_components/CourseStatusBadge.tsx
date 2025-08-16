@@ -1,10 +1,10 @@
-import { Badge } from "@/components/ui/badge"
-import { QrCode, KeyRound } from "lucide-react"
+import { Badge } from "@/components/ui/badge";
+import { QrCode, KeyRound } from "lucide-react";
 
 interface Props {
-  status: string
-  verified: boolean
-  locationAccuracy: number
+  status: string;
+  verified: boolean;
+  locationAccuracy: number;
 }
 
 export const CourseStatusBadge = ({
@@ -12,7 +12,7 @@ export const CourseStatusBadge = ({
   status,
   verified,
 }: Props) => {
-  const baseClasses = "flex items-center gap-1"
+  const baseClasses = "flex items-center gap-1";
 
   switch (status) {
     case "present":
@@ -25,9 +25,9 @@ export const CourseStatusBadge = ({
           {locationAccuracy >= 95 && <KeyRound className="h-3 w-3" />}
           2/2
         </Badge>
-      )
+      );
     case "absent":
-      return <Badge variant="destructive">Absent 0/2</Badge>
+      return <Badge variant="destructive">Absent 0/2</Badge>;
     case "late":
       return (
         <Badge
@@ -35,14 +35,14 @@ export const CourseStatusBadge = ({
         >
           Late {verified && <KeyRound className="h-3 w-3" />} 1/2
         </Badge>
-      )
+      );
     case "partial":
       return (
         <Badge className="border-transparent bg-amber-100 text-amber-800 hover:bg-amber-100 dark:bg-amber-900 dark:text-amber-200 dark:hover:bg-amber-800">
           Partial
         </Badge>
-      )
+      );
     default:
-      return <Badge variant="secondary">{status}</Badge>
+      return <Badge variant="secondary">{status}</Badge>;
   }
-}
+};

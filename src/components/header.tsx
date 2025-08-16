@@ -1,16 +1,16 @@
-"use client"
+"use client";
 
-import { authClient } from "@/lib/auth/auth-client"
-import Image from "next/image"
-import Link from "next/link"
-import { ThemeToggler } from "./theme-toggler"
-import { Button } from "./ui/button"
+import { authClient } from "@/lib/auth/auth-client";
+import Image from "next/image";
+import Link from "next/link";
+import { ThemeToggler } from "./theme-toggler";
+import { Button } from "./ui/button";
 
 export const Header = () => {
-  const { data: session, isPending } = authClient.useSession()
+  const { data: session, isPending } = authClient.useSession();
 
   if (isPending) {
-    return null
+    return null;
   }
 
   return (
@@ -42,5 +42,5 @@ export const Header = () => {
         )}
       </div>
     </div>
-  )
-}
+  );
+};

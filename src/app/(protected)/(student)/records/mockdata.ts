@@ -29,4 +29,4 @@ export const attendanceRecords = [
     status: "partial" as const,
     checkInTime: "11:45 AM",
   },
-]
+];

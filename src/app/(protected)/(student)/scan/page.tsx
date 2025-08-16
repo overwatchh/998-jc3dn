@@ -1,9 +1,9 @@
-"use client"
+"use client";
 
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Bell,
   Camera,
@@ -18,9 +18,9 @@ import {
   Wifi,
   XCircle,
   Zap,
-} from "lucide-react"
-import { redirect } from "next/navigation"
-import { useEffect, useState } from "react"
+} from "lucide-react";
+import { redirect } from "next/navigation";
+import { useEffect, useState } from "react";
 
 type ScanState =
   | "scanning"
@@ -31,25 +31,25 @@ type ScanState =
   | "confirming-presence"
   | "final-success"
   | "window-expired"
-  | "error"
+  | "error";
 
 interface QRScannerState {
-  scanState: ScanState
+  scanState: ScanState;
   scannedCourse: {
-    name: string
-    location: string
-    time: string
-    instructor: string
-  }
-  locationAccuracy: number
-  locationStatus: "checking" | "verified" | "failed"
-  confirmationWindowEnd: number | null
-  sessionToken: string
+    name: string;
+    location: string;
+    time: string;
+    instructor: string;
+  };
+  locationAccuracy: number;
+  locationStatus: "checking" | "verified" | "failed";
+  confirmationWindowEnd: number | null;
+  sessionToken: string;
 }
 
 export default function QRScannerScreen() {
-  const [timeRemaining, setTimeRemaining] = useState<number>(0)
-  const [showConfirmationBanner, setShowConfirmationBanner] = useState(false)
+  const [timeRemaining, setTimeRemaining] = useState<number>(0);
+  const [showConfirmationBanner, setShowConfirmationBanner] = useState(false);
 
   const defaultScannerState: QRScannerState = {
     scanState: "scanning",
@@ -63,122 +63,125 @@ export default function QRScannerScreen() {
     locationStatus: "checking",
     confirmationWindowEnd: null,
     sessionToken: "",
-  }
+  };
 
   const [qrScannerState, setQRScannerState] =
-    useState<QRScannerState>(defaultScannerState)
+    useState<QRScannerState>(defaultScannerState);
   const {
     scanState,
     scannedCourse,
     locationAccuracy,
     locationStatus,
     confirmationWindowEnd,
-  } = qrScannerState
+  } = qrScannerState;
 
   // Timer for confirmation window
   useEffect(() => {
     if (confirmationWindowEnd && scanState === "confirmation-active") {
       const interval = setInterval(() => {
-        const now = Date.now()
-        const remaining = Math.max(0, confirmationWindowEnd - now)
-        setTimeRemaining(Math.ceil(remaining / 1000))
+        const now = Date.now();
+        const remaining = Math.max(0, confirmationWindowEnd - now);
+        setTimeRemaining(Math.ceil(remaining / 1000));
 
         if (remaining <= 0) {
-          setQRScannerState(prev => ({ ...prev, scanState: "window-expired" }))
-          clearInterval(interval)
+          setQRScannerState(prev => ({ ...prev, scanState: "window-expired" }));
+          clearInterval(interval);
         }
-      }, 100)
+      }, 100);
 
-      return () => clearInterval(interval)
+      return () => clearInterval(interval);
     }
-  }, [confirmationWindowEnd, scanState, setQRScannerState])
+  }, [confirmationWindowEnd, scanState, setQRScannerState]);
 
   // Simulate confirmation window opening (in real app, this would come from push notification or websocket)
   useEffect(() => {
     if (scanState === "waiting-for-window") {
       // Simulate lecturer opening confirmation window after 5-15 seconds
-      const delay = Math.random() * 10000 + 5000 // 5-15 seconds
+      const delay = Math.random() * 10000 + 5000; // 5-15 seconds
       const timer = setTimeout(() => {
-        const windowEnd = Date.now() + 60000 // 60 second window
+        const windowEnd = Date.now() + 60000; // 60 second window
         setQRScannerState(prev => ({
           ...prev,
           scanState: "confirmation-active",
           confirmationWindowEnd: windowEnd,
-        }))
-        setShowConfirmationBanner(true)
+        }));
+        setShowConfirmationBanner(true);
         // Hide banner after 3 seconds
-        setTimeout(() => setShowConfirmationBanner(false), 3000)
-      }, delay)
+        setTimeout(() => setShowConfirmationBanner(false), 3000);
+      }, delay);
 
-      return () => clearTimeout(timer)
+      return () => clearTimeout(timer);
     }
-  }, [scanState, setQRScannerState])
+  }, [scanState, setQRScannerState]);
 
   useEffect(() => {
     if (scanState === "scanning") {
       // Simulate QR scanning process
       const timer = setTimeout(() => {
-        setQRScannerState(prev => ({ ...prev, scanState: "qr-success" }))
+        setQRScannerState(prev => ({ ...prev, scanState: "qr-success" }));
         // Show course info for 2 seconds, then start location verification
         setTimeout(() => {
-          setQRScannerState(prev => ({ ...prev, scanState: "location-verify" }))
-          simulateLocationVerification()
-        }, 2000)
-      }, 3000)
+          setQRScannerState(prev => ({
+            ...prev,
+            scanState: "location-verify",
+          }));
+          simulateLocationVerification();
+        }, 2000);
+      }, 3000);
 
-      return () => clearTimeout(timer)
+      return () => clearTimeout(timer);
     }
-  }, [scanState, setQRScannerState])
+  }, [scanState, setQRScannerState]);
 
   const simulateLocationVerification = () => {
     setQRScannerState(prev => ({
       ...prev,
       locationStatus: "checking",
       locationAccuracy: 0,
-    }))
+    }));
 
     // Simulate high-accuracy location verification
     const interval = setInterval(() => {
       setQRScannerState(prev => {
-        const newAccuracy = prev.locationAccuracy + Math.random() * 20
+        const newAccuracy = prev.locationAccuracy + Math.random() * 20;
         if (newAccuracy >= 95) {
-          clearInterval(interval)
+          clearInterval(interval);
           setTimeout(() => {
             setQRScannerState(prevState => ({
               ...prevState,
               scanState: "waiting-for-window",
               sessionToken: `session_${Date.now()}`, // Generate session token
-            }))
-          }, 1000)
-          return { ...prev, locationStatus: "verified", locationAccuracy: 98 }
+            }));
+          }, 1000);
+          return { ...prev, locationStatus: "verified", locationAccuracy: 98 };
         }
-        return { ...prev, locationAccuracy: newAccuracy }
-      })
-    }, 200)
-  }
+        return { ...prev, locationAccuracy: newAccuracy };
+      });
+    }, 200);
+  };
 
   const handleOneTapConfirmation = () => {
-    setQRScannerState(prev => ({ ...prev, scanState: "confirming-presence" }))
+    setQRScannerState(prev => ({ ...prev, scanState: "confirming-presence" }));
 
     // Simulate instant location check and confirmation
     setTimeout(() => {
       // In real app, this would send GPS location + sessionToken to backend
-      setQRScannerState(prev => ({ ...prev, scanState: "final-success" }))
+      setQRScannerState(prev => ({ ...prev, scanState: "final-success" }));
       // Auto navigate back after final success and reset state
       setTimeout(() => {
-        setQRScannerState(defaultScannerState)
-        redirect("/dashboard")
-      }, 3000)
-    }, 1500)
-  }
+        setQRScannerState(defaultScannerState);
+        redirect("/dashboard");
+      }, 3000);
+    }, 1500);
+  };
 
   const handleRetry = () => {
-    setQRScannerState(defaultScannerState)
-  }
+    setQRScannerState(defaultScannerState);
+  };
 
   const formatTime = (seconds: number) => {
-    return `${Math.floor(seconds / 60)}:${(seconds % 60).toString().padStart(2, "0")}`
-  }
+    return `${Math.floor(seconds / 60)}:${(seconds % 60).toString().padStart(2, "0")}`;
+  };
 
   const getScannerContent = () => {
     switch (scanState) {
@@ -207,7 +210,7 @@ export default function QRScannerScreen() {
               <span className="text-sm">Scanning...</span>
             </div>
           </div>
-        )
+        );
 
       case "qr-success":
         return (
@@ -243,7 +246,7 @@ export default function QRScannerScreen() {
               Verifying location...
             </p>
           </div>
-        )
+        );
 
       case "location-verify":
         return (
@@ -299,7 +302,7 @@ export default function QRScannerScreen() {
               </div>
             )}
           </div>
-        )
+        );
 
       case "waiting-for-window":
         return (
@@ -348,7 +351,7 @@ export default function QRScannerScreen() {
               </p>
             </div>
           </div>
-        )
+        );
 
       case "confirmation-active":
         return (
@@ -409,7 +412,7 @@ export default function QRScannerScreen() {
               This will instantly verify your location and confirm attendance
             </p>
           </div>
-        )
+        );
 
       case "confirming-presence":
         return (
@@ -446,7 +449,7 @@ export default function QRScannerScreen() {
               </div>
             </div>
           </div>
-        )
+        );
 
       case "final-success":
         return (
@@ -496,7 +499,7 @@ export default function QRScannerScreen() {
               Redirecting to home...
             </p>
           </div>
-        )
+        );
 
       case "window-expired":
         return (
@@ -537,7 +540,7 @@ export default function QRScannerScreen() {
               Wait for New Window
             </Button>
           </div>
-        )
+        );
 
       case "error":
         return (
@@ -558,12 +561,12 @@ export default function QRScannerScreen() {
               Try Again
             </Button>
           </div>
-        )
+        );
 
       default:
-        return null
+        return null;
     }
-  }
+  };
 
   return (
     <div className="p-4 space-y-6">
@@ -670,5 +673,5 @@ export default function QRScannerScreen() {
         )}
       </div>
     </div>
-  )
+  );
 }

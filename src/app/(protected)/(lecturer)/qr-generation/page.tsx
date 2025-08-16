@@ -1,7 +1,7 @@
-import QrCodeGeneration from "../_components/qr-code-generation"
+import QrCodeGeneration from "../_components/qr-code-generation";
 
 const Page = () => {
-  return <QrCodeGeneration />
-}
+  return <QrCodeGeneration />;
+};
 
-export default Page
+export default Page;

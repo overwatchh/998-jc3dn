@@ -1,5 +1,5 @@
-import { AttendanceTrackingScreen } from "../_components/attendance-tracking"
+import { AttendanceTrackingScreen } from "../_components/attendance-tracking";
 
 export default function Home() {
-  return <AttendanceTrackingScreen />
+  return <AttendanceTrackingScreen />;
 }

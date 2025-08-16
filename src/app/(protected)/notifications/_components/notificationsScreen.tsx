@@ -1,35 +1,35 @@
-"use client"
+"use client";
 
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { AlertTriangle, Bell, CheckCheck } from "lucide-react"
-import { useState } from "react"
-import { mockNotifications } from "./mockdata"
-import { NotificationCard } from "./NotificationCard"
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AlertTriangle, Bell, CheckCheck } from "lucide-react";
+import { useState } from "react";
+import { mockNotifications } from "./mockdata";
+import { NotificationCard } from "./NotificationCard";
 
 export function NotificationsScreen() {
-  const [notifications, setNotifications] = useState(mockNotifications)
+  const [notifications, setNotifications] = useState(mockNotifications);
 
   function markAllAsRead() {
-    setNotifications(prev => prev.map(notif => ({ ...notif, unread: false })))
+    setNotifications(prev => prev.map(notif => ({ ...notif, unread: false })));
   }
 
   function filterNotifications(filter: string) {
     switch (filter) {
       case "unread":
-        return notifications.filter(n => n.unread)
+        return notifications.filter(n => n.unread);
       case "attendance":
         return notifications.filter(
           n =>
             n.type === "warning" || n.title.toLowerCase().includes("attendance")
-        )
+        );
       default:
-        return notifications
+        return notifications;
     }
   }
 
-  const unreadCount = notifications.filter(n => n.unread).length
+  const unreadCount = notifications.filter(n => n.unread).length;
 
   return (
     <div className="p-4 space-y-6">
@@ -115,5 +115,5 @@ export function NotificationsScreen() {
         </TabsContent>
       </Tabs>
     </div>
-  )
+  );
 }

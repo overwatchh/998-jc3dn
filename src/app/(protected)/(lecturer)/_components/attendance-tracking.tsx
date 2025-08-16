@@ -1,8 +1,8 @@
-"use client"
+"use client";
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -10,21 +10,21 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
+} from "@/components/ui/card";
 import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
   type ChartConfig,
-} from "@/components/ui/chart"
+} from "@/components/ui/chart";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Input } from "@/components/ui/input"
-import { Pagination } from "@/components/ui/pagination"
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import { Pagination } from "@/components/ui/pagination";
 import {
   Table,
   TableBody,
@@ -32,8 +32,8 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+} from "@/components/ui/table";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   DownloadIcon,
   FilterIcon,
@@ -41,8 +41,8 @@ import {
   MapIcon,
   MoreVerticalIcon,
   RefreshCwIcon as RefreshIcon,
-} from "lucide-react"
-import { useState } from "react"
+} from "lucide-react";
+import { useState } from "react";
 import {
   Bar,
   BarChart,
@@ -51,7 +51,7 @@ import {
   LineChart,
   XAxis,
   YAxis,
-} from "recharts"
+} from "recharts";
 
 // Mock AttendanceMap component
 function AttendanceMap() {
@@ -68,11 +68,11 @@ function AttendanceMap() {
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }
 
 export function AttendanceTrackingScreen() {
-  const [view, setView] = useState<"list" | "map">("list")
+  const [view, setView] = useState<"list" | "map">("list");
 
   return (
     <div className="flex min-h-screen">
@@ -176,7 +176,7 @@ export function AttendanceTrackingScreen() {
         </main>
       </div>
     </div>
-  )
+  );
 }
 
 function SessionInfoCard() {
@@ -213,7 +213,7 @@ function SessionInfoCard() {
         <Button className="w-full">Generate New QR</Button>
       </CardFooter>
     </Card>
-  )
+  );
 }
 
 function PresentStudentsCard() {
@@ -222,14 +222,14 @@ function PresentStudentsCard() {
     { name: "Week 2", value: 50 },
     { name: "Week 3", value: 48 },
     { name: "Week 4", value: 100 },
-  ]
+  ];
 
   const chartConfig = {
     value: {
       label: "Attendance %",
       color: "hsl(var(--chart-1))",
     },
-  } satisfies ChartConfig
+  } satisfies ChartConfig;
 
   return (
     <Card>
@@ -259,7 +259,7 @@ function PresentStudentsCard() {
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }
 
 function AbsentStudentsCard() {
@@ -289,7 +289,7 @@ function AbsentStudentsCard() {
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }
 
 function CheckinTimelineCard() {
@@ -300,14 +300,14 @@ function CheckinTimelineCard() {
     { time: "10:05", value: 5 },
     { time: "10:10", value: 3 },
     { time: "10:15", value: 1 },
-  ]
+  ];
 
   const chartConfig = {
     value: {
       label: "Students",
       color: "hsl(var(--chart-2))",
     },
-  } satisfies ChartConfig
+  } satisfies ChartConfig;
 
   return (
     <Card className="sm:col-span-2 lg:col-span-1">
@@ -340,7 +340,7 @@ function CheckinTimelineCard() {
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }
 
 function AttendanceTable() {
@@ -399,7 +399,7 @@ function AttendanceTable() {
       locationStatus: "Invalid",
       distance: "850m",
     },
-  ]
+  ];
 
   return (
     <div className="rounded-md border">
@@ -564,5 +564,5 @@ function AttendanceTable() {
         <Pagination />
       </div>
     </div>
-  )
+  );
 }

@@ -1,16 +1,16 @@
-"use client"
+"use client";
 
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from "@/components/ui/collapsible"
-import { Separator } from "@/components/ui/separator"
-import { Switch } from "@/components/ui/switch"
-import { authClient } from "@/lib/auth/auth-client"
+} from "@/components/ui/collapsible";
+import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
+import { useCurrentUser, useLogout } from "@/hooks/useAuth";
 import {
   ChevronDown,
   Globe,
@@ -22,27 +22,30 @@ import {
   Palette,
   Shield,
   Wifi,
-} from "lucide-react"
-import { useTheme } from "next-themes"
-import Image from "next/image"
-import { useRouter } from "next/navigation"
-import { useEffect, useState } from "react"
+} from "lucide-react";
+import { useTheme } from "next-themes";
+import Image from "next/image";
+import { useEffect, useState } from "react";
 
 export default function SettingsScreen() {
-  const router = useRouter()
-  const { setTheme, resolvedTheme } = useTheme()
+  const { setTheme, resolvedTheme } = useTheme();
+  const logout = useLogout();
 
-  const { data: session } = authClient.useSession()
+  const { data: session } = useCurrentUser();
 
-  const [privacyExpanded, setPrivacyExpanded] = useState(false)
+  const [privacyExpanded, setPrivacyExpanded] = useState(false);
 
   // Ensure component is mounted to avoid hydration mismatch
-  const [mounted, setMounted] = useState(false)
+  const [mounted, setMounted] = useState(false);
   useEffect(() => {
-    setMounted(true)
-  }, [])
+    setMounted(true);
+  }, []);
   if (!mounted) {
-    return null // or a loading state
+    return null; // or a loading state
+  }
+
+  async function handleSignout(): Promise<void> {
+    await logout.mutateAsync();
   }
 
   return (
@@ -60,7 +63,12 @@ export default function SettingsScreen() {
           <div className="flex items-center space-x-4">
             <Avatar key={session?.user.image} className="h-16 w-16">
               {session?.user.image ? (
-                <Image src={session.user.image} alt={session.user.name} fill />
+                <Image
+                  src={session.user.image}
+                  alt={session.user.name}
+                  sizes="100vw"
+                  fill
+                />
               ) : (
                 <AvatarFallback className="text-lg">
                   {session?.user.name.charAt(0) ?? "A"}
@@ -247,7 +255,7 @@ export default function SettingsScreen() {
           <Button
             variant="outline"
             className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50 bg-transparent"
-            onClick={() => authClient.signOut().then(() => router.push("/"))}
+            onClick={handleSignout}
           >
             <LogOut className="h-4 w-4 mr-2" />
             Sign Out
@@ -255,5 +263,5 @@ export default function SettingsScreen() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

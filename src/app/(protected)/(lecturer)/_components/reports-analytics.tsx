@@ -1,9 +1,9 @@
-"use client"
+"use client";
 
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Calendar as CalendarComponent } from "@/components/ui/calendar"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import {
   Card,
   CardContent,
@@ -11,32 +11,32 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
+} from "@/components/ui/card";
 import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
-} from "@/components/ui/chart"
+} from "@/components/ui/chart";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Input } from "@/components/ui/input"
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover"
+} from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
-import { Switch } from "@/components/ui/switch"
+} from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import {
   Table,
   TableBody,
@@ -44,9 +44,9 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { format } from "date-fns"
+} from "@/components/ui/table";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { format } from "date-fns";
 import {
   ArrowDown,
   ArrowUp,
@@ -60,9 +60,9 @@ import {
   Printer,
   Search,
   Share2,
-} from "lucide-react"
-import { useState } from "react"
-import type { DateRange } from "react-day-picker"
+} from "lucide-react";
+import { useState } from "react";
+import type { DateRange } from "react-day-picker";
 import {
   Bar,
   BarChart,
@@ -74,13 +74,13 @@ import {
   ReferenceLine,
   XAxis,
   YAxis,
-} from "recharts"
+} from "recharts";
 
 export default function ReportsAnalytics() {
   const [date, setDate] = useState<DateRange>({
     from: new Date(2025, 2, 1), // Mar 1, 2025
     to: new Date(2025, 3, 24), // Apr 24, 2025
-  })
+  });
 
   return (
     <main className="flex flex-1 flex-col gap-4 p-3 sm:p-4 md:gap-6 md:p-6">
@@ -357,8 +357,8 @@ export default function ReportsAnalytics() {
                   dataKey="value"
                   nameKey="name"
                   label={({ name, percent }) => {
-                    const shortName = name.split(" ")[0] // Get first word only on mobile
-                    return `${shortName} ${(percent * 100).toFixed(0)}%`
+                    const shortName = name.split(" ")[0]; // Get first word only on mobile
+                    return `${shortName} ${(percent * 100).toFixed(0)}%`;
                   }}
                   labelLine={false}
                   fontSize={10}
@@ -684,7 +684,7 @@ export default function ReportsAnalytics() {
         </CardFooter>
       </Card>
     </main>
-  )
+  );
 }
 
 // Sample data for charts
@@ -698,7 +698,7 @@ const attendanceData = [
   { date: "Apr 10", attendance: 92, color: "#22c55e" },
   { date: "Apr 17", attendance: 76, color: "#f59e0b" },
   { date: "Apr 24", attendance: 88, color: "#22c55e" },
-]
+];
 
 const trendData = [
   { week: "Week 1", current: 82, previous: 78 },
@@ -709,7 +709,7 @@ const trendData = [
   { week: "Week 6", current: 80, previous: 74 },
   { week: "Week 7", current: 92, previous: 82 },
   { week: "Week 8", current: 76, previous: 78 },
-]
+];
 
 const distributionData = [
   { name: "Excellent", value: 15, fill: "#22c55e" },
@@ -717,7 +717,7 @@ const distributionData = [
   { name: "Average", value: 25, fill: "#f59e0b" },
   { name: "Below Average", value: 18, fill: "#f97316" },
   { name: "Poor", value: 12, fill: "#ef4444" },
-]
+];
 
 // Sample data for student table
 const studentData = [
@@ -821,4 +821,4 @@ const studentData = [
     total: 12,
     trend: "up",
   },
-]
+];

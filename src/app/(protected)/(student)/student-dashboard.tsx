@@ -1,22 +1,67 @@
-"use client"
+"use client";
 
-import { mockData } from "@/app/mockData"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Progress } from "@/components/ui/progress"
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 import {
   AlertTriangle,
   ChevronRight,
   Clock,
   MapPin,
   QrCode,
-} from "lucide-react"
-import { redirect } from "next/navigation"
+} from "lucide-react";
+import { redirect } from "next/navigation";
+
+const mockData = {
+  todaysClasses: [
+    {
+      id: 1,
+      name: "Physics 301",
+      time: "10:00 AM - 12:00 PM",
+      location: "Room 101",
+      attendance: 75,
+      status: "present",
+    },
+    {
+      id: 2,
+      name: "Chemistry 301",
+      time: "10:00 AM - 12:00 PM",
+      location: "Room 102",
+      attendance: 75,
+      status: "present",
+    },
+    {
+      id: 3,
+      name: "Biology 301",
+      time: "10:00 AM - 12:00 PM",
+      location: "Room 103",
+      attendance: 75,
+      status: "present",
+    },
+  ],
+  recentActivity: [
+    {
+      course: "Physics 301",
+      date: "2023-03-01",
+      status: "present",
+    },
+    {
+      course: "Chemistry 301",
+      date: "2023-03-02",
+      status: "absent",
+    },
+    {
+      course: "Biology 301",
+      date: "2023-03-03",
+      status: "upcoming",
+    },
+  ],
+};
 
 export function StudentDashboard() {
-  const { todaysClasses, recentActivity } = mockData
+  const { todaysClasses, recentActivity } = mockData;
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "present":
@@ -24,19 +69,19 @@ export function StudentDashboard() {
           <Badge variant="outline" className="text-green-500 border-green-500">
             Present
           </Badge>
-        )
+        );
       case "absent":
-        return <Badge variant="destructive">Absent</Badge>
+        return <Badge variant="destructive">Absent</Badge>;
       case "upcoming":
         return (
           <Badge variant="outline" className="text-blue-500 border-blue-500">
             Upcoming
           </Badge>
-        )
+        );
       default:
-        return <Badge variant="secondary">{status}</Badge>
+        return <Badge variant="secondary">{status}</Badge>;
     }
-  }
+  };
 
   return (
     <div className="p-4 space-y-6 bg-background text-foreground">
@@ -67,7 +112,7 @@ export function StudentDashboard() {
               key={course.id}
               className="cursor-pointer hover:shadow-md transition-shadow bg-card text-card-foreground"
               onClick={() => {
-                redirect("/course-detail")
+                redirect("/course-detail");
               }}
             >
               <CardContent className="p-4">
@@ -155,5 +200,5 @@ export function StudentDashboard() {
         </Card>
       </div>
     </div>
-  )
+  );
 }

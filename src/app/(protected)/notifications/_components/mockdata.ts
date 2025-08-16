@@ -1,10 +1,10 @@
 export interface INotification {
-  id: number
-  type: "warning" | "info" | "system"
-  title: string
-  description: string
-  timestamp: string
-  unread: boolean
+  id: number;
+  type: "warning" | "info" | "system";
+  title: string;
+  description: string;
+  timestamp: string;
+  unread: boolean;
 }
 
 export const mockNotifications: INotification[] = [
@@ -50,4 +50,4 @@ export const mockNotifications: INotification[] = [
     timestamp: "1 week ago",
     unread: false,
   },
-]
+];

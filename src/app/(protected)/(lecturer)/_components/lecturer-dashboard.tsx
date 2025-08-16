@@ -1,8 +1,6 @@
-"use client"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-
-export function LecturerDashboard() {
+export function InstructorDashboard() {
   return (
     <div className="p-4 space-y-6 bg-background text-foreground">
       <h1 className="text-2xl font-bold">Lecturer Dashboard</h1>
@@ -18,5 +16,5 @@ export function LecturerDashboard() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

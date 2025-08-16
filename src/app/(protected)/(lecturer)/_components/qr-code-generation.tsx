@@ -1,88 +1,88 @@
-"use client"
+"use client";
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Progress } from "@/components/ui/progress"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Slider } from "@/components/ui/slider"
-import { Switch } from "@/components/ui/switch"
-import { Tabs } from "@/components/ui/tabs"
-import { format } from "date-fns"
-import { Calendar, Download, FileText, RefreshCw, Share2 } from "lucide-react"
-import Image from "next/image"
-import { useEffect, useState } from "react"
+} from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
+import { Tabs } from "@/components/ui/tabs";
+import { format } from "date-fns";
+import { Calendar, Download, FileText, RefreshCw, Share2 } from "lucide-react";
+import Image from "next/image";
+import { useEffect, useState } from "react";
 
 export default function QrCodeGeneration() {
-  const [qrType, setQrType] = useState("check-in")
-  const [validityDuration, setValidityDuration] = useState(15)
-  const [attendanceType, setAttendanceType] = useState("mandatory")
-  const [geoValidation, setGeoValidation] = useState(false)
-  const [geoRadius, setGeoRadius] = useState(100)
+  const [qrType, setQrType] = useState("check-in");
+  const [validityDuration, setValidityDuration] = useState(15);
+  const [attendanceType, setAttendanceType] = useState("mandatory");
+  const [geoValidation, setGeoValidation] = useState(false);
+  const [geoRadius, setGeoRadius] = useState(100);
   const [autoExpireOptions, setAutoExpireOptions] = useState({
     afterClass: true,
     afterLimit: false,
     afterDate: false,
-  })
+  });
 
   // Calculate remaining time for the validity timer
-  const [remainingTime, setRemainingTime] = useState(validityDuration * 60) // Start with full duration
-  const [isExpired, setIsExpired] = useState(false)
+  const [remainingTime, setRemainingTime] = useState(validityDuration * 60); // Start with full duration
+  const [isExpired, setIsExpired] = useState(false);
 
   // Real countdown timer effect
   useEffect(() => {
     if (remainingTime <= 0) {
-      setIsExpired(true)
-      return
+      setIsExpired(true);
+      return;
     }
 
     const timer = setInterval(() => {
       setRemainingTime(prev => {
         if (prev <= 1) {
-          setIsExpired(true)
-          return 0
+          setIsExpired(true);
+          return 0;
         }
-        return prev - 1
-      })
-    }, 1000)
+        return prev - 1;
+      });
+    }, 1000);
 
-    return () => clearInterval(timer)
-  }, [remainingTime])
+    return () => clearInterval(timer);
+  }, [remainingTime]);
 
   // Reset timer when validity duration changes
   useEffect(() => {
-    setRemainingTime(validityDuration * 60)
-    setIsExpired(false)
-  }, [validityDuration])
+    setRemainingTime(validityDuration * 60);
+    setIsExpired(false);
+  }, [validityDuration]);
 
   // Get timer color based on remaining time
   const getTimerColor = () => {
-    if (isExpired) return "text-red-500"
-    const percentage = (remainingTime / (validityDuration * 60)) * 100
-    if (percentage > 50) return "text-green-500"
-    if (percentage > 20) return "text-amber-500"
-    return "text-red-500"
-  }
+    if (isExpired) return "text-red-500";
+    const percentage = (remainingTime / (validityDuration * 60)) * 100;
+    if (percentage > 50) return "text-green-500";
+    if (percentage > 20) return "text-amber-500";
+    return "text-red-500";
+  };
 
   // Format seconds to MM:SS
   const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60)
-    const secs = seconds % 60
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
     return `${mins.toString().padStart(2, "0")}:${secs
       .toString()
-      .padStart(2, "0")}`
-  }
+      .padStart(2, "0")}`;
+  };
 
   // Mock data for recently checked-in students
   const recentCheckins = [
@@ -116,7 +116,7 @@ export default function QrCodeGeneration() {
       timestamp: "10:08 AM",
       avatar: "/placeholder.svg?height=32&width=32",
     },
-  ]
+  ];
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -196,8 +196,8 @@ export default function QrCodeGeneration() {
                   <Button
                     className="gap-1"
                     onClick={() => {
-                      setRemainingTime(validityDuration * 60)
-                      setIsExpired(false)
+                      setRemainingTime(validityDuration * 60);
+                      setIsExpired(false);
                     }}
                   >
                     <RefreshCw className="h-4 w-4" />
@@ -471,5 +471,5 @@ export default function QrCodeGeneration() {
         </main>
       </div>
     </div>
-  )
+  );
 }

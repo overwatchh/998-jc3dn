@@ -1,30 +1,31 @@
-"use client"
+"use client";
 
-import { AdminDashboard } from "@/app/(protected)/(admin)/_components/AdminDashboard"
-import { RolePicker } from "@/components/role-picker"
-import { authClient } from "@/lib/auth/auth-client"
-import { Roles } from "@/lib/auth/permission"
-import { redirect } from "next/navigation"
-import { LecturerDashboard } from "../(lecturer)/_components/lecturer-dashboard"
-import { StudentDashboard } from "../(student)/student-dashboard"
+import { AdminDashboard } from "@/app/(protected)/(admin)/_components/AdminDashboard";
+import { useCurrentUser } from "@/hooks/useAuth";
+import { Roles } from "@/types";
+import { redirect } from "next/navigation";
+import { InstructorDashboard } from "../(lecturer)/_components/lecturer-dashboard";
+import { StudentDashboard } from "../(student)/student-dashboard";
+import { LoadingScreen } from "@/components/loading-skeleton";
 
 export default function DashboardPage() {
-  const { data: session } = authClient.useSession()
+  const { data, isLoading } = useCurrentUser();
 
-  if (!session) {
-    redirect("/login")
-  }
+  if (isLoading) return <LoadingScreen />;
 
-  const userRole = session.user.role
+  if (!data) redirect("/login");
+
+  const userRole = data.user.role;
 
   switch (userRole) {
     case Roles.STUDENT:
-      return <StudentDashboard />
-    case Roles.LECTURER:
-      return <LecturerDashboard />
+      return <StudentDashboard />;
+    case Roles.INSTRUCTOR:
+      return <InstructorDashboard />;
     case Roles.ADMIN:
-      return <AdminDashboard />
+      return <AdminDashboard />;
     default:
-      return <RolePicker userId={session.user.id} />
+      // return <RolePicker userId={user.id} />;
+      return null;
   }
 }

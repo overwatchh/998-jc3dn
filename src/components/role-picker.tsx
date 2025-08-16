@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import {
   AlertDialog,
@@ -9,41 +9,41 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
-import { Button } from "@/components/ui/button"
-import { Label } from "@/components/ui/label"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { authClient } from "@/lib/auth/auth-client"
-import { Role } from "@/lib/auth/permission"
-import { GraduationCap, Users } from "lucide-react"
-import { useState } from "react"
-import { toast } from "sonner"
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { authClient } from "@/lib/auth/auth-client";
+import { Role } from "@/lib/auth/permission";
+import { GraduationCap, Users } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
 
 interface Props {
-  userId: string
+  userId: string;
 }
 
 export function RolePicker({ userId }: Props) {
-  const [selectedRole, setSelectedRole] = useState("")
-  const [showConfirmation, setShowConfirmation] = useState(false)
+  const [selectedRole, setSelectedRole] = useState("");
+  const [showConfirmation, setShowConfirmation] = useState(false);
 
   function handleSubmit() {
-    if (!selectedRole) return
-    setShowConfirmation(true)
+    if (!selectedRole) return;
+    setShowConfirmation(true);
   }
 
   async function handleConfirmedSubmit(role: Role) {
     const { error } = await authClient.admin.setRole({
       userId,
       role,
-    })
+    });
 
     if (error) {
-      toast.error("Failed to set role. Check server log for more details.")
-      return
+      toast.error("Failed to set role. Check server log for more details.");
+      return;
     }
 
-    window.location.reload()
+    window.location.reload();
   }
 
   const roles = [
@@ -59,7 +59,7 @@ export function RolePicker({ userId }: Props) {
       description: "Create courses, manage students, and grade assignments",
       icon: Users,
     },
-  ]
+  ];
 
   return (
     <div className="mx-auto max-w-md space-y-6 p-6">
@@ -76,7 +76,7 @@ export function RolePicker({ userId }: Props) {
         className="space-y-3"
       >
         {roles.map(role => {
-          const Icon = role.icon
+          const Icon = role.icon;
           return (
             <div key={role.id} className="relative">
               <RadioGroupItem
@@ -99,7 +99,7 @@ export function RolePicker({ userId }: Props) {
                 </div>
               </Label>
             </div>
-          )
+          );
         })}
       </RadioGroup>
 
@@ -134,5 +134,5 @@ export function RolePicker({ userId }: Props) {
         </AlertDialogContent>
       </AlertDialog>
     </div>
-  )
+  );
 }

@@ -1,9 +1,9 @@
 "use client";
-import { ReactNode, useEffect } from "react";
+import { ThemeProvider } from "@/components/theme-provider";
 import { ReactQueryProvider } from "@/lib/queryClient";
-import { useCurrentUser } from "@/hooks/useAuth";
-import useAuthStore from "@/store/authStore";
-import "./globals.css"; // Assuming you have global styles
+import { Toaster } from "@/components/ui/sonner";
+import { ReactNode } from "react";
+import "./globals.css";
 
 interface RootLayoutProps {
   children: ReactNode;
@@ -11,34 +11,24 @@ interface RootLayoutProps {
 
 export default function RootLayout({ children }: RootLayoutProps) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         {/* Add necessary head elements here, like meta tags, title, etc. */}
         <title>QR Attendance System</title>
       </head>
-      <body>
+      <body className="flex flex-col h-screen overflow-scroll">
         <ReactQueryProvider>
-          <AuthProvider>{children}</AuthProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            {children}
+            <Toaster richColors />
+          </ThemeProvider>
         </ReactQueryProvider>
       </body>
     </html>
   );
-}
-
-function AuthProvider({ children }: { children: ReactNode }) {
-  const { data: user, isLoading, isError } = useCurrentUser();
-  const { setUser, setLoading, clearAuth } = useAuthStore();
-
-  // Update Zustand store based on React Query results
-  useEffect(() => {
-    if (isLoading) {
-      setLoading(true);
-    } else if (isError) {
-      clearAuth();
-    } else {
-      setUser(user || null);
-    }
-  }, [user, isLoading, isError, setUser, setLoading, clearAuth]);
-
-  return <>{children}</>;
 }

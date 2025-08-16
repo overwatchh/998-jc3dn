@@ -1,31 +1,38 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { Button } from "@/components/ui/button"
-import { authClient } from "@/lib/auth/auth-client"
-import type { Role } from "@/lib/auth/permission"
-import { Bell, FileText, Home, QrCode, Settings, UserCheck } from "lucide-react"
-import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { Button } from "@/components/ui/button";
+import { useCurrentUser } from "@/hooks/useAuth";
+import { Role } from "@/types";
+import {
+  Bell,
+  FileText,
+  Home,
+  QrCode,
+  Settings,
+  UserCheck,
+} from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 interface NavItem {
-  id: string
-  icon: React.FC<React.SVGProps<SVGSVGElement>>
-  label: string
-  shortLabel?: string // For very small screens
-  href: string
-  role: Role[]
+  id: string;
+  icon: React.FC<React.SVGProps<SVGSVGElement>>;
+  label: string;
+  shortLabel?: string; // For very small screens
+  href: string;
+  role: Role[];
 }
 
 interface NavItemProps {
-  item: NavItem
-  isActive: boolean
-  className?: string
+  item: NavItem;
+  isActive: boolean;
+  className?: string;
 }
 
 function NavItem({ item, isActive, className = "" }: NavItemProps) {
-  const Icon = item.icon
+  const Icon = item.icon;
 
   return (
     <Button
@@ -55,13 +62,16 @@ function NavItem({ item, isActive, className = "" }: NavItemProps) {
         </span>
       </Link>
     </Button>
-  )
+  );
 }
 
 export function BottomNavigation() {
-  const { data: session } = authClient.useSession()
-  const pathname = usePathname()
-  const role = session?.user.role as Role
+  const { data } = useCurrentUser();
+  const pathname = usePathname();
+
+  if (!data) return null;
+
+  const role = data.user.role;
 
   const navItems: NavItem[] = [
     {
@@ -69,7 +79,7 @@ export function BottomNavigation() {
       icon: Home,
       label: "Home",
       href: "/",
-      role: ["student", "lecturer", "admin"],
+      role: ["student", "instructor", "admin"],
     },
     {
       id: "attendance-tracking",
@@ -77,7 +87,7 @@ export function BottomNavigation() {
       label: "Attendance Tracking",
       shortLabel: "Attendance",
       href: "/attendance-tracking",
-      role: ["lecturer"],
+      role: ["instructor"],
     },
     {
       id: "qr-generation",
@@ -85,14 +95,14 @@ export function BottomNavigation() {
       label: "QR Code Generation",
       shortLabel: "QR",
       href: "/qr-generation",
-      role: ["lecturer"],
+      role: ["instructor"],
     },
     {
       id: "report",
       icon: FileText,
       label: "Report",
       href: "/report",
-      role: ["lecturer"],
+      role: ["instructor"],
     },
     {
       id: "scan",
@@ -114,19 +124,19 @@ export function BottomNavigation() {
       label: "Notifications",
       shortLabel: "Notifications",
       href: "/notifications",
-      role: ["student", "lecturer", "admin"],
+      role: ["student", "instructor", "admin"],
     },
     {
       id: "settings",
       icon: Settings,
       label: "Settings",
       href: "/settings",
-      role: ["student", "lecturer", "admin"],
+      role: ["student", "instructor", "admin"],
     },
-  ]
+  ];
 
-  const filteredNavItems = navItems.filter(item => item.role.includes(role))
-  const itemCount = filteredNavItems.length
+  const filteredNavItems = navItems.filter(item => item.role.includes(role));
+  const itemCount = filteredNavItems.length;
 
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border z-50">
@@ -160,5 +170,5 @@ export function BottomNavigation() {
         )}
       </div>
     </div>
-  )
+  );
 }

@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export const AdminDashboard = () => {
   return (
@@ -16,5 +16,5 @@ export const AdminDashboard = () => {
         </CardContent>
       </Card>
     </div>
-  )
-}
+  );
+};

@@ -1,28 +1,28 @@
-"use client"
+"use client";
 
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
-import { Calendar, Filter, List } from "lucide-react"
-import { useState } from "react"
-import { attendanceRecords } from "./mockdata"
+} from "@/components/ui/select";
+import { Calendar, Filter, List } from "lucide-react";
+import { useState } from "react";
+import { attendanceRecords } from "./mockdata";
 
 export default function AttendanceRecordsScreen() {
-  const [viewMode, setViewMode] = useState<"list" | "calendar">("list")
-  const [selectedCourse, setSelectedCourse] = useState("all")
+  const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
+  const [selectedCourse, setSelectedCourse] = useState("all");
 
   const overallStats = {
     percentage: 78,
     attended: 23,
     total: 30,
-  }
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -31,34 +31,34 @@ export default function AttendanceRecordsScreen() {
           <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
             Present
           </Badge>
-        )
+        );
       case "absent":
         return (
           <Badge className="bg-red-100 text-red-800 hover:bg-red-100">
             Absent
           </Badge>
-        )
+        );
       case "late":
         return (
           <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">
             Late
           </Badge>
-        )
+        );
       case "partial":
         return (
           <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100">
             Partial
           </Badge>
-        )
+        );
       default:
-        return <Badge variant="secondary">{status}</Badge>
+        return <Badge variant="secondary">{status}</Badge>;
     }
-  }
+  };
 
   const filteredRecords =
     selectedCourse === "all"
       ? attendanceRecords
-      : attendanceRecords.filter(record => record.course === selectedCourse)
+      : attendanceRecords.filter(record => record.course === selectedCourse);
 
   return (
     <div className="p-4 space-y-6">
@@ -186,5 +186,5 @@ export default function AttendanceRecordsScreen() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

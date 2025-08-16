@@ -1,9 +1,9 @@
-import { Card, CardContent } from "@/components/ui/card"
-import { NotificationIcon } from "./NotificationIcon"
-import { INotification } from "./mockdata"
+import { Card, CardContent } from "@/components/ui/card";
+import { NotificationIcon } from "./NotificationIcon";
+import { INotification } from "./mockdata";
 
 interface Props {
-  notification: INotification
+  notification: INotification;
 }
 
 export const NotificationCard = ({ notification }: Props) => {
@@ -36,5 +36,5 @@ export const NotificationCard = ({ notification }: Props) => {
         </div>
       </CardContent>
     </Card>
-  )
-}
+  );
+};

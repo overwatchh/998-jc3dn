@@ -1,5 +1,13 @@
 import { RowDataPacket } from "mysql2";
 
+export enum Roles {
+  STUDENT = "student",
+  INSTRUCTOR = "instructor",
+  ADMIN = "admin",
+}
+
+export type Role = `${Roles}`;
+
 export interface User extends RowDataPacket {
   id: string;
   name: string;
