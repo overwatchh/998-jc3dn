@@ -6,7 +6,7 @@ export default function ProtectedLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="pb-20">
+    <div className="flex flex-col grow pb-20">
       {children}
       <BottomNavigation />
     </div>

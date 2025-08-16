@@ -1,12 +1,12 @@
 "use client";
 
 import { AdminDashboard } from "@/app/(protected)/(admin)/_components/AdminDashboard";
+import { LoadingScreen } from "@/components/loading-skeleton";
 import { useCurrentUser } from "@/hooks/useAuth";
 import { Roles } from "@/types";
 import { redirect } from "next/navigation";
 import { InstructorDashboard } from "../(lecturer)/_components/lecturer-dashboard";
 import { StudentDashboard } from "../(student)/student-dashboard";
-import { LoadingScreen } from "@/components/loading-skeleton";
 
 export default function DashboardPage() {
   const { data, isLoading } = useCurrentUser();

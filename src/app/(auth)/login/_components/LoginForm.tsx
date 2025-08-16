@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/form";
 import { GoogleIcon } from "@/components/ui/icons/google-icon";
 import { Input } from "@/components/ui/input";
+import { useLogin } from "@/hooks/useAuth";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowRight, Eye, EyeOff } from "lucide-react";
 import { redirect, useRouter } from "next/navigation";
@@ -41,17 +42,13 @@ export function LoginForm() {
   });
 
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+
+  const { mutateAsync: login, isPending: isLoading, isError } = useLogin();
 
   const handleEmailLogin: SubmitHandler<SigninInputs> = async data => {
-    setIsLoading(true);
-    // const { email, password, rememberMe } = data;
+    await login(data);
 
-    alert(JSON.stringify(data, null, 2));
-
-    const error = false;
-    if (error) {
-      setIsLoading(false);
+    if (isError) {
       toast.error("Signin failed. Check your server log for more details");
     }
 

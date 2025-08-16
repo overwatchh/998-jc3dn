@@ -21,8 +21,12 @@ export const useCurrentUser = () => {
 // Login mutation
 export const useLogin = () => {
   return useMutation({
-    mutationFn: async (credentials: { email: string; password: string }) => {
-      const response = await apiClient.post("/auth/login", credentials);
+    mutationFn: async (credentials: {
+      email: string;
+      password: string;
+      rememberMe: boolean;
+    }) => {
+      const response = await apiClient.post("/auth/signin", credentials);
       return response.data;
     },
     onSuccess: () => {
