@@ -4,6 +4,7 @@ import { ReactQueryProvider } from "@/lib/queryClient";
 import { Toaster } from "@/components/ui/sonner";
 import { ReactNode } from "react";
 import "./globals.css";
+import { Header } from "@/components/header";
 
 interface RootLayoutProps {
   children: ReactNode;
@@ -24,6 +25,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
             enableSystem
             disableTransitionOnChange
           >
+            <Header />
             {children}
             <Toaster richColors />
           </ThemeProvider>

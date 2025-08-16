@@ -1,13 +1,13 @@
 "use client";
 
-import { authClient } from "@/lib/auth/auth-client";
+import { useCurrentUser } from "@/hooks/useAuth";
 import Image from "next/image";
 import Link from "next/link";
 import { ThemeToggler } from "./theme-toggler";
 import { Button } from "./ui/button";
 
 export const Header = () => {
-  const { data: session, isPending } = authClient.useSession();
+  const { data: session, isPending } = useCurrentUser();
 
   if (isPending) {
     return null;

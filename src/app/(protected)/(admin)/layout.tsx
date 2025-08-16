@@ -1,5 +1,5 @@
-import { auth } from "@/lib/auth/auth";
-import { Roles } from "@/lib/auth/permission";
+import { auth } from "@/lib/server/auth";
+import { Roles } from "@/types";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
