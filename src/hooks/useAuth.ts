@@ -1,49 +1,37 @@
-import { useQuery, useMutation } from "@tanstack/react-query";
 import apiClient from "@/lib/api/apiClient";
-import { User } from "@/types";
 import { queryClient } from "@/lib/queryClient";
+import { User } from "@/types";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
+
+const CURRENT_USER_QUERY_KEY = ["currentUser"];
 
 // Get current user (me) query
 export const useCurrentUser = () => {
-  return useQuery<User>({
-    queryKey: ["currentUser"],
-    queryFn: async () => {
-      try {
-        const response = await apiClient.get("/auth/me");
-        return response.data;
-      } catch (error: unknown) {
-        // Check if error is an object with a response property
-        if (
-          typeof error === "object" &&
-          error !== null &&
-          "response" in error &&
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          typeof (error as any).response === "object" &&
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (error as any).response !== null &&
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          "status" in (error as any).response &&
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (error as any).response.status === 401
-        ) {
-          return null;
-        }
-        throw error;
-      }
-    },
+  const queryFn = async () => {
+    const { data } = await apiClient.get("/auth/me");
+    return data;
+  };
+  return useQuery<{ user: User }>({
+    queryKey: [CURRENT_USER_QUERY_KEY],
+    queryFn,
   });
 };
 
 // Login mutation
 export const useLogin = () => {
   return useMutation({
-    mutationFn: async (credentials: { email: string; password: string }) => {
-      const response = await apiClient.post("/auth/login", credentials);
+    mutationFn: async (credentials: {
+      email: string;
+      password: string;
+      rememberMe: boolean;
+    }) => {
+      const response = await apiClient.post("/auth/signin", credentials);
       return response.data;
     },
     onSuccess: () => {
       // Invalidate the currentUser query to refetch user data
-      queryClient.invalidateQueries({ queryKey: ["currentUser"] });
+      queryClient.invalidateQueries({ queryKey: [CURRENT_USER_QUERY_KEY] });
     },
   });
 };
@@ -57,26 +45,28 @@ export const useRegister = () => {
       password: string;
       role?: string;
     }) => {
-      const response = await apiClient.post("/auth/register", userData);
+      const response = await apiClient.post("/auth/signup", userData);
       return response.data;
     },
     onSuccess: () => {
       // Invalidate the currentUser query to refetch user data
-      queryClient.invalidateQueries({ queryKey: ["currentUser"] });
+      queryClient.invalidateQueries({ queryKey: [CURRENT_USER_QUERY_KEY] });
     },
   });
 };
 
 // Logout mutation
 export const useLogout = () => {
+  const router = useRouter();
   return useMutation({
     mutationFn: async () => {
-      const response = await apiClient.post("/auth/logout");
+      const response = await apiClient.post("/auth/signout");
       return response.data;
     },
     onSuccess: () => {
       // Invalidate the currentUser query to refetch user data
-      queryClient.invalidateQueries({ queryKey: ["currentUser"] });
+      queryClient.invalidateQueries({ queryKey: [CURRENT_USER_QUERY_KEY] });
+      router.push("/login");
     },
   });
 };
