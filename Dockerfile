@@ -5,6 +5,8 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
+# Install build tools needed for lightningcss (and other native deps)
+RUN apk add --no-cache python3 make g++
 # Install dependencies first (better cache)
 COPY package*.json ./
 RUN npm ci
