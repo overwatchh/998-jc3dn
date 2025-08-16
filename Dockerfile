@@ -1,13 +1,13 @@
 # ----------------------------
 # 1️⃣ Build stage
 # ----------------------------
-FROM node:20-slim AS builder
+FROM node:20-alpine AS builder
 
 WORKDIR /app
 
 # Install dependencies first (better cache)
 COPY package*.json ./
-RUN npm ci
+RUN npm i
 
 # Copy all source code
 COPY . .
