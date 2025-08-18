@@ -10,7 +10,7 @@ const Layout = async ({ children }: { children: React.ReactNode }) => {
   if (!session) {
     redirect("/login");
   }
-  if (session.user.role !== Roles.INSTRUCTOR) {
+  if (session.user.role !== Roles.LECTURER) {
     redirect("/dashboard");
   }
   return <div>{children}</div>;

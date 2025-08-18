@@ -2,7 +2,7 @@ import { RowDataPacket } from "mysql2";
 
 export enum Roles {
   STUDENT = "student",
-  INSTRUCTOR = "instructor",
+  LECTURER = "lecturer",
   ADMIN = "admin",
 }
 
@@ -13,7 +13,7 @@ export interface User extends RowDataPacket {
   name: string;
   email: string;
   password: string;
-  role: "student" | "instructor" | "admin";
+  role: Role;
 }
 
 export interface Course {
