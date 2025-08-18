@@ -20,7 +20,7 @@ export default function DashboardPage() {
   switch (userRole) {
     case Roles.STUDENT:
       return <StudentDashboard />;
-    case Roles.INSTRUCTOR:
+    case Roles.LECTURER:
       return <InstructorDashboard />;
     case Roles.ADMIN:
       return <AdminDashboard />;

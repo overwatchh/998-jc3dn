@@ -79,7 +79,7 @@ export function BottomNavigation() {
       icon: Home,
       label: "Home",
       href: "/",
-      role: ["student", "instructor", "admin"],
+      role: ["student", "lecturer", "admin"],
     },
     {
       id: "attendance-tracking",
@@ -87,7 +87,7 @@ export function BottomNavigation() {
       label: "Attendance Tracking",
       shortLabel: "Attendance",
       href: "/attendance-tracking",
-      role: ["instructor"],
+      role: ["lecturer"],
     },
     {
       id: "qr-generation",
@@ -95,14 +95,14 @@ export function BottomNavigation() {
       label: "QR Code Generation",
       shortLabel: "QR",
       href: "/qr-generation",
-      role: ["instructor"],
+      role: ["lecturer"],
     },
     {
       id: "report",
       icon: FileText,
       label: "Report",
       href: "/report",
-      role: ["instructor"],
+      role: ["lecturer"],
     },
     {
       id: "scan",
@@ -124,14 +124,14 @@ export function BottomNavigation() {
       label: "Notifications",
       shortLabel: "Notifications",
       href: "/notifications",
-      role: ["student", "instructor", "admin"],
+      role: ["student", "lecturer", "admin"],
     },
     {
       id: "settings",
       icon: Settings,
       label: "Settings",
       href: "/settings",
-      role: ["student", "instructor", "admin"],
+      role: ["student", "lecturer", "admin"],
     },
   ];
 
