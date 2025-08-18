@@ -1,9 +1,7 @@
-"use client";
-
 import type React from "react";
 
 import { Button } from "@/components/ui/button";
-import { useCurrentUser } from "@/hooks/useAuth";
+import { auth } from "@/lib/server/auth";
 import { Role } from "@/types";
 import {
   Bell,
@@ -13,8 +11,8 @@ import {
   Settings,
   UserCheck,
 } from "lucide-react";
+import { headers } from "next/headers";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 
 interface NavItem {
   id: string;
@@ -27,11 +25,10 @@ interface NavItem {
 
 interface NavItemProps {
   item: NavItem;
-  isActive: boolean;
   className?: string;
 }
 
-function NavItem({ item, isActive, className = "" }: NavItemProps) {
+function NavItem({ item, className = "" }: NavItemProps) {
   const Icon = item.icon;
 
   return (
@@ -40,11 +37,7 @@ function NavItem({ item, isActive, className = "" }: NavItemProps) {
       key={item.id}
       variant="ghost"
       size="sm"
-      className={`relative flex flex-col items-center justify-center space-y-0.5 h-auto py-2 hover:bg-accent/50 ${
-        isActive
-          ? "text-primary bg-accent/50"
-          : "text-muted-foreground hover:text-foreground"
-      } ${className}`}
+      className={`relative flex flex-col items-center justify-center space-y-0.5 h-auto py-2 hover:bg-accent/50 ${"text-muted-foreground hover:text-foreground"} ${className}`}
     >
       <Link
         href={item.href}
@@ -52,9 +45,6 @@ function NavItem({ item, isActive, className = "" }: NavItemProps) {
       >
         <div className="relative">
           <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
-          {isActive && (
-            <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-primary rounded-full" />
-          )}
         </div>
         <span className="text-[10px] sm:text-xs font-medium leading-tight text-center truncate w-full">
           <span className="hidden xs:inline">{item.label}</span>
@@ -65,13 +55,15 @@ function NavItem({ item, isActive, className = "" }: NavItemProps) {
   );
 }
 
-export function BottomNavigation() {
-  const { data } = useCurrentUser();
-  const pathname = usePathname();
+export async function BottomNavigation() {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+  // const pathname = usePathname();
 
-  if (!data) return null;
+  if (!session) return null;
 
-  const role = data.user.role;
+  const role = session.user.role as Role;
 
   const navItems: NavItem[] = [
     {
@@ -148,7 +140,6 @@ export function BottomNavigation() {
               <NavItem
                 key={item.id}
                 item={item}
-                isActive={pathname === item.href}
                 className="px-1 sm:px-2 min-w-0 flex-1 max-w-[80px] sm:max-w-none"
               />
             ))}
@@ -158,12 +149,7 @@ export function BottomNavigation() {
           <div className="overflow-x-auto max-w-screen">
             <div className="flex px-2 py-1 sm:px-4 gap-2 justify-between sm:py-2">
               {filteredNavItems.map(item => (
-                <NavItem
-                  key={item.id}
-                  item={item}
-                  isActive={pathname === item.href}
-                  className="px-3 sm:px-4"
-                />
+                <NavItem key={item.id} item={item} className="px-3 sm:px-4" />
               ))}
             </div>
           </div>

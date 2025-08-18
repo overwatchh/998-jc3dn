@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "format": "prettier . --write",
+    "clean": "rm -rf node_modules .next package-lock.json",
     "check": "tsc --noEmit && npm run lint",
     "auth:migrate": "dotenv -e .env.local -- npx @better-auth/cli migrate"
   },
