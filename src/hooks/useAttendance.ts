@@ -66,8 +66,7 @@ export const useUpdateAttendanceRecord = () => {
       const response = await apiClient.put(`/attendance/${recordId}`, data);
       return response.data;
     },
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    onSuccess: (_, _variables) => {
+    onSuccess: () => {
       // Invalidate specific attendance record queries
       queryClient.invalidateQueries({ queryKey: ["attendance"] });
     },

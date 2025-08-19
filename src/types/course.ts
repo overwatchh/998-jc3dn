@@ -56,3 +56,9 @@ export interface RawCourseSessionRow extends RowDataPacket {
   course_session_id: number;
   course_id: number;
 }
+
+export type CourseSessionResponse = Array<{
+  id: number;
+  name: string;
+  code: string;
+}>;

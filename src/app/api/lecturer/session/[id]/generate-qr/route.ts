@@ -1,12 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/server/auth";
 import { rawQuery } from "@/lib/server/query"; // Replace with your DB access method (e.g., mysql2)
-import crypto from "crypto";
-import QRCode from "qrcode";
-import { headers } from "next/headers";
 import { RawCourseSessionRow } from "@/types/course";
 import { GenerateQrRequestBody, GenerateQrResponse } from "@/types/qr-code";
+import crypto from "crypto";
+import { headers } from "next/headers";
+import { NextRequest, NextResponse } from "next/server";
+import QRCode from "qrcode";
 
 /**
  * @openapi
@@ -156,11 +156,38 @@ export async function POST(
         return NextResponse.json(response);
       } else {
         // QR code has expired, delete it
-        const deleteQrSql = `
-          DELETE FROM session_qr_codes
+        // QR code has expired, update it
+        const token = crypto.randomBytes(6).toString("hex"); // 12-char token
+        const now = new Date();
+        const validUntil = new Date(now.getTime() + 10 * 60 * 1000); // 10 minutes
+
+        const updateQrSql = `
+          UPDATE session_qr_codes
+          SET qr_code = ?, generated_at = ?, valid_until = ?, radius = ?
           WHERE course_session_id = ? AND week_number = ?
         `;
-        await rawQuery(deleteQrSql, [courseSessionId, week_number]);
+        await rawQuery(updateQrSql, [
+          token,
+          now,
+          validUntil,
+          radius ?? 100,
+          courseSessionId,
+          week_number,
+        ]);
+
+        const redirectPath = redirect_url || "/scan";
+        const qrUrl = `${APP_URL}${redirectPath}?token=${token}`;
+        const qrDataUrl = await QRCode.toDataURL(qrUrl);
+
+        const response: GenerateQrResponse = {
+          message: "Existing QR code updated successfully",
+          qr_url: qrDataUrl,
+          course_id: courseSession.course_id,
+          course_session_id: courseSession.course_session_id,
+          week_number,
+          valid_until: validUntil.toISOString(),
+        };
+        return NextResponse.json(response);
       }
     }
 
@@ -198,7 +225,9 @@ export async function POST(
       valid_until: validUntil.toISOString(),
     };
     return NextResponse.json(response);
-  } catch {
+  } catch (error) {
+    // TODO: Delete console.log
+    console.error("LOGGING error", error);
     return NextResponse.json(
       { message: "Internal Server Error" },
       { status: 500 }

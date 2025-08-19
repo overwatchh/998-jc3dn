@@ -1,6 +1,7 @@
 import apiClient from "@/lib/api/apiClient";
+import { CourseSessionResponse } from "@/types/course";
 import { GenerateQrRequestBody, GenerateQrResponse } from "@/types/qr-code";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 const QR_CODE_GENERATION_QUERY_KEY = ["qrCodeGeneration"];
 
@@ -22,5 +23,20 @@ export const useGenerateQr = (id: number) => {
         queryKey: [QR_CODE_GENERATION_QUERY_KEY],
       });
     },
+  });
+};
+
+const COURSES_QUERY_KEY = ["courses"];
+
+// Get courses
+export const useGetCourses = () => {
+  const queryFn = async () => {
+    const { data } =
+      await apiClient.get<CourseSessionResponse>("/lecturer/courses");
+    return data;
+  };
+  return useQuery({
+    queryKey: [COURSES_QUERY_KEY],
+    queryFn,
   });
 };

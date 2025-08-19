@@ -19,8 +19,11 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Tabs } from "@/components/ui/tabs";
+import { GenerateQrResponse } from "@/types/qr-code";
+import { AxiosError } from "axios";
 import { format } from "date-fns";
 import {
+  ArrowLeft,
   Calendar,
   Download,
   FileText,
@@ -29,11 +32,24 @@ import {
   Share2,
 } from "lucide-react";
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { Dispatch, SetStateAction, useEffect, useState } from "react";
+import { toast } from "sonner";
+import { QRGenScreens, SelectedCourse } from "../qr-generation/page";
 import { useGenerateQr } from "../qr-generation/queries";
-import { GenerateQrResponse } from "@/types/qr-code";
 
-export default function QrCodeGeneration() {
+interface Props {
+  sessionId: number;
+  weekNumber: number;
+  setCurrentScreen: Dispatch<SetStateAction<QRGenScreens>>;
+  setSelectedCourse: Dispatch<SetStateAction<SelectedCourse | undefined>>;
+}
+
+export function QrCodeGeneration({
+  sessionId,
+  weekNumber,
+  setCurrentScreen,
+  setSelectedCourse,
+}: Props) {
   const [qrType, setQrType] = useState("check-in");
   const [validityDuration, setValidityDuration] = useState(15);
   const [attendanceType, setAttendanceType] = useState("mandatory");
@@ -65,7 +81,6 @@ export default function QrCodeGeneration() {
         return prev - 1;
       });
     }, 1000);
-
     return () => clearInterval(timer);
   }, [remainingTime]);
 
@@ -128,18 +143,24 @@ export default function QrCodeGeneration() {
   ];
 
   const [qrCode, setQrCode] = useState<GenerateQrResponse>();
-  // TODO: Get session ID from URL
-  const sessionId = 1;
   const { mutateAsync: generateQr } = useGenerateQr(sessionId);
   useEffect(() => {
     async function generateQrCode() {
-      const data = await generateQr({
-        week_number: 1,
-      });
-      setQrCode(data);
+      try {
+        const data = await generateQr({
+          week_number: weekNumber,
+        });
+        setQrCode(data);
+      } catch (e: unknown) {
+        if (e instanceof AxiosError && e.response?.data?.message) {
+          toast.error(e.response.data.message);
+        } else {
+          toast.error("An unknown error occurred.");
+        }
+      }
     }
     generateQrCode();
-  }, [generateQr]);
+  }, [generateQr, weekNumber]);
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -147,7 +168,17 @@ export default function QrCodeGeneration() {
         {/* Main Content */}
         <main className="flex-1 overflow-auto p-4 md:p-6">
           <div className="mx-auto max-w-7xl">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Button
+                onClick={() => {
+                  setCurrentScreen(QRGenScreens.COURSE_SELECTION);
+                  setSelectedCourse(undefined);
+                }}
+                variant="ghost"
+                className="h-fit"
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
               <h1 className="text-2xl font-bold tracking-tight">
                 QR Code Generation
               </h1>
