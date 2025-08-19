@@ -118,6 +118,27 @@ export default function QrCodeGeneration() {
     },
   ];
 
+  const res = {
+    message: "Generate Qr sucessfully",
+    qr_url:
+      "data:image/png;base64,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",
+    course_id: 1,
+    course_session_id: 1,
+    week_number: 1,
+    valid_until: "2025-08-19T00:27:13.798Z",
+  };
+
+  // const sessionId = 1;
+  // const { mutate: generateQr } = useGenerateQr();
+  // useEffect(() => {
+  //   const data = generateQr({
+  //     id: sessionId,
+  //     reqBody: {
+  //       week_number: 1,
+  //     },
+  //   });
+  // }, [generateQr, sessionId]);
+
   return (
     <div className="flex min-h-screen flex-col">
       <div className="flex flex-1">
@@ -168,7 +189,8 @@ export default function QrCodeGeneration() {
                 <CardContent className="flex flex-col items-center justify-center p-6 pt-6">
                   <div className="relative mb-4 rounded-lg border bg-white p-2 shadow-sm">
                     <Image
-                      src="https://upload.wikimedia.org/wikipedia/commons/2/2f/Rickrolling_QR_code.png"
+                      // src="https://upload.wikimedia.org/wikipedia/commons/2/2f/Rickrolling_QR_code.png"
+                      src={res.qr_url}
                       width={256}
                       height={256}
                       alt="QR Code"
@@ -420,7 +442,10 @@ export default function QrCodeGeneration() {
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
                         <Label>Recent Check-ins</Label>
-                        <span className="text-xs text-muted-foreground">
+                        <span
+                          suppressHydrationWarning
+                          className="text-xs text-muted-foreground"
+                        >
                           Last updated: {format(new Date(), "hh:mm:ss a")}
                         </span>
                       </div>
