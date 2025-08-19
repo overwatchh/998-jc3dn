@@ -123,15 +123,56 @@ export async function POST(
         { status: 403 }
       );
     }
-    // Step 3: Generate token
-    // Generate short secure token
+
+    // Step 3: Check for existing QR code
+    const checkQrSql = `
+      SELECT qr_code, generated_at, valid_until, radius
+      FROM session_qr_codes
+      WHERE course_session_id = ? AND week_number = ?
+    `;
+    const [existingQr] = await rawQuery<any>(checkQrSql, [
+      courseSessionId,
+      week_number,
+    ]);
+
+    if (existingQr) {
+      const now = new Date();
+      const existingValidUntil = new Date(existingQr.valid_until);
+
+      if (existingValidUntil > now) {
+        // QR code is still valid, return it
+        const redirectPath = redirect_url || "/scan";
+        const qrUrl = `${APP_URL}${redirectPath}?token=${existingQr.qr_code}`;
+        const qrDataUrl = await QRCode.toDataURL(qrUrl);
+
+        const response: GenerateQrResponse = {
+          message: "Existing QR code retrieved successfully",
+          qr_url: qrDataUrl,
+          course_id: courseSession.course_id,
+          course_session_id: courseSession.course_session_id,
+          week_number,
+          valid_until: existingValidUntil.toISOString(),
+        };
+        return NextResponse.json(response);
+      } else {
+        // QR code has expired, delete it
+        const deleteQrSql = `
+          DELETE FROM session_qr_codes
+          WHERE course_session_id = ? AND week_number = ?
+        `;
+        await rawQuery(deleteQrSql, [courseSessionId, week_number]);
+      }
+    }
+
+    // Step 4: Generate new token
     const token = crypto.randomBytes(6).toString("hex"); // 12-char token
 
-    // Step 4: Generate QR Code
+    // Step 5: Generate QR Code
     const redirectPath = redirect_url || "/scan";
     const qrUrl = `${APP_URL}${redirectPath}?token=${token}`;
     const qrDataUrl = await QRCode.toDataURL(qrUrl);
-    // Step 5: Store in DB
+
+    // Step 6: Store in DB
     const now = new Date();
     const validUntil = new Date(now.getTime() + 10 * 60 * 1000); // 10 minutes
 
@@ -147,8 +188,9 @@ export async function POST(
       week_number,
       radius ?? 100,
     ]);
+
     const response: GenerateQrResponse = {
-      message: "Generate Qr sucessfully",
+      message: "New QR code generated successfully",
       qr_url: qrDataUrl,
       course_id: courseSession.course_id,
       course_session_id: courseSession.course_session_id,
@@ -156,13 +198,7 @@ export async function POST(
       valid_until: validUntil.toISOString(),
     };
     return NextResponse.json(response);
-  } catch (err: any) {
-    if (err.message === "DUPLICATE_ENTRY") {
-      return NextResponse.json(
-        { message: "QR code already exists for this session and week." },
-        { status: 409 }
-      );
-    }
+  } catch {
     return NextResponse.json(
       { message: "Internal Server Error" },
       { status: 500 }
