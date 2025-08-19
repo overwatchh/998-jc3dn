@@ -1,22 +1,17 @@
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CourseSessionResponse } from "@/types/course";
-import { Dispatch, SetStateAction } from "react";
-import { QRGenScreens, SelectedCourse } from "../qr-generation/page";
 import { ArrowLeft } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { QRGenScreens } from "../qr-generation/page";
+import { useQrGenContext } from "../qr-generation/qr-gen-context";
 
 interface Props {
   courses: CourseSessionResponse;
-  setCurrentScreen: Dispatch<SetStateAction<QRGenScreens>>;
-  setSelectedCourse: Dispatch<SetStateAction<SelectedCourse | undefined>>;
 }
 
-export function CoursesList({
-  courses,
-  setCurrentScreen,
-  setSelectedCourse,
-}: Props) {
+export function CoursesList({ courses }: Props) {
+  const { setCurrentScreen, setSelectedCourse } = useQrGenContext();
   function handleCourseSelection(course: {
     id: number;
     name: string;

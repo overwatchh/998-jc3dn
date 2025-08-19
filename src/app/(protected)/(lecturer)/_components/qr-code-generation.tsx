@@ -1,5 +1,6 @@
 "use client";
 
+import { useQrGenContext } from "@/app/(protected)/(lecturer)/qr-generation/qr-gen-context";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -32,24 +33,18 @@ import {
   Share2,
 } from "lucide-react";
 import Image from "next/image";
-import { Dispatch, SetStateAction, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { QRGenScreens, SelectedCourse } from "../qr-generation/page";
+import { QRGenScreens } from "../qr-generation/page";
 import { useGenerateQr } from "../qr-generation/queries";
 
 interface Props {
   sessionId: number;
   weekNumber: number;
-  setCurrentScreen: Dispatch<SetStateAction<QRGenScreens>>;
-  setSelectedCourse: Dispatch<SetStateAction<SelectedCourse | undefined>>;
 }
 
-export function QrCodeGeneration({
-  sessionId,
-  weekNumber,
-  setCurrentScreen,
-  setSelectedCourse,
-}: Props) {
+export function QrCodeGeneration({ sessionId, weekNumber }: Props) {
+  const { setCurrentScreen, setSelectedCourse } = useQrGenContext();
   const [qrType, setQrType] = useState("check-in");
   const [validityDuration, setValidityDuration] = useState(15);
   const [attendanceType, setAttendanceType] = useState("mandatory");
