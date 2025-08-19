@@ -109,7 +109,7 @@ CREATE TABLE campus (
 CREATE TABLE room (
   id INT AUTO_INCREMENT PRIMARY KEY,
   building_number INT NOT NULL,
-  name VARCHAR(36) NOT NULL,
+  building_name VARCHAR(36) NOT NULL,
   room_number INT NOT NULL,
   campus_id INT NOT NULL,
   description VARCHAR(128),
