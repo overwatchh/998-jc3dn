@@ -47,87 +47,114 @@ INSERT INTO `session` (`id`, `expiresAt`, `token`, `createdAt`, `updatedAt`, `ip
 ('ThWUWLhjpG0Fay9xGQZqVA2Nd7xwTmjE', '2025-08-13 13:04:02', 'DRKFOqTddN76jQ2aKaG1wJZL3RnIt5Op', '2025-08-06 13:04:02', '2025-08-06 13:04:02', '', '', 'QNZ4aS743Pn4hUsd0dskFnnAUQ3JIxaw'),
 ('vHvvwQCPXFbSupgRMtLjTpSuBJ9U0l1V', '2025-08-13 13:03:20', 'sEkimNwmWYSGmNLQDCAbuDyKUvZIoG1r', '2025-08-06 13:03:20', '2025-08-06 13:03:20', '', '', 'hrEpeIa27ITirYij0FJRAYgbMledKcuw');
 
+-- Campus
+INSERT INTO campus (id, name) VALUES
+(1, 'Wollongong'),
+(2, 'Sydney');
+
+-- Rooms
+INSERT INTO room (building_number, room_number, description, latitude, longitude, campus_id) VALUES
+('17', '101', 'Library', -34.406735319735034, 150.87855122064795, 1),
+('20', '102', 'Building 20', -34.405756696459065, 150.8784914211785, 1),
+('14', '201', 'Building 14', -34.40637101770338, 150.8801386108864, 1),
+('17', '202', 'Building 17', -34.40727843969014, 150.87895838559652, 1),
+('2', '103', 'Building 2', -34.40661777021882, 150.88137803896953, 1),
+('3', '103', 'Building 3', -34.40599667280061, 150.8823234816749, 1),
+('22', '103', 'Building 22', -34.404630436746494, 150.87661222539015, 1),
+('40', '103', 'Building 40', -34.4062537916668, 150.87683726956962, 2),
+('35', '103', 'Building 35', -34.40582005010667, 150.88081766767468, 2),
+('67', '202', 'Building 67', -34.40458820292591, 150.87731246467433, 2);
+
 -- Semesters
-INSERT INTO semesters (id, name, year) VALUES
+INSERT INTO semester (id, name, year) VALUES
 (1, 'spring', 2024),
 (2, 'autumn', 2025),
 (3, 'spring', 2025);
 
--- Courses
-INSERT INTO courses (name, code, semester_id, status) VALUES
-('Project management', 'CSIT883', 1, 'finished'),
-('Database management', 'CSIT882', 2, 'finished'),
-('Research methodology', 'CSIT940', 3, 'active'),
-('Web server programming DTN939', 'MTS9307', 3, 'active'),
-('Computer vision algorithms and systems', 'CSCI935', 3, 'active');
-
--- Course Lecturers
-INSERT INTO course_lecturers (course_id, lecturer_id) VALUES
-(1, 'hrEpeIa27ITirYij0FJRAYgbMledKcuw'),
-(2, 'Pl3aUloS8SowYGhvBTnUH2nocxPPXE41'),
-(3, 'QNZ4aS743Pn4hUsd0dskFnnAUQ3JIxaw'),
-(4, 'hrEpeIa27ITirYij0FJRAYgbMledKcuw'),
-(5, 'Pl3aUloS8SowYGhvBTnUH2nocxPPXE41');
-
--- Locations
-INSERT INTO locations (building_name, room_number, description, latitude, longitude) VALUES
-('Lib', '101', 'Library', -34.406735319735034, 150.87855122064795),
-('20', '102', 'Building 20', -34.405756696459065, 150.8784914211785),
-('14', '201', 'Building 14', -34.40637101770338, 150.8801386108864),
-('17', '202', 'Building 17', -34.40727843969014, 150.87895838559652),
-('2', '103', 'Building 2', -34.40661777021882, 150.88137803896953),
-('3', '103', 'Building 3', -34.40599667280061, 150.8823234816749),
-('22', '103', 'Building 22', -34.404630436746494, 150.87661222539015),
-('40', '103', 'Building 40', -34.4062537916668, 150.87683726956962),
-('35', '103', 'Building 35', -34.40582005010667, 150.88081766767468),
-('67', '202', 'Building 67', -34.40458820292591, 150.87731246467433);
-
--- Course Sessions (1 lecture + 2 labs each course)
-INSERT INTO course_sessions (course_id, type, day_of_week, start_time, end_time, location_id) VALUES
--- CSIT883
-(1, 'lecture', 'Monday', '09:00:00', '11:00:00', 1),
-(1, 'lab', 'Wednesday', '13:00:00', '15:00:00', 2),
-(1, 'lab', 'Friday', '10:00:00', '12:00:00', 3),
--- CSIT882
-(2, 'lecture', 'Tuesday', '08:00:00', '10:00:00', 4),
-(2, 'lab', 'Thursday', '14:00:00', '16:00:00', 5),
-(2, 'lab', 'Friday', '12:00:00', '14:00:00', 6),
--- CSIT940
-(3, 'lecture', 'Wednesday', '11:00:00', '13:00:00', 7),
-(3, 'lab', 'Thursday', '10:00:00', '12:00:00', 8),
-(3, 'lab', 'Friday', '14:00:00', '16:00:00', 9),
--- MTS9307
-(4, 'lecture', 'Monday', '13:00:00', '15:00:00', 10),
-(4, 'lab', 'Tuesday', '10:00:00', '12:00:00', 1),
-(4, 'lab', 'Thursday', '08:00:00', '10:00:00', 2),
--- CSCI935
-(5, 'lecture', 'Friday', '09:00:00', '11:00:00', 3),
-(5, 'lab', 'Wednesday', '15:00:00', '17:00:00', 4),
-(5, 'lab', 'Thursday', '16:00:00', '18:00:00', 5);
+-- Subjects
+INSERT INTO subject (id, name, code, semester_id, status) VALUES
+(1, 'Project management', 'CSIT883', 1, 'finished'),
+(2, 'Database management', 'CSIT882', 2, 'finished'),
+(3, 'Research methodology', 'CSIT940', 3, 'active'),
+(4, 'Web server programming DTN939', 'MTS9307', 3, 'active'),
+(5, 'Computer vision algorithms and systems', 'CSCI935', 3, 'active');
 
 -- enrollments — 5 students assigned to 5 courses
-INSERT INTO enrollments (student_id, course_id) VALUES
--- student 1, student 2 enrolled course 1
+INSERT INTO enrolment (student_id, subject_id) VALUES
+-- student 1, student 2 enrolled subject 1
 ('MPuBeIdXwIoPhceUBtKLFEiFxoAzE3dd', 1), ('zkpUwtQqTxeezHJgkXVtW8n2lyf65AI5', 1),
- -- student 3, student 4 enrolled course 2
+ -- student 3, student 4 enrolled subject 2
 ('UbM08mzzakyMBZFaQ46MB4ocQpd0gNUp', 2), ('xSaq6zsZubsuIpDWzyDGGi39Q1q3iiv5', 2),
--- student 5 enrolled course 3
+-- student 5 enrolled subject 3
 ('w72ehe9ERt9ezeQNLT1Bf3HOoJNbpCsx', 3),
--- student 1,2,3 enrolled course 4
+-- student 1,2,3 enrolled subject 4
 ('MPuBeIdXwIoPhceUBtKLFEiFxoAzE3dd', 4), ('zkpUwtQqTxeezHJgkXVtW8n2lyf65AI5', 4),('UbM08mzzakyMBZFaQ46MB4ocQpd0gNUp',4),
--- student 3,4,5 enrolled course 5
+-- student 3,4,5 enrolled subject 5
 ('UbM08mzzakyMBZFaQ46MB4ocQpd0gNUp', 5), ('xSaq6zsZubsuIpDWzyDGGi39Q1q3iiv5', 5), ('w72ehe9ERt9ezeQNLT1Bf3HOoJNbpCsx', 5);
 
--- QR codes for course 5
--- INSERT INTO session_qr_codes (course_session_id, qr_code, generated_at, valid_until, week_number) VALUES
--- (13, 'QR_13_2_6477e554', '2025-07-14 08:00:00', '2025-07-14 23:59:59', 2),
--- (14, 'QR_14_2_42054543', '2025-07-14 08:00:00', '2025-07-14 23:59:59', 2),
--- (15, 'QR_15_2_ae879978', '2025-07-14 08:00:00', '2025-07-14 23:59:59', 2);
+-- Course Sessions (1 lecture + 2 labs each course)
+INSERT INTO study_session (id, type, day_of_week, start_time, end_time, room_id) VALUES
+-- CSIT883
+(1, 'lecture', 'Monday', '09:00:00', '11:00:00', 1),
+(2, 'lab', 'Wednesday', '13:00:00', '15:00:00', 2),
+(3, 'lab', 'Friday', '10:00:00', '12:00:00', 3),
+-- CSIT882
+(4, 'lecture', 'Tuesday', '08:00:00', '10:00:00', 4),
+(5, 'lab', 'Thursday', '14:00:00', '16:00:00', 5),
+(6, 'lab', 'Friday', '12:00:00', '14:00:00', 6),
+-- CSIT940
+(7, 'lecture', 'Wednesday', '11:00:00', '13:00:00', 7),
+(8, 'lab', 'Thursday', '10:00:00', '12:00:00', 8),
+(9, 'lab', 'Friday', '14:00:00', '16:00:00', 9),
+-- MTS9307
+(10, 'lecture', 'Monday', '13:00:00', '15:00:00', 10),
+(11, 'lab', 'Tuesday', '10:00:00', '12:00:00', 1),
+(12, 'lab', 'Thursday', '08:00:00', '10:00:00', 2),
+-- CSCI935
+(13, 'lecture', 'Friday', '09:00:00', '11:00:00', 3),
+(14, 'lab', 'Wednesday', '15:00:00', '17:00:00', 4),
+(15, 'lab', 'Thursday', '16:00:00', '18:00:00', 5);
 
--- INSERT INTO attendance (student_id, session_id, qr_code_id, checkin_time, latitude, longitude) VALUES
--- (1, 13, 1, '2025-07-14 09:30:00', -34.4072165, 150.8793267),
--- (2, 14, 2, '2025-07-14 10:15:00', -34.4071712, 150.8797944),
--- (5, 15, 3, '2025-07-14 10:45:00', -34.4074413, 150.8796216);
+-- Subject-StudySession
+INSERT INTO subject_study_session (subject_id, study_session_id) VALUES
+(1, 1), (1, 2), (1, 3),
+(2, 4), (2, 5), (2, 6),
+(3, 7), (3, 8), (3, 9),
+(4, 10), (4, 11), (4, 12),
+-- subject MTS9307(subject_id=4) students also attend lectures of CSCI935 (study_session_id=13)
+(5, 13), (4, 13), (5, 14), (5, 15);
 
+-- Student-StudySession
+INSERT INTO student_study_session (student_id, study_session_id) VALUES
+-- Students 3 and 4 enrolled in CSCI935 lab on Wednesday session
+('UbM08mzzakyMBZFaQ46MB4ocQpd0gNUp', 14),
+('xSaq6zsZubsuIpDWzyDGGi39Q1q3iiv5', 14),
+-- Student 5 enrolled in CSCI935 lab on Thursday session
+('w72ehe9ERt9ezeQNLT1Bf3HOoJNbpCsx', 15);
 
+-- Lectuer study session
+INSERT INTO lecturer_study_session (study_session_id, lecturer_id) VALUES
+(10, 'hrEpeIa27ITirYij0FJRAYgbMledKcuw'),
+(11, 'Pl3aUloS8SowYGhvBTnUH2nocxPPXE41'),
+(13, 'QNZ4aS743Pn4hUsd0dskFnnAUQ3JIxaw'),
+(14, 'hrEpeIa27ITirYij0FJRAYgbMledKcuw'),
+(15, 'Pl3aUloS8SowYGhvBTnUH2nocxPPXE41');
+
+-- QR Codes 
+INSERT INTO qr_code (id, qr_token) VALUES
+(1, 'QR12345678'),
+(2, 'QR23456789'),
+(3, 'QR34567890');
+
+-- QR Code - Study Session mapping
+-- CSCI935 week 1 lucture, tutorial, lab 
+INSERT INTO qr_code_study_session (study_session_id, qr_code_id,week_number) VALUES
+(13, 1, 1),
+(14,2, 1),
+(15,3, 1);
+
+-- Checkin records for students
+-- Student 3 checked in to CSCI935 lab week 1 on Wednesday
+INSERT INTO checkin (student_id, qr_code_study_session_id, verify_distance) VALUES
+('UbM08mzzakyMBZFaQ46MB4ocQpd0gNUp', 2, FALSE);
 
