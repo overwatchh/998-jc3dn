@@ -5,16 +5,16 @@ USE qr_attendance_app;
 -- Password is Abcd@1234
 --
 
-INSERT INTO `user` (`id`, `name`, `email`, `emailVerified`, `image`, `createdAt`, `updatedAt`, `role`) VALUES
-('h8nKiTVlYKqt1FpQxHWG6IUDDugNu9NS', 'Admin 1', 'adm1@uowmail.edu.com', 0, NULL, '2025-08-06 13:04:26', '2025-08-06 13:04:26', 'admin'),
-('hrEpeIa27ITirYij0FJRAYgbMledKcuw', 'Lecturer 1', 'lec1@uowmail.edu.com', 0, NULL, '2025-08-06 13:03:20', '2025-08-06 13:03:20', 'lecturer'),
-('Pl3aUloS8SowYGhvBTnUH2nocxPPXE41', 'Lecturer 2', 'lec2@uowmail.edu.com', 0, NULL, '2025-08-06 13:03:53', '2025-08-06 13:03:53', 'lecturer'),
-('QNZ4aS743Pn4hUsd0dskFnnAUQ3JIxaw', 'Lecturer 3', 'lec3@uowmail.edu.com', 0, NULL, '2025-08-06 13:04:02', '2025-08-06 13:04:02', 'lecturer'),
-('MPuBeIdXwIoPhceUBtKLFEiFxoAzE3dd', 'Student 1', 'stu1@uowmail.edu.com', 0, NULL, '2025-08-06 13:00:50', '2025-08-06 13:00:50', 'student'),
-('zkpUwtQqTxeezHJgkXVtW8n2lyf65AI5', 'Student 2', 'stu2@uowmail.edu.com', 0, NULL, '2025-08-06 13:02:07', '2025-08-06 13:02:07', 'student'),
-('UbM08mzzakyMBZFaQ46MB4ocQpd0gNUp', 'Student 3', 'stu3@uowmail.edu.com', 0, NULL, '2025-08-06 13:02:18', '2025-08-06 13:02:18', 'student'),
-('xSaq6zsZubsuIpDWzyDGGi39Q1q3iiv5', 'Student 4', 'stu4@uowmail.edu.com', 0, NULL, '2025-08-06 13:02:28', '2025-08-06 13:02:28', 'student'),
-('w72ehe9ERt9ezeQNLT1Bf3HOoJNbpCsx', 'Student 5', 'stu5@uowmail.edu.com', 0, NULL, '2025-08-06 13:02:37', '2025-08-06 13:02:37', 'student');
+INSERT INTO `user` (`id`, `name`, `email`, `emailVerified`, `image`, `type`, `createdAt`, `updatedAt`, `role`) VALUES
+('h8nKiTVlYKqt1FpQxHWG6IUDDugNu9NS', 'Admin 1', 'adm1@uowmail.edu.com', 0, NULL, 'Admin', '2025-08-06 13:04:26', '2025-08-06 13:04:26', 'admin'),
+('hrEpeIa27ITirYij0FJRAYgbMledKcuw', 'Lecturer 1', 'lec1@uowmail.edu.com', 0, NULL, 'Lecturer', '2025-08-06 13:03:20', '2025-08-06 13:03:20', 'lecturer'),
+('Pl3aUloS8SowYGhvBTnUH2nocxPPXE41', 'Lecturer 2', 'lec2@uowmail.edu.com', 0, NULL, 'Lecturer', '2025-08-06 13:03:53', '2025-08-06 13:03:53', 'lecturer'),
+('QNZ4aS743Pn4hUsd0dskFnnAUQ3JIxaw', 'Lecturer 3', 'lec3@uowmail.edu.com', 0, NULL, 'Lecturer', '2025-08-06 13:04:02', '2025-08-06 13:04:02', 'lecturer'),
+('MPuBeIdXwIoPhceUBtKLFEiFxoAzE3dd', 'Student 1', 'stu1@uowmail.edu.com', 0, NULL, 'Student', '2025-08-06 13:00:50', '2025-08-06 13:00:50', 'student'),
+('zkpUwtQqTxeezHJgkXVtW8n2lyf65AI5', 'Student 2', 'stu2@uowmail.edu.com', 0, NULL, 'Student', '2025-08-06 13:02:07', '2025-08-06 13:02:07', 'student'),
+('UbM08mzzakyMBZFaQ46MB4ocQpd0gNUp', 'Student 3', 'stu3@uowmail.edu.com', 0, NULL, 'Student', '2025-08-06 13:02:18', '2025-08-06 13:02:18', 'student'),
+('xSaq6zsZubsuIpDWzyDGGi39Q1q3iiv5', 'Student 4', 'stu4@uowmail.edu.com', 0, NULL, 'Student', '2025-08-06 13:02:28', '2025-08-06 13:02:28', 'student'),
+('w72ehe9ERt9ezeQNLT1Bf3HOoJNbpCsx', 'Student 5', 'stu5@uowmail.edu.com', 0, NULL, 'Student', '2025-08-06 13:02:37', '2025-08-06 13:02:37', 'student');
 
 
 --
@@ -48,86 +48,57 @@ INSERT INTO `session` (`id`, `expiresAt`, `token`, `createdAt`, `updatedAt`, `ip
 ('vHvvwQCPXFbSupgRMtLjTpSuBJ9U0l1V', '2025-08-13 13:03:20', 'sEkimNwmWYSGmNLQDCAbuDyKUvZIoG1r', '2025-08-06 13:03:20', '2025-08-06 13:03:20', '', '', 'hrEpeIa27ITirYij0FJRAYgbMledKcuw');
 
 -- Semesters
-INSERT INTO semesters (id, name, year) VALUES
+INSERT INTO semester (id, name, year) VALUES
 (1, 'spring', 2024),
 (2, 'autumn', 2025),
 (3, 'spring', 2025);
 
--- Courses
-INSERT INTO courses (name, code, semester_id, status) VALUES
-('Project management', 'CSIT883', 1, 'finished'),
-('Database management', 'CSIT882', 2, 'finished'),
-('Research methodology', 'CSIT940', 3, 'active'),
-('Web server programming DTN939', 'MTS9307', 3, 'active'),
-('Computer vision algorithms and systems', 'CSCI935', 3, 'active');
+--subject
+INSERT INTO subject (id, code, name, attendance_thresh, semester_id) VALUES
+(1, 'CSIT883', 'Project management', 80, 1),
+(2, 'CSIT882', 'Database management', 80, 2),
+(3, 'CSIT940', 'Research methodology', 80, 2),
+(4, 'MTS9307', 'Web server programming DTN939', 80, 3),
+(5, 'CSCI935', 'Computer vision algorithms and systems', 80, 3);
 
--- Course Lecturers
-INSERT INTO course_lecturers (course_id, lecturer_id) VALUES
-(1, 'hrEpeIa27ITirYij0FJRAYgbMledKcuw'),
-(2, 'Pl3aUloS8SowYGhvBTnUH2nocxPPXE41'),
-(3, 'QNZ4aS743Pn4hUsd0dskFnnAUQ3JIxaw'),
-(4, 'hrEpeIa27ITirYij0FJRAYgbMledKcuw'),
-(5, 'Pl3aUloS8SowYGhvBTnUH2nocxPPXE41');
+INSERT INTO study_session (id, name, coordinator_id) VALUES
+(1, 'Project Management S225', 'hrEpeIa27ITirYij0FJRAYgbMledKcuw'),
+(2, 'Database management S225', 'hrEpeIa27ITirYij0FJRAYgbMledKcuw'),
+(3, 'Research methodology S225', 'QNZ4aS743Pn4hUsd0dskFnnAUQ3JIxaw'),
+(4, 'Web server programming S225', 'QNZ4aS743Pn4hUsd0dskFnnAUQ3JIxaw'),
+(5, 'Computer vision', 'Pl3aUloS8SowYGhvBTnUH2nocxPPXE41');
 
--- Locations
-INSERT INTO locations (building_name, room_number, description, latitude, longitude) VALUES
-('Lib', '101', 'Library', -34.406735319735034, 150.87855122064795),
-('20', '102', 'Building 20', -34.405756696459065, 150.8784914211785),
-('14', '201', 'Building 14', -34.40637101770338, 150.8801386108864),
-('17', '202', 'Building 17', -34.40727843969014, 150.87895838559652),
-('2', '103', 'Building 2', -34.40661777021882, 150.88137803896953),
-('3', '103', 'Building 3', -34.40599667280061, 150.8823234816749),
-('22', '103', 'Building 22', -34.404630436746494, 150.87661222539015),
-('40', '103', 'Building 40', -34.4062537916668, 150.87683726956962),
-('35', '103', 'Building 35', -34.40582005010667, 150.88081766767468),
-('67', '202', 'Building 67', -34.40458820292591, 150.87731246467433);
+INSERT INTO session_enrolment (enrolment_id, subject_id, study_session_id) VALUES
+(1, 1, 1),
+(2, 2, 2),
+(3, 3, 3),
+(4, 4, 4),
+(5, 5, 5);
 
--- Course Sessions (1 lecture + 2 labs each course)
-INSERT INTO course_sessions (course_id, type, day_of_week, start_time, end_time, location_id) VALUES
+INSERT INTO campus (id, campus_name) VALUES
+(1, 'University of Wollongong Wollongong Campus');
+
+INSERT INTO room (id, building_number, building_name, room_number, campus_id, description, latitude, longitude, room_size) VALUES
+(1, 16, 'Library', 101, 1, NULL, -34.406735319735034, 150.87855122064795, 20),
+(2, 20, 'Building 20', 102, 1, NULL, -34.405756696459065, 150.8784914211785, 20),
+(3, 14, 'Building 14', 201, 1, NULL, -34.40637101770338, 150.8801386108864, 20),
+(4, 17, 'Building 17', 202, 1, NULL, -34.40727843969014, 150.87895838559652, 20),
+(5, 2, 'Building 2', 103, 1, NULL, -34.40661777021882, 150.88137803896953, 20),
+(6, 3, 'Building 3', 103, 1, NULL, -34.40599667280061, 150.8823234816749, 20),
+(7, 22, 'Building 22', 103, 1, NULL, -34.404630436746494, 150.87661222539015, 20),
+(8, 40, 'Building 40', 103, 1, NULL, -34.4062537916668, 150.87683726956962, 20),
+(9, 35, 'Building 35', 103, 1, NULL, -34.40582005010667, 150.88081766767468, 20),
+(10, 67, 'Building 67', 202, 1, NULL, -34.40458820292591, 150.87731246467433, 20);
+
+INSERT INTO class (id, study_session_id, enrollable, type, day_of_week, start_time, end_time, total_classes, room_id, teacher_id) VALUE
 -- CSIT883
-(1, 'lecture', 'Monday', '09:00:00', '11:00:00', 1),
-(1, 'lab', 'Wednesday', '13:00:00', '15:00:00', 2),
-(1, 'lab', 'Friday', '10:00:00', '12:00:00', 3),
--- CSIT882
-(2, 'lecture', 'Tuesday', '08:00:00', '10:00:00', 4),
-(2, 'lab', 'Thursday', '14:00:00', '16:00:00', 5),
-(2, 'lab', 'Friday', '12:00:00', '14:00:00', 6),
--- CSIT940
-(3, 'lecture', 'Wednesday', '11:00:00', '13:00:00', 7),
-(3, 'lab', 'Thursday', '10:00:00', '12:00:00', 8),
-(3, 'lab', 'Friday', '14:00:00', '16:00:00', 9),
--- MTS9307
-(4, 'lecture', 'Monday', '13:00:00', '15:00:00', 10),
-(4, 'lab', 'Tuesday', '10:00:00', '12:00:00', 1),
-(4, 'lab', 'Thursday', '08:00:00', '10:00:00', 2),
--- CSCI935
-(5, 'lecture', 'Friday', '09:00:00', '11:00:00', 3),
-(5, 'lab', 'Wednesday', '15:00:00', '17:00:00', 4),
-(5, 'lab', 'Thursday', '16:00:00', '18:00:00', 5);
-
--- enrollments — 5 students assigned to 5 courses
-INSERT INTO enrollments (student_id, course_id) VALUES
--- student 1, student 2 enrolled course 1
-('MPuBeIdXwIoPhceUBtKLFEiFxoAzE3dd', 1), ('zkpUwtQqTxeezHJgkXVtW8n2lyf65AI5', 1),
- -- student 3, student 4 enrolled course 2
-('UbM08mzzakyMBZFaQ46MB4ocQpd0gNUp', 2), ('xSaq6zsZubsuIpDWzyDGGi39Q1q3iiv5', 2),
--- student 5 enrolled course 3
-('w72ehe9ERt9ezeQNLT1Bf3HOoJNbpCsx', 3),
--- student 1,2,3 enrolled course 4
-('MPuBeIdXwIoPhceUBtKLFEiFxoAzE3dd', 4), ('zkpUwtQqTxeezHJgkXVtW8n2lyf65AI5', 4),('UbM08mzzakyMBZFaQ46MB4ocQpd0gNUp',4),
--- student 3,4,5 enrolled course 5
-('UbM08mzzakyMBZFaQ46MB4ocQpd0gNUp', 5), ('xSaq6zsZubsuIpDWzyDGGi39Q1q3iiv5', 5), ('w72ehe9ERt9ezeQNLT1Bf3HOoJNbpCsx', 5);
-
--- QR codes for course 5
--- INSERT INTO session_qr_codes (course_session_id, qr_code, generated_at, valid_until, week_number) VALUES
--- (13, 'QR_13_2_6477e554', '2025-07-14 08:00:00', '2025-07-14 23:59:59', 2),
--- (14, 'QR_14_2_42054543', '2025-07-14 08:00:00', '2025-07-14 23:59:59', 2),
--- (15, 'QR_15_2_ae879978', '2025-07-14 08:00:00', '2025-07-14 23:59:59', 2);
-
--- INSERT INTO attendance (student_id, session_id, qr_code_id, checkin_time, latitude, longitude) VALUES
--- (1, 13, 1, '2025-07-14 09:30:00', -34.4072165, 150.8793267),
--- (2, 14, 2, '2025-07-14 10:15:00', -34.4071712, 150.8797944),
--- (5, 15, 3, '2025-07-14 10:45:00', -34.4074413, 150.8796216);
+(1, 1, FALSE, 'Lecture', 'Monday', '09:00:00', '11:00:00', 12, 5, 'Pl3aUloS8SowYGhvBTnUH2nocxPPXE41'),
+(2, 1, TRUE, 'Lab', 'Monday', '08:00:00', '09:00:00', 12, 2, 'Pl3aUloS8SowYGhvBTnUH2nocxPPXE41');
+(3, 1, FALSE, 'Lecture', 'Wednesday', '09:00:00', '11:00:00', 12, 5, 'Pl3aUloS8SowYGhvBTnUH2nocxPPXE41'),
+ 
+INSERT INTO subject_enrolment (id, student_id, subject_id, tutorial_enrolment_id) VALUES
+(1, 'zkpUwtQqTxeezHJgkXVtW8n2lyf65AI5', 1, 1)
+(2, 'zkpUwtQqTxeezHJgkXVtW8n2lyf65AI5', 1, FALSE)
 
 
 
