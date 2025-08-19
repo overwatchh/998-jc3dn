@@ -76,18 +76,6 @@ CREATE TABLE subject (
     FOREIGN KEY (semester_id) REFERENCES semester(id),
 );
 
--- Subject enrolment -- details of students enrolling in subjects, shows which subject they are associated with,
--- also shows which labs they are enrolled in
-CREATE TABLE subject_enrolment (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    student_id VARCHAR(36) NOT NULL,
-    subject_id INT NOT NULL,
-    tutorial_enrolment_id INT, -- which tutorial, if any, they are enrolled in
-    FOREIGN KEY (student_id) REFERENCES `user` (`id`),
-    FOREIGN KEY (subject_id) REFERENCES subject(id),
-    FOREIGN KEY (tutorial_enrolment_id) REFERENCES class(id),
-    UNIQUE (student_id, subject_id)
-);
 
 --study session the actual subject session the users enrol into, consists of multiple subjects that attend the same lectures
 --all lectures tutorials and labs are for this study_session
@@ -150,6 +138,20 @@ CREATE TABLE class (
     FOREIGN KEY (room_id) REFERENCES room(id)
 );
 
+-- Subject enrolment -- details of students enrolling in subjects, shows which subject they are associated with,
+-- also shows which labs they are enrolled in
+CREATE TABLE subject_enrolment (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    student_id VARCHAR(36) NOT NULL,
+    subject_id INT NOT NULL,
+    tutorial_enrolment_id INT, -- which tutorial, if any, they are enrolled in
+    FOREIGN KEY (student_id) REFERENCES `user` (`id`),
+    FOREIGN KEY (subject_id) REFERENCES subject(id),
+    FOREIGN KEY (tutorial_enrolment_id) REFERENCES class(id),
+    UNIQUE (student_id, subject_id)
+);
+
+
 
 -- each individual event or istance of a class element (lecture, lab, tutorial) being taughts, e.g. one for each week
 CREATE TABLE event (
@@ -179,7 +181,6 @@ CREATE TABLE attendance (
     longitude DECIMAL(10, 7) NOT NULL,
     offline_student BOOLEAN NOT NULL DEFAULT TRUE,
     FOREIGN KEY (student_id) REFERENCES `user` (`id`),
-    FOREIGN KEY (week) REFERENCES event(series),
     FOREIGN KEY (event_token) REFERENCES event(token)
 );
 
