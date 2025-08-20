@@ -14,8 +14,9 @@ import { GoogleIcon } from "@/components/ui/icons/google-icon";
 import { Input } from "@/components/ui/input";
 import { useLogin } from "@/hooks/useAuth";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { AxiosError } from "axios";
 import { ArrowRight, Eye, EyeOff } from "lucide-react";
-import { redirect, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -43,16 +44,23 @@ export function LoginForm() {
 
   const [showPassword, setShowPassword] = useState(false);
 
-  const { mutateAsync: login, isPending: isLoading, isError } = useLogin();
+  const {
+    mutateAsync: login,
+    isPending: isLoading,
+    isError: _isError,
+  } = useLogin();
 
   const handleEmailLogin: SubmitHandler<SigninInputs> = async data => {
-    await login(data);
-
-    if (isError) {
-      toast.error("Signin failed. Check your server log for more details");
+    try {
+      await login(data);
+      router.push("/");
+    } catch (err: unknown) {
+      let message = "An unexpected error occurred.";
+      if (err instanceof AxiosError) {
+        message = err.response?.data?.message || message;
+      }
+      toast.error(message);
     }
-
-    redirect("/");
   };
 
   const router = useRouter();
