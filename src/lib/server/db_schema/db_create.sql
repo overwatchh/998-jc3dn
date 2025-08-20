@@ -19,7 +19,8 @@ CREATE TABLE `user` (
   `role` TEXT
 );
 
---carried from previous version
+-- carried from previous version
+
 CREATE TABLE `account` (
   `id` VARCHAR(36) NOT NULL PRIMARY KEY,
   `accountId` TEXT NOT NULL,
@@ -46,7 +47,7 @@ CREATE TABLE `session` (
   `ipAddress` TEXT,
   `userAgent` TEXT,
   `userId` VARCHAR(36) NOT NULL,
-  FOREIGN KEY (`userId`) REFERENCES `user` (`id`) ON DELETE CASCADE
+  FOREIGN KEY (`userId`) REFERENCES `user`(`id`) ON DELETE CASCADE
 );
 
 CREATE TABLE `verification` (
@@ -73,12 +74,12 @@ CREATE TABLE subject (
     name VARCHAR(36) NOT NULL,
     attendance_thresh INT NOT NULL,
     semester_id INT NOT NULL,
-    FOREIGN KEY (semester_id) REFERENCES semester(id),
+    FOREIGN KEY (semester_id) REFERENCES semester(id)
 );
 
 
---study session the actual subject session the users enrol into, consists of multiple subjects that attend the same lectures
---all lectures tutorials and labs are for this study_session
+-- study session the actual subject session the users enrol into, consists of multiple subjects that attend the same lectures
+-- all lectures tutorials and labs are for this study_session
 CREATE TABLE study_session (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(36) NOT NULL,
@@ -87,8 +88,8 @@ CREATE TABLE study_session (
 );
 
 
---session enrolment, contains the details of which study_sessions each subject is part of
---more than one subject can be enroled in each study session
+-- session enrolment, contains the details of which study_sessions each subject is part of
+-- more than one subject can be enroled in each study session
 CREATE TABLE session_enrolment (
     enrolment_id INT AUTO_INCREMENT PRIMARY KEY,
     subject_id INT NOT NULL,
@@ -99,7 +100,7 @@ CREATE TABLE session_enrolment (
 );
 
 
---campus
+-- campus
 CREATE TABLE campus (
   id INT AUTO_INCREMENT PRIMARY KEY,
   campus_name VARCHAR(36) NOT NULL
@@ -132,9 +133,9 @@ CREATE TABLE class (
     end_time TIME NOT NULL,
     total_classes INT NOT NULL,
     room_id INT NOT NULL,
-    teacher_id INT NOT NULL,
+    teacher_id VARCHAR(36) NOT NULL,
     FOREIGN KEY (study_session_id) REFERENCES study_session(id),
-    FOREIGN KEY (teacher_id) REFERENCES `user`(id),
+    FOREIGN KEY (teacher_id) REFERENCES `user`(`id`),
     FOREIGN KEY (room_id) REFERENCES room(id)
 );
 
@@ -158,7 +159,7 @@ CREATE TABLE event (
   token VARCHAR(128) PRIMARY KEY, -- encoded text used as unique ID and random number for QR code address
   class_id INT NOT NULL,
   created_at DATETIME NOT NULL,
---series number, most events are one in a sequence for a class (e.g. weekly lectures), each gets their own number within that series
+-- series number, most events are one in a sequence for a class (e.g. weekly lectures), each gets their own number within that series
   series INT NOT NULL,
   valid_until DATETIME NOT NULL,
   valid_radius INT NOT NULL DEFAULT 50,
@@ -170,7 +171,7 @@ CREATE TABLE event (
 
 
 
---checkin -- attendance log
+-- checkin -- attendance log
 CREATE TABLE attendance (
     id INT AUTO_INCREMENT PRIMARY KEY,
     student_id VARCHAR(36) NOT NULL,
