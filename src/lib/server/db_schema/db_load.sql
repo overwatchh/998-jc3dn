@@ -53,7 +53,7 @@ INSERT INTO semester (id, name, year) VALUES
 (2, 'autumn', 2025),
 (3, 'spring', 2025);
 
---subject
+-- subject
 INSERT INTO subject (id, code, name, attendance_thresh, semester_id) VALUES
 (1, 'CSIT883', 'Project management', 80, 1),
 (2, 'CSIT882', 'Database management', 80, 2),
@@ -93,12 +93,12 @@ INSERT INTO room (id, building_number, building_name, room_number, campus_id, de
 INSERT INTO class (id, study_session_id, enrollable, type, day_of_week, start_time, end_time, total_classes, room_id, teacher_id) VALUE
 -- CSIT883
 (1, 1, FALSE, 'Lecture', 'Monday', '09:00:00', '11:00:00', 12, 5, 'Pl3aUloS8SowYGhvBTnUH2nocxPPXE41'),
-(2, 1, TRUE, 'Lab', 'Monday', '08:00:00', '09:00:00', 12, 2, 'Pl3aUloS8SowYGhvBTnUH2nocxPPXE41');
-(3, 1, FALSE, 'Lecture', 'Wednesday', '09:00:00', '11:00:00', 12, 5, 'Pl3aUloS8SowYGhvBTnUH2nocxPPXE41'),
+(2, 1, TRUE, 'Lab', 'Monday', '08:00:00', '09:00:00', 12, 2, 'Pl3aUloS8SowYGhvBTnUH2nocxPPXE41'),
+(3, 1, FALSE, 'Lecture', 'Wednesday', '09:00:00', '11:00:00', 12, 5, 'Pl3aUloS8SowYGhvBTnUH2nocxPPXE41');
  
 INSERT INTO subject_enrolment (id, student_id, subject_id, tutorial_enrolment_id) VALUES
-(1, 'zkpUwtQqTxeezHJgkXVtW8n2lyf65AI5', 1, 1)
-(2, 'zkpUwtQqTxeezHJgkXVtW8n2lyf65AI5', 1, FALSE)
+(1, 'zkpUwtQqTxeezHJgkXVtW8n2lyf65AI5', 1, 1),
+(2, 'xSaq6zsZubsuIpDWzyDGGi39Q1q3iiv5', 1, FALSE);
 
 
 
