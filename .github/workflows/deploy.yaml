@@ -4,6 +4,7 @@ on:
   push:
     branches:      
       - master      
+      - feat/qr-genration
     paths-ignore:
       - src/lib/server/db_schema/db_*.sql
 
