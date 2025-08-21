@@ -5,13 +5,19 @@ import { LoadingScreen } from "@/components/loading-skeleton";
 import { useCurrentUser } from "@/hooks/useAuth";
 import { Roles } from "@/types";
 import { redirect } from "next/navigation";
+import { useEffect, useState } from "react";
 import { InstructorDashboard } from "../(lecturer)/_components/lecturer-dashboard";
 import { StudentDashboard } from "../(student)/student-dashboard";
 
 export default function DashboardPage() {
   const { data, isLoading } = useCurrentUser();
+  const [isMounted, setIsMounted] = useState(false);
 
-  if (isLoading) return <LoadingScreen />;
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  if (isLoading || !isMounted) return <LoadingScreen />;
 
   if (!data) redirect("/login");
 
