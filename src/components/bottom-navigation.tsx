@@ -1,7 +1,4 @@
-import type React from "react";
-
 import { Button } from "@/components/ui/button";
-import { auth } from "@/lib/server/auth";
 import { Role } from "@/types";
 import {
   Bell,
@@ -11,7 +8,6 @@ import {
   Settings,
   UserCheck,
 } from "lucide-react";
-import { headers } from "next/headers";
 import Link from "next/link";
 
 interface NavItem {
@@ -55,16 +51,10 @@ function NavItem({ item, className = "" }: NavItemProps) {
   );
 }
 
-export async function BottomNavigation() {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
-  // const pathname = usePathname();
-
-  if (!session) return null;
-
-  const role = session.user.role as Role;
-
+interface Props {
+  role: Role;
+}
+export function BottomNavigation({ role }: Props) {
   const navItems: NavItem[] = [
     {
       id: "home",

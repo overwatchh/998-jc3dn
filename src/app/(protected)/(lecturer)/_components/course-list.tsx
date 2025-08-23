@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CourseSessionResponse } from "@/types/course";
 import { ArrowLeft } from "lucide-react";
-import { QRGenScreens } from "../qr-generation/page";
+import { QRGenScreens } from "../qr-generation/types";
 import { useQrGenContext } from "../qr-generation/qr-gen-context";
 
 interface Props {

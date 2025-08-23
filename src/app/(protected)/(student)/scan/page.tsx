@@ -4,6 +4,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Html5Qrcode } from "html5-qrcode";
 import { Bell, Navigation, RotateCcw, Shield } from "lucide-react";
 import { redirect } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -28,6 +29,8 @@ interface QRScannerState {
   locationStatus: "checking" | "verified" | "failed";
   confirmationWindowEnd: number | null;
   sessionToken: string;
+  cameraPermission: "pending" | "granted" | "denied";
+  qrScanner: Html5Qrcode | null;
 }
 
 export default function QRScannerScreen() {
@@ -46,6 +49,8 @@ export default function QRScannerScreen() {
     locationStatus: "checking",
     confirmationWindowEnd: null,
     sessionToken: "",
+    cameraPermission: "pending",
+    qrScanner: null,
   };
 
   const [qrScannerState, setQRScannerState] =
@@ -56,7 +61,49 @@ export default function QRScannerScreen() {
     locationAccuracy,
     locationStatus,
     confirmationWindowEnd,
+    cameraPermission,
+    qrScanner,
   } = qrScannerState;
+
+  // Request camera permission and initialize QR scanner
+  useEffect(() => {
+    const requestCameraPermission = async () => {
+      try {
+        // Check if camera is available
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const hasCamera = devices.some(device => device.kind === "videoinput");
+
+        if (!hasCamera) {
+          setQRScannerState(prev => ({ ...prev, cameraPermission: "denied" }));
+          return;
+        }
+
+        // Request camera permission
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "environment" }, // Use back camera on mobile
+        });
+
+        // Stop the stream as we don't need it directly
+        stream.getTracks().forEach(track => track.stop());
+
+        // Initialize QR scanner
+        const scanner = new Html5Qrcode("qr-reader");
+
+        setQRScannerState(prev => ({
+          ...prev,
+          cameraPermission: "granted",
+          qrScanner: scanner,
+        }));
+      } catch (error) {
+        console.error("Camera permission denied or error:", error);
+        setQRScannerState(prev => ({ ...prev, cameraPermission: "denied" }));
+      }
+    };
+
+    if (cameraPermission === "pending") {
+      requestCameraPermission();
+    }
+  }, [cameraPermission]);
 
   // Timer for confirmation window
   useEffect(() => {
@@ -97,24 +144,70 @@ export default function QRScannerScreen() {
     }
   }, [scanState, setQRScannerState]);
 
+  // Start QR scanning when camera is ready and in scanning state
   useEffect(() => {
-    if (scanState === "scanning") {
-      // Simulate QR scanning process
-      const timer = setTimeout(() => {
-        setQRScannerState(prev => ({ ...prev, scanState: "qr-success" }));
-        // Show course info for 2 seconds, then start location verification
-        setTimeout(() => {
-          setQRScannerState(prev => ({
-            ...prev,
-            scanState: "location-verify",
-          }));
-          simulateLocationVerification();
-        }, 2000);
-      }, 3000);
+    if (
+      scanState === "scanning" &&
+      cameraPermission === "granted" &&
+      qrScanner
+    ) {
+      const startScanning = async () => {
+        try {
+          await qrScanner.start(
+            { facingMode: "environment" },
+            {
+              fps: 10,
+              qrbox: { width: 250, height: 250 },
+            },
+            (decodedText: string) => {
+              // QR code detected
+              console.log("QR Code detected:", decodedText);
 
-      return () => clearTimeout(timer);
+              // Stop scanning
+              qrScanner.stop().catch(console.error);
+
+              // Update state to show QR success
+              setQRScannerState(prev => ({ ...prev, scanState: "qr-success" }));
+
+              // Show course info for 2 seconds, then start location verification
+              setTimeout(() => {
+                setQRScannerState(prev => ({
+                  ...prev,
+                  scanState: "location-verify",
+                }));
+                simulateLocationVerification();
+              }, 2000);
+            },
+            (errorMessage: string) => {
+              // Handle scanning errors (usually just no QR code found)
+              console.log("QR scan error:", errorMessage);
+            }
+          );
+        } catch (error) {
+          console.error("Failed to start QR scanning:", error);
+          setQRScannerState(prev => ({ ...prev, scanState: "error" }));
+        }
+      };
+
+      startScanning();
     }
-  }, [scanState, setQRScannerState]);
+
+    // Cleanup function to stop scanning when component unmounts or state changes
+    return () => {
+      if (qrScanner && qrScanner.isScanning) {
+        qrScanner.stop().catch(console.error);
+      }
+    };
+  }, [scanState, cameraPermission, qrScanner]);
+
+  // Cleanup QR scanner on unmount
+  useEffect(() => {
+    return () => {
+      if (qrScanner) {
+        qrScanner.stop().catch(console.error);
+      }
+    };
+  }, [qrScanner]);
 
   const simulateLocationVerification = () => {
     setQRScannerState(prev => ({
@@ -159,7 +252,15 @@ export default function QRScannerScreen() {
   };
 
   const handleRetry = () => {
-    setQRScannerState(defaultScannerState);
+    if (cameraPermission === "denied") {
+      // Reset camera permission to pending to trigger permission request again
+      setQRScannerState(_prev => ({
+        ...defaultScannerState,
+        cameraPermission: "pending",
+      }));
+    } else {
+      setQRScannerState(defaultScannerState);
+    }
   };
 
   const handleWaitForNewWindow = () => {
@@ -173,7 +274,11 @@ export default function QRScannerScreen() {
     switch (scanState) {
       case "scanning":
         return (
-          <ScanningScreen courseInfo={scannedCourse} onRetry={handleRetry} />
+          <ScanningScreen
+            courseInfo={scannedCourse}
+            onRetry={handleRetry}
+            cameraPermission={cameraPermission}
+          />
         );
       case "qr-success":
         return (

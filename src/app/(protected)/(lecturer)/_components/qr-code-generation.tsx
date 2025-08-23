@@ -35,16 +35,12 @@ import {
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { QRGenScreens } from "../qr-generation/page";
 import { useGenerateQr } from "../qr-generation/queries";
+import { QRGenScreens } from "../qr-generation/types";
 
-interface Props {
-  sessionId: number;
-  weekNumber: number;
-}
-
-export function QrCodeGeneration({ sessionId, weekNumber }: Props) {
-  const { setCurrentScreen, setSelectedCourse } = useQrGenContext();
+export function QrCodeGeneration() {
+  const { setCurrentScreen, setSelectedCourse, selectedCourse } =
+    useQrGenContext();
   const [qrType, setQrType] = useState("check-in");
   const [validityDuration, setValidityDuration] = useState(15);
   const [attendanceType, setAttendanceType] = useState("mandatory");
@@ -138,12 +134,16 @@ export function QrCodeGeneration({ sessionId, weekNumber }: Props) {
   ];
 
   const [qrCode, setQrCode] = useState<GenerateQrResponse>();
-  const { mutateAsync: generateQr } = useGenerateQr(sessionId);
+  const { mutateAsync: generateQr } = useGenerateQr(
+    selectedCourse?.sessionId || 0
+  );
   useEffect(() => {
+    if (!selectedCourse) return;
+
     async function generateQrCode() {
       try {
         const data = await generateQr({
-          week_number: weekNumber,
+          week_number: selectedCourse?.weekNumber || 1,
         });
         setQrCode(data);
       } catch (e: unknown) {
@@ -155,7 +155,7 @@ export function QrCodeGeneration({ sessionId, weekNumber }: Props) {
       }
     }
     generateQrCode();
-  }, [generateQr, weekNumber]);
+  }, [generateQr, selectedCourse]);
 
   return (
     <div className="flex min-h-screen flex-col">
