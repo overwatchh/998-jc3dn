@@ -10,7 +10,7 @@ import { GenerateQrRequestBody, GenerateQrResponse } from "@/types/qr-code";
 
 /**
  * @openapi
- * /api/lecturer/session/{id}/generate-qr:
+ * /api/lecturer/study-session/{id}/generate-qr:
  *   post:
  *     tags:
  *       - Lecturer

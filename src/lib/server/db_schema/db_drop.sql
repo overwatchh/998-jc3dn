@@ -7,6 +7,7 @@ SET FOREIGN_KEY_CHECKS = 0;
 -- Drop tables 
 DROP TABLE IF EXISTS checkin;
 DROP TABLE IF EXISTS qr_code_study_session;
+DROP TABLE IF EXISTS validity;
 DROP TABLE IF EXISTS qr_code;
 DROP TABLE IF EXISTS lecturer_study_session;
 DROP TABLE IF EXISTS student_study_session;

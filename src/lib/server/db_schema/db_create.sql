@@ -143,10 +143,42 @@ CREATE TABLE lecturer_study_session (
 CREATE TABLE qr_code (
     id INT AUTO_INCREMENT PRIMARY KEY,
     qr_token VARCHAR(12) UNIQUE NOT NULL,
-    createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    valid_until TIMESTAMP NOT NULL DEFAULT (CURRENT_TIMESTAMP + INTERVAL 5 MINUTE),
+    createdAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     valid_radius DECIMAL(5,2) DEFAULT 500.00
 );
+
+-- Validity table
+CREATE TABLE validity(
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    qr_code_id INT NOT NULL,
+    count TINYINT NOT NULL DEFAULT 1,
+    start_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    end_time DATETIME NOT NULL DEFAULT (CURRENT_TIMESTAMP + INTERVAL 30 MINUTE),
+    CONSTRAINT fk_validity_qrcode FOREIGN KEY (qr_code_id) REFERENCES qr_code(id),
+    UNIQUE (qr_code_id, start_time, end_time)
+);
+
+-- Trigger to ensure only 2 validity records per qr_code_id
+-- This trigger will prevent inserting more than 2 validity records for the same qr_code_id
+DELIMITER //
+
+CREATE TRIGGER validity_max_two
+BEFORE INSERT ON validity
+FOR EACH ROW
+BEGIN
+    DECLARE cnt INT;
+
+    SELECT COUNT(*) INTO cnt
+    FROM validity
+    WHERE qr_code_id = NEW.qr_code_id;
+
+    IF cnt >= 2 THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Only 2 records per qr_code_id are allowed';
+    END IF;
+END //
+
+DELIMITER ;
 
 -- QR Code - Study Session mapping
 CREATE TABLE qr_code_study_session (
@@ -163,7 +195,7 @@ CREATE TABLE qr_code_study_session (
 CREATE TABLE checkin (
     student_id VARCHAR(36) NOT NULL,
     qr_code_study_session_id INT NOT NULL,
-    checkin_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    checkin_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     latitude DECIMAL(16,14),
     longitude DECIMAL(16,14),
     verify_distance BOOLEAN DEFAULT TRUE,

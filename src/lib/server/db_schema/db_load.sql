@@ -77,7 +77,8 @@ INSERT INTO subject (id, name, code, semester_id, status) VALUES
 (2, 'Database management', 'CSIT882', 2, 'finished'),
 (3, 'Research methodology', 'CSIT940', 3, 'active'),
 (4, 'Web server programming DTN939', 'MTS9307', 3, 'active'),
-(5, 'Computer vision algorithms and systems', 'CSCI935', 3, 'active');
+(5, 'Computer vision algorithms and systems', 'CSCI935', 3, 'active'),
+(6, 'Computer vision algorithms and systems', 'CSCI435', 3, 'active');
 
 -- enrollments — 5 students assigned to 5 courses
 INSERT INTO enrolment (student_id, subject_id) VALUES
@@ -90,7 +91,9 @@ INSERT INTO enrolment (student_id, subject_id) VALUES
 -- student 1,2,3 enrolled subject 4
 ('MPuBeIdXwIoPhceUBtKLFEiFxoAzE3dd', 4), ('zkpUwtQqTxeezHJgkXVtW8n2lyf65AI5', 4),('UbM08mzzakyMBZFaQ46MB4ocQpd0gNUp',4),
 -- student 3,4,5 enrolled subject 5
-('UbM08mzzakyMBZFaQ46MB4ocQpd0gNUp', 5), ('xSaq6zsZubsuIpDWzyDGGi39Q1q3iiv5', 5), ('w72ehe9ERt9ezeQNLT1Bf3HOoJNbpCsx', 5);
+('UbM08mzzakyMBZFaQ46MB4ocQpd0gNUp', 5), ('xSaq6zsZubsuIpDWzyDGGi39Q1q3iiv5', 5), ('w72ehe9ERt9ezeQNLT1Bf3HOoJNbpCsx', 5),
+-- student 1, student 2 enrolled subject 6
+('MPuBeIdXwIoPhceUBtKLFEiFxoAzE3dd', 6), ('zkpUwtQqTxeezHJgkXVtW8n2lyf65AI5', 6);
 
 -- Course Sessions (1 lecture + 2 labs each course)
 INSERT INTO study_session (id, type, day_of_week, start_time, end_time, room_id) VALUES
@@ -110,7 +113,7 @@ INSERT INTO study_session (id, type, day_of_week, start_time, end_time, room_id)
 (10, 'lecture', 'Monday', '13:00:00', '15:00:00', 10),
 (11, 'lab', 'Tuesday', '10:00:00', '12:00:00', 1),
 (12, 'lab', 'Thursday', '08:00:00', '10:00:00', 2),
--- CSCI935
+-- CSCI935, CSCI435
 (13, 'lecture', 'Friday', '09:00:00', '11:00:00', 3),
 (14, 'lab', 'Wednesday', '15:00:00', '17:00:00', 4),
 (15, 'lab', 'Thursday', '16:00:00', '18:00:00', 5);
@@ -121,8 +124,8 @@ INSERT INTO subject_study_session (subject_id, study_session_id) VALUES
 (2, 4), (2, 5), (2, 6),
 (3, 7), (3, 8), (3, 9),
 (4, 10), (4, 11), (4, 12),
--- subject MTS9307(subject_id=4) students also attend lectures of CSCI935 (study_session_id=13)
-(5, 13), (4, 13), (5, 14), (5, 15);
+(5, 13), (5, 14), (5, 15),
+(6, 13), (6, 14), (6, 15);
 
 -- Student-StudySession
 INSERT INTO student_study_session (student_id, study_session_id) VALUES
@@ -146,6 +149,11 @@ INSERT INTO qr_code (id, qr_token) VALUES
 (2, 'QR23456789'),
 (3, 'QR34567890');
 
+-- Validity records for qr codes
+INSERT INTO validity (id, qr_code_id, count) VALUES
+(1, 1, 1),
+(2, 2, 1),
+(3, 3, 1);
 -- QR Code - Study Session mapping
 -- CSCI935 week 1 lucture, tutorial, lab 
 INSERT INTO qr_code_study_session (study_session_id, qr_code_id,week_number) VALUES
