@@ -1,3 +1,5 @@
+import { auth } from "@/lib/server/auth";
+import { NextResponse } from "next/server";
 /**
  * @openapi
  * /api/auth/microsoft:
@@ -12,3 +14,16 @@
  *       500:
  *         description: Internal Server Error
  */
+
+export async function GET() {
+  const response = await auth.api.signInSocial({
+    body: {
+      provider: "microsoft",
+      callbackURL: "/",
+    },
+    asResponse: false,
+  });
+
+  // Perform the actual redirect
+  return NextResponse.redirect(response.url as string);
+}
