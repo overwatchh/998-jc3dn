@@ -188,7 +188,7 @@ CREATE TABLE qr_code_study_session (
     week_number INT NOT NULL,
     CONSTRAINT fk_qrss_session FOREIGN KEY (study_session_id) REFERENCES study_session(id),
     CONSTRAINT fk_qrss_qrcode FOREIGN KEY (qr_code_id) REFERENCES qr_code(id),
-    UNIQUE (qr_code_id, study_session_id, week_number)
+    UNIQUE (study_session_id, week_number) -- Ensure one QR code per study session per week
 );
 
 -- Check-in table

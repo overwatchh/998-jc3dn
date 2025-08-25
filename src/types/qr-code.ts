@@ -3,6 +3,7 @@ import { BaseApiResponse } from "./api";
 
 export type GenerateQrRequestBody = {
   week_number: number;
+  duration?: number; 
   redirect_url?: string;
   radius?: number;
 };
@@ -15,9 +16,8 @@ export type AttendanceCheckinRequestBody = {
 };
 
 export type GenerateQrResponse = BaseApiResponse & {
-  qr_url: string; // base64 image
-  course_id: number;
-  course_session_id: number;
+  qr_url: string; // base64 image  
+  study_session_id: number;
   week_number: number;
   valid_until: string; // ISO datetime
 };
