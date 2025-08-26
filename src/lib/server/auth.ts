@@ -17,11 +17,13 @@ export const auth = betterAuth({
         };
       },
     },
+    // TODO: replace google with microsoft
+    // TODO: update login page design
     microsoft: {
       clientId: process.env.MICROSOFT_CLIENT_ID as string,
       clientSecret: process.env.MICROSOFT_CLIENT_SECRET as string,
       // Optional
-      tenantId: 'aab4897d-5f99-4439-b442-c204c65875b5', // UOW tenantId
+      tenantId: "aab4897d-5f99-4439-b442-c204c65875b5", // UOW tenantId
       prompt: "select_account", // Forces account selection
     },
   },

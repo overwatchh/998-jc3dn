@@ -10,12 +10,11 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { GoogleIcon } from "@/components/ui/icons/google-icon";
 import { Input } from "@/components/ui/input";
 import { useLogin } from "@/hooks/useAuth";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AxiosError } from "axios";
-import { ArrowRight, Eye, EyeOff } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, User } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
@@ -65,8 +64,8 @@ export function LoginForm() {
 
   const router = useRouter();
 
-  const handleGoogleLogin = async () => {
-    router.push("/api/auth/google");
+  const handleMicrosoftLogin = async () => {
+    router.push("/api/auth/microsoft");
   };
 
   return (
@@ -87,11 +86,11 @@ export function LoginForm() {
         <Button
           variant="outline"
           className="w-full h-12 flex items-center justify-center gap-3 bg-transparent"
-          onClick={handleGoogleLogin}
+          onClick={handleMicrosoftLogin}
           disabled={isLoading}
         >
-          <GoogleIcon />
-          <span className="font-medium">Continue with Google</span>
+          <User />
+          <span className="font-medium">SSO Login</span>
         </Button>
 
         {/* Divider */}

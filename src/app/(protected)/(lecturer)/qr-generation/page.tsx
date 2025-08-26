@@ -8,6 +8,7 @@ import { QrGenProvider, useQrGenContext } from "./qr-gen-context";
 import { QRGenScreens } from "./types";
 
 export default function Page() {
+  // TODO: integrate API
   const { data, isLoading, isError } = useGetCourses();
 
   if (isLoading) {
