@@ -2,11 +2,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/server/auth";
 import { rawQuery } from "@/lib/server/query"; // Replace with your DB access method (e.g., mysql2)
-import crypto from "crypto";
 import QRCode from "qrcode";
 import { headers } from "next/headers";
 import { GenerateQrRequestBody, GenerateQrResponse } from "@/types/qr-code";
-import { count } from "console";
 
 /**
  * @openapi
@@ -40,11 +38,6 @@ import { count } from "console";
  *                 example: 15
  *                 description: The duration in minutes for which the QR code is valid (default 15)
  *                 default: 15
- *               redirect_url:
- *                 type: string
- *                 example: /scan
- *                 description: Relative URL to redirect after scanning the QR code
- *                 default: /scan
  *               radius:
  *                 type: number
  *                 example: 100
@@ -119,8 +112,6 @@ import { count } from "console";
  *                     properties:
  *                       qr_code_id:
  *                         type: integer
- *                       qr_token:
- *                         type: string
  *                       qr_url:
  *                         type: string
  *                       week_number:
@@ -228,7 +219,7 @@ export async function POST(
     const { id } = await context.params;
     const studySessionId = parseInt(id); // study session id
     const body = (await req.json()) as GenerateQrRequestBody;
-    const { week_number, duration, redirect_url, radius } = body;
+    const { week_number, duration, radius } = body;
     if (!week_number || typeof week_number !== "number") {
       return NextResponse.json(
         { message: "week_number is required and must be a number" },
@@ -261,15 +252,7 @@ export async function POST(
         { status: 403 }
       );
     }
-    // Step 3: Generate token
-    // Generate short secure token
-    const token = crypto.randomBytes(6).toString("hex"); // 12-char token
-
-    // Step 4: Generate QR Code
-    const redirectPath = redirect_url || "/scan";
-    const qrUrl = `${APP_URL}${redirectPath}?token=${token}`;
-    const qrDataUrl = await QRCode.toDataURL(qrUrl);
-    // Step 5: Store in DB
+    // Step 3: Create qr in DB
     const validDuration =
       duration && typeof duration === "number" ? duration : 15; // default 15 minutes
     const now = new Date();
@@ -277,15 +260,15 @@ export async function POST(
 
     // Insert into qr_code
     const insertQrSql = `
-      INSERT INTO qr_code (qr_token, createdAt, valid_radius)
-      VALUES (?, ?, ?)
+      INSERT INTO qr_code (createdAt, valid_radius)
+      VALUES (?, ?)
     `;
-    const qrResult: any = await rawQuery(insertQrSql, [
-      token,
-      now,
-      radius ?? 100,
-    ]);
+    const qrResult: any = await rawQuery(insertQrSql, [now, radius ?? 100]);
     const qrCodeId = qrResult.insertId;
+    // Step 4: Generate QR URL
+    const redirectPath = "/scan";
+    const qrUrl = `${APP_URL}${redirectPath}?qr_code_id=${qrCodeId}`;
+    const qrDataUrl = await QRCode.toDataURL(qrUrl);
     // Insert into validity (1st validity window)
     const insertValiditySql = `
       INSERT INTO validity (qr_code_id, count, start_time, end_time)
@@ -374,8 +357,7 @@ export async function GET(
     // Step 3: Fetch QR codes with validities
     const qrSqlBase = `
     SELECT 
-      qrs.qr_code_id,
-      qc.qr_token,
+      qrs.qr_code_id,      
       qc.valid_radius,
       qc.createdAt,
       qrs.week_number,
@@ -401,7 +383,6 @@ export async function GET(
     qrSql += " ORDER BY qc.createdAt DESC, v.count ASC";
     interface QrCodeWithValidity {
       qr_code_id: number;
-      qr_token: string;
       valid_radius: number;
       createdAt: string;
       week_number: number;
@@ -417,7 +398,6 @@ export async function GET(
       number,
       {
         qr_code_id: number;
-        qr_token: string;
         valid_radius: number;
         createdAt: string;
         week_number: number;
@@ -434,7 +414,6 @@ export async function GET(
       if (!qrMap[row.qr_code_id]) {
         qrMap[row.qr_code_id] = {
           qr_code_id: row.qr_code_id,
-          qr_token: row.qr_token,
           valid_radius: row.valid_radius,
           createdAt: row.createdAt,
           week_number: row.week_number,

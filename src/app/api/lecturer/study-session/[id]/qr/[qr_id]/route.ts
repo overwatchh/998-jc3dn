@@ -3,7 +3,7 @@ import { rawQuery } from "@/lib/server/query"; // Replace with your DB access me
 import QRCode from "qrcode";
 /**
  * @openapi
- * /api/lecturer/study-session/{id}/qr/{qr_id}:
+ * /api/lecturer/study-session/{id}/qr/{qr_code_id}:
  *   get:
  *     tags:
  *       - Lecturer
@@ -12,7 +12,6 @@ import QRCode from "qrcode";
  *       Retrieves QR code information for a specific study session and QR code ID.  
  *       The response includes the QR image (base64 Data URL), the associated study session, 
  *       week number, and the validity window.  
- *       You can optionally pass a `redirect_url` query parameter to customize the scan redirect target (default is `/scan`).
  *     parameters:
  *       - in: path
  *         name: id
@@ -21,18 +20,11 @@ import QRCode from "qrcode";
  *           type: integer
  *         description: ID of the study session
  *       - in: path
- *         name: qr_id
+ *         name: qr_code_id
  *         required: true
  *         schema:
  *           type: integer
  *         description: ID of the QR code
- *       - in: query
- *         name: redirect_url
- *         required: false
- *         schema:
- *           type: string
- *           example: "/custom-scan"
- *         description: Optional path to redirect to when scanning the QR code (default is `/scan`)
  *     responses:
  *       200:
  *         description: QR code retrieved successfully
@@ -82,23 +74,20 @@ const APP_URL = process.env.BASE_URL!;
 
 export async function GET(
   req: NextRequest,
-  context: { params: Promise<{ id: string; qr_id: string }> }
+  context: { params: Promise<{ id: string; qr_code_id: string }> }
 ) {
   try {
-    const { id, qr_id } = await context.params;
+    const { id, qr_code_id } = await context.params;
     const studySessionId = parseInt(id, 10);
-    const qrId = parseInt(qr_id, 10);
-
-    // Get optional redirect_url query param
-    const { searchParams } = new URL(req.url);
-    const redirect_url = searchParams.get("redirect_url") || "/scan";
+    const qrId = parseInt(qr_code_id, 10);
+    
+    const redirect_path = "/scan";
 
     // Query QR code info
     const qrSql = `
       SELECT 
         qrs.study_session_id,
-        qrs.week_number,
-        qc.qr_token,
+        qrs.week_number,        
         v.end_time AS valid_until
       FROM qr_code_study_session qrs
       JOIN qr_code qc ON qrs.qr_code_id = qc.id
@@ -110,8 +99,7 @@ export async function GET(
 
     const rows = await rawQuery<{
       study_session_id: number;
-      week_number: number;
-      qr_token: string;
+      week_number: number;      
       valid_until: string;
     }>(qrSql, [studySessionId, qrId]);
 
@@ -122,10 +110,10 @@ export async function GET(
       );
     }
 
-    const { study_session_id, week_number, qr_token, valid_until } = rows[0];
+    const { study_session_id, week_number, valid_until } = rows[0];
 
     // Build QR url
-    const qrUrl = `${APP_URL}${redirect_url}?token=${qr_token}`;
+    const qrUrl = `${APP_URL}${redirect_path}?qr_code_id=${qr_code_id}`;
     const qrDataUrl = await QRCode.toDataURL(qrUrl);
 
     return NextResponse.json({
