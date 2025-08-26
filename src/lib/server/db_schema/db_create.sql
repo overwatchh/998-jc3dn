@@ -65,8 +65,8 @@ CREATE TABLE room (
     building_number VARCHAR(50) NOT NULL,
     room_number VARCHAR(50) NOT NULL,
     description TEXT,
-    latitude DECIMAL(16,14),
-    longitude DECIMAL(16,14),
+    latitude DECIMAL(18,14),
+    longitude DECIMAL(18,14),
     campus_id INT NOT NULL,
     CONSTRAINT fk_room_campus FOREIGN KEY (campus_id) REFERENCES campus(id)
 );
