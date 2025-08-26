@@ -50,8 +50,7 @@ WHERE sss.study_session_id = 14;
 -- 4. List all qr_code for a subject with information about study_session and qr_code given subject_id
 -- List all QR codes created for a subject
 SELECT 
-    qr.id AS qr_code_id,
-    qr.qr_token,
+    qr.id AS qr_code_id,    
     qr.createdAt,
     qr.valid_until,
     qr.valid_radius,
@@ -67,7 +66,7 @@ JOIN study_session ss ON qrss.study_session_id = ss.id
 JOIN subject_study_session sss ON ss.id = sss.study_session_id
 WHERE sss.subject_id = 5;
 
---5. List all students checked_in a qr_code given the qr_token
+--5. List all students checked_in a qr_code given the qr_code_id
 -- Chose one of qr_code from the previous query, for example, 'QR23456789'
 -- This will return all students who checked in using the QR code for the study session
 SELECT 
@@ -82,4 +81,4 @@ FROM checkin c
 JOIN qr_code_study_session qrss ON c.qr_code_study_session_id = qrss.id
 JOIN qr_code qr ON qrss.qr_code_id = qr.id
 JOIN user u ON c.student_id = u.id
-WHERE qr.qr_token = ?;
+WHERE qr.qr_code_id = ?;

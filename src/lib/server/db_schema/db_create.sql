@@ -141,8 +141,7 @@ CREATE TABLE lecturer_study_session (
 
 -- QR Code table
 CREATE TABLE qr_code (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    qr_token VARCHAR(12) UNIQUE NOT NULL,
+    id INT AUTO_INCREMENT PRIMARY KEY,    
     createdAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     valid_radius DECIMAL(5,2) DEFAULT 500.00
 );

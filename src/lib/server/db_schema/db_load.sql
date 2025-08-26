@@ -137,17 +137,22 @@ INSERT INTO student_study_session (student_id, study_session_id) VALUES
 
 -- Lectuer study session
 INSERT INTO lecturer_study_session (study_session_id, lecturer_id) VALUES
+-- lec1 
 (10, 'hrEpeIa27ITirYij0FJRAYgbMledKcuw'),
+-- lec2
 (11, 'Pl3aUloS8SowYGhvBTnUH2nocxPPXE41'),
+-- lec3
 (13, 'QNZ4aS743Pn4hUsd0dskFnnAUQ3JIxaw'),
+-- lec1
 (14, 'hrEpeIa27ITirYij0FJRAYgbMledKcuw'),
+-- lec2
 (15, 'Pl3aUloS8SowYGhvBTnUH2nocxPPXE41');
 
 -- QR Codes 
-INSERT INTO qr_code (id, qr_token) VALUES
-(1, 'QR12345678'),
-(2, 'QR23456789'),
-(3, 'QR34567890');
+INSERT INTO qr_code (id) VALUES
+(1),
+(2),
+(3);
 
 -- Validity records for qr codes
 INSERT INTO validity (id, qr_code_id, count) VALUES
