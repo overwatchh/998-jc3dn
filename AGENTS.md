@@ -1,48 +1,56 @@
 # Agent Guidelines for 998-jc3dn
 
 ## Build/Lint/Test Commands
-- **Build**: `npm run build`
-- **Dev server**: `npm run dev`
+
+- **Build**: `npm run build` (only when prompted)
+- **Dev server**: `npm run dev` (only when prompted)
 - **Lint**: `npm run lint`
 - **Format**: `npm run format`
-- **Type check**: `npm run check` (runs TypeScript + ESLint)
+- **Type check**: `npm run check` (TypeScript + ESLint) - run as final validation step
 - **Clean**: `npm run clean`
 - **Start production**: `npm run start`
+- **Auth migration**: `npm run auth:migrate`
+
+## Testing
+
+- No test framework configured yet
+- Test APIs manually with Postman/curl
+- Consider Jest + React Testing Library for future component testing
+- Always manually test API routes before deploying
 
 ## Code Style Guidelines
 
-### Imports
-- Use absolute imports with `@/` alias for `src/` directory
-- Group imports: React/React-related, third-party libraries, internal modules
-- No relative imports beyond current directory
+### Imports & Formatting
 
-### Formatting
-- Prettier config: semicolons, double quotes, 2 spaces, 80 char width
-- No tabs, trailing commas in ES5 style, avoid arrow parens when possible
+- Use `@/` alias for `src/` directory (no relative imports beyond current directory)
+- Group: React/React-related → third-party libraries → internal modules
+- Prettier: semicolons, double quotes, 2 spaces, 80 char width, ES5 trailing commas
+- Use .prettierrc.json as source of truth
 
 ### Types & Naming
-- Strict TypeScript with full type checking enabled
+
+- Strict TypeScript enabled with full type checking
 - camelCase for variables/functions, PascalCase for components/types
-- Use descriptive names, prefix unused params with `_`
+- Descriptive names, prefix unused params with `_`
 - Define interfaces for API responses and component props
 
-### Error Handling
-- Use try-catch in async functions with proper error responses
-- Return NextResponse.json with appropriate status codes
-- Log errors for debugging but don't expose sensitive info
+### Error Handling & Security
 
-### React Patterns
-- Functional components with hooks (no classes)
-- Use React Query for server state, Zustand for client state
-- Proper TypeScript typing for all props and state
-- Follow existing component patterns with class-variance-authority
-
-### API Patterns
-- Next.js API routes with OpenAPI documentation in JSDoc comments
-- Use proper HTTP status codes and response formatting
-- Validate requests with proper error handling
-
-### Security
-- Never log or expose sensitive information
-- Use proper authentication patterns with better-auth
+- Use try-catch in async functions with NextResponse.json error responses
+- Never log/expose sensitive information
 - Validate all user inputs and API requests
+- Use proper HTTP status codes
+
+### React & API Patterns
+
+- Functional components with hooks (no classes)
+- React Query for server state, Zustand for client state
+- Next.js API routes with OpenAPI docs in JSDoc comments
+- Follow class-variance-authority component patterns
+
+## Project Structure
+
+- `src/app/` - Next.js app router (auth/protected/admin/lecturer/student route groups)
+- `src/components/` - shadcn/ui components
+- `src/lib/` - utilities, `src/hooks/` - custom hooks, `src/types/` - type definitions
+- `src/app/api/` - API routes organized by feature with RESTful conventions
