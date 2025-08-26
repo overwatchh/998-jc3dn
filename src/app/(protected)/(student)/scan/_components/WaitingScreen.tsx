@@ -4,8 +4,8 @@ import { ScanScreenProps } from "./types";
 
 export function WaitingScreen({ courseInfo }: ScanScreenProps) {
   return (
-    <div className="text-center space-y-4">
-      <div className="w-24 h-24 mx-auto mb-4 flex animate-pulse items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/50">
+    <div className="space-y-4 text-center">
+      <div className="mx-auto mb-4 flex h-24 w-24 animate-pulse items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/50">
         <Timer className="h-12 w-12 text-amber-600 dark:text-amber-400" />
       </div>
 
@@ -27,10 +27,10 @@ export function WaitingScreen({ courseInfo }: ScanScreenProps) {
       </Card>
 
       <div>
-        <h3 className="mb-2 text-lg font-semibold text-primary">
+        <h3 className="text-primary mb-2 text-lg font-semibold">
           Waiting for Final Confirmation
         </h3>
-        <p className="mb-4 text-sm text-muted-foreground">
+        <p className="text-muted-foreground mb-4 text-sm">
           Your lecturer will open the confirmation window when ready.
           You&apos;ll receive a notification to tap and confirm your presence.
         </p>

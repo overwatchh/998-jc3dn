@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
 import { GeolocationCoords } from "@/types";
+import { useState, useEffect } from "react";
 
 interface UseGeolocationReturn {
   position: GeolocationCoords | null;

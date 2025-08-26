@@ -13,7 +13,7 @@ interface Props {
 export function QRSuccessScreen({ courseInfo, onRetry, onProceed }: Props) {
   return (
     <div className="space-y-4">
-      <div className="text-center space-y-2">
+      <div className="space-y-2 text-center">
         <h1 className="text-2xl font-bold">QR Code Detected!</h1>
         <div className="space-y-1 text-sm opacity-75">
           <p>Course: {courseInfo.name}</p>

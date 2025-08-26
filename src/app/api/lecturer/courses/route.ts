@@ -1,8 +1,8 @@
 import { auth } from "@/lib/server/auth";
 import { rawQuery } from "@/lib/server/query";
+import { RowDataPacket } from "mysql2";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
-import { RowDataPacket } from "mysql2";
 
 interface Course extends RowDataPacket {
   course_id: number;

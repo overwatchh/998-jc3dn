@@ -33,17 +33,17 @@ function NavItem({ item, className = "" }: NavItemProps) {
       key={item.id}
       variant="ghost"
       size="sm"
-      className={`relative flex flex-col items-center justify-center space-y-0.5 h-auto py-2 hover:bg-accent/50 ${"text-muted-foreground hover:text-foreground"} ${className}`}
+      className={`hover:bg-accent/50 relative flex h-auto flex-col items-center justify-center space-y-0.5 py-2 ${"text-muted-foreground hover:text-foreground"} ${className}`}
     >
       <Link
         href={item.href}
-        className="flex flex-col items-center justify-center space-y-0.5 grow"
+        className="flex grow flex-col items-center justify-center space-y-0.5"
       >
         <div className="relative">
           <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
         </div>
-        <span className="text-[10px] sm:text-xs font-medium leading-tight text-center truncate w-full">
-          <span className="hidden xs:inline">{item.label}</span>
+        <span className="w-full truncate text-center text-[10px] leading-tight font-medium sm:text-xs">
+          <span className="xs:inline hidden">{item.label}</span>
           <span className="xs:hidden">{item.shortLabel || item.label}</span>
         </span>
       </Link>
@@ -121,7 +121,7 @@ export function BottomNavigation({ role }: Props) {
   const itemCount = filteredNavItems.length;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border z-50">
+    <div className="bg-background border-border fixed right-0 bottom-0 left-0 z-50 border-t">
       <div className="safe-area-pb">
         {/* For 5 or fewer items, use flex justify-around */}
         {itemCount <= 5 ? (
@@ -130,14 +130,14 @@ export function BottomNavigation({ role }: Props) {
               <NavItem
                 key={item.id}
                 item={item}
-                className="px-1 sm:px-2 min-w-0 flex-1 max-w-[80px] sm:max-w-none"
+                className="max-w-[80px] min-w-0 flex-1 px-1 sm:max-w-none sm:px-2"
               />
             ))}
           </div>
         ) : (
           /* For more than 5 items, use horizontal scroll */
-          <div className="overflow-x-auto max-w-screen">
-            <div className="flex px-2 py-1 sm:px-4 gap-2 justify-between sm:py-2">
+          <div className="max-w-screen overflow-x-auto">
+            <div className="flex justify-between gap-2 px-2 py-1 sm:px-4 sm:py-2">
               {filteredNavItems.map(item => (
                 <NavItem key={item.id} item={item} className="px-3 sm:px-4" />
               ))}

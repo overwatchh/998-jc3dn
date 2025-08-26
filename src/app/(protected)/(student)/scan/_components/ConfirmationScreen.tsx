@@ -18,8 +18,8 @@ export function ConfirmationScreen({
   };
 
   return (
-    <div className="text-center space-y-4">
-      <div className="w-24 h-24 mx-auto mb-4 flex animate-pulse items-center justify-center rounded-full bg-green-100 dark:bg-green-900/50">
+    <div className="space-y-4 text-center">
+      <div className="mx-auto mb-4 flex h-24 w-24 animate-pulse items-center justify-center rounded-full bg-green-100 dark:bg-green-900/50">
         <Zap className="h-12 w-12 text-green-600 dark:text-green-400" />
       </div>
 
@@ -44,7 +44,7 @@ export function ConfirmationScreen({
         <h3 className="mb-2 text-lg font-semibold text-green-800 dark:text-green-200">
           Confirmation Window Open!
         </h3>
-        <p className="mb-4 text-sm text-muted-foreground">
+        <p className="text-muted-foreground mb-4 text-sm">
           Tap the button below to instantly confirm your presence in class
         </p>
       </div>
@@ -71,7 +71,7 @@ export function ConfirmationScreen({
         Confirm I&apos;m Here!
       </Button>
 
-      <p className="text-xs text-muted-foreground">
+      <p className="text-muted-foreground text-xs">
         This will instantly verify your location and confirm attendance
       </p>
     </div>

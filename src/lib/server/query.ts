@@ -1,5 +1,5 @@
-import { db } from "./db";
 import { RowDataPacket, ResultSetHeader, QueryError } from "mysql2";
+import { db } from "./db";
 
 // Overload for SELECT queries
 export async function rawQuery<T>(

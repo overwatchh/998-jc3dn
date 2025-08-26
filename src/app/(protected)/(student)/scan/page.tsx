@@ -330,7 +330,7 @@ export default function QRScannerScreen() {
   };
 
   return (
-    <div className="p-4 space-y-6">
+    <div className="space-y-6 p-4">
       {/* Confirmation Banner */}
       {showConfirmationBanner && (
         <Alert className="animate-in slide-in-from-top-2 border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/30">
@@ -345,7 +345,7 @@ export default function QRScannerScreen() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center">
-          <h1 className="text-xl font-semibold text-primary">
+          <h1 className="text-primary text-xl font-semibold">
             Scan Attendance QR
           </h1>
         </div>

@@ -4,8 +4,8 @@ import { ScanScreenProps } from "./types";
 
 export function SuccessScreen({ courseInfo }: ScanScreenProps) {
   return (
-    <div className="text-center space-y-4">
-      <div className="w-24 h-24 mx-auto mb-4 flex items-center justify-center rounded-full bg-green-100 dark:bg-green-900/50">
+    <div className="space-y-4 text-center">
+      <div className="mx-auto mb-4 flex h-24 w-24 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/50">
         <CheckCircle className="h-12 w-12 text-green-600 dark:text-green-400" />
       </div>
       <h3 className="mb-2 text-lg font-semibold text-green-800 dark:text-green-200">
@@ -46,7 +46,7 @@ export function SuccessScreen({ courseInfo }: ScanScreenProps) {
         </div>
       </div>
 
-      <p className="mt-4 text-sm text-muted-foreground">
+      <p className="text-muted-foreground mt-4 text-sm">
         Redirecting to home...
       </p>
     </div>

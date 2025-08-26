@@ -5,14 +5,14 @@ import { ScanScreenProps } from "./types";
 
 export function ExpiredScreen({ courseInfo, onRetry }: ScanScreenProps) {
   return (
-    <div className="text-center space-y-4">
-      <div className="w-24 h-24 mx-auto mb-4 flex items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/50">
+    <div className="space-y-4 text-center">
+      <div className="mx-auto mb-4 flex h-24 w-24 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/50">
         <Timer className="h-12 w-12 text-amber-600 dark:text-amber-400" />
       </div>
       <h3 className="mb-2 text-lg font-semibold text-amber-800 dark:text-amber-200">
         Confirmation Window Expired
       </h3>
-      <p className="mb-4 text-muted-foreground">
+      <p className="text-muted-foreground mb-4">
         The 60-second confirmation window has closed. Please ask your lecturer
         to open a new confirmation window.
       </p>

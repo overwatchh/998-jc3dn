@@ -1,10 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/server/auth";
-import { rawQuery } from "@/lib/server/query"; // Replace with your DB access method (e.g., mysql2)
-import QRCode from "qrcode";
-import { headers } from "next/headers";
+import { rawQuery } from "@/lib/server/query";
 import { GenerateQrRequestBody, GenerateQrResponse } from "@/types/qr-code";
+import { headers } from "next/headers";
+import { NextRequest, NextResponse } from "next/server";
+// Replace with your DB access method (e.g., mysql2)
+import QRCode from "qrcode";
 
 /**
  * @openapi

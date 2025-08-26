@@ -185,7 +185,7 @@ export function QrCodeGeneration() {
                 <TabsTrigger value="check-in">Check-in QR</TabsTrigger>
                 <TabsTrigger value="throughout">Throughout QR</TabsTrigger>
               </TabsList> */}
-              <div className="mt-2 text-sm text-muted-foreground">
+              <div className="text-muted-foreground mt-2 text-sm">
                 {qrType === "check-in" ? (
                   <p>
                     Generate a QR code for initial attendance at the beginning
@@ -203,9 +203,9 @@ export function QrCodeGeneration() {
             <div className="mt-6 grid gap-6 md:grid-cols-2">
               {/* QR Code Display Card */}
               <Card className="overflow-hidden">
-                <CardHeader className="bg-primary/5 pb-0 border-b">
+                <CardHeader className="bg-primary/5 border-b pb-0">
                   <div className="text-center">
-                    <div className="text-sm font-medium text-muted-foreground">
+                    <div className="text-muted-foreground text-sm font-medium">
                       Introduction to Computer Science - CSIT883
                     </div>
                     <div className="mt-1 flex items-center justify-center gap-1 text-sm">
@@ -226,13 +226,13 @@ export function QrCodeGeneration() {
                         className={`h-64 w-64 ${isExpired ? "opacity-30 grayscale" : ""}`}
                       />
                     ) : (
-                      <div className="h-64 w-64 grid place-items-center text-primary">
-                        <Loader2 className="animate-spin dark:text-primary-foreground" />
+                      <div className="text-primary grid h-64 w-64 place-items-center">
+                        <Loader2 className="dark:text-primary-foreground animate-spin" />
                       </div>
                     )}
                     {isExpired && (
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-lg">
-                        <div className="bg-red-500 text-white px-3 py-1 rounded text-sm font-semibold">
+                      <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/20">
+                        <div className="rounded bg-red-500 px-3 py-1 text-sm font-semibold text-white">
                           EXPIRED
                         </div>
                       </div>
@@ -472,23 +472,23 @@ export function QrCodeGeneration() {
                         Live
                       </Badge>
                     </div>
-                    <Progress value={53} className="h-2 bg-muted" />
+                    <Progress value={53} className="bg-muted h-2" />
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
                         <Label>Recent Check-ins</Label>
                         <span
                           suppressHydrationWarning
-                          className="text-xs text-muted-foreground"
+                          className="text-muted-foreground text-xs"
                         >
                           Last updated: {format(new Date(), "hh:mm:ss a")}
                         </span>
                       </div>
-                      <ScrollArea className="h-[140px] rounded-md border p-2 bg-card">
+                      <ScrollArea className="bg-card h-[140px] rounded-md border p-2">
                         <div className="space-y-2">
                           {recentCheckins.map(student => (
                             <div
                               key={student.id}
-                              className="flex items-center justify-between rounded-md p-2 hover:bg-muted"
+                              className="hover:bg-muted flex items-center justify-between rounded-md p-2"
                             >
                               <div className="flex items-center gap-2">
                                 <Avatar className="h-8 w-8">
@@ -507,7 +507,7 @@ export function QrCodeGeneration() {
                                   {student.name}
                                 </span>
                               </div>
-                              <span className="text-xs text-muted-foreground">
+                              <span className="text-muted-foreground text-xs">
                                 {student.timestamp}
                               </span>
                             </div>

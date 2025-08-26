@@ -14,7 +14,7 @@ export default async function ProtectedLayout({
   const role = session?.user.role as Role;
 
   return (
-    <div className="flex flex-col grow pb-20">
+    <div className="flex grow flex-col pb-20">
       {children}
       {role && <BottomNavigation role={role} />}
     </div>

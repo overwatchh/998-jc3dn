@@ -1,4 +1,5 @@
 import { createSwaggerSpec } from "next-swagger-doc";
+
 const isProd = process.env.NODE_ENV === "production";
 const productionURL = "https://jc3dn-qr-attendance-kosgs4isma-ts.a.run.app";
 export const getApiDocs = async () => {

@@ -1,7 +1,7 @@
-import { useQuery, useMutation } from "@tanstack/react-query";
 import apiClient from "@/lib/api/apiClient";
-import { AttendanceRecord } from "@/types";
 import { queryClient } from "@/lib/queryClient";
+import { AttendanceRecord } from "@/types";
+import { useQuery, useMutation } from "@tanstack/react-query";
 
 // Mark attendance for a lecture
 export const useMarkAttendance = () => {

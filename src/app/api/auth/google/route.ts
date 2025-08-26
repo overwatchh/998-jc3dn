@@ -1,6 +1,7 @@
 // src/app/api/auth/google/route.ts
 import { auth } from "@/lib/server/auth";
 import { NextResponse } from "next/server";
+
 /**
  * @openapi
  * /api/auth/google:

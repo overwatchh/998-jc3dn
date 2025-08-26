@@ -1,6 +1,8 @@
+import { rawQuery } from "@/lib/server/query";
 import { NextRequest, NextResponse } from "next/server";
-import { rawQuery } from "@/lib/server/query"; // Replace with your DB access method (e.g., mysql2)
+// Replace with your DB access method (e.g., mysql2)
 import QRCode from "qrcode";
+
 /**
  * @openapi
  * /api/lecturer/study-session/{id}/qr/{qr_code_id}:
@@ -9,9 +11,9 @@ import QRCode from "qrcode";
  *       - Lecturer
  *     summary: Get QR code base64 data for a study session
  *     description: >
- *       Retrieves QR code information for a specific study session and QR code ID.  
- *       The response includes the QR image (base64 Data URL), the associated study session, 
- *       week number, and the validity window.  
+ *       Retrieves QR code information for a specific study session and QR code ID.
+ *       The response includes the QR image (base64 Data URL), the associated study session,
+ *       week number, and the validity window.
  *     parameters:
  *       - in: path
  *         name: id
@@ -80,7 +82,7 @@ export async function GET(
     const { id, qr_code_id } = await context.params;
     const studySessionId = parseInt(id, 10);
     const qrId = parseInt(qr_code_id, 10);
-    
+
     const redirect_path = "/scan";
 
     // Query QR code info
@@ -99,7 +101,7 @@ export async function GET(
 
     const rows = await rawQuery<{
       study_session_id: number;
-      week_number: number;      
+      week_number: number;
       valid_until: string;
     }>(qrSql, [studySessionId, qrId]);
 

@@ -61,11 +61,11 @@ export default function AttendanceRecordsScreen() {
       : attendanceRecords.filter(record => record.course === selectedCourse);
 
   return (
-    <div className="p-4 space-y-6">
+    <div className="space-y-6 p-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center">
-          <h1 className="text-xl font-semibold text-primary">My Attendance</h1>
+          <h1 className="text-primary text-xl font-semibold">My Attendance</h1>
         </div>
         <div className="flex items-center space-x-2">
           <Button
@@ -93,9 +93,9 @@ export default function AttendanceRecordsScreen() {
         <CardContent>
           <div className="flex items-center justify-between">
             <div className="text-center">
-              <div className="relative w-20 h-20 mx-auto mb-2">
+              <div className="relative mx-auto mb-2 h-20 w-20">
                 <svg
-                  className="w-20 h-20 transform -rotate-90"
+                  className="h-20 w-20 -rotate-90 transform"
                   viewBox="0 0 36 36"
                 >
                   <path
@@ -113,18 +113,18 @@ export default function AttendanceRecordsScreen() {
                   />
                 </svg>
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-lg font-bold text-primary">
+                  <span className="text-primary text-lg font-bold">
                     {overallStats.percentage}%
                   </span>
                 </div>
               </div>
-              <p className="text-sm text-primary/80">Overall</p>
+              <p className="text-primary/80 text-sm">Overall</p>
             </div>
             <div className="text-right">
-              <p className="text-2xl font-bold text-primary">
+              <p className="text-primary text-2xl font-bold">
                 {overallStats.attended}/{overallStats.total}
               </p>
-              <p className="text-sm text-primary/80">Classes Attended</p>
+              <p className="text-primary/80 text-sm">Classes Attended</p>
             </div>
           </div>
         </CardContent>
@@ -146,7 +146,7 @@ export default function AttendanceRecordsScreen() {
           </SelectContent>
         </Select>
         <Button variant="outline" size="sm">
-          <Filter className="h-4 w-4 mr-2" />
+          <Filter className="mr-2 h-4 w-4" />
           Filter
         </Button>
       </div>
@@ -159,15 +159,15 @@ export default function AttendanceRecordsScreen() {
               {filteredRecords.map((record, index) => (
                 <div
                   key={index}
-                  className="p-4 flex items-center justify-between"
+                  className="flex items-center justify-between p-4"
                 >
                   <div>
-                    <p className="font-medium text-primary">{record.course}</p>
-                    <p className="text-sm text-primary/80">{record.date}</p>
+                    <p className="text-primary font-medium">{record.course}</p>
+                    <p className="text-primary/80 text-sm">{record.date}</p>
                   </div>
                   <div className="text-right">
                     {getStatusBadge(record.status)}
-                    <p className="text-sm text-primary mt-1">
+                    <p className="text-primary mt-1 text-sm">
                       {record.checkInTime}
                     </p>
                   </div>
@@ -176,7 +176,7 @@ export default function AttendanceRecordsScreen() {
             </div>
           ) : (
             <div className="p-8 text-center">
-              <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <Calendar className="mx-auto mb-4 h-12 w-12 text-gray-400" />
               <p className="text-primary">No attendance records found</p>
               <p className="text-sm text-gray-500">
                 Try adjusting your filters

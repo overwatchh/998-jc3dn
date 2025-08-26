@@ -4,8 +4,8 @@ import { ScanScreenProps } from "./types";
 
 export function ConfirmingScreen({ courseInfo }: ScanScreenProps) {
   return (
-    <div className="text-center space-y-4">
-      <div className="w-24 h-24 mx-auto mb-4 flex items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/50">
+    <div className="space-y-4 text-center">
+      <div className="mx-auto mb-4 flex h-24 w-24 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/50">
         <Loader2 className="h-12 w-12 animate-spin text-blue-600 dark:text-blue-400" />
       </div>
 
@@ -23,7 +23,7 @@ export function ConfirmingScreen({ courseInfo }: ScanScreenProps) {
         </CardContent>
       </Card>
 
-      <h3 className="mb-2 text-lg font-semibold text-primary">
+      <h3 className="text-primary mb-2 text-lg font-semibold">
         Confirming Presence
       </h3>
       <p className="text-muted-foreground">

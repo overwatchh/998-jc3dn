@@ -1,7 +1,7 @@
 "use client";
+
 import { useGetCourses } from "@/app/(protected)/(lecturer)/qr-generation/queries";
 import { LoadingScreen } from "@/components/loading-skeleton";
-
 import { CoursesList } from "../_components/course-list";
 import { QrCodeGeneration } from "../_components/qr-code-generation";
 import { QrGenProvider, useQrGenContext } from "./qr-gen-context";

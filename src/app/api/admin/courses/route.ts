@@ -1,8 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
-import { GroupedCourse, RawSessionRow } from "@/types/course";
-import { ApiArrayResponse } from "@/types/api";
-import { rawQuery } from "@/lib/server/query";
 import { groupByCourse } from "@/lib/server/process-data";
+import { rawQuery } from "@/lib/server/query";
+import { ApiArrayResponse } from "@/types/api";
+import { GroupedCourse, RawSessionRow } from "@/types/course";
+import { NextRequest, NextResponse } from "next/server";
+
 /**
  * @openapi
  * /api/admin/courses:

@@ -69,11 +69,11 @@ export function LoginForm() {
   };
 
   return (
-    <div className="bg-card rounded-2xl shadow-xl border overflow-hidden md:min-w-md">
+    <div className="bg-card overflow-hidden rounded-2xl border shadow-xl md:min-w-md">
       {/* Header */}
-      <div className="px-8 pt-8 pb-6 bg-secondary text-primary">
+      <div className="bg-secondary text-primary px-8 pt-8 pb-6">
         <div className="text-center">
-          <h1 className="text-2xl font-bold mb-2">Welcome back</h1>
+          <h1 className="mb-2 text-2xl font-bold">Welcome back</h1>
           <p className="text-primary/80 text-sm">
             Sign in to continue to your account
           </p>
@@ -81,11 +81,11 @@ export function LoginForm() {
       </div>
 
       {/* Form Content */}
-      <div className="p-8 space-y-6">
+      <div className="space-y-6 p-8">
         {/* Google Login */}
         <Button
           variant="outline"
-          className="w-full h-12 flex items-center justify-center gap-3 bg-transparent"
+          className="flex h-12 w-full items-center justify-center gap-3 bg-transparent"
           onClick={handleMicrosoftLogin}
           disabled={isLoading}
         >
@@ -99,7 +99,7 @@ export function LoginForm() {
             <div className="w-full border-t"></div>
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="px-4 bg-card text-muted-foreground font-medium">
+            <span className="bg-card text-muted-foreground px-4 font-medium">
               or sign in with email
             </span>
           </div>
@@ -145,12 +145,12 @@ export function LoginForm() {
                         <button
                           type="button"
                           onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                          className="text-muted-foreground hover:text-foreground absolute top-1/2 right-3 -translate-y-1/2 transition-colors"
                         >
                           {showPassword ? (
-                            <EyeOff className="w-4 h-4" />
+                            <EyeOff className="h-4 w-4" />
                           ) : (
-                            <Eye className="w-4 h-4" />
+                            <Eye className="h-4 w-4" />
                           )}
                         </button>
                       </div>
@@ -169,12 +169,12 @@ export function LoginForm() {
                   return (
                     <FormItem>
                       <FormControl>
-                        <label className="flex items-center space-x-2 cursor-pointer">
+                        <label className="flex cursor-pointer items-center space-x-2">
                           <Checkbox
                             checked={field.value}
                             onCheckedChange={field.onChange}
                           />
-                          <span className="text-sm text-muted-foreground">
+                          <span className="text-muted-foreground text-sm">
                             Remember me
                           </span>
                         </label>
@@ -186,7 +186,7 @@ export function LoginForm() {
               />
               <a
                 href="#"
-                className="text-sm font-medium text-primary hover:text-primary/80"
+                className="text-primary hover:text-primary/80 text-sm font-medium"
               >
                 Forgot password?
               </a>
@@ -194,15 +194,15 @@ export function LoginForm() {
 
             <Button
               type="submit"
-              className="w-full h-12 flex items-center justify-center gap-2"
+              className="flex h-12 w-full items-center justify-center gap-2"
               disabled={isLoading}
             >
               {isLoading ? (
-                <div className="w-5 h-5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin"></div>
+                <div className="border-primary-foreground h-5 w-5 animate-spin rounded-full border-2 border-t-transparent"></div>
               ) : (
                 <>
                   <span>Sign in</span>
-                  <ArrowRight className="w-4 h-4" />
+                  <ArrowRight className="h-4 w-4" />
                 </>
               )}
             </Button>
@@ -210,12 +210,12 @@ export function LoginForm() {
         </Form>
 
         {/* Footer */}
-        <div className="text-center pt-4 border-t">
-          <p className="text-sm text-muted-foreground">
+        <div className="border-t pt-4 text-center">
+          <p className="text-muted-foreground text-sm">
             {"Don't have an account? "}
             <a
               href="/signup"
-              className="font-medium text-primary hover:text-primary/80"
+              className="text-primary hover:text-primary/80 font-medium"
             >
               Create one now
             </a>

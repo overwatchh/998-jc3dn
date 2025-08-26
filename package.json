@@ -61,6 +61,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
+    "@trivago/prettier-plugin-sort-imports": "^5.2.2",
     "@types/node": "^20.19.10",
     "@types/qrcode": "^1.5.5",
     "@types/react": "^19",
@@ -70,6 +71,7 @@
     "eslint": "^9",
     "eslint-config-next": "15.3.0",
     "prettier": "^3.6.2",
+    "prettier-plugin-tailwindcss": "^0.6.14",
     "tailwindcss": "^4",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.2"

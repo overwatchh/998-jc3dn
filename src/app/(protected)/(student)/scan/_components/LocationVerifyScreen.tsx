@@ -10,13 +10,13 @@ export function LocationVerifyScreen({
   locationStatus,
 }: ScanScreenProps) {
   return (
-    <div className="text-center space-y-4">
-      <div className="w-24 h-24 mx-auto mb-4 flex items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/50">
+    <div className="space-y-4 text-center">
+      <div className="mx-auto mb-4 flex h-24 w-24 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/50">
         <Navigation
           className={`h-12 w-12 text-blue-600 dark:text-blue-400 ${locationStatus === "checking" ? "animate-pulse" : ""}`}
         />
       </div>
-      <h3 className="mb-2 text-lg font-semibold text-primary">
+      <h3 className="text-primary mb-2 text-lg font-semibold">
         Verifying Location
       </h3>
 
@@ -43,13 +43,13 @@ export function LocationVerifyScreen({
             {Math.round(locationAccuracy)}%
           </span>
         </div>
-        <div className="h-2 w-full rounded-full bg-muted">
+        <div className="bg-muted h-2 w-full rounded-full">
           <div
             className="h-2 rounded-full bg-blue-600 transition-all duration-300"
             style={{ width: `${locationAccuracy}%` }}
           ></div>
         </div>
-        <div className="flex items-center justify-center text-sm text-muted-foreground">
+        <div className="text-muted-foreground flex items-center justify-center text-sm">
           <Wifi className="mr-1 h-4 w-4" />
           <span>High-accuracy GPS enabled</span>
         </div>

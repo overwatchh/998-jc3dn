@@ -1,14 +1,15 @@
-import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/server/auth";
 import { rawQuery } from "@/lib/server/query";
-import { z } from "zod";
-import { headers } from "next/headers";
+import { haversineDistance } from "@/lib/server/util";
 import {
   AttendanceCheckinRequestBody,
   QRCodeInfoRow,
   RowLocation,
 } from "@/types/qr-code";
-import { haversineDistance } from "@/lib/server/util";
+import { headers } from "next/headers";
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+
 /**
  * @openapi
  * /api/student/attendance/checkin:

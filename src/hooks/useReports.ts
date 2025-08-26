@@ -1,5 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
 import apiClient from "@/lib/api/apiClient";
+import { useQuery } from "@tanstack/react-query";
 
 // Get attendance statistics for a course
 export const useCourseAttendanceStats = (courseId: string) => {

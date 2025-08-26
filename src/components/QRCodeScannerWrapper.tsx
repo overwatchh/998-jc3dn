@@ -1,6 +1,6 @@
+import { Button } from "@/components/ui/button";
 import { Html5Qrcode } from "html5-qrcode";
 import { useState, useEffect, useRef } from "react";
-import { Button } from "@/components/ui/button";
 
 interface QRCodeScannerWrapperProps {
   onScanSuccess: (decodedText: string) => void;
@@ -91,8 +91,8 @@ const QRCodeScannerWrapper = ({
   return (
     <div className="flex flex-col items-center">
       <div id={scannerDivId} style={{ width, height }}></div>
-      {scanError && <p className="mt-2 text-red-500 text-sm">{scanError}</p>}
-      <div className="flex gap-4 mt-4">
+      {scanError && <p className="mt-2 text-sm text-red-500">{scanError}</p>}
+      <div className="mt-4 flex gap-4">
         {!isScanning ? (
           <Button onClick={startScanner}>Start Scanner</Button>
         ) : (

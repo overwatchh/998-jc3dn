@@ -1,4 +1,5 @@
 import { RowDataPacket } from "mysql2";
+
 export interface RawSessionRow extends RowDataPacket {
   session_id: number;
   session_type: string;
