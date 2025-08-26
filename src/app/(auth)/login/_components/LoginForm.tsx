@@ -15,6 +15,7 @@ import { useLogin } from "@/hooks/useAuth";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AxiosError } from "axios";
 import { ArrowRight, Eye, EyeOff, User } from "lucide-react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
@@ -70,16 +71,14 @@ export function LoginForm() {
 
   return (
     <div className="bg-card overflow-hidden rounded-2xl border shadow-xl md:min-w-md">
-      {/* Header */}
-      <div className="bg-secondary text-primary px-8 pt-8 pb-6">
-        <div className="text-center">
-          <h1 className="mb-2 text-2xl font-bold">Welcome back</h1>
-          <p className="text-primary/80 text-sm">
-            Sign in to continue to your account
-          </p>
-        </div>
+      <div className="relative h-28 border-b">
+        <Image
+          className="object-cover"
+          alt="University of Wollongong Australia"
+          src={"/logo-secondary-mono.png"}
+          fill
+        />
       </div>
-
       {/* Form Content */}
       <div className="space-y-6 p-8">
         {/* Google Login */}

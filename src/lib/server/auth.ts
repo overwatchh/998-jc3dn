@@ -18,8 +18,6 @@ export const auth = betterAuth({
         };
       },
     },
-    // TODO: replace google with microsoft
-    // TODO: update login page design
     microsoft: {
       clientId: process.env.MICROSOFT_CLIENT_ID as string,
       clientSecret: process.env.MICROSOFT_CLIENT_SECRET as string,
