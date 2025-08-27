@@ -3,7 +3,6 @@ import { auth } from "@/lib/server/auth";
 import { rawQuery } from "@/lib/server/query";
 import { z } from "zod";
 import { headers } from "next/headers";
-import { haversineDistance } from "@/lib/server/util";
 /**
  * @openapi
  * /api/student/attendance/checkin:
@@ -181,7 +180,7 @@ export async function POST(req: NextRequest) {
   }
   // set currentWindow to second window if there are two windows
   // default to first window if only one window
-  let currentWindow: ValidityRow =
+  const currentWindow: ValidityRow =
     windows.length === 1 ? windows[0] : windows[1];
   const now = new Date();
   const validStart = new Date(currentWindow.start_time);

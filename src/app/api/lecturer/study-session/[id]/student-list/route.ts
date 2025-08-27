@@ -28,3 +28,6 @@
  *                   email:
  *                     type: string
  */
+
+export async function GET() {
+}
