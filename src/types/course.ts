@@ -63,3 +63,15 @@ export type CourseSessionResponse = Array<{
   name: string;
   code: string;
 }>;
+
+export type AbsentListResponse = Array<{
+  student_id: string;
+  name: string;
+  email: string;
+}>;
+
+export type CheckInListResponse = Array<{
+  student_id: string;
+  name: string;
+  checkin_time: string;
+}>;
