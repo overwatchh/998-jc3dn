@@ -32,14 +32,59 @@ export const useGenerateQr = (id: number) => {
   });
 };
 
+// Add second validity window to an existing QR code (PUT /lecturer/study-session/{id}/qr)
+type AddSecondValidityRequestBody = {
+  qr_code_id: number;
+};
+
+type AddSecondValidityResponse = {
+  message: string;
+  qr_code_id: number;
+  week_number: number;
+  validity: {
+    validity_id: number;
+    count: number;
+    start_time: string;
+    end_time: string;
+  };
+};
+
+export const useAddSecondValidity = (id: number) => {
+  const queryClient = useQueryClient();
+  const mutationFn = async (args: AddSecondValidityRequestBody) => {
+    const { data } = await apiClient.put<AddSecondValidityResponse>(
+      `/lecturer/study-session/${id}/qr`,
+      args
+    );
+    return data;
+  };
+  return useMutation({
+    mutationKey: [QR_CODE_GENERATION_QUERY_KEY, id, "addValidity"],
+    mutationFn,
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: [["qrCodes"], id],
+      });
+    },
+  });
+};
+
 const COURSES_QUERY_KEY = ["courses"];
 
-// Get courses
+// Get courses (flatten subjects + study_sessions to UI-friendly list)
 export const useGetCourses = () => {
   const queryFn = async () => {
-    const { data } =
-      await apiClient.get<CourseSessionResponse>("/lecturer/courses");
-    return data;
+    const { data } = await apiClient.get<LecturerSubjectsResponse>(
+      "/lecturer/subjects"
+    );
+    const flattened: CourseSessionResponse = data.data.flatMap(subject =>
+      subject.study_sessions.map(ss => ({
+        id: ss.study_session_id,
+        name: subject.subject_name,
+        code: subject.subject_code,
+      }))
+    );
+    return flattened;
   };
   return useQuery({
     queryKey: [COURSES_QUERY_KEY],
@@ -84,7 +129,11 @@ export const useGetCheckedInStudents = (
 
 // Retrieves QR code information for a specific study session and QR code ID. The response includes the QR image (base64 Data URL), the associated study session, week number, and the validity window.
 const QR_CODE_INFO_QUERY_KEY = ["qrCodeInfo"];
-export const useGetQrCode = (id: number, qrCodeId: number) => {
+export const useGetQrCode = (
+  id: number,
+  qrCodeId: number,
+  options?: { enabled?: boolean }
+) => {
   const queryFn = async () => {
     const { data } = await apiClient.get<GenerateQrResponse>(
       `/lecturer/study-session/${id}/qr/${qrCodeId}`
@@ -94,12 +143,17 @@ export const useGetQrCode = (id: number, qrCodeId: number) => {
   return useQuery({
     queryKey: [QR_CODE_INFO_QUERY_KEY, id, qrCodeId],
     queryFn,
+    enabled: options?.enabled,
   });
 };
 
 // Retrieves QR codes created for the study session (one per week) with their validity windows. Can be filtered by week_number.
 const QR_CODES_QUERY_KEY = ["qrCodes"];
-export const useGetQrCodes = (id: number, weekNumber?: number) => {
+export const useGetQrCodes = (
+  id: number, 
+  weekNumber?: number,
+  options?: { enabled?: boolean }
+) => {
   const queryFn = async () => {
     const { data } = await apiClient.get<GetQrCodesResponse>(
       `/lecturer/study-session/${id}/qr`,
@@ -110,6 +164,7 @@ export const useGetQrCodes = (id: number, weekNumber?: number) => {
   return useQuery({
     queryKey: [QR_CODES_QUERY_KEY, id, weekNumber],
     queryFn,
+    enabled: options?.enabled,
   });
 };
 

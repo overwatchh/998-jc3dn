@@ -61,7 +61,8 @@ import {
   Search,
   Share2,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useGetCourses } from "@/app/(protected)/(lecturer)/qr-generation/queries";
 import type { DateRange } from "react-day-picker";
 import {
   Bar,
@@ -81,6 +82,14 @@ export default function ReportsAnalytics() {
     from: new Date(2025, 2, 1), // Mar 1, 2025
     to: new Date(2025, 3, 24), // Apr 24, 2025
   });
+  const { data: courses, isLoading: isCoursesLoading } = useGetCourses();
+  const [selectedCourseId, setSelectedCourseId] = useState<string>("");
+
+  useEffect(() => {
+    if (!selectedCourseId && courses && courses.length > 0) {
+      setSelectedCourseId(String(courses[0].id));
+    }
+  }, [courses, selectedCourseId]);
 
   return (
     <main className="flex flex-1 flex-col gap-4 p-3 sm:p-4 md:gap-6 md:p-6">
@@ -98,24 +107,20 @@ export default function ReportsAnalytics() {
               <label className="text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                 Course
               </label>
-              <Select defaultValue="csit883">
+              <Select
+                disabled={isCoursesLoading}
+                value={selectedCourseId}
+                onValueChange={setSelectedCourseId}
+              >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select course" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="csit883">
-                    CSIT883 - Introduction to Computer Science
-                  </SelectItem>
-                  <SelectItem value="csit884">
-                    CSIT884 - Data Structures
-                  </SelectItem>
-                  <SelectItem value="csit885">CSIT885 - Algorithms</SelectItem>
-                  <SelectItem value="csit886">
-                    CSIT886 - Database Systems
-                  </SelectItem>
-                  <SelectItem value="csit887">
-                    CSIT887 - Software Engineering
-                  </SelectItem>
+                  {(courses ?? []).map(c => (
+                    <SelectItem key={c.id} value={String(c.id)}>
+                      {c.code} - {c.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
