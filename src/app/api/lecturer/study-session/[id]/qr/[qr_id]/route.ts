@@ -74,12 +74,12 @@ const APP_URL = process.env.BASE_URL!;
 
 export async function GET(
   req: NextRequest,
-  context: { params: Promise<{ id: string; qr_code_id: string }> }
+  context: { params: Promise<{ id: string; qr_id: string }> }
 ) {
   try {
-    const { id, qr_code_id } = await context.params;
+    const { id, qr_id } = await context.params;
     const studySessionId = parseInt(id, 10);
-    const qrId = parseInt(qr_code_id, 10);
+    const qrId = parseInt(qr_id, 10);
     
     const redirect_path = "/scan";
 
@@ -113,7 +113,7 @@ export async function GET(
     const { study_session_id, week_number, valid_until } = rows[0];
 
     // Build QR url
-    const qrUrl = `${APP_URL}${redirect_path}?qr_code_id=${qr_code_id}`;
+    const qrUrl = `${APP_URL}${redirect_path}?qr_code_id=${qrId}`;
     const qrDataUrl = await QRCode.toDataURL(qrUrl);
 
     return NextResponse.json({
