@@ -4,7 +4,50 @@ import { rawQuery } from "@/lib/server/query";
 import { z } from "zod";
 import { headers } from "next/headers";
 import { haversineDistance } from "@/lib/server/util";
-
+/**
+ * @openapi
+ * /api/student/attendance/checkin:
+ *   post:
+ *     tags:
+ *       - Student
+ *     summary: Student checks in using QR code
+ *     description: Allows a student to check in to a study session using a valid QR code and their current location.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - qr_code_id
+ *               - lat
+ *               - long
+ *             properties:
+ *               qr_code_id:
+ *                 type: integer
+ *                 description: The numeric QR code identifier
+ *               lat:
+ *                 type: number
+ *                 description: Student's latitude when checking in
+ *               long:
+ *                 type: number
+ *                 description: Student's longitude when checking in
+ *               verify_distance:
+ *                 type: boolean
+ *                 description: Verify distance between student's location and the study session room. May be disabled for online students.
+ *                 default: true
+ *     responses:
+ *       200:
+ *         description: Check-in successful
+ *       400:
+ *         description: Invalid request or already checked in
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Check-in not allowed (e.g., not enrolled, invalid QR code)
+ *       404:
+ *         description: QR code not found or expired
+ */
 type QrSessionRow = {
   qr_code_study_session_id: number;
   study_session_id: number;
