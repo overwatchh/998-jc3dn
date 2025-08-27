@@ -65,8 +65,8 @@ CREATE TABLE room (
     building_number VARCHAR(50) NOT NULL,
     room_number VARCHAR(50) NOT NULL,
     description TEXT,
-    latitude DECIMAL(16,14),
-    longitude DECIMAL(16,14),
+    latitude DECIMAL(18,14),
+    longitude DECIMAL(18,14),
     campus_id INT NOT NULL,
     CONSTRAINT fk_room_campus FOREIGN KEY (campus_id) REFERENCES campus(id)
 );
@@ -196,8 +196,8 @@ CREATE TABLE checkin (
     qr_code_study_session_id INT NOT NULL,
     checkin_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     validity_id INT NOT NULL,
-    latitude DECIMAL(16,14),
-    longitude DECIMAL(16,14),    
+    latitude DECIMAL(18,14),
+    longitude DECIMAL(18,14),    
     PRIMARY KEY (student_id, qr_code_study_session_id, validity_id),
     CONSTRAINT fk_check_validity FOREIGN KEY (validity_id) REFERENCES validity(id),
     CONSTRAINT fk_check_student FOREIGN KEY (student_id) REFERENCES user(id),

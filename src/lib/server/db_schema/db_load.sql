@@ -170,5 +170,5 @@ INSERT INTO qr_code_study_session (id, study_session_id, qr_code_id,week_number)
 -- Student 3 checked in to CSCI935 lab week 1 on Wednesday on the first attendance checkin
 -- qr_code_study_session_id = 2=> qr_code_id=2 => validity_id=2 for the first checkin window with count=1
 INSERT INTO checkin (student_id, qr_code_study_session_id, validity_id) VALUES
-('UbM08mzzakyMBZFaQ46MB4ocQpd0gNUp', 2, FALSE, 2);
+('UbM08mzzakyMBZFaQ46MB4ocQpd0gNUp', 2, 2);
 
