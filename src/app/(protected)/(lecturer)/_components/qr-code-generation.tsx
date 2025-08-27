@@ -35,7 +35,11 @@ import {
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { useGenerateQr } from "../qr-generation/queries";
+import {
+  useGenerateQr,
+  useGetCheckedInStudents,
+  useGetStudentList,
+} from "../qr-generation/queries";
 import { QRGenScreens } from "../qr-generation/types";
 
 export function QrCodeGeneration() {
@@ -99,44 +103,24 @@ export function QrCodeGeneration() {
       .padStart(2, "0")}`;
   };
 
-  // Mock data for recently checked-in students
-  const recentCheckins = [
-    {
-      id: 1,
-      name: "Justin",
-      timestamp: "10:02 AM",
-      avatar: "/placeholder.svg?height=32&width=32",
-    },
-    {
-      id: 2,
-      name: "Deepak",
-      timestamp: "10:03 AM",
-      avatar: "/placeholder.svg?height=32&width=32",
-    },
-    {
-      id: 3,
-      name: "Thu",
-      timestamp: "10:05 AM",
-      avatar: "/placeholder.svg?height=32&width=32",
-    },
-    {
-      id: 4,
-      name: "Tuan",
-      timestamp: "10:06 AM",
-      avatar: "/placeholder.svg?height=32&width=32",
-    },
-    {
-      id: 5,
-      name: "Changu",
-      timestamp: "10:08 AM",
-      avatar: "/placeholder.svg?height=32&width=32",
-    },
-  ];
+  // Real-time data
+  const sessionId = selectedCourse?.sessionId || 0;
+  const { data: studentList } = useGetStudentList(sessionId, {
+    enabled: !!selectedCourse,
+    refetchInterval: 30000,
+  });
+  const { data: checkedInList } = useGetCheckedInStudents(sessionId, {
+    enabled: !!selectedCourse,
+    refetchInterval: 5000,
+  });
+  const totalStudents = studentList?.length ?? 0;
+  const presentStudents = checkedInList?.length ?? 0;
+  const presentPercent = totalStudents
+    ? Math.round((presentStudents / totalStudents) * 100)
+    : 0;
 
   const [qrCode, setQrCode] = useState<GenerateQrResponse>();
-  const { mutateAsync: generateQr } = useGenerateQr(
-    selectedCourse?.sessionId || 0
-  );
+  const { mutateAsync: generateQr } = useGenerateQr(sessionId);
   useEffect(() => {
     if (!selectedCourse) return;
 
@@ -144,6 +128,8 @@ export function QrCodeGeneration() {
       try {
         const data = await generateQr({
           week_number: selectedCourse?.weekNumber || 1,
+          duration: validityDuration,
+          radius: geoValidation ? geoRadius : undefined,
         });
         setQrCode(data);
       } catch (e: unknown) {
@@ -155,7 +141,7 @@ export function QrCodeGeneration() {
       }
     }
     generateQrCode();
-  }, [generateQr, selectedCourse]);
+  }, [generateQr, selectedCourse, validityDuration, geoValidation, geoRadius]);
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -206,11 +192,11 @@ export function QrCodeGeneration() {
                 <CardHeader className="bg-primary/5 border-b pb-0">
                   <div className="text-center">
                     <div className="text-muted-foreground text-sm font-medium">
-                      Introduction to Computer Science - CSIT883
+                      Study Session {selectedCourse?.sessionId} - Week {selectedCourse?.weekNumber}
                     </div>
                     <div className="mt-1 flex items-center justify-center gap-1 text-sm">
                       <Calendar className="h-4 w-4" />
-                      <span>Monday, April 24, 2025 - 10:00 AM</span>
+                      <span>Live check-in tracking</span>
                     </div>
                   </div>
                 </CardHeader>
@@ -251,9 +237,19 @@ export function QrCodeGeneration() {
                 <CardFooter className="flex flex-wrap justify-center gap-2 p-6 pt-0">
                   <Button
                     className="gap-1"
-                    onClick={() => {
+                    onClick={async () => {
                       setRemainingTime(validityDuration * 60);
                       setIsExpired(false);
+                      try {
+                        const data = await generateQr({
+                          week_number: selectedCourse?.weekNumber || 1,
+                          duration: validityDuration,
+                          radius: geoValidation ? geoRadius : undefined,
+                        });
+                        setQrCode(data);
+                      } catch (_e) {
+                        // noop, toast handled in effect
+                      }
                     }}
                   >
                     <RefreshCw className="h-4 w-4" />
@@ -463,7 +459,7 @@ export function QrCodeGeneration() {
                   <CardContent className="space-y-4">
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium">
-                        24/45 students checked in (53%)
+                        {presentStudents}/{totalStudents} students checked in ({presentPercent}%)
                       </span>
                       <Badge
                         variant="outline"
@@ -472,7 +468,7 @@ export function QrCodeGeneration() {
                         Live
                       </Badge>
                     </div>
-                    <Progress value={53} className="bg-muted h-2" />
+                    <Progress value={presentPercent} className="bg-muted h-2" />
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
                         <Label>Recent Check-ins</Label>
@@ -485,30 +481,27 @@ export function QrCodeGeneration() {
                       </div>
                       <ScrollArea className="bg-card h-[140px] rounded-md border p-2">
                         <div className="space-y-2">
-                          {recentCheckins.map(student => (
+                          {(checkedInList ?? []).map(s => (
                             <div
-                              key={student.id}
+                              key={s.student_id + s.checkin_time}
                               className="hover:bg-muted flex items-center justify-between rounded-md p-2"
                             >
                               <div className="flex items-center gap-2">
                                 <Avatar className="h-8 w-8">
-                                  <AvatarImage
-                                    src={student.avatar || "/placeholder.svg"}
-                                    alt={student.name}
-                                  />
+                                  <AvatarImage src={"/placeholder.svg"} alt={s.name} />
                                   <AvatarFallback>
-                                    {student.name
+                                    {s.name
                                       .split(" ")
                                       .map(n => n[0])
                                       .join("")}
                                   </AvatarFallback>
                                 </Avatar>
                                 <span className="text-sm font-medium">
-                                  {student.name}
+                                  {s.name}
                                 </span>
                               </div>
                               <span className="text-muted-foreground text-xs">
-                                {student.timestamp}
+                                {format(new Date(s.checkin_time), "hh:mm a")}
                               </span>
                             </div>
                           ))}

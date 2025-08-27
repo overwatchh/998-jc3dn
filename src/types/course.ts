@@ -75,3 +75,40 @@ export type CheckInListResponse = Array<{
   name: string;
   checkin_time: string;
 }>;
+
+// Lecturer GET /lecturer/study-session/{id}/student-list
+export type StudentListResponse = Array<{
+  student_id: string;
+  name: string;
+  email: string;
+}>;
+
+// Lecturer GET /api/lecturer/subjects
+export type LecturerSubjectStudySession = {
+  study_session_id: number;
+  day_of_week: string;
+  start_time: string; // HH:mm:ss
+  end_time: string; // HH:mm:ss
+  session_type: string; // lecture | lab | tutorial
+  location: {
+    building_number: string;
+    room_number: string;
+    room_description: string;
+    campus_name: string;
+  };
+};
+
+export type LecturerSubject = {
+  subject_id: number;
+  subject_name: string;
+  subject_code: string;
+  semester_name: "autumn" | "spring" | "summer";
+  semester_year: number;
+  study_sessions: LecturerSubjectStudySession[];
+};
+
+export type LecturerSubjectsResponse = {
+  message: string;
+  count: number;
+  data: LecturerSubject[];
+};

@@ -36,3 +36,25 @@ export interface RowLocation extends RowDataPacket {
   latitude: number;
   longitude: number;
 }
+
+// Lecturer GET /api/lecturer/study-session/{id}/qr response types
+export type QrCodeValidity = {
+  validity_id: number;
+  count: number; // 1 = first validity, 2 = second validity
+  start_time: string; // ISO datetime
+  end_time: string; // ISO datetime
+};
+
+export type QrCodeWithValidities = {
+  qr_code_id: number;
+  valid_radius: number;
+  createdAt: string; // ISO datetime
+  week_number: number;
+  validities: QrCodeValidity[];
+};
+
+export type GetQrCodesResponse = BaseApiResponse & {
+  study_session_id: number;
+  count: number;
+  data: QrCodeWithValidities[];
+};
