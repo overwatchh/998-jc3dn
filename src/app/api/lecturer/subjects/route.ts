@@ -89,4 +89,58 @@
  *                   example: Unauthorized access. Student role required.
  */
 
-export async function GET() {}
+import { NextResponse } from "next/server";
+
+export async function GET() {
+  const response = {
+    message: "Fetched teaches subjects successfully",
+    count: 2,
+    data: [
+      {
+        subject_id: 4,
+        subject_name: "Web server programming DTN939",
+        subject_code: "MTS9307",
+        semester_name: "spring",
+        semester_year: 2025,
+        study_sessions: [
+          {
+            study_session_id: 10,
+            day_of_week: "Monday",
+            start_time: "13:00:00",
+            end_time: "15:00:00",
+            session_type: "lecture",
+            location: {
+              building_number: "67",
+              room_number: "202",
+              room_description: "Building 67",
+              campus_name: "Sydney",
+            },
+          },
+        ],
+      },
+      {
+        subject_id: 6,
+        subject_name: "Computer vision algorithms and systems",
+        subject_code: "CSCI435",
+        semester_name: "spring",
+        semester_year: 2025,
+        study_sessions: [
+          {
+            study_session_id: 14,
+            day_of_week: "Wednesday",
+            start_time: "15:00:00",
+            end_time: "17:00:00",
+            session_type: "lab",
+            location: {
+              building_number: "20",
+              room_number: "102",
+              room_description: "Building 20",
+              campus_name: "Wollongong",
+            },
+          },
+        ],
+      },
+    ],
+  };
+  return NextResponse.json(response, { status: 200 });
+}
