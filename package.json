@@ -10,7 +10,8 @@
     "format": "prettier . --write",
     "clean": "rm -rf node_modules .next package-lock.json",
     "check": "tsc --noEmit && npm run lint",
-    "auth:migrate": "dotenv -e .env.local -- npx @better-auth/cli migrate"
+    "auth:migrate": "dotenv -e .env.local -- npx @better-auth/cli migrate",
+    "db:init": "bash src/scripts/init-db.sh"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.1",
