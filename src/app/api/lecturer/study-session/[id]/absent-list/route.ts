@@ -31,3 +31,6 @@
  *       400:
  *         description: Cannot fetch absent list until the study session has ended
  */
+
+export async function GET() {
+}

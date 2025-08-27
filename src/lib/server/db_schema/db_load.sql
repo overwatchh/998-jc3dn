@@ -161,13 +161,14 @@ INSERT INTO validity (id, qr_code_id, count) VALUES
 (3, 3, 1);
 -- QR Code - Study Session mapping
 -- CSCI935 week 1 lucture, tutorial, lab 
-INSERT INTO qr_code_study_session (study_session_id, qr_code_id,week_number) VALUES
-(13, 1, 1),
-(14,2, 1),
-(15,3, 1);
+INSERT INTO qr_code_study_session (id, study_session_id, qr_code_id,week_number) VALUES
+(1, 13, 1, 1),
+(2, 14, 2, 1),
+(3, 15, 3, 1);
 
 -- Checkin records for students
--- Student 3 checked in to CSCI935 lab week 1 on Wednesday
-INSERT INTO checkin (student_id, qr_code_study_session_id, verify_distance) VALUES
-('UbM08mzzakyMBZFaQ46MB4ocQpd0gNUp', 2, FALSE);
+-- Student 3 checked in to CSCI935 lab week 1 on Wednesday on the first attendance checkin
+-- qr_code_study_session_id = 2=> qr_code_id=2 => validity_id=2 for the first checkin window with count=1
+INSERT INTO checkin (student_id, qr_code_study_session_id, validity_id) VALUES
+('UbM08mzzakyMBZFaQ46MB4ocQpd0gNUp', 2, 2);
 

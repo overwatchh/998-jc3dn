@@ -1,4 +1,4 @@
-import { RawSessionRow, GroupedCourse } from "@/types/subject";
+import { RawSessionRow, GroupedCourse } from "@/types/course";
 
 export function groupByCourse(rows: RawSessionRow[]): GroupedCourse[] {
   const grouped: Record<number, GroupedCourse> = {};

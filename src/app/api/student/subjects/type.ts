@@ -33,6 +33,8 @@ export interface GroupedSubject extends RowDataPacket {
       room_number: string;
       room_description: string;
       campus_name: string;
+      latitude:number;
+      longitude:number;
     };
   }[];
 }
