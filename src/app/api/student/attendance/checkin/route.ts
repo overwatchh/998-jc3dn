@@ -32,10 +32,6 @@ import { haversineDistance } from "@/lib/server/util";
  *               long:
  *                 type: number
  *                 description: Student's longitude when checking in
- *               verify_distance:
- *                 type: boolean
- *                 description: Verify distance between student's location and the study session room. May be disabled for online students.
- *                 default: true
  *     responses:
  *       200:
  *         description: Check-in successful
@@ -81,8 +77,7 @@ export async function POST(req: NextRequest) {
   const schema = z.object({
     qr_code_id: z.number(),
     lat: z.number(),
-    long: z.number(),
-    verify_distance: z.boolean().optional().default(true),
+    long: z.number()    
   });
   const parsed = schema.safeParse(body);
   if (!parsed.success) {
@@ -92,7 +87,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { qr_code_id, lat, long, verify_distance } = parsed.data;
+  const { qr_code_id, lat, long } = parsed.data;
 
   // Step 1: From qr_code_id, figure out study session, week, subject, and whether the student is allowed ---
   const [qrRow] = await rawQuery<QrSessionRow>(
@@ -239,45 +234,12 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Step 4: Verify distance (if enabled)
-  if (verify_distance) {
-    if (qrRow.room_latitude == null || qrRow.room_longitude == null) {
-      return NextResponse.json(
-        {
-          message: "Study session room location not configured.",
-          ...studySessionDetails,
-        },
-        { status: 404 }
-      );
-    }
-
-    const distance = haversineDistance(
-      Number(qrRow.room_latitude),
-      Number(qrRow.room_longitude),
-      lat,
-      long
-    );
-
-    const allowedRadius = Number(qrRow.valid_radius ?? 100);
-    if (distance > allowedRadius) {
-      return NextResponse.json(
-        {
-          message: `You are ${distance.toFixed(
-            2
-          )}m away. You must be within ${allowedRadius}m to check in.`,
-          ...studySessionDetails,
-        },
-        { status: 403 }
-      );
-    }
-  }
-
-  // Step 5: Insert check-in ---
+  // Step 4: Insert check-in
   await rawQuery(
     `
     INSERT INTO checkin
-      (student_id, qr_code_study_session_id, validity_id, checkin_time, latitude, longitude, verify_distance)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
+      (student_id, qr_code_study_session_id, validity_id, checkin_time, latitude, longitude)
+    VALUES (?, ?, ?, ?, ?, ?)
     `,
     [
       studentId,
@@ -285,8 +247,7 @@ export async function POST(req: NextRequest) {
       currentWindow.id,
       now,
       lat,
-      long,
-      verify_distance,
+      long,      
     ]
   );
 
