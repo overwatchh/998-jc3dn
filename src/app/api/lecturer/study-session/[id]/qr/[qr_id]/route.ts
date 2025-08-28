@@ -82,7 +82,7 @@ export async function GET(
     const { id, qr_id } = await context.params;
     const studySessionId = parseInt(id, 10);
     const qrId = parseInt(qr_id, 10);
-    
+
     const redirect_path = "/scan";
 
     // Query QR code info

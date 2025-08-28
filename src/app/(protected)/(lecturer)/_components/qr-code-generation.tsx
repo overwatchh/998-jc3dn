@@ -1,7 +1,6 @@
 "use client";
 
 import { useQrGenContext } from "@/app/(protected)/(lecturer)/qr-generation/qr-gen-context";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,10 +12,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Switch } from "@/components/ui/switch";
-import { Tabs } from "@/components/ui/tabs";
 import {
   Select,
   SelectContent,
@@ -24,8 +20,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { GenerateQrResponse } from "@/types/qr-code";
+import { Switch } from "@/components/ui/switch";
+import { Tabs } from "@/components/ui/tabs";
 import apiClient from "@/lib/api/apiClient";
+import { GenerateQrResponse } from "@/types/qr-code";
 import { AxiosError } from "axios";
 import { format } from "date-fns";
 import {
@@ -38,12 +36,11 @@ import {
   Share2,
 } from "lucide-react";
 import Image from "next/image";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { useCountdown } from "../hooks/useCountdown";
 import {
   useGenerateQr,
-  useGetCheckedInStudents,
-  useGetStudentList,
   useGetCourses,
   useGetQrCodes,
 } from "../qr-generation/queries";
@@ -53,41 +50,19 @@ export function QrCodeGeneration() {
   const { setCurrentScreen, setSelectedCourse, selectedCourse } =
     useQrGenContext();
   const [qrType, setQrType] = useState("check-in");
-  const [validityDuration, _setValidityDuration] = useState(15);
   const [geoValidation, setGeoValidation] = useState(false);
   const [geoRadius, setGeoRadius] = useState(100);
 
   // Courses for subject selection
   const { data: courses, isLoading: isCoursesLoading } = useGetCourses();
 
-  // Calculate remaining time for the validity timer
-  const [remainingTime, setRemainingTime] = useState(validityDuration * 60); // Start with full duration
-  const [isExpired, setIsExpired] = useState(false);
-
-  // Real countdown timer effect
-  useEffect(() => {
-    if (remainingTime <= 0) {
-      setIsExpired(true);
-      return;
-    }
-
-    const timer = setInterval(() => {
-      setRemainingTime(prev => {
-        if (prev <= 1) {
-          setIsExpired(true);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [remainingTime]);
-
-  // Reset timer when validity duration changes
-  useEffect(() => {
-    setRemainingTime(validityDuration * 60);
-    setIsExpired(false);
-  }, [validityDuration]);
+  const {
+    remainingTime,
+    setRemainingTime,
+    setIsExpired,
+    isExpired,
+    validityDuration,
+  } = useCountdown();
 
   // Get timer color based on remaining time
   const getTimerColor = () => {
@@ -109,43 +84,47 @@ export function QrCodeGeneration() {
 
   // Real-time data
   const sessionId = selectedCourse?.sessionId || 0;
-  const { data: studentList } = useGetStudentList(sessionId, {
-    enabled: !!selectedCourse,
-    refetchInterval: 30000,
-  });
-  const { data: checkedInList } = useGetCheckedInStudents(sessionId, {
-    enabled: !!selectedCourse,
-    refetchInterval: 5000,
-  });
-  const totalStudents = studentList?.length ?? 0;
-  const presentStudents = checkedInList?.length ?? 0;
-  const presentPercent = totalStudents
-    ? Math.round((presentStudents / totalStudents) * 100)
-    : 0;
+  // const { data: studentList } = useGetStudentList(sessionId, {
+  //   enabled: !!selectedCourse,
+  //   refetchInterval: 30000,
+  // });
+
+  // NOTE: Not implemented yet
+  // const { data: checkedInList } = useGetCheckedInStudents(sessionId, {
+  //   enabled: !!selectedCourse,
+  //   refetchInterval: 5000,
+  // });
+
+  // const totalStudents = studentList?.length ?? 0;
+  // const presentStudents = checkedInList?.length ?? 0;
+  // const presentPercent = totalStudents
+  //   ? Math.round((presentStudents / totalStudents) * 100)
+  //   : 0;
+  //
 
   const [qrCode, setQrCode] = useState<GenerateQrResponse>();
   const { mutateAsync: generateQr } = useGenerateQr(sessionId);
-  
+
   // Use the hook to get existing QR codes for the selected week
   const { data: qrCodesData, refetch: refetchQrCodes } = useGetQrCodes(
     sessionId,
     selectedCourse?.weekNumber,
     { enabled: !!selectedCourse }
   );
-  
+
   // Get all existing QR codes for this session to determine used weeks
   const { data: allQrCodesData } = useGetQrCodes(
     sessionId,
     undefined, // Get all weeks
     { enabled: !!selectedCourse }
   );
-  
+
   // Get used weeks and calculate next available week
   const usedWeeks = useMemo(() => {
     if (!allQrCodesData?.data) return new Set<number>();
     return new Set(allQrCodesData.data.map(qr => qr.week_number));
   }, [allQrCodesData]);
-  
+
   const nextAvailableWeek = useMemo(() => {
     for (let week = 1; week <= 13; week++) {
       if (!usedWeeks.has(week)) {
@@ -154,14 +133,17 @@ export function QrCodeGeneration() {
     }
     return 1; // Fallback
   }, [usedWeeks]);
-  
+
   // Ensure a default course is selected if none
   useEffect(() => {
     if (!selectedCourse && courses && courses.length > 0) {
-      setSelectedCourse({ sessionId: courses[0].id, weekNumber: nextAvailableWeek });
+      setSelectedCourse({
+        sessionId: courses[0].id,
+        weekNumber: nextAvailableWeek,
+      });
     }
   }, [courses, selectedCourse, setSelectedCourse, nextAvailableWeek]);
-  
+
   // Auto-update to next available week when session changes
   useEffect(() => {
     if (selectedCourse && usedWeeks.size > 0) {
@@ -169,12 +151,12 @@ export function QrCodeGeneration() {
       if (usedWeeks.has(currentWeek) && nextAvailableWeek !== currentWeek) {
         setSelectedCourse({
           ...selectedCourse,
-          weekNumber: nextAvailableWeek
+          weekNumber: nextAvailableWeek,
         });
       }
     }
   }, [selectedCourse, usedWeeks, nextAvailableWeek, setSelectedCourse]);
-  
+
   // Handle QR code fetching and generation
   useEffect(() => {
     if (!selectedCourse) return;
@@ -204,7 +186,7 @@ export function QrCodeGeneration() {
           setIsExpired(remaining <= 0);
           return;
         }
-        
+
         // No existing QR found, generate a new one
         const data = await generateQr({
           week_number: selectedCourse?.weekNumber || 1,
@@ -219,7 +201,7 @@ export function QrCodeGeneration() {
         );
         setRemainingTime(remaining);
         setIsExpired(remaining <= 0);
-        
+
         // Refetch QR codes list to update cache
         refetchQrCodes();
       } catch (e: unknown) {
@@ -263,7 +245,18 @@ export function QrCodeGeneration() {
     return () => {
       cancelled = true;
     };
-  }, [selectedCourse, sessionId, generateQr, validityDuration, geoValidation, geoRadius, qrCodesData, refetchQrCodes]);
+  }, [
+    selectedCourse,
+    sessionId,
+    generateQr,
+    validityDuration,
+    geoValidation,
+    geoRadius,
+    qrCodesData,
+    refetchQrCodes,
+    setRemainingTime,
+    setIsExpired,
+  ]);
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -336,13 +329,15 @@ export function QrCodeGeneration() {
               </div>
               <div>
                 <Label className="mb-2 block">
-                  Week 
+                  Week
                   <span className="text-muted-foreground text-xs font-normal">
                     ({usedWeeks.size}/13 created)
                   </span>
                 </Label>
                 <Select
-                  value={selectedCourse ? String(selectedCourse.weekNumber) : ""}
+                  value={
+                    selectedCourse ? String(selectedCourse.weekNumber) : ""
+                  }
                   onValueChange={value =>
                     setSelectedCourse({
                       sessionId: selectedCourse?.sessionId ?? 0,
@@ -356,7 +351,7 @@ export function QrCodeGeneration() {
                   </SelectTrigger>
                   <SelectContent>
                     {usedWeeks.size >= 13 ? (
-                      <div className="p-2 text-center text-muted-foreground text-sm">
+                      <div className="text-muted-foreground p-2 text-center text-sm">
                         All weeks have been created
                       </div>
                     ) : (
@@ -364,8 +359,8 @@ export function QrCodeGeneration() {
                         const isUsed = usedWeeks.has(week);
                         const isNextAvailable = week === nextAvailableWeek;
                         return (
-                          <SelectItem 
-                            key={week} 
+                          <SelectItem
+                            key={week}
                             value={String(week)}
                             disabled={isUsed}
                           >
@@ -387,7 +382,8 @@ export function QrCodeGeneration() {
                 <CardHeader className="bg-primary/5 border-b pb-0">
                   <div className="text-center">
                     <div className="text-muted-foreground text-sm font-medium">
-                      Study Session {selectedCourse?.sessionId} - Week {selectedCourse?.weekNumber}
+                      Study Session {selectedCourse?.sessionId} - Week{" "}
+                      {selectedCourse?.weekNumber}
                     </div>
                     <div className="mt-1 flex items-center justify-center gap-1 text-sm">
                       <Calendar className="h-4 w-4" />
@@ -445,30 +441,38 @@ export function QrCodeGeneration() {
                         const remaining = Math.max(
                           0,
                           Math.floor(
-                            (new Date(data.valid_until).getTime() - Date.now()) /
+                            (new Date(data.valid_until).getTime() -
+                              Date.now()) /
                               1000
                           )
                         );
                         setRemainingTime(remaining);
                         setIsExpired(remaining <= 0);
-                        
+
                         // Refetch QR codes list to update cache
                         refetchQrCodes();
                       } catch (e: unknown) {
                         // Handle race condition: if QR was created by another request
-                        if (e instanceof AxiosError && e.response?.status === 409) {
-                          const { data: updatedQrCodes } = await refetchQrCodes();
+                        if (
+                          e instanceof AxiosError &&
+                          e.response?.status === 409
+                        ) {
+                          const { data: updatedQrCodes } =
+                            await refetchQrCodes();
                           const existing = updatedQrCodes?.data?.[0];
                           if (existing) {
                             try {
-                              const existingQr = await apiClient.get<GenerateQrResponse>(
-                                `/lecturer/study-session/${sessionId}/qr/${existing.qr_code_id}`
-                              );
+                              const existingQr =
+                                await apiClient.get<GenerateQrResponse>(
+                                  `/lecturer/study-session/${sessionId}/qr/${existing.qr_code_id}`
+                                );
                               setQrCode(existingQr.data);
                               const remaining = Math.max(
                                 0,
                                 Math.floor(
-                                  (new Date(existingQr.data.valid_until).getTime() -
+                                  (new Date(
+                                    existingQr.data.valid_until
+                                  ).getTime() -
                                     Date.now()) /
                                     1000
                                 )
@@ -512,7 +516,9 @@ export function QrCodeGeneration() {
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="flex items-center justify-between">
-                      <Label htmlFor="geo-validation">Require valid location</Label>
+                      <Label htmlFor="geo-validation">
+                        Require valid location
+                      </Label>
                       <Switch
                         id="geo-validation"
                         checked={geoValidation}
@@ -546,7 +552,8 @@ export function QrCodeGeneration() {
                   <CardContent className="space-y-4">
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium">
-                        {presentStudents}/{totalStudents} students checked in ({presentPercent}%)
+                        {/* {presentStudents}/{totalStudents} students checked in ( */}
+                        {/* {presentPercent}%) */}
                       </span>
                       <Badge
                         variant="outline"
@@ -555,7 +562,7 @@ export function QrCodeGeneration() {
                         Live
                       </Badge>
                     </div>
-                    <Progress value={presentPercent} className="bg-muted h-2" />
+                    {/* <Progress value={presentPercent} className="bg-muted h-2" /> */}
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
                         <Label>Recent Check-ins</Label>
@@ -568,30 +575,33 @@ export function QrCodeGeneration() {
                       </div>
                       <ScrollArea className="bg-card h-[140px] rounded-md border p-2">
                         <div className="space-y-2">
-                          {(checkedInList ?? []).map(s => (
-                            <div
-                              key={s.student_id + s.checkin_time}
-                              className="hover:bg-muted flex items-center justify-between rounded-md p-2"
-                            >
-                              <div className="flex items-center gap-2">
-                                <Avatar className="h-8 w-8">
-                                  <AvatarImage src={"/placeholder.svg"} alt={s.name} />
-                                  <AvatarFallback>
-                                    {s.name
-                                      .split(" ")
-                                      .map(n => n[0])
-                                      .join("")}
-                                  </AvatarFallback>
-                                </Avatar>
-                                <span className="text-sm font-medium">
-                                  {s.name}
-                                </span>
-                              </div>
-                              <span className="text-muted-foreground text-xs">
-                                {format(new Date(s.checkin_time), "hh:mm a")}
-                              </span>
-                            </div>
-                          ))}
+                          {/* {(checkedInList ?? []).map(s => ( */}
+                          {/*   <div */}
+                          {/*     key={s.student_id + s.checkin_time} */}
+                          {/*     className="hover:bg-muted flex items-center justify-between rounded-md p-2" */}
+                          {/*   > */}
+                          {/*     <div className="flex items-center gap-2"> */}
+                          {/*       <Avatar className="h-8 w-8"> */}
+                          {/*         <AvatarImage */}
+                          {/*           src={"/placeholder.svg"} */}
+                          {/*           alt={s.name} */}
+                          {/*         /> */}
+                          {/*         <AvatarFallback> */}
+                          {/*           {s.name */}
+                          {/*             .split(" ") */}
+                          {/*             .map(n => n[0]) */}
+                          {/*             .join("")} */}
+                          {/*         </AvatarFallback> */}
+                          {/*       </Avatar> */}
+                          {/*       <span className="text-sm font-medium"> */}
+                          {/*         {s.name} */}
+                          {/*       </span> */}
+                          {/*     </div> */}
+                          {/*     <span className="text-muted-foreground text-xs"> */}
+                          {/*       {format(new Date(s.checkin_time), "hh:mm a")} */}
+                          {/*     </span> */}
+                          {/*   </div> */}
+                          {/* ))} */}
                         </div>
                       </ScrollArea>
                       <Button

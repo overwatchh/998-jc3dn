@@ -6,7 +6,11 @@ import {
   StudentListResponse,
   LecturerSubjectsResponse,
 } from "@/types/course";
-import { GenerateQrRequestBody, GenerateQrResponse, GetQrCodesResponse } from "@/types/qr-code";
+import {
+  GenerateQrRequestBody,
+  GenerateQrResponse,
+  GetQrCodesResponse,
+} from "@/types/qr-code";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 const QR_CODE_GENERATION_QUERY_KEY = ["qrCodeGeneration"];
@@ -74,9 +78,8 @@ const COURSES_QUERY_KEY = ["courses"];
 // Get courses (flatten subjects + study_sessions to UI-friendly list)
 export const useGetCourses = () => {
   const queryFn = async () => {
-    const { data } = await apiClient.get<LecturerSubjectsResponse>(
-      "/lecturer/subjects"
-    );
+    const { data } =
+      await apiClient.get<LecturerSubjectsResponse>("/lecturer/subjects");
     const flattened: CourseSessionResponse = data.data.flatMap(subject =>
       subject.study_sessions.map(ss => ({
         id: ss.study_session_id,
@@ -150,7 +153,7 @@ export const useGetQrCode = (
 // Retrieves QR codes created for the study session (one per week) with their validity windows. Can be filtered by week_number.
 const QR_CODES_QUERY_KEY = ["qrCodes"];
 export const useGetQrCodes = (
-  id: number, 
+  id: number,
   weekNumber?: number,
   options?: { enabled?: boolean }
 ) => {
@@ -189,12 +192,11 @@ export const useGetStudentList = (
 };
 
 // Get subjects taught by lecturer with grouped study sessions
-const LECTURER_SUBJECTS_QUERY_KEY = ["lecturerSubjects"]; 
+const LECTURER_SUBJECTS_QUERY_KEY = ["lecturerSubjects"];
 export const useGetLecturerSubjects = () => {
   const queryFn = async () => {
-    const { data } = await apiClient.get<LecturerSubjectsResponse>(
-      `/lecturer/subjects`
-    );
+    const { data } =
+      await apiClient.get<LecturerSubjectsResponse>(`/lecturer/subjects`);
     return data;
   };
   return useQuery({
@@ -202,6 +204,3 @@ export const useGetLecturerSubjects = () => {
     queryFn,
   });
 };
-
-
-

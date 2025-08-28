@@ -2,8 +2,8 @@ name: Deploy to Cloud Run
 
 on:
   push:
-    branches:      
-      - master      
+    branches:
+      - master
       - feat/qr-generation
     paths-ignore:
       - src/lib/server/db_schema/db_*.sql

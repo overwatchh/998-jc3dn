@@ -1,5 +1,10 @@
 "use client";
 
+import {
+  useGetCheckedInStudents,
+  useGetCourses,
+  useGetStudentList,
+} from "@/app/(protected)/(lecturer)/qr-generation/queries";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -44,11 +49,6 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import {
-  useGetCheckedInStudents,
-  useGetCourses,
-  useGetStudentList,
-} from "@/app/(protected)/(lecturer)/qr-generation/queries";
-import {
   Bar,
   BarChart,
   CartesianGrid,
@@ -79,7 +79,9 @@ function AttendanceMap() {
 export function AttendanceTrackingScreen() {
   const [view, setView] = useState<"list" | "map">("list");
   const { data: courses } = useGetCourses();
-  const [selectedSessionId, setSelectedSessionId] = useState<number | null>(null);
+  const [selectedSessionId, setSelectedSessionId] = useState<number | null>(
+    null
+  );
   useEffect(() => {
     if (!selectedSessionId && courses && courses.length > 0) {
       setSelectedSessionId(courses[0].id);

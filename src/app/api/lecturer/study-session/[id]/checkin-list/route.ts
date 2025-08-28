@@ -30,5 +30,4 @@
  *                     format: date-time
  */
 
-export async function GET() {
-}
+export async function GET() {}

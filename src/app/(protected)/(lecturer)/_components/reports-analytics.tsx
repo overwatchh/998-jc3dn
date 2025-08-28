@@ -1,5 +1,6 @@
 "use client";
 
+import { useGetCourses } from "@/app/(protected)/(lecturer)/qr-generation/queries";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -62,7 +63,6 @@ import {
   Share2,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useGetCourses } from "@/app/(protected)/(lecturer)/qr-generation/queries";
 import type { DateRange } from "react-day-picker";
 import {
   Bar,
