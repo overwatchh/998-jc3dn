@@ -61,9 +61,9 @@ INSERT INTO room (building_number, room_number, description, latitude, longitude
 ('2', '103', 'Building 2', -34.40661777021882, 150.88137803896953, 1),
 ('3', '103', 'Building 3', -34.40599667280061, 150.8823234816749, 1),
 ('22', '103', 'Building 22', -34.404630436746494, 150.87661222539015, 1),
-('40', '103', 'Building 40', -34.4062537916668, 150.87683726956962, 2),
-('35', '103', 'Building 35', -34.40582005010667, 150.88081766767468, 2),
-('67', '202', 'Building 67', -34.40458820292591, 150.87731246467433, 2);
+('40', '103', 'Building 40', -34.4062537916668, 150.87683726956962, 1),
+('35', '103', 'Building 35', -34.40582005010667, 150.88081766767468, 1),
+('67', '202', 'Building 67', -34.40458820292591, 150.87731246467433, 1);
 
 -- Semesters
 INSERT INTO semester (id, name, year) VALUES
@@ -76,9 +76,14 @@ INSERT INTO subject (id, name, code, semester_id, status) VALUES
 (1, 'Project management', 'CSIT883', 1, 'finished'),
 (2, 'Database management', 'CSIT882', 2, 'finished'),
 (3, 'Research methodology', 'CSIT940', 3, 'active'),
-(4, 'Web server programming DTN939', 'MTS9307', 3, 'active'),
+(4, 'Web server programming', 'MTS9307', 3, 'active'),
 (5, 'Computer vision algorithms and systems', 'CSCI935', 3, 'active'),
-(6, 'Computer vision algorithms and systems', 'CSCI435', 3, 'active');
+(6, 'Computer vision algorithms and systems', 'CSCI435', 3, 'active'),
+(7, 'Data Mining', 'CSCI910', 3, 'active'),
+(8, 'Artificial Intelligence', 'CSCI920', 3, 'active'),
+(9, 'Cybersecurity Fundamentals', 'CSIT930', 3, 'active'),
+(10, 'Cloud Computing', 'CSIT941', 3, 'active'),
+(11, 'Machine Learning Applications', 'CSCI950', 3, 'active');
 
 -- enrollments — 5 students assigned to 5 courses
 INSERT INTO enrolment (student_id, subject_id) VALUES
@@ -93,30 +98,52 @@ INSERT INTO enrolment (student_id, subject_id) VALUES
 -- student 3,4,5 enrolled subject 5
 ('UbM08mzzakyMBZFaQ46MB4ocQpd0gNUp', 5), ('xSaq6zsZubsuIpDWzyDGGi39Q1q3iiv5', 5), ('w72ehe9ERt9ezeQNLT1Bf3HOoJNbpCsx', 5),
 -- student 1, student 2 enrolled subject 6
-('MPuBeIdXwIoPhceUBtKLFEiFxoAzE3dd', 6), ('zkpUwtQqTxeezHJgkXVtW8n2lyf65AI5', 6);
+('MPuBeIdXwIoPhceUBtKLFEiFxoAzE3dd', 6), ('zkpUwtQqTxeezHJgkXVtW8n2lyf65AI5', 6),
+-- student 1 enrolled subject 7,8,9,10,11
+('MPuBeIdXwIoPhceUBtKLFEiFxoAzE3dd', 7),
+('MPuBeIdXwIoPhceUBtKLFEiFxoAzE3dd', 8),
+('MPuBeIdXwIoPhceUBtKLFEiFxoAzE3dd', 9),
+('MPuBeIdXwIoPhceUBtKLFEiFxoAzE3dd', 10),
+('MPuBeIdXwIoPhceUBtKLFEiFxoAzE3dd', 11);
 
 -- Course Sessions (1 lecture + 2 labs each course)
 INSERT INTO study_session (id, type, day_of_week, start_time, end_time, room_id) VALUES
 -- CSIT883
 (1, 'lecture', 'Monday', '09:00:00', '11:00:00', 1),
-(2, 'lab', 'Wednesday', '13:00:00', '15:00:00', 2),
-(3, 'lab', 'Friday', '10:00:00', '12:00:00', 3),
+(2, 'tutorial', 'Wednesday', '13:00:00', '15:00:00', 2),
+(3, 'tutorial', 'Friday', '10:00:00', '12:00:00', 3),
 -- CSIT882
 (4, 'lecture', 'Tuesday', '08:00:00', '10:00:00', 4),
-(5, 'lab', 'Thursday', '14:00:00', '16:00:00', 5),
-(6, 'lab', 'Friday', '12:00:00', '14:00:00', 6),
+(5, 'tutorial', 'Thursday', '14:00:00', '16:00:00', 5),
+(6, 'tutorial', 'Friday', '12:00:00', '14:00:00', 6),
 -- CSIT940
 (7, 'lecture', 'Wednesday', '11:00:00', '13:00:00', 7),
-(8, 'lab', 'Thursday', '10:00:00', '12:00:00', 8),
-(9, 'lab', 'Friday', '14:00:00', '16:00:00', 9),
+(8, 'tutorial', 'Thursday', '10:00:00', '12:00:00', 8),
+(9, 'tutorial', 'Friday', '14:00:00', '16:00:00', 9),
 -- MTS9307
 (10, 'lecture', 'Monday', '13:00:00', '15:00:00', 10),
-(11, 'lab', 'Tuesday', '10:00:00', '12:00:00', 1),
-(12, 'lab', 'Thursday', '08:00:00', '10:00:00', 2),
+(11, 'tutorial', 'Tuesday', '10:00:00', '12:00:00', 1),
+(12, 'tutorial', 'Thursday', '08:00:00', '10:00:00', 2),
 -- CSCI935, CSCI435
 (13, 'lecture', 'Friday', '09:00:00', '11:00:00', 3),
-(14, 'lab', 'Wednesday', '15:00:00', '17:00:00', 4),
-(15, 'lab', 'Thursday', '16:00:00', '18:00:00', 5);
+(14, 'tutorial', 'Wednesday', '15:00:00', '17:00:00', 4),
+(15, 'tutorial', 'Thursday', '16:00:00', '18:00:00', 5),
+-- Data Mining
+(16, 'lecture', 'Monday', '09:00:00', '11:00:00', 6),
+(17, 'tutorial', 'Wednesday', '13:00:00', '15:00:00', 7),
+-- Artificial Intelligence
+(18, 'lecture', 'Tuesday', '10:00:00', '12:00:00', 8),
+(19, 'tutorial', 'Thursday', '14:00:00', '16:00:00', 9),
+-- Cybersecurity Fundamentals
+(20, 'lecture', 'Wednesday', '09:00:00', '11:00:00', 10),
+(21, 'tutorial', 'Friday', '11:00:00', '13:00:00', 1),
+-- Cloud Computing
+(22, 'lecture', 'Thursday', '09:00:00', '11:00:00', 2),
+(23, 'tutorial', 'Monday', '14:00:00', '16:00:00', 3),
+-- Machine Learning Applications
+(24, 'lecture', 'Friday', '09:00:00', '11:00:00', 4),
+(25, 'tutorial', 'Tuesday', '15:00:00', '17:00:00', 5);
+
 
 -- Subject-StudySession
 INSERT INTO subject_study_session (subject_id, study_session_id) VALUES
@@ -125,15 +152,27 @@ INSERT INTO subject_study_session (subject_id, study_session_id) VALUES
 (3, 7), (3, 8), (3, 9),
 (4, 10), (4, 11), (4, 12),
 (5, 13), (5, 14), (5, 15),
-(6, 13), (6, 14), (6, 15);
+(6, 13), (6, 14), (6, 15),
+(7, 16), (7, 17),
+(8, 18), (8, 19),
+(9, 20), (9, 21),
+(10, 22), (10, 23),
+(11, 24), (11, 25);
 
 -- Student-StudySession
 INSERT INTO student_study_session (student_id, study_session_id) VALUES
--- Students 3 and 4 enrolled in CSCI935 lab on Wednesday session
+-- Students 3 and 4 enrolled in CSCI935 tutorial on Wednesday session
 ('UbM08mzzakyMBZFaQ46MB4ocQpd0gNUp', 14),
 ('xSaq6zsZubsuIpDWzyDGGi39Q1q3iiv5', 14),
--- Student 5 enrolled in CSCI935 lab on Thursday session
-('w72ehe9ERt9ezeQNLT1Bf3HOoJNbpCsx', 15);
+-- Student 5 enrolled in CSCI935 tutorial on Thursday session
+('w72ehe9ERt9ezeQNLT1Bf3HOoJNbpCsx', 15),
+-- Student 1 enrolled into tutorials
+('MPuBeIdXwIoPhceUBtKLFEiFxoAzE3dd', 15),
+('MPuBeIdXwIoPhceUBtKLFEiFxoAzE3dd', 17),
+('MPuBeIdXwIoPhceUBtKLFEiFxoAzE3dd', 19),
+('MPuBeIdXwIoPhceUBtKLFEiFxoAzE3dd', 21),
+('MPuBeIdXwIoPhceUBtKLFEiFxoAzE3dd', 23),
+('MPuBeIdXwIoPhceUBtKLFEiFxoAzE3dd', 25);
 
 -- Lectuer study session
 INSERT INTO lecturer_study_session (study_session_id, lecturer_id) VALUES
@@ -143,10 +182,19 @@ INSERT INTO lecturer_study_session (study_session_id, lecturer_id) VALUES
 (11, 'Pl3aUloS8SowYGhvBTnUH2nocxPPXE41'),
 -- lec3
 (13, 'QNZ4aS743Pn4hUsd0dskFnnAUQ3JIxaw'),
--- lec1
+-- lec1 teaches study sesion 14-25
 (14, 'hrEpeIa27ITirYij0FJRAYgbMledKcuw'),
--- lec2
-(15, 'Pl3aUloS8SowYGhvBTnUH2nocxPPXE41');
+(15, 'Pl3aUloS8SowYGhvBTnUH2nocxPPXE41'),
+(16, 'hrEpeIa27ITirYij0FJRAYgbMledKcuw'),
+(17, 'hrEpeIa27ITirYij0FJRAYgbMledKcuw'),
+(18, 'hrEpeIa27ITirYij0FJRAYgbMledKcuw'),
+(19, 'hrEpeIa27ITirYij0FJRAYgbMledKcuw'),
+(20, 'hrEpeIa27ITirYij0FJRAYgbMledKcuw'),
+(21, 'hrEpeIa27ITirYij0FJRAYgbMledKcuw'),
+(22, 'hrEpeIa27ITirYij0FJRAYgbMledKcuw'),
+(23, 'hrEpeIa27ITirYij0FJRAYgbMledKcuw'),
+(24, 'hrEpeIa27ITirYij0FJRAYgbMledKcuw'),
+(25, 'hrEpeIa27ITirYij0FJRAYgbMledKcuw');
 
 -- QR Codes 
 INSERT INTO qr_code (id) VALUES
@@ -160,14 +208,14 @@ INSERT INTO validity (id, qr_code_id, count) VALUES
 (2, 2, 1),
 (3, 3, 1);
 -- QR Code - Study Session mapping
--- CSCI935 week 1 lucture, tutorial, lab 
+-- CSCI935 week 1 lucture, tutorial
 INSERT INTO qr_code_study_session (id, study_session_id, qr_code_id,week_number) VALUES
 (1, 13, 1, 1),
 (2, 14, 2, 1),
 (3, 15, 3, 1);
 
 -- Checkin records for students
--- Student 3 checked in to CSCI935 lab week 1 on Wednesday on the first attendance checkin
+-- Student 3 checked in to CSCI935 tutorial week 1 on Wednesday on the first attendance checkin
 -- qr_code_study_session_id = 2=> qr_code_id=2 => validity_id=2 for the first checkin window with count=1
 INSERT INTO checkin (student_id, qr_code_study_session_id, validity_id) VALUES
 ('UbM08mzzakyMBZFaQ46MB4ocQpd0gNUp', 2, 2);
