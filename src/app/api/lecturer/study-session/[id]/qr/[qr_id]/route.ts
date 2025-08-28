@@ -76,20 +76,13 @@ const APP_URL = process.env.BASE_URL!;
 
 export async function GET(
   req: NextRequest,
-  context: { params: Promise<{ id: string; qr_id?: string; qr_code_id?: string }> }
+  context: { params: Promise<{ id: string; qr_id: string }> }
 ) {
   try {
-    const { id, qr_id, qr_code_id } = await context.params;
+    const { id, qr_id } = await context.params;
     const studySessionId = parseInt(id, 10);
-    // Support both folder param name [qr_id] and legacy 'qr_code_id'
-    const qrId = parseInt(qr_id ?? qr_code_id ?? "", 10);
-    if (Number.isNaN(qrId)) {
-      return NextResponse.json(
-        { message: "Invalid qr_id provided" },
-        { status: 400 }
-      );
-    }
-
+    const qrId = parseInt(qr_id, 10);
+    
     const redirect_path = "/scan";
 
     // Query QR code info
