@@ -107,7 +107,7 @@ CREATE TABLE study_session (
     day_of_week ENUM('Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday') NOT NULL,
     start_time TIME NOT NULL,
     end_time TIME NOT NULL,
-    type ENUM('lecture', 'lab', 'tutorial') NOT NULL,
+    type ENUM('lecture', 'tutorial') NOT NULL,
     room_id INT NOT NULL,
     CONSTRAINT fk_studysession_room FOREIGN KEY (room_id) REFERENCES room(id)
 );

@@ -66,8 +66,8 @@ import { GroupedSubject, RawSubjectRow } from "./type";
  *                               example: "12:00:00"
  *                             session_type:
  *                               type: string
- *                               enum: [lecture, lab, tutorial]
- *                               example: lab
+ *                               enum: [lecture, tutorial]
+ *                               example: tutorial
  *                             location:
  *                               type: object
  *                               properties:
