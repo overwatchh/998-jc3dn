@@ -88,12 +88,11 @@
  *                   type: string
  *                   example: Unauthorized access. Student role required.
  */
-
 import { NextResponse } from "next/server";
 
 export async function GET() {
   // Hardcoded response based on db_load.sql data
-  // for lecturer with id=1 
+  // for lecturer with id=1
   // teaching subjects with id 4,5,7,8,9,10,11
   const response = {
     message: "Fetched teaches subjects successfully",

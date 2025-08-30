@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
   const schema = z.object({
     qr_code_id: z.number(),
     lat: z.number(),
-    long: z.number()    
+    long: z.number(),
   });
   const parsed = schema.safeParse(body);
   if (!parsed.success) {
@@ -246,7 +246,7 @@ export async function POST(req: NextRequest) {
       currentWindow.id,
       now,
       lat,
-      long,      
+      long,
     ]
   );
 
