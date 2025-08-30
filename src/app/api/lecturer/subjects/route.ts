@@ -173,8 +173,6 @@ ORDER BY sub.id,
           room_number: row.room_number,
           room_description: row.room_description,
           campus_name: row.campus_name,
-          latitude: Number(row.latitude),
-          longitude: Number(row.longitude),
         },
       });
     });
