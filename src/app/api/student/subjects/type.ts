@@ -5,7 +5,7 @@ export interface RawSubjectRow extends RowDataPacket {
   day_of_week: string;
   start_time: string;
   end_time: string;
-  session_type: "lecture" | "lab" | "tutorial";
+  session_type: "lecture" | "tutorial";
   building_number: string;
   room_number: string;
   room_description: string;
@@ -28,12 +28,14 @@ export interface GroupedSubject extends RowDataPacket {
     day_of_week: string;
     start_time: string;
     end_time: string;
-    session_type: "lecture" | "lab" | "tutorial";
+    session_type: "lecture" | "tutorial";
     location: {
       building_number: string;
       room_number: string;
       room_description: string;
       campus_name: string;
+      latitude:number;
+      longitude:number;
     };
   }[];
 }

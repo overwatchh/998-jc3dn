@@ -68,8 +68,8 @@ import { GroupedSubject, RawSubjectRow } from "./type";
  *                               example: "12:00:00"
  *                             session_type:
  *                               type: string
- *                               enum: [lecture, lab, tutorial]
- *                               example: lab
+ *                               enum: [lecture, tutorial]
+ *                               example: tutorial
  *                             location:
  *                               type: object
  *                               properties:
@@ -85,6 +85,12 @@ import { GroupedSubject, RawSubjectRow } from "./type";
  *                                 campus_name:
  *                                   type: string
  *                                   example: Wollongong
+ *                                 latitude:
+ *                                   type: float
+ *                                   example: -34.40458820292591
+ *                                 longitude:
+ *                                   type: float
+ *                                   example: -34.40458820292591
  *       401:
  *         description: User is not authenticated or does not have the student role.
  *         content:
@@ -123,6 +129,8 @@ export async function GET() {
     r.building_number,
     r.room_number,
     r.description AS room_description,
+    r.latitude,
+    r.longitude,
     c.name AS campus_name,
     s.id AS subject_id,
     s.name AS subject_name,
@@ -183,6 +191,8 @@ ORDER BY s.id,
           room_number: row.room_number,
           room_description: row.room_description,
           campus_name: row.campus_name,
+          latitude: Number(row.latitude),
+          longitude: Number(row.longitude),
         },
       });
     });

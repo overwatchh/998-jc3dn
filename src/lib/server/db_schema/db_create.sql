@@ -107,7 +107,7 @@ CREATE TABLE study_session (
     day_of_week ENUM('Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday') NOT NULL,
     start_time TIME NOT NULL,
     end_time TIME NOT NULL,
-    type ENUM('lecture', 'lab', 'tutorial') NOT NULL,
+    type ENUM('lecture', 'tutorial') NOT NULL,
     room_id INT NOT NULL,
     CONSTRAINT fk_studysession_room FOREIGN KEY (room_id) REFERENCES room(id)
 );
@@ -195,10 +195,11 @@ CREATE TABLE checkin (
     student_id VARCHAR(36) NOT NULL,
     qr_code_study_session_id INT NOT NULL,
     checkin_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    latitude DECIMAL(16,14),
-    longitude DECIMAL(16,14),
-    verify_distance BOOLEAN DEFAULT TRUE,
-    PRIMARY KEY (student_id, qr_code_study_session_id),
+    validity_id INT NOT NULL,
+    latitude DECIMAL(18,14),
+    longitude DECIMAL(18,14),    
+    PRIMARY KEY (student_id, qr_code_study_session_id, validity_id),
+    CONSTRAINT fk_check_validity FOREIGN KEY (validity_id) REFERENCES validity(id),
     CONSTRAINT fk_check_student FOREIGN KEY (student_id) REFERENCES user(id),
     CONSTRAINT fk_check_qrss FOREIGN KEY (qr_code_study_session_id) REFERENCES qr_code_study_session(id)
 );

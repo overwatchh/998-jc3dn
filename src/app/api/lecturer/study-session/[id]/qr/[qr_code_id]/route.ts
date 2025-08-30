@@ -115,7 +115,7 @@ export async function GET(
     const { study_session_id, week_number, valid_until } = rows[0];
 
     // Build QR url
-    const qrUrl = `${APP_URL}${redirect_path}?qr_code_id=${qr_code_id}`;
+    const qrUrl = `${APP_URL}${redirect_path}?qr_code_id=${qrId}`;
     const qrDataUrl = await QRCode.toDataURL(qrUrl);
 
     return NextResponse.json({

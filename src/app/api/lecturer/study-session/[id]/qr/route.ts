@@ -235,7 +235,7 @@ export async function POST(
     }
 
     const lecturerId = session.user.id;
-    // Step 2: Check if lecturer is assigned to this session
+    // Step 2a: Check if lecturer is assigned to this session
     const checkSql = `
       SELECT ss.id AS study_session_id
       FROM study_session ss
@@ -253,6 +253,41 @@ export async function POST(
         { status: 403 }
       );
     }
+    // Step 2b: Check that it's the correct day and time window
+    const timeCheckSql = `
+  SELECT 
+    ss.day_of_week,
+    ss.start_time,
+    ss.end_time,
+    CASE 
+      WHEN ss.day_of_week = DAYNAME(NOW()) 
+       AND TIME(NOW()) BETWEEN ss.start_time AND ss.end_time
+      THEN 1 ELSE 0 
+    END AS valid_time
+  FROM study_session ss
+  WHERE ss.id = ?
+`;
+
+    const [timeCheck] = await rawQuery<{
+      day_of_week: string;
+      start_time: string;
+      end_time: string;
+      valid_time: number;
+    }>(timeCheckSql, [studySessionId]);
+
+    if (!timeCheck || timeCheck.valid_time === 0) {
+      return NextResponse.json(
+        {
+          message:
+            "This request is outside the allowed session time or wrong day",
+          valid_day: timeCheck?.day_of_week,
+          valid_start_time: timeCheck?.start_time,
+          valid_end_time: timeCheck?.end_time,
+        },
+        { status: 403 }
+      );
+    }
+
     // Step 3: Create qr in DB
     const validDuration =
       duration && typeof duration === "number" ? duration : 15; // default 15 minutes
