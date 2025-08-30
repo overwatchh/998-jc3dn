@@ -92,6 +92,125 @@
 import { NextResponse } from "next/server";
 
 export async function GET()
+  const session = await auth.api.getSession({ headers: await headers() });
+
+  if (!session || !session.user) {
+    return NextResponse.json({ message: "Unauthorised" }, { status: 401 });
+  }
+  // ensure proper user role
+  if (session.user.role !== "lecturer") {
+    return NextResponse.json(
+      { message: "Forbidden: Only lecturers can access this." },
+      { status: 403 }
+    );
+  }
+
+  try {
+    const lecturer_id = session.user.id;
+
+    const sql = ` SELECT
+      sub.id AS subject_id,
+      sub.name AS subject_name,
+      sub.code AS subject_code,
+      sem.name AS semester_name,
+      sem.year AS semester_year,
+      ss.id AS study_session_id,
+      ss.day_of_week,
+      ss.start_time,
+      ss.end_time,
+      ss.type AS session_type,
+      ro.building_number AS building_number,
+      ro.room_number AS room_number,
+      ro.description AS room_description,
+      cam.name AS campus_name
+    
+
+FROM lecturer_study_session lss
+JOIN study_session ss ON lss.study_session_id = ss.id
+JOIN subject_study_session sss ON ss.id = sss.study_session_id
+JOIN subject sub ON sss.subject_id = sub.id
+JOIN semester sem ON sub.semester_id = sem.id
+JOIN room ro ON ss.room_id = ro.id
+JOIN capus cam ON ro.campus_id = cam.id
+
+
+WHERE lss.lecturer_id = ?
+  AND s.status = 'Active'
+  )
+ORDER BY sub.id,
+         FIELD(ss.day_of_week,'Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'),
+         ss.start_time;
+`;
+
+    const subjects = await rawQuery<RawSubjectRow>(sql, [lecturer_id]);
+    const grouped: GroupedSubject[] = [];
+
+    subjects.forEach(row => {
+      // Check if the subject already exists in the grouped array
+      let subject = grouped.find(s => s.subject_id === row.subject_id);
+
+      if (!subject) {
+        subject = {
+          subject_id: row.subject_id,
+          subject_name: row.subject_name,
+          subject_code: row.subject_code,
+          semester_name: row.semester_name,
+          semester_year: row.semester_year,
+          study_sessions: [],
+        } as GroupedSubject;
+        grouped.push(subject);
+      }
+
+      // Add the study session
+      subject.study_sessions.push({
+        study_session_id: row.study_session_id,
+        day_of_week: row.day_of_week,
+        start_time: row.start_time,
+        end_time: row.end_time,
+        session_type: row.session_type,
+        location: {
+          building_number: row.building_number,
+          room_number: row.room_number,
+          room_description: row.room_description,
+          campus_name: row.campus_name,
+          latitude: Number(row.latitude),
+          longitude: Number(row.longitude),
+        },
+      });
+    });
+
+    const response: ApiArrayResponse<GroupedSubject[]> = {
+      message: "Fetched taught subjects successfully",
+      count: grouped.length,
+      data: grouped,
+    };
+
+    return NextResponse.json(response);
+  } catch (err) {
+    console.error("[GET_LECTURER_SUBJECTS]", err);
+    return NextResponse.json({ message: "Server Error" }, { status: 500 });
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
