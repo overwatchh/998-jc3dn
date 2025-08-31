@@ -86,7 +86,7 @@
  *               properties:
  *                 message:
  *                   type: string
- *                   example: Unauthorized access. Student role required.
+ *                   example: Unauthorised access. Student role required.
  */
 
 import { NextResponse } from "next/server";
@@ -94,6 +94,8 @@ import { auth } from "@/lib/server/auth";
 import { rawQuery } from "@/lib/server/query";
 import { headers } from "next/headers";
 import { ApiArrayResponse } from "@/types/api";
+import { RawSubjectRow, GroupedSubject } from "./type";
+
 
 
 
@@ -195,6 +197,8 @@ ORDER BY sub.id,
     return NextResponse.json({ message: "Server Error" }, { status: 500 });
   }
 }
+
+
 
 
 
