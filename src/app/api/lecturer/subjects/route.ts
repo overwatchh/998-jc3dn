@@ -96,9 +96,6 @@ import { headers } from "next/headers";
 import { ApiArrayResponse } from "@/types/api";
 import { RawSubjectRow, GroupedSubject } from "./type";
 
-
-
-
 export async function GET() {
   const session = await auth.api.getSession({ headers: await headers() });
 
@@ -197,8 +194,3 @@ ORDER BY sub.id,
     return NextResponse.json({ message: "Server Error" }, { status: 500 });
   }
 }
-
-
-
-
-
