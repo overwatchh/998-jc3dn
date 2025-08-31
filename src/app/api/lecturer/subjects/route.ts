@@ -90,8 +90,14 @@
  */
 
 import { NextResponse } from "next/server";
+import { auth } from "@/lib/server/auth";
+import { rawQuery } from "@/lib/server/query";
+import { headers } from "next/headers";
+import { ApiArrayResponse } from "@/types/api";
 
-export async function GET()
+
+
+export async function GET() {
   const session = await auth.api.getSession({ headers: await headers() });
 
   if (!session || !session.user) {
@@ -131,12 +137,12 @@ JOIN subject_study_session sss ON ss.id = sss.study_session_id
 JOIN subject sub ON sss.subject_id = sub.id
 JOIN semester sem ON sub.semester_id = sem.id
 JOIN room ro ON ss.room_id = ro.id
-JOIN capus cam ON ro.campus_id = cam.id
+JOIN campus cam ON ro.campus_id = cam.id
 
 
 WHERE lss.lecturer_id = ?
-  AND s.status = 'Active'
-  )
+  AND sub.status = 'Active'
+  
 ORDER BY sub.id,
          FIELD(ss.day_of_week,'Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'),
          ss.start_time;
