@@ -86,238 +86,110 @@
  *               properties:
  *                 message:
  *                   type: string
- *                   example: Unauthorized access. Student role required.
+ *                   example: Unauthorised access. Student role required.
  */
+import { auth } from "@/lib/server/auth";
+import { rawQuery } from "@/lib/server/query";
+import { ApiArrayResponse } from "@/types/api";
+import { headers } from "next/headers";
 import { NextResponse } from "next/server";
+import { GroupedSubject, RawSubjectRow } from "./type";
 
 export async function GET() {
-  // Hardcoded response based on db_load.sql data
-  // for lecturer with id=1
-  // teaching subjects with id 4,5,7,8,9,10,11
-  const response = {
-    message: "Fetched teaches subjects successfully",
-    count: 7,
-    data: [
-      {
-        subject_id: 4,
-        subject_name: "Web server programming",
-        subject_code: "MTS9307",
-        semester_name: "spring",
-        semester_year: 2025,
-        study_sessions: [
-          {
-            study_session_id: 10,
-            day_of_week: "Monday",
-            start_time: "13:00:00",
-            end_time: "15:00:00",
-            session_type: "lecture",
-            location: {
-              building_number: "67",
-              room_number: "202",
-              room_description: "Building 67",
-              campus_name: "Sydney",
-            },
-          },
-        ],
-      },
-      {
-        subject_id: 5,
-        subject_name: "Computer vision algorithms and systems",
-        subject_code: "CSCI935",
-        semester_name: "spring",
-        semester_year: 2025,
-        study_sessions: [
-          {
-            study_session_id: 14,
-            day_of_week: "Wednesday",
-            start_time: "15:00:00",
-            end_time: "17:00:00",
-            session_type: "tutorial",
-            location: {
-              building_number: "20",
-              room_number: "102",
-              room_description: "Building 20",
-              campus_name: "Wollongong",
-            },
-          },
-        ],
-      },
-      {
-        subject_id: 7,
-        subject_name: "Data Mining",
-        subject_code: "CSCI910",
-        semester_name: "spring",
-        semester_year: 2025,
-        study_sessions: [
-          {
-            study_session_id: 16,
-            day_of_week: "Monday",
-            start_time: "09:00:00",
-            end_time: "11:00:00",
-            session_type: "lecture",
-            location: {
-              building_number: "3",
-              room_number: "103",
-              room_description: "Building 3",
-              campus_name: "Wollongong",
-            },
-          },
-          {
-            study_session_id: 17,
-            day_of_week: "Wednesday",
-            start_time: "13:00:00",
-            end_time: "15:00:00",
-            session_type: "tutorial",
-            location: {
-              building_number: "22",
-              room_number: "103",
-              room_description: "Building 22",
-              campus_name: "Wollongong",
-            },
-          },
-        ],
-      },
-      {
-        subject_id: 8,
-        subject_name: "Artificial Intelligence",
-        subject_code: "CSCI920",
-        semester_name: "spring",
-        semester_year: 2025,
-        study_sessions: [
-          {
-            study_session_id: 18,
-            day_of_week: "Tuesday",
-            start_time: "10:00:00",
-            end_time: "12:00:00",
-            session_type: "lecture",
-            location: {
-              building_number: "40",
-              room_number: "103",
-              room_description: "Building 40",
-              campus_name: "Sydney",
-            },
-          },
-          {
-            study_session_id: 19,
-            day_of_week: "Thursday",
-            start_time: "14:00:00",
-            end_time: "16:00:00",
-            session_type: "tutorial",
-            location: {
-              building_number: "35",
-              room_number: "103",
-              room_description: "Building 35",
-              campus_name: "Sydney",
-            },
-          },
-        ],
-      },
-      {
-        subject_id: 9,
-        subject_name: "Cybersecurity Fundamentals",
-        subject_code: "CSIT930",
-        semester_name: "spring",
-        semester_year: 2025,
-        study_sessions: [
-          {
-            study_session_id: 20,
-            day_of_week: "Wednesday",
-            start_time: "09:00:00",
-            end_time: "11:00:00",
-            session_type: "lecture",
-            location: {
-              building_number: "67",
-              room_number: "202",
-              room_description: "Building 67",
-              campus_name: "Sydney",
-            },
-          },
-          {
-            study_session_id: 21,
-            day_of_week: "Friday",
-            start_time: "11:00:00",
-            end_time: "13:00:00",
-            session_type: "tutorial",
-            location: {
-              building_number: "17",
-              room_number: "101",
-              room_description: "Library",
-              campus_name: "Wollongong",
-            },
-          },
-        ],
-      },
-      {
-        subject_id: 10,
-        subject_name: "Cloud Computing",
-        subject_code: "CSIT941",
-        semester_name: "spring",
-        semester_year: 2025,
-        study_sessions: [
-          {
-            study_session_id: 22,
-            day_of_week: "Thursday",
-            start_time: "09:00:00",
-            end_time: "11:00:00",
-            session_type: "lecture",
-            location: {
-              building_number: "20",
-              room_number: "102",
-              room_description: "Building 20",
-              campus_name: "Wollongong",
-            },
-          },
-          {
-            study_session_id: 23,
-            day_of_week: "Monday",
-            start_time: "14:00:00",
-            end_time: "16:00:00",
-            session_type: "tutorial",
-            location: {
-              building_number: "14",
-              room_number: "201",
-              room_description: "Building 14",
-              campus_name: "Wollongong",
-            },
-          },
-        ],
-      },
-      {
-        subject_id: 11,
-        subject_name: "Machine Learning Applications",
-        subject_code: "CSCI950",
-        semester_name: "spring",
-        semester_year: 2025,
-        study_sessions: [
-          {
-            study_session_id: 24,
-            day_of_week: "Friday",
-            start_time: "09:00:00",
-            end_time: "11:00:00",
-            session_type: "lecture",
-            location: {
-              building_number: "17",
-              room_number: "202",
-              room_description: "Building 17",
-              campus_name: "Wollongong",
-            },
-          },
-          {
-            study_session_id: 25,
-            day_of_week: "Tuesday",
-            start_time: "15:00:00",
-            end_time: "17:00:00",
-            session_type: "tutorial",
-            location: {
-              building_number: "2",
-              room_number: "103",
-              room_description: "Building 2",
-              campus_name: "Wollongong",
-            },
-          },
-        ],
-      },
-    ],
-  };
-  return NextResponse.json(response, { status: 200 });
+  const session = await auth.api.getSession({ headers: await headers() });
+
+  if (!session || !session.user) {
+    return NextResponse.json({ message: "Unauthorised" }, { status: 401 });
+  }
+  // ensure proper user role
+  if (session.user.role !== "lecturer") {
+    return NextResponse.json(
+      { message: "Forbidden: Only lecturers can access this." },
+      { status: 403 }
+    );
+  }
+
+  try {
+    const lecturer_id = session.user.id;
+
+    const sql = ` SELECT
+      sub.id AS subject_id,
+      sub.name AS subject_name,
+      sub.code AS subject_code,
+      sem.name AS semester_name,
+      sem.year AS semester_year,
+      ss.id AS study_session_id,
+      ss.day_of_week,
+      ss.start_time,
+      ss.end_time,
+      ss.type AS session_type,
+      ro.building_number AS building_number,
+      ro.room_number AS room_number,
+      ro.description AS room_description,
+      cam.name AS campus_name
+    
+
+FROM lecturer_study_session lss
+JOIN study_session ss ON lss.study_session_id = ss.id
+JOIN subject_study_session sss ON ss.id = sss.study_session_id
+JOIN subject sub ON sss.subject_id = sub.id
+JOIN semester sem ON sub.semester_id = sem.id
+JOIN room ro ON ss.room_id = ro.id
+JOIN campus cam ON ro.campus_id = cam.id
+
+
+WHERE lss.lecturer_id = ?
+  AND sub.status = 'Active'
+  
+ORDER BY sub.id,
+         FIELD(ss.day_of_week,'Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'),
+         ss.start_time;
+`;
+
+    const subjects = await rawQuery<RawSubjectRow>(sql, [lecturer_id]);
+    const grouped: GroupedSubject[] = [];
+
+    subjects.forEach(row => {
+      // Check if the subject already exists in the grouped array
+      let subject = grouped.find(s => s.subject_id === row.subject_id);
+
+      if (!subject) {
+        subject = {
+          subject_id: row.subject_id,
+          subject_name: row.subject_name,
+          subject_code: row.subject_code,
+          semester_name: row.semester_name,
+          semester_year: row.semester_year,
+          study_sessions: [],
+        } as GroupedSubject;
+        grouped.push(subject);
+      }
+
+      // Add the study session
+      subject.study_sessions.push({
+        study_session_id: row.study_session_id,
+        day_of_week: row.day_of_week,
+        start_time: row.start_time,
+        end_time: row.end_time,
+        session_type: row.session_type,
+        location: {
+          building_number: row.building_number,
+          room_number: row.room_number,
+          room_description: row.room_description,
+          campus_name: row.campus_name,
+        },
+      });
+    });
+
+    const response: ApiArrayResponse<GroupedSubject[]> = {
+      message: "Fetched taught subjects successfully",
+      count: grouped.length,
+      data: grouped,
+    };
+
+    return NextResponse.json(response);
+  } catch (err) {
+    console.error("[GET_LECTURER_SUBJECTS]", err);
+    return NextResponse.json({ message: "Server Error" }, { status: 500 });
+  }
 }
