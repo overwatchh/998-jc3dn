@@ -5,8 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertTriangle, Bell, CheckCheck } from "lucide-react";
 import { useState } from "react";
-import { mockNotifications } from "./mockdata";
 import { NotificationCard } from "./NotificationCard";
+import { mockNotifications } from "./mockdata";
 
 export function NotificationsScreen() {
   const [notifications, setNotifications] = useState(mockNotifications);
@@ -32,11 +32,11 @@ export function NotificationsScreen() {
   const unreadCount = notifications.filter(n => n.unread).length;
 
   return (
-    <div className="p-4 space-y-6">
+    <div className="space-y-6 p-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center">
-          <h1 className="text-xl font-semibold text-primary/90">
+          <h1 className="text-primary/90 text-xl font-semibold">
             Notifications
           </h1>
           {unreadCount > 0 && (
@@ -51,7 +51,7 @@ export function NotificationsScreen() {
           onClick={markAllAsRead}
           disabled={unreadCount === 0}
         >
-          <CheckCheck className="h-4 w-4 mr-2" />
+          <CheckCheck className="mr-2 h-4 w-4" />
           Mark all read
         </Button>
       </div>
@@ -66,7 +66,7 @@ export function NotificationsScreen() {
           <TabsTrigger value="attendance">Attendance</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="all" className="space-y-3 mt-4">
+        <TabsContent value="all" className="mt-4 space-y-3">
           {filterNotifications("all").length > 0 ? (
             filterNotifications("all").map(notification => (
               <NotificationCard
@@ -75,14 +75,14 @@ export function NotificationsScreen() {
               />
             ))
           ) : (
-            <div className="text-center py-8">
-              <Bell className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <div className="py-8 text-center">
+              <Bell className="mx-auto mb-4 h-12 w-12 text-gray-400" />
               <p className="text-gray-600">No notifications</p>
             </div>
           )}
         </TabsContent>
 
-        <TabsContent value="unread" className="space-y-3 mt-4">
+        <TabsContent value="unread" className="mt-4 space-y-3">
           {filterNotifications("unread").length > 0 ? (
             filterNotifications("unread").map(notification => (
               <NotificationCard
@@ -91,14 +91,14 @@ export function NotificationsScreen() {
               />
             ))
           ) : (
-            <div className="text-center py-8">
-              <CheckCheck className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <div className="py-8 text-center">
+              <CheckCheck className="mx-auto mb-4 h-12 w-12 text-gray-400" />
               <p className="text-gray-600">No unread notifications</p>
             </div>
           )}
         </TabsContent>
 
-        <TabsContent value="attendance" className="space-y-3 mt-4">
+        <TabsContent value="attendance" className="mt-4 space-y-3">
           {filterNotifications("attendance").length > 0 ? (
             filterNotifications("attendance").map(notification => (
               <NotificationCard
@@ -107,8 +107,8 @@ export function NotificationsScreen() {
               />
             ))
           ) : (
-            <div className="text-center py-8">
-              <AlertTriangle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <div className="py-8 text-center">
+              <AlertTriangle className="mx-auto mb-4 h-12 w-12 text-gray-400" />
               <p className="text-gray-600">No attendance alerts</p>
             </div>
           )}

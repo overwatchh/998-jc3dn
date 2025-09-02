@@ -66,7 +66,7 @@ export function StudentDashboard() {
     switch (status) {
       case "present":
         return (
-          <Badge variant="outline" className="text-green-500 border-green-500">
+          <Badge variant="outline" className="border-green-500 text-green-500">
             Present
           </Badge>
         );
@@ -74,7 +74,7 @@ export function StudentDashboard() {
         return <Badge variant="destructive">Absent</Badge>;
       case "upcoming":
         return (
-          <Badge variant="outline" className="text-blue-500 border-blue-500">
+          <Badge variant="outline" className="border-blue-500 text-blue-500">
             Upcoming
           </Badge>
         );
@@ -84,7 +84,7 @@ export function StudentDashboard() {
   };
 
   return (
-    <div className="p-4 space-y-6 bg-background text-foreground">
+    <div className="bg-background text-foreground space-y-6 p-4">
       {/* Warning Banner */}
       <Alert variant="destructive">
         <AlertTriangle className="h-4 w-4" />
@@ -96,8 +96,8 @@ export function StudentDashboard() {
 
       {/* Scan QR Code Button */}
       <Button
-        onClick={() => redirect("/scan")}
-        className="w-full h-14 bg-primary hover:bg-primary/90 text-primary-foreground text-lg font-semibold"
+        onClick={() => redirect("/scan-qr")}
+        className="bg-primary hover:bg-primary/90 text-primary-foreground h-14 w-full text-lg font-semibold"
       >
         <QrCode className="mr-3 h-6 w-6" />
         Scan QR Code
@@ -105,31 +105,31 @@ export function StudentDashboard() {
 
       {/* Today's Classes */}
       <div>
-        <h2 className="text-lg font-semibold mb-3">{"Today's Classes"}</h2>
+        <h2 className="mb-3 text-lg font-semibold">{"Today's Classes"}</h2>
         <div className="space-y-3">
           {todaysClasses.map(course => (
             <Card
               key={course.id}
-              className="cursor-pointer hover:shadow-md transition-shadow bg-card text-card-foreground"
+              className="bg-card text-card-foreground cursor-pointer transition-shadow hover:shadow-md"
               onClick={() => {
                 redirect("/course-detail");
               }}
             >
               <CardContent className="p-4">
-                <div className="flex items-center justify-between mb-2">
+                <div className="mb-2 flex items-center justify-between">
                   <h3 className="font-medium">{course.name}</h3>
                   {getStatusBadge(course.status)}
                 </div>
-                <div className="flex items-center text-sm text-muted-foreground mb-2">
-                  <Clock className="h-4 w-4 mr-1" />
+                <div className="text-muted-foreground mb-2 flex items-center text-sm">
+                  <Clock className="mr-1 h-4 w-4" />
                   <span className="mr-4">{course.time}</span>
-                  <MapPin className="h-4 w-4 mr-1" />
+                  <MapPin className="mr-1 h-4 w-4" />
                   <span>{course.location}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center">
                     <div
-                      className={`w-3 h-3 rounded-full mr-2 ${
+                      className={`mr-2 h-3 w-3 rounded-full ${
                         course.status === "present"
                           ? "bg-green-500"
                           : course.status === "absent"
@@ -137,11 +137,11 @@ export function StudentDashboard() {
                             : "bg-blue-500"
                       }`}
                     />
-                    <span className="text-sm text-muted-foreground">
+                    <span className="text-muted-foreground text-sm">
                       Attendance: {course.attendance}%
                     </span>
                   </div>
-                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                  <ChevronRight className="text-muted-foreground h-4 w-4" />
                 </div>
               </CardContent>
             </Card>
@@ -151,12 +151,12 @@ export function StudentDashboard() {
 
       {/* Attendance Overview */}
       <div>
-        <h2 className="text-lg font-semibold mb-3">Attendance Overview</h2>
+        <h2 className="mb-3 text-lg font-semibold">Attendance Overview</h2>
         <Card className="bg-card text-card-foreground">
-          <CardContent className="p-4 space-y-4">
+          <CardContent className="space-y-4 p-4">
             {todaysClasses.map(course => (
               <div key={course.id}>
-                <div className="flex justify-between text-sm mb-1">
+                <div className="mb-1 flex justify-between text-sm">
                   <span className="text-foreground">{course.name}</span>
                   <span className="text-muted-foreground">
                     {course.attendance}%
@@ -178,17 +178,17 @@ export function StudentDashboard() {
 
       {/* Recent Activity */}
       <div>
-        <h2 className="text-lg font-semibold mb-3">Recent Activity</h2>
+        <h2 className="mb-3 text-lg font-semibold">Recent Activity</h2>
         <Card className="bg-card text-card-foreground">
           <CardContent className="p-4">
             <div className="space-y-3">
               {recentActivity.map((activity, index) => (
                 <div key={index} className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-foreground">
+                    <p className="text-foreground text-sm font-medium">
                       {activity.course}
                     </p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-muted-foreground text-xs">
                       {activity.date}
                     </p>
                   </div>

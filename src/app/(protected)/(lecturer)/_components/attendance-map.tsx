@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
+import { useState } from "react";
 
 export function AttendanceMap() {
   const [radius, setRadius] = useState([100]);
@@ -26,9 +26,9 @@ export function AttendanceMap() {
             />
           </div>
         </div>
-        <div className="relative h-[400px] w-full overflow-hidden rounded-lg border bg-muted/50">
+        <div className="bg-muted/50 relative h-[400px] w-full overflow-hidden rounded-lg border">
           <div className="flex h-full items-center justify-center">
-            <div className="text-center text-muted-foreground">
+            <div className="text-muted-foreground text-center">
               <p>Map View</p>
               <p className="text-sm">Showing student check-in locations</p>
               <p className="text-xs">
@@ -37,7 +37,7 @@ export function AttendanceMap() {
             </div>
           </div>
           {/* Map would be rendered here with a mapping library like Leaflet or Google Maps */}
-          <div className="absolute bottom-4 right-4 rounded-md bg-background p-2 shadow-md">
+          <div className="bg-background absolute right-4 bottom-4 rounded-md p-2 shadow-md">
             <div className="flex items-center gap-2 text-xs">
               <div className="h-3 w-3 rounded-full bg-green-500"></div>
               <span>Valid Location</span>
@@ -47,7 +47,7 @@ export function AttendanceMap() {
               <span>Invalid Location</span>
             </div>
             <div className="flex items-center gap-2 text-xs">
-              <div className="h-3 w-3 rounded-full border border-dashed border-primary"></div>
+              <div className="border-primary h-3 w-3 rounded-full border border-dashed"></div>
               <span>Allowed Radius</span>
             </div>
           </div>

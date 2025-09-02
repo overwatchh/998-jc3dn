@@ -63,14 +63,14 @@ const ReportDisplay: React.FC<ReportDisplayProps> = ({ title, data, type }) => {
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
-      <h2 className="text-2xl font-bold mb-6">{title}</h2>
+    <div className="rounded-lg bg-white p-6 shadow-md">
+      <h2 className="mb-6 text-2xl font-bold">{title}</h2>
 
       {/* Overall Stats */}
-      <div className="mb-8 bg-slate-50 p-4 rounded-md">
-        <h3 className="text-lg font-semibold mb-3">Overall Statistics</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-white p-3 rounded shadow-sm">
+      <div className="mb-8 rounded-md bg-slate-50 p-4">
+        <h3 className="mb-3 text-lg font-semibold">Overall Statistics</h3>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <div className="rounded bg-white p-3 shadow-sm">
             <p className="text-sm text-slate-500">
               Total {type === "course" ? "Students" : "Courses"}
             </p>
@@ -80,13 +80,13 @@ const ReportDisplay: React.FC<ReportDisplayProps> = ({ title, data, type }) => {
                 : data.overallStats?.totalCourses || 0}
             </p>
           </div>
-          <div className="bg-white p-3 rounded shadow-sm">
+          <div className="rounded bg-white p-3 shadow-sm">
             <p className="text-sm text-slate-500">Total Lectures</p>
             <p className="text-2xl font-bold">
               {data.overallStats?.totalLectures || 0}
             </p>
           </div>
-          <div className="bg-white p-3 rounded shadow-sm">
+          <div className="rounded bg-white p-3 shadow-sm">
             <p className="text-sm text-slate-500">Average Attendance</p>
             <p className="text-2xl font-bold">
               {data.overallStats?.averageAttendanceRate?.toFixed(1) ||
@@ -103,16 +103,16 @@ const ReportDisplay: React.FC<ReportDisplayProps> = ({ title, data, type }) => {
         <>
           {/* Student Stats Table */}
           <div className="mb-8">
-            <h3 className="text-lg font-semibold mb-3">Student Attendance</h3>
+            <h3 className="mb-3 text-lg font-semibold">Student Attendance</h3>
             <div className="overflow-x-auto">
               <table className="min-w-full bg-white">
                 <thead className="bg-slate-100">
                   <tr>
-                    <th className="py-2 px-4 text-left">Name</th>
-                    <th className="py-2 px-4 text-center">Present</th>
-                    <th className="py-2 px-4 text-center">Late</th>
-                    <th className="py-2 px-4 text-center">Absent</th>
-                    <th className="py-2 px-4 text-center">Attendance Rate</th>
+                    <th className="px-4 py-2 text-left">Name</th>
+                    <th className="px-4 py-2 text-center">Present</th>
+                    <th className="px-4 py-2 text-center">Late</th>
+                    <th className="px-4 py-2 text-center">Absent</th>
+                    <th className="px-4 py-2 text-center">Attendance Rate</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -122,17 +122,17 @@ const ReportDisplay: React.FC<ReportDisplayProps> = ({ title, data, type }) => {
                         key={index}
                         className={index % 2 === 0 ? "bg-slate-50" : "bg-white"}
                       >
-                        <td className="py-2 px-4">{student.name}</td>
-                        <td className="py-2 px-4 text-center">
+                        <td className="px-4 py-2">{student.name}</td>
+                        <td className="px-4 py-2 text-center">
                           {student.present}
                         </td>
-                        <td className="py-2 px-4 text-center">
+                        <td className="px-4 py-2 text-center">
                           {student.late}
                         </td>
-                        <td className="py-2 px-4 text-center">
+                        <td className="px-4 py-2 text-center">
                           {student.absent}
                         </td>
-                        <td className="py-2 px-4 text-center">
+                        <td className="px-4 py-2 text-center">
                           {student.attendanceRate.toFixed(1)}%
                         </td>
                       </tr>
@@ -145,17 +145,17 @@ const ReportDisplay: React.FC<ReportDisplayProps> = ({ title, data, type }) => {
 
           {/* Lecture Stats Table */}
           <div>
-            <h3 className="text-lg font-semibold mb-3">Lecture Attendance</h3>
+            <h3 className="mb-3 text-lg font-semibold">Lecture Attendance</h3>
             <div className="overflow-x-auto">
               <table className="min-w-full bg-white">
                 <thead className="bg-slate-100">
                   <tr>
-                    <th className="py-2 px-4 text-left">Lecture</th>
-                    <th className="py-2 px-4 text-center">Date</th>
-                    <th className="py-2 px-4 text-center">Present</th>
-                    <th className="py-2 px-4 text-center">Late</th>
-                    <th className="py-2 px-4 text-center">Absent</th>
-                    <th className="py-2 px-4 text-center">Attendance Rate</th>
+                    <th className="px-4 py-2 text-left">Lecture</th>
+                    <th className="px-4 py-2 text-center">Date</th>
+                    <th className="px-4 py-2 text-center">Present</th>
+                    <th className="px-4 py-2 text-center">Late</th>
+                    <th className="px-4 py-2 text-center">Absent</th>
+                    <th className="px-4 py-2 text-center">Attendance Rate</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -165,20 +165,20 @@ const ReportDisplay: React.FC<ReportDisplayProps> = ({ title, data, type }) => {
                         key={index}
                         className={index % 2 === 0 ? "bg-slate-50" : "bg-white"}
                       >
-                        <td className="py-2 px-4">{lecture.title}</td>
-                        <td className="py-2 px-4 text-center">
+                        <td className="px-4 py-2">{lecture.title}</td>
+                        <td className="px-4 py-2 text-center">
                           {new Date(lecture.date).toLocaleDateString()}
                         </td>
-                        <td className="py-2 px-4 text-center">
+                        <td className="px-4 py-2 text-center">
                           {lecture.present}
                         </td>
-                        <td className="py-2 px-4 text-center">
+                        <td className="px-4 py-2 text-center">
                           {lecture.late}
                         </td>
-                        <td className="py-2 px-4 text-center">
+                        <td className="px-4 py-2 text-center">
                           {lecture.absent}
                         </td>
-                        <td className="py-2 px-4 text-center">
+                        <td className="px-4 py-2 text-center">
                           {lecture.attendanceRate.toFixed(1)}%
                         </td>
                       </tr>
@@ -193,17 +193,17 @@ const ReportDisplay: React.FC<ReportDisplayProps> = ({ title, data, type }) => {
 
       {type === "student" && (
         <div className="mb-8">
-          <h3 className="text-lg font-semibold mb-3">Course Attendance</h3>
+          <h3 className="mb-3 text-lg font-semibold">Course Attendance</h3>
           <div className="overflow-x-auto">
             <table className="min-w-full bg-white">
               <thead className="bg-slate-100">
                 <tr>
-                  <th className="py-2 px-4 text-left">Course</th>
-                  <th className="py-2 px-4 text-center">Total Lectures</th>
-                  <th className="py-2 px-4 text-center">Present</th>
-                  <th className="py-2 px-4 text-center">Late</th>
-                  <th className="py-2 px-4 text-center">Absent</th>
-                  <th className="py-2 px-4 text-center">Attendance Rate</th>
+                  <th className="px-4 py-2 text-left">Course</th>
+                  <th className="px-4 py-2 text-center">Total Lectures</th>
+                  <th className="px-4 py-2 text-center">Present</th>
+                  <th className="px-4 py-2 text-center">Late</th>
+                  <th className="px-4 py-2 text-center">Absent</th>
+                  <th className="px-4 py-2 text-center">Attendance Rate</th>
                 </tr>
               </thead>
               <tbody>
@@ -212,22 +212,22 @@ const ReportDisplay: React.FC<ReportDisplayProps> = ({ title, data, type }) => {
                     key={index}
                     className={index % 2 === 0 ? "bg-slate-50" : "bg-white"}
                   >
-                    <td className="py-2 px-4">
+                    <td className="px-4 py-2">
                       {course.course.name} ({course.course.code})
                     </td>
-                    <td className="py-2 px-4 text-center">
+                    <td className="px-4 py-2 text-center">
                       {course.stats.totalLectures}
                     </td>
-                    <td className="py-2 px-4 text-center">
+                    <td className="px-4 py-2 text-center">
                       {course.stats.present}
                     </td>
-                    <td className="py-2 px-4 text-center">
+                    <td className="px-4 py-2 text-center">
                       {course.stats.late}
                     </td>
-                    <td className="py-2 px-4 text-center">
+                    <td className="px-4 py-2 text-center">
                       {course.stats.absent}
                     </td>
-                    <td className="py-2 px-4 text-center">
+                    <td className="px-4 py-2 text-center">
                       {course.stats.attendanceRate.toFixed(1)}%
                     </td>
                   </tr>

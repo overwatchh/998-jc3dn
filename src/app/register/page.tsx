@@ -1,9 +1,9 @@
 "use client";
 
 import { useRegister } from "@/hooks/useAuth";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 export default function RegisterPage() {
   const [name, setName] = useState("");
@@ -43,14 +43,14 @@ export default function RegisterPage() {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center p-4">
-      <div className="w-full max-w-md space-y-8 bg-white p-8 rounded-lg shadow-md">
+      <div className="w-full max-w-md space-y-8 rounded-lg bg-white p-8 shadow-md">
         <div className="text-center">
           <h1 className="text-2xl font-bold">QR Attendance System</h1>
           <h2 className="mt-2 text-xl">Create a new account</h2>
         </div>
 
         {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+          <div className="rounded border border-red-400 bg-red-100 px-4 py-3 text-red-700">
             {error}
           </div>
         )}
@@ -71,7 +71,7 @@ export default function RegisterPage() {
                 required
                 value={name}
                 onChange={e => setName(e.target.value)}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 focus:outline-none"
               />
             </div>
 
@@ -90,7 +90,7 @@ export default function RegisterPage() {
                 required
                 value={email}
                 onChange={e => setEmail(e.target.value)}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 focus:outline-none"
               />
             </div>
 
@@ -108,7 +108,7 @@ export default function RegisterPage() {
                 required
                 value={password}
                 onChange={e => setPassword(e.target.value)}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 focus:outline-none"
               />
             </div>
 
@@ -126,7 +126,7 @@ export default function RegisterPage() {
                 required
                 value={confirmPassword}
                 onChange={e => setConfirmPassword(e.target.value)}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 focus:outline-none"
               />
             </div>
 
@@ -142,7 +142,7 @@ export default function RegisterPage() {
                 name="role"
                 value={role}
                 onChange={e => setRole(e.target.value)}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 focus:outline-none"
               >
                 <option value="student">Student</option>
                 <option value="instructor">Instructor</option>
@@ -154,7 +154,7 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={register.isPending}
-              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-indigo-300"
+              className="flex w-full justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:outline-none disabled:bg-indigo-300"
             >
               {register.isPending ? "Registering..." : "Register"}
             </button>

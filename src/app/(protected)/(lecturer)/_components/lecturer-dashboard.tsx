@@ -1,8 +1,10 @@
+"use client";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export function InstructorDashboard() {
   return (
-    <div className="p-4 space-y-6 bg-background text-foreground">
+    <div className="bg-background text-foreground space-y-6 p-4">
       <h1 className="text-2xl font-bold">Lecturer Dashboard</h1>
       <Card>
         <CardHeader>

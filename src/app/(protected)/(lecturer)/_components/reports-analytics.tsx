@@ -1,5 +1,6 @@
 "use client";
 
+import { useGetCourses } from "@/app/(protected)/(lecturer)/qr-generation/queries";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -61,7 +62,7 @@ import {
   Search,
   Share2,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { DateRange } from "react-day-picker";
 import {
   Bar,
@@ -81,6 +82,14 @@ export default function ReportsAnalytics() {
     from: new Date(2025, 2, 1), // Mar 1, 2025
     to: new Date(2025, 3, 24), // Apr 24, 2025
   });
+  const { data: courses, isLoading: isCoursesLoading } = useGetCourses();
+  const [selectedCourseId, setSelectedCourseId] = useState<string>("");
+
+  useEffect(() => {
+    if (!selectedCourseId && courses && courses.length > 0) {
+      setSelectedCourseId(String(courses[0].id));
+    }
+  }, [courses, selectedCourseId]);
 
   return (
     <main className="flex flex-1 flex-col gap-4 p-3 sm:p-4 md:gap-6 md:p-6">
@@ -95,40 +104,36 @@ export default function ReportsAnalytics() {
         <CardContent className="p-4 sm:p-6">
           <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 xl:grid-cols-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+              <label className="text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                 Course
               </label>
-              <Select defaultValue="csit883">
+              <Select
+                disabled={isCoursesLoading}
+                value={selectedCourseId}
+                onValueChange={setSelectedCourseId}
+              >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select course" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="csit883">
-                    CSIT883 - Introduction to Computer Science
-                  </SelectItem>
-                  <SelectItem value="csit884">
-                    CSIT884 - Data Structures
-                  </SelectItem>
-                  <SelectItem value="csit885">CSIT885 - Algorithms</SelectItem>
-                  <SelectItem value="csit886">
-                    CSIT886 - Database Systems
-                  </SelectItem>
-                  <SelectItem value="csit887">
-                    CSIT887 - Software Engineering
-                  </SelectItem>
+                  {(courses ?? []).map(c => (
+                    <SelectItem key={c.id} value={String(c.id)}>
+                      {c.code} - {c.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+              <label className="text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                 Date Range
               </label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
-                    className="w-full justify-start text-left font-normal bg-transparent"
+                    className="w-full justify-start bg-transparent text-left font-normal"
                   >
                     <Calendar className="mr-2 h-4 w-4 flex-shrink-0" />
                     <span className="truncate">
@@ -170,7 +175,7 @@ export default function ReportsAnalytics() {
             </div>
 
             <div className="space-y-2 md:col-span-2 xl:col-span-2">
-              <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+              <label className="text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                 Report Type
               </label>
               <Tabs defaultValue="overview" className="w-full">
@@ -197,7 +202,7 @@ export default function ReportsAnalytics() {
               <Switch id="compare" />
               <label
                 htmlFor="compare"
-                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                className="text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
               >
                 Compare to previous period
               </label>
@@ -378,27 +383,27 @@ export default function ReportsAnalytics() {
             </CardDescription>
           </CardHeader>
           <CardContent className="pb-4">
-            <div className="grid grid-cols-1 gap-4 xs:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4">
+            <div className="xs:grid-cols-2 grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-4">
               <div className="space-y-1 text-center sm:text-left">
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                   Average Attendance
                 </p>
                 <p className="text-2xl font-bold">78%</p>
               </div>
               <div className="space-y-1 text-center sm:text-left">
-                <p className="text-sm text-muted-foreground">Most Attended</p>
+                <p className="text-muted-foreground text-sm">Most Attended</p>
                 <p className="text-2xl font-bold">Apr 10</p>
-                <p className="text-xs text-muted-foreground">92% attendance</p>
+                <p className="text-muted-foreground text-xs">92% attendance</p>
               </div>
               <div className="space-y-1 text-center sm:text-left">
-                <p className="text-sm text-muted-foreground">Least Attended</p>
+                <p className="text-muted-foreground text-sm">Least Attended</p>
                 <p className="text-2xl font-bold">Mar 15</p>
-                <p className="text-xs text-muted-foreground">64% attendance</p>
+                <p className="text-muted-foreground text-xs">64% attendance</p>
               </div>
               <div className="space-y-1 text-center sm:text-left">
-                <p className="text-sm text-muted-foreground">Below Threshold</p>
+                <p className="text-muted-foreground text-sm">Below Threshold</p>
                 <p className="text-2xl font-bold text-red-500">12</p>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-muted-foreground text-xs">
                   students at risk
                 </p>
               </div>
@@ -428,19 +433,19 @@ export default function ReportsAnalytics() {
           </Tabs>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col gap-4 mb-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="relative w-full sm:max-w-sm">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Search className="text-muted-foreground absolute top-2.5 left-2.5 h-4 w-4" />
               <Input
                 type="search"
                 placeholder="Search students..."
-                className="w-full bg-background pl-8"
+                className="bg-background w-full pl-8"
               />
             </div>
             <Button
               variant="outline"
               size="sm"
-              className="w-full sm:w-auto bg-transparent"
+              className="w-full bg-transparent sm:w-auto"
             >
               <Filter className="mr-2 h-4 w-4" />
               Filter
@@ -448,20 +453,20 @@ export default function ReportsAnalytics() {
           </div>
 
           {/* Mobile Card View */}
-          <div className="block sm:hidden space-y-4">
+          <div className="block space-y-4 sm:hidden">
             {studentData.map(student => (
               <Card key={student.id}>
                 <CardContent className="p-4">
-                  <div className="flex items-center justify-between mb-3">
+                  <div className="mb-3 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <Avatar className="h-10 w-10">
                         <AvatarFallback>{student.initials}</AvatarFallback>
                       </Avatar>
                       <div>
-                        <p className="font-medium leading-none">
+                        <p className="leading-none font-medium">
                           {student.name}
                         </p>
-                        <p className="text-sm text-muted-foreground mt-1">
+                        <p className="text-muted-foreground mt-1 text-sm">
                           {student.email}
                         </p>
                       </div>
@@ -493,7 +498,7 @@ export default function ReportsAnalytics() {
                       >
                         {student.attendance}%
                       </Badge>
-                      <span className="text-sm text-muted-foreground">
+                      <span className="text-muted-foreground text-sm">
                         {student.attended}/{student.total} sessions
                       </span>
                     </div>
@@ -513,19 +518,19 @@ export default function ReportsAnalytics() {
           </div>
 
           {/* Desktop Table View */}
-          <div className="hidden sm:block overflow-x-auto rounded-md border">
+          <div className="hidden overflow-x-auto rounded-md border sm:block">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[50px] hidden lg:table-cell">
+                  <TableHead className="hidden w-[50px] lg:table-cell">
                     ID
                   </TableHead>
                   <TableHead>Student</TableHead>
                   <TableHead className="text-center">Attendance</TableHead>
-                  <TableHead className="text-center hidden md:table-cell">
+                  <TableHead className="hidden text-center md:table-cell">
                     Sessions
                   </TableHead>
-                  <TableHead className="text-center hidden lg:table-cell">
+                  <TableHead className="hidden text-center lg:table-cell">
                     Trend
                   </TableHead>
                   <TableHead className="text-right">Actions</TableHead>
@@ -534,7 +539,7 @@ export default function ReportsAnalytics() {
               <TableBody>
                 {studentData.map(student => (
                   <TableRow key={student.id}>
-                    <TableCell className="font-medium hidden lg:table-cell">
+                    <TableCell className="hidden font-medium lg:table-cell">
                       {student.id}
                     </TableCell>
                     <TableCell>
@@ -543,10 +548,10 @@ export default function ReportsAnalytics() {
                           <AvatarFallback>{student.initials}</AvatarFallback>
                         </Avatar>
                         <div>
-                          <p className="font-medium leading-none">
+                          <p className="leading-none font-medium">
                             {student.name}
                           </p>
-                          <p className="text-sm text-muted-foreground hidden md:block">
+                          <p className="text-muted-foreground hidden text-sm md:block">
                             {student.email}
                           </p>
                         </div>
@@ -565,10 +570,10 @@ export default function ReportsAnalytics() {
                         {student.attendance}%
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-center hidden md:table-cell">
+                    <TableCell className="hidden text-center md:table-cell">
                       {student.attended}/{student.total}
                     </TableCell>
-                    <TableCell className="text-center hidden lg:table-cell">
+                    <TableCell className="hidden text-center lg:table-cell">
                       {student.trend === "up" ? (
                         <div className="flex items-center justify-center text-green-500">
                           <ArrowUp className="h-4 w-4" />
@@ -578,7 +583,7 @@ export default function ReportsAnalytics() {
                           <ArrowDown className="h-4 w-4" />
                         </div>
                       ) : (
-                        <div className="flex items-center justify-center text-muted-foreground">
+                        <div className="text-muted-foreground flex items-center justify-center">
                           —
                         </div>
                       )}
@@ -604,12 +609,12 @@ export default function ReportsAnalytics() {
             </Table>
           </div>
 
-          <div className="flex flex-col gap-4 mt-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="text-sm text-muted-foreground text-center sm:text-left">
+          <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="text-muted-foreground text-center text-sm sm:text-left">
               Showing <strong>1</strong> to <strong>10</strong> of{" "}
               <strong>42</strong> results
             </div>
-            <div className="flex items-center gap-2 justify-center sm:justify-end">
+            <div className="flex items-center justify-center gap-2 sm:justify-end">
               <Button variant="outline" size="sm" disabled>
                 Previous
               </Button>
@@ -633,35 +638,35 @@ export default function ReportsAnalytics() {
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
             <Button
               variant="outline"
-              className="flex flex-col items-center justify-center gap-2 h-20 sm:h-24 bg-transparent"
+              className="flex h-20 flex-col items-center justify-center gap-2 bg-transparent sm:h-24"
             >
               <FileText className="h-6 w-6 sm:h-8 sm:w-8" />
               <span className="text-xs sm:text-sm">PDF Report</span>
             </Button>
             <Button
               variant="outline"
-              className="flex flex-col items-center justify-center gap-2 h-20 sm:h-24 bg-transparent"
+              className="flex h-20 flex-col items-center justify-center gap-2 bg-transparent sm:h-24"
             >
               <Download className="h-6 w-6 sm:h-8 sm:w-8" />
               <span className="text-xs sm:text-sm">Excel/CSV</span>
             </Button>
             <Button
               variant="outline"
-              className="flex flex-col items-center justify-center gap-2 h-20 sm:h-24 bg-transparent"
+              className="flex h-20 flex-col items-center justify-center gap-2 bg-transparent sm:h-24"
             >
               <Printer className="h-6 w-6 sm:h-8 sm:w-8" />
               <span className="text-xs sm:text-sm">Print View</span>
             </Button>
             <Button
               variant="outline"
-              className="flex flex-col items-center justify-center gap-2 h-20 sm:h-24 bg-transparent"
+              className="flex h-20 flex-col items-center justify-center gap-2 bg-transparent sm:h-24"
             >
               <Mail className="h-6 w-6 sm:h-8 sm:w-8" />
               <span className="text-xs sm:text-sm">Email Report</span>
             </Button>
             <Button
               variant="outline"
-              className="flex flex-col items-center justify-center gap-2 h-20 sm:h-24 col-span-2 sm:col-span-1 bg-transparent"
+              className="col-span-2 flex h-20 flex-col items-center justify-center gap-2 bg-transparent sm:col-span-1 sm:h-24"
             >
               <Calendar className="h-6 w-6 sm:h-8 sm:w-8" />
               <span className="text-xs sm:text-sm">Schedule Reports</span>
@@ -669,14 +674,14 @@ export default function ReportsAnalytics() {
           </div>
         </CardContent>
         <CardFooter className="flex flex-col gap-4 sm:flex-row sm:justify-between">
-          <div className="flex items-center text-sm text-muted-foreground">
+          <div className="text-muted-foreground flex items-center text-sm">
             <Info className="mr-1 h-4 w-4" />
             Preview will be generated based on selected format
           </div>
           <Button
             variant="outline"
             size="sm"
-            className="w-full sm:w-auto bg-transparent"
+            className="w-full bg-transparent sm:w-auto"
           >
             <Share2 className="mr-2 h-4 w-4" />
             Share Report

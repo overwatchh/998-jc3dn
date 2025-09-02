@@ -1,7 +1,7 @@
-import { useQuery, useMutation } from "@tanstack/react-query";
 import apiClient from "@/lib/api/apiClient";
-import { Course } from "@/types";
 import { queryClient } from "@/lib/queryClient";
+import { Course } from "@/types";
+import { useQuery, useMutation } from "@tanstack/react-query";
 
 // Get all courses
 export const useCourses = () => {

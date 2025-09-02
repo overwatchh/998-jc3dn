@@ -1,5 +1,10 @@
 "use client";
 
+import {
+  useGetCheckedInStudents,
+  useGetCourses,
+  useGetStudentList,
+} from "@/app/(protected)/(lecturer)/qr-generation/queries";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -42,7 +47,7 @@ import {
   MoreVerticalIcon,
   RefreshCwIcon as RefreshIcon,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Bar,
   BarChart,
@@ -58,9 +63,9 @@ function AttendanceMap() {
   return (
     <Card>
       <CardContent className="p-6">
-        <div className="flex h-[400px] items-center justify-center bg-muted rounded-lg">
+        <div className="bg-muted flex h-[400px] items-center justify-center rounded-lg">
           <div className="text-center">
-            <MapIcon className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+            <MapIcon className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
             <p className="text-muted-foreground">
               Map view would be displayed here
             </p>
@@ -73,21 +78,38 @@ function AttendanceMap() {
 
 export function AttendanceTrackingScreen() {
   const [view, setView] = useState<"list" | "map">("list");
+  const { data: courses } = useGetCourses();
+  const [selectedSessionId, setSelectedSessionId] = useState<number | null>(
+    null
+  );
+  useEffect(() => {
+    if (!selectedSessionId && courses && courses.length > 0) {
+      setSelectedSessionId(courses[0].id);
+    }
+  }, [courses, selectedSessionId]);
+
+  const { data: checkedIn } = useGetCheckedInStudents(selectedSessionId ?? 0, {
+    enabled: Boolean(selectedSessionId),
+    refetchInterval: 5000,
+  });
+  const { data: studentList } = useGetStudentList(selectedSessionId ?? 0, {
+    enabled: Boolean(selectedSessionId),
+  });
 
   return (
     <div className="flex min-h-screen">
       <div className="flex-1">
-        <main className="flex-1 p-3 sm:p-4 md:p-8 space-y-4 sm:space-y-6">
+        <main className="flex-1 space-y-4 p-3 sm:space-y-6 sm:p-4 md:p-8">
           {/* Header - Stack on mobile */}
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight">
+            <h1 className="text-xl font-bold tracking-tight sm:text-2xl">
               Real-time Attendance Tracking
             </h1>
             <div className="flex items-center gap-2">
               <Button
                 variant="outline"
                 size="sm"
-                className="flex-1 sm:flex-none bg-transparent"
+                className="flex-1 bg-transparent sm:flex-none"
               >
                 <RefreshIcon className="mr-2 h-4 w-4" />
                 <span className="hidden sm:inline">Refresh</span>
@@ -97,7 +119,7 @@ export function AttendanceTrackingScreen() {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="flex-1 sm:flex-none bg-transparent"
+                    className="flex-1 bg-transparent sm:flex-none"
                   >
                     <DownloadIcon className="mr-2 h-4 w-4" />
                     <span className="hidden sm:inline">Export</span>
@@ -133,7 +155,7 @@ export function AttendanceTrackingScreen() {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="w-full sm:w-auto bg-transparent"
+                    className="w-full bg-transparent sm:w-auto"
                   >
                     <FilterIcon className="mr-2 h-4 w-4" />
                     Filter
@@ -157,7 +179,7 @@ export function AttendanceTrackingScreen() {
                   onClick={() => setView("list")}
                   className="text-xs sm:text-sm"
                 >
-                  <ListIcon className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+                  <ListIcon className="mr-1 h-3 w-3 sm:mr-2 sm:h-4 sm:w-4" />
                   List
                 </TabsTrigger>
                 <TabsTrigger
@@ -165,14 +187,21 @@ export function AttendanceTrackingScreen() {
                   onClick={() => setView("map")}
                   className="text-xs sm:text-sm"
                 >
-                  <MapIcon className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+                  <MapIcon className="mr-1 h-3 w-3 sm:mr-2 sm:h-4 sm:w-4" />
                   Map
                 </TabsTrigger>
               </TabsList>
             </Tabs>
           </div>
 
-          {view === "list" ? <AttendanceTable /> : <AttendanceMap />}
+          {view === "list" ? (
+            <AttendanceTable
+              checkedIn={checkedIn ?? []}
+              totalEnrolled={studentList?.length ?? 0}
+            />
+          ) : (
+            <AttendanceMap />
+          )}
         </main>
       </div>
     </div>
@@ -191,13 +220,13 @@ function SessionInfoCard() {
       <CardContent>
         <div className="grid gap-2">
           <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-            <span className="text-sm text-muted-foreground">
+            <span className="text-muted-foreground text-sm">
               Room Location:
             </span>
             <span className="font-medium">Engineering Building, Room 302</span>
           </div>
           <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-            <span className="text-sm text-muted-foreground">
+            <span className="text-muted-foreground text-sm">
               QR Code Status:
             </span>
             <div className="flex items-center">
@@ -343,63 +372,25 @@ function CheckinTimelineCard() {
   );
 }
 
-function AttendanceTable() {
-  const students = [
-    {
-      id: "S12345",
-      name: "Sarah Johnson",
-      avatar: "/placeholder.svg?height=32&width=32",
-      checkInTime: "9:58 AM",
-      checkInType: "QR Code",
-      locationStatus: "Valid",
-      distance: "5m",
-    },
-    {
-      id: "S12346",
-      name: "Michael Chen",
-      avatar: "/placeholder.svg?height=32&width=32",
-      checkInTime: "10:01 AM",
-      checkInType: "QR Code",
-      locationStatus: "Valid",
-      distance: "8m",
-    },
-    {
-      id: "S12347",
-      name: "Jessica Williams",
-      avatar: "/placeholder.svg?height=32&width=32",
-      checkInTime: "10:03 AM",
-      checkInType: "Manual",
-      locationStatus: "Valid",
-      distance: "12m",
-    },
-    {
-      id: "S12348",
-      name: "David Rodriguez",
-      avatar: "/placeholder.svg?height=32&width=32",
-      checkInTime: "10:05 AM",
-      checkInType: "QR Code",
-      locationStatus: "Invalid",
-      distance: "1.2km",
-    },
-    {
-      id: "S12349",
-      name: "Emma Thompson",
-      avatar: "/placeholder.svg?height=32&width=32",
-      checkInTime: "10:07 AM",
-      checkInType: "QR Code",
-      locationStatus: "Valid",
-      distance: "3m",
-    },
-    {
-      id: "S12350",
-      name: "James Wilson",
-      avatar: "/placeholder.svg?height=32&width=32",
-      checkInTime: "10:12 AM",
-      checkInType: "QR Code",
-      locationStatus: "Invalid",
-      distance: "850m",
-    },
-  ];
+type AttendanceTableProps = {
+  checkedIn: Array<{ student_id: string; name: string; checkin_time: string }>;
+  totalEnrolled: number;
+};
+
+function AttendanceTable({ checkedIn, totalEnrolled }: AttendanceTableProps) {
+  const students = useMemo(
+    () =>
+      (checkedIn ?? []).map(s => ({
+        id: s.student_id,
+        name: s.name,
+        avatar: "/placeholder.svg?height=32&width=32",
+        checkInTime: new Date(s.checkin_time).toLocaleTimeString(),
+        checkInType: "QR Code",
+        locationStatus: "Valid",
+        distance: "-",
+      })),
+    [checkedIn]
+  );
 
   return (
     <div className="rounded-md border">
@@ -427,7 +418,7 @@ function AttendanceTable() {
                     </Avatar>
                     <div>
                       <div className="font-medium">{student.name}</div>
-                      <div className="text-sm text-muted-foreground">
+                      <div className="text-muted-foreground text-sm">
                         {student.id}
                       </div>
                     </div>
@@ -557,9 +548,9 @@ function AttendanceTable() {
         </Table>
       </div>
 
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-t px-4 py-3">
-        <div className="text-sm text-muted-foreground text-center sm:text-left">
-          Showing 6 of 24 students
+      <div className="flex flex-col gap-2 border-t px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="text-muted-foreground text-center text-sm sm:text-left">
+          Showing {students.length} of {totalEnrolled} students
         </div>
         <Pagination />
       </div>

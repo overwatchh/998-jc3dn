@@ -1,20 +1,31 @@
+import { RowDataPacket, ResultSetHeader, QueryError } from "mysql2";
 import { db } from "./db";
-import { RowDataPacket } from "mysql2";
 
-interface QueryError {
-  code: string;
-}
-
-export async function rawQuery<T extends RowDataPacket>(
+// Overload for SELECT queries
+export async function rawQuery<T>(
   sql: string,
   values?: unknown[]
-): Promise<T[]> {
+): Promise<T[]>;
+
+// Overload for INSERT/UPDATE/DELETE queries
+export async function rawQuery(
+  sql: string,
+  values?: unknown[]
+): Promise<ResultSetHeader>;
+
+// Implementation
+export async function rawQuery(
+  sql: string,
+  values?: unknown[]
+): Promise<RowDataPacket[] | ResultSetHeader> {
   try {
-    const [rows] = await db.query(sql, values);
-    if (Array.isArray(rows)) {
-      return rows as T[];
+    const [result] = await db.query(sql, values);
+
+    if (Array.isArray(result)) {
+      return result as RowDataPacket[];
     }
-    return [];
+
+    return result as ResultSetHeader;
   } catch (error: unknown) {
     if ((error as QueryError).code === "ER_DUP_ENTRY") {
       throw new Error("DUPLICATE_ENTRY");

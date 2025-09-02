@@ -63,11 +63,11 @@ export function SignupForm() {
   };
 
   return (
-    <div className="bg-card rounded-2xl shadow-xl border overflow-hidden md:min-w-md">
+    <div className="bg-card overflow-hidden rounded-2xl border shadow-xl md:min-w-md">
       {/* Header */}
-      <div className="px-8 pt-8 pb-6 bg-secondary text-primary">
+      <div className="bg-secondary text-primary px-8 pt-8 pb-6">
         <div className="text-center">
-          <h1 className="text-2xl font-bold mb-2">Create your account</h1>
+          <h1 className="mb-2 text-2xl font-bold">Create your account</h1>
           <p className="text-primary/80 text-sm">
             Join us and start your journey today
           </p>
@@ -75,7 +75,7 @@ export function SignupForm() {
       </div>
 
       <Form {...form}>
-        <div className="p-8 space-y-6">
+        <div className="space-y-6 p-8">
           {/* Signup Form */}
           <form
             onSubmit={form.handleSubmit(handleSignup)}
@@ -139,12 +139,12 @@ export function SignupForm() {
                         <button
                           type="button"
                           onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                          className="text-muted-foreground hover:text-foreground absolute top-1/2 right-3 -translate-y-1/2 transition-colors"
                         >
                           {showPassword ? (
-                            <EyeOff className="w-4 h-4" />
+                            <EyeOff className="h-4 w-4" />
                           ) : (
-                            <Eye className="w-4 h-4" />
+                            <Eye className="h-4 w-4" />
                           )}
                         </button>
                       </div>
@@ -179,12 +179,12 @@ export function SignupForm() {
                           onClick={() =>
                             setShowConfirmPassword(!showConfirmPassword)
                           }
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                          className="text-muted-foreground hover:text-foreground absolute top-1/2 right-3 -translate-y-1/2 transition-colors"
                         >
                           {showConfirmPassword ? (
-                            <EyeOff className="w-4 h-4" />
+                            <EyeOff className="h-4 w-4" />
                           ) : (
-                            <Eye className="w-4 h-4" />
+                            <Eye className="h-4 w-4" />
                           )}
                         </button>
                       </div>
@@ -203,12 +203,12 @@ export function SignupForm() {
                 id="terms"
                 checked={acceptTerms}
                 onChange={e => setAcceptTerms(e.target.checked)}
-                className="w-4 h-4 mt-1 rounded border-input bg-background"
+                className="border-input bg-background mt-1 h-4 w-4 rounded"
                 required
               />
               <label
                 htmlFor="terms"
-                className="text-sm text-muted-foreground leading-5"
+                className="text-muted-foreground text-sm leading-5"
               >
                 I agree to the{" "}
                 <a
@@ -229,27 +229,27 @@ export function SignupForm() {
 
             <Button
               type="submit"
-              className="w-full h-12 flex items-center justify-center gap-2"
+              className="flex h-12 w-full items-center justify-center gap-2"
               disabled={isLoading || !acceptTerms}
             >
               {isLoading ? (
-                <div className="w-5 h-5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin"></div>
+                <div className="border-primary-foreground h-5 w-5 animate-spin rounded-full border-2 border-t-transparent"></div>
               ) : (
                 <>
                   <span>Create account</span>
-                  <ArrowRight className="w-4 h-4" />
+                  <ArrowRight className="h-4 w-4" />
                 </>
               )}
             </Button>
           </form>
 
           {/* Footer */}
-          <div className="text-center pt-4 border-t">
-            <p className="text-sm text-muted-foreground">
+          <div className="border-t pt-4 text-center">
+            <p className="text-muted-foreground text-sm">
               Already have an account?{" "}
               <a
                 href="/login"
-                className="font-medium text-primary hover:text-primary/80"
+                className="text-primary hover:text-primary/80 font-medium"
               >
                 Sign in here
               </a>
