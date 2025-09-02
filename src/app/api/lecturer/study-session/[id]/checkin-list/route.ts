@@ -147,7 +147,7 @@ export async function GET(
       count: students.length,
       data: students,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error(error);
     return NextResponse.json(
       { error: "Internal server error" },
