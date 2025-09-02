@@ -21,8 +21,8 @@ export const CourseStatusIcon = ({
     return (
       <div className="flex items-center">
         <CheckCircle className="h-4 w-4 text-green-600" />
-        <Navigation className="h-3 w-3 text-green-600 ml-1" />
-        <KeyRound className="h-3 w-3 text-green-600 ml-1" />
+        <Navigation className="ml-1 h-3 w-3 text-green-600" />
+        <KeyRound className="ml-1 h-3 w-3 text-green-600" />
       </div>
     );
   }
@@ -30,7 +30,7 @@ export const CourseStatusIcon = ({
     return (
       <div className="flex items-center">
         <CheckCircle className="h-4 w-4 text-green-600" />
-        <KeyRound className="h-3 w-3 text-green-600 ml-1" />
+        <KeyRound className="ml-1 h-3 w-3 text-green-600" />
       </div>
     );
   }

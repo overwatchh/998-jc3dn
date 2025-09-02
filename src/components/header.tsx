@@ -14,7 +14,7 @@ export const Header = () => {
   }
 
   return (
-    <div className="w-full px-3 py-2 flex justify-between border-b border-primary/10">
+    <div className="border-primary/10 flex w-full justify-between border-b px-3 py-2">
       <Link href={"/"} className="text-2xl font-bold">
         Attendease
       </Link>

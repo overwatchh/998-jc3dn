@@ -1,6 +1,6 @@
 "use client";
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useQrGenContext } from "@/app/(protected)/(lecturer)/qr-generation/qr-gen-context";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,61 +10,60 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Progress } from "@/components/ui/progress";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Slider } from "@/components/ui/slider";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Tabs } from "@/components/ui/tabs";
+import { AxiosError } from "axios";
 import { format } from "date-fns";
-import { Calendar, Download, FileText, RefreshCw, Share2 } from "lucide-react";
+import {
+  ArrowLeft,
+  Calendar,
+  Download,
+  FileText,
+  Loader2,
+  Plus,
+  Share2,
+} from "lucide-react";
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
+import { useCountdown } from "../hooks/useCountdown";
+import {
+  useAddSecondValidity,
+  useGenerateQr,
+  useGetCourses,
+  useGetQrCode,
+  useGetQrCodes,
+} from "../qr-generation/queries";
+import { QRGenScreens } from "../qr-generation/types";
 
-export default function QrCodeGeneration() {
-  const [qrType, setQrType] = useState("check-in");
-  const [validityDuration, setValidityDuration] = useState(15);
-  const [attendanceType, setAttendanceType] = useState("mandatory");
+export function QrCodeGeneration() {
+  const { setCurrentScreen, setSelectedCourse, selectedCourse } =
+    useQrGenContext();
+
   const [geoValidation, setGeoValidation] = useState(false);
   const [geoRadius, setGeoRadius] = useState(100);
-  const [autoExpireOptions, setAutoExpireOptions] = useState({
-    afterClass: true,
-    afterLimit: false,
-    afterDate: false,
-  });
+  const [hasGeneratedQrForCurrentWeek, setHasGeneratedQrForCurrentWeek] =
+    useState(false);
 
-  // Calculate remaining time for the validity timer
-  const [remainingTime, setRemainingTime] = useState(validityDuration * 60); // Start with full duration
-  const [isExpired, setIsExpired] = useState(false);
+  // Courses for subject selection
+  const { data: courses, isLoading: isCoursesLoading } = useGetCourses();
 
-  // Real countdown timer effect
-  useEffect(() => {
-    if (remainingTime <= 0) {
-      setIsExpired(true);
-      return;
-    }
-
-    const timer = setInterval(() => {
-      setRemainingTime(prev => {
-        if (prev <= 1) {
-          setIsExpired(true);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [remainingTime]);
-
-  // Reset timer when validity duration changes
-  useEffect(() => {
-    setRemainingTime(validityDuration * 60);
-    setIsExpired(false);
-  }, [validityDuration]);
+  const {
+    remainingTime,
+    setRemainingTime,
+    setIsExpired,
+    isExpired,
+    validityDuration,
+  } = useCountdown();
 
   // Get timer color based on remaining time
   const getTimerColor = () => {
@@ -84,39 +83,127 @@ export default function QrCodeGeneration() {
       .padStart(2, "0")}`;
   };
 
-  // Mock data for recently checked-in students
-  const recentCheckins = [
-    {
-      id: 1,
-      name: "Justin",
-      timestamp: "10:02 AM",
-      avatar: "/placeholder.svg?height=32&width=32",
-    },
-    {
-      id: 2,
-      name: "Deepak",
-      timestamp: "10:03 AM",
-      avatar: "/placeholder.svg?height=32&width=32",
-    },
-    {
-      id: 3,
-      name: "Thu",
-      timestamp: "10:05 AM",
-      avatar: "/placeholder.svg?height=32&width=32",
-    },
-    {
-      id: 4,
-      name: "Tuan",
-      timestamp: "10:06 AM",
-      avatar: "/placeholder.svg?height=32&width=32",
-    },
-    {
-      id: 5,
-      name: "Changu",
-      timestamp: "10:08 AM",
-      avatar: "/placeholder.svg?height=32&width=32",
-    },
-  ];
+  // Real-time data
+  const sessionId = selectedCourse?.sessionId || 0;
+
+  const { mutateAsync: generateQr, isPending: isGenerating } =
+    useGenerateQr(sessionId);
+
+  const { mutateAsync: addSecondValidity, isPending: isAddingValidity } =
+    useAddSecondValidity(sessionId);
+
+  // Use the hook to get existing QR codes for the selected week
+  const {
+    data: qrCodesData,
+    isLoading: isQrCodesLoading,
+    refetch: refetchQrCodes,
+  } = useGetQrCodes(sessionId, selectedCourse?.weekNumber, {
+    enabled: !!selectedCourse,
+  });
+
+  // Get the existing QR code if one exists
+  const existingQrCodeId = qrCodesData?.data?.[0]?.qr_code_id;
+  const { data: qrCode, isLoading: isQrCodeLoading } = useGetQrCode(
+    sessionId,
+    existingQrCodeId!,
+    { enabled: !!selectedCourse && !!existingQrCodeId }
+  );
+
+  // Get all existing QR codes for this session to determine used weeks
+  const { data: allQrCodesData } = useGetQrCodes(
+    sessionId,
+    undefined, // Get all weeks
+    { enabled: !!selectedCourse }
+  );
+
+  // Get used weeks and calculate next available week
+  const usedWeeks = useMemo(() => {
+    if (!allQrCodesData?.data) return new Set<number>();
+    return new Set(allQrCodesData.data.map(qr => qr.week_number));
+  }, [allQrCodesData]);
+
+  const nextAvailableWeek = useMemo(() => {
+    for (let week = 1; week <= 13; week++) {
+      if (!usedWeeks.has(week)) {
+        return week;
+      }
+    }
+    return 1; // Fallback
+  }, [usedWeeks]);
+
+  // Ensure a default course is selected if none
+  useEffect(() => {
+    if (!selectedCourse && courses && courses.length > 0) {
+      setSelectedCourse({
+        sessionId: courses[0].id,
+        weekNumber: 1, // Initially set to week 1
+      });
+    }
+  }, [courses, selectedCourse, setSelectedCourse, nextAvailableWeek]);
+
+  // Handle timer setup when QR code changes
+  useEffect(() => {
+    if (qrCode?.valid_until) {
+      const remaining = Math.max(
+        0,
+        Math.floor((new Date(qrCode.valid_until).getTime() - Date.now()) / 1000)
+      );
+      setRemainingTime(remaining);
+      setIsExpired(remaining <= 0);
+    }
+  }, [qrCode, setRemainingTime, setIsExpired]);
+
+  // Reset hasGeneratedQrForCurrentWeek when selectedCourse or weekNumber changes
+  useEffect(() => {
+    setHasGeneratedQrForCurrentWeek(false);
+  }, [selectedCourse?.sessionId, selectedCourse?.weekNumber]);
+
+  // Auto-generate QR if no existing one found and not currently generating
+  useEffect(() => {
+    if (
+      !selectedCourse ||
+      isGenerating ||
+      isQrCodeLoading ||
+      isQrCodesLoading ||
+      hasGeneratedQrForCurrentWeek
+    ) {
+      return;
+    }
+
+    // If we have QR codes data and no existing QR, generate a new one
+    if (qrCodesData && !existingQrCodeId) {
+      generateQr({
+        week_number: selectedCourse.weekNumber,
+        duration: validityDuration,
+        radius: geoValidation ? geoRadius : undefined,
+      })
+        .then(() => {
+          setHasGeneratedQrForCurrentWeek(true);
+        })
+        .catch((e: unknown) => {
+          // Only show error if it's not a 409 (already exists)
+          if (!(e instanceof AxiosError && e.response?.status === 409)) {
+            toast.error(
+              e instanceof AxiosError && e.response?.data?.message
+                ? e.response.data.message
+                : "Failed to generate QR code."
+            );
+          }
+        });
+    }
+  }, [
+    selectedCourse,
+    isGenerating,
+    isQrCodeLoading,
+    isQrCodesLoading,
+    qrCodesData,
+    existingQrCodeId,
+    generateQr,
+    validityDuration,
+    geoValidation,
+    geoRadius,
+    hasGeneratedQrForCurrentWeek,
+  ]);
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -124,59 +211,138 @@ export default function QrCodeGeneration() {
         {/* Main Content */}
         <main className="flex-1 overflow-auto p-4 md:p-6">
           <div className="mx-auto max-w-7xl">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Button
+                onClick={() => {
+                  setCurrentScreen(QRGenScreens.COURSE_SELECTION);
+                  setSelectedCourse(undefined);
+                }}
+                variant="ghost"
+                className="h-fit"
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
               <h1 className="text-2xl font-bold tracking-tight">
                 QR Code Generation
               </h1>
             </div>
 
             {/* QR Code Type Selector */}
-            <Tabs value={qrType} onValueChange={setQrType} className="mt-6">
-              {/* <TabsList className="grid w-full max-w-md grid-cols-2">
-                <TabsTrigger value="check-in">Check-in QR</TabsTrigger>
-                <TabsTrigger value="throughout">Throughout QR</TabsTrigger>
-              </TabsList> */}
-              <div className="mt-2 text-sm text-muted-foreground">
-                {qrType === "check-in" ? (
-                  <p>
-                    Generate a QR code for initial attendance at the beginning
-                    of class.
-                  </p>
-                ) : (
-                  <p>
-                    Generate QR codes for ongoing attendance checks throughout
-                    the class session.
-                  </p>
-                )}
+            <div className="text-muted-foreground mt-6 text-sm">
+              <p>
+                Generate a QR code for initial attendance at the beginning of
+                class.
+              </p>
+            </div>
+
+            {/* Subject and Week Selection */}
+            <div className="mt-4 grid gap-4 md:grid-cols-2">
+              <div>
+                <Label className="mb-2 block">Subject</Label>
+                <Select
+                  value={selectedCourse ? String(selectedCourse.sessionId) : ""}
+                  onValueChange={value =>
+                    setSelectedCourse({
+                      sessionId: Number(value),
+                      weekNumber: selectedCourse?.weekNumber ?? 1,
+                    })
+                  }
+                  disabled={isCoursesLoading}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select subject" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(courses ?? []).map(c => (
+                      <SelectItem key={c.id + c.code} value={String(c.id)}>
+                        {c.code} - {c.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-            </Tabs>
+              <div>
+                <Label className="mb-2 block">
+                  Week
+                  <span className="text-muted-foreground text-xs font-normal">
+                    ({usedWeeks.size}/13 created)
+                  </span>
+                </Label>
+                <Select
+                  value={
+                    selectedCourse ? String(selectedCourse.weekNumber) : ""
+                  }
+                  onValueChange={value =>
+                    setSelectedCourse({
+                      sessionId: selectedCourse?.sessionId ?? 0,
+                      weekNumber: Number(value),
+                    })
+                  }
+                  disabled={!selectedCourse}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select week" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {usedWeeks.size >= 13 ? (
+                      <div className="text-muted-foreground p-2 text-center text-sm">
+                        All weeks have been created
+                      </div>
+                    ) : (
+                      Array.from({ length: 13 }, (_, i) => i + 1).map(week => {
+                        const isUsed = usedWeeks.has(week);
+                        const isNextAvailable = week === nextAvailableWeek;
+                        return (
+                          <SelectItem
+                            key={week}
+                            value={String(week)}
+                            disabled={isUsed}
+                          >
+                            Week {week}
+                            {isUsed && " (Created)"}
+                            {isNextAvailable && !isUsed && " (Recommended)"}
+                          </SelectItem>
+                        );
+                      })
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
 
             <div className="mt-6 grid gap-6 md:grid-cols-2">
               {/* QR Code Display Card */}
               <Card className="overflow-hidden">
-                <CardHeader className="bg-primary/5 pb-0 border-b">
+                <CardHeader className="bg-primary/5 border-b pb-0">
                   <div className="text-center">
-                    <div className="text-sm font-medium text-muted-foreground">
-                      Introduction to Computer Science - CSIT883
+                    <div className="text-muted-foreground text-sm font-medium">
+                      Study Session {selectedCourse?.sessionId} - Week{" "}
+                      {selectedCourse?.weekNumber}
                     </div>
                     <div className="mt-1 flex items-center justify-center gap-1 text-sm">
                       <Calendar className="h-4 w-4" />
-                      <span>Monday, April 24, 2025 - 10:00 AM</span>
+                      <span>Live check-in tracking</span>
                     </div>
                   </div>
                 </CardHeader>
                 <CardContent className="flex flex-col items-center justify-center p-6 pt-6">
                   <div className="relative mb-4 rounded-lg border bg-white p-2 shadow-sm">
-                    <Image
-                      src="https://upload.wikimedia.org/wikipedia/commons/2/2f/Rickrolling_QR_code.png"
-                      width={256}
-                      height={256}
-                      alt="QR Code"
-                      className={`h-64 w-64 ${isExpired ? "opacity-30 grayscale" : ""}`}
-                    />
+                    {qrCode?.qr_url && !isGenerating && !isQrCodeLoading ? (
+                      <Image
+                        src={qrCode.qr_url}
+                        width={256}
+                        height={256}
+                        alt="QR Code"
+                        className={`h-64 w-64 ${isExpired ? "opacity-30 grayscale" : ""}`}
+                      />
+                    ) : (
+                      <div className="text-primary grid h-64 w-64 place-items-center">
+                        <Loader2 className="dark:text-primary-foreground animate-spin" />
+                      </div>
+                    )}
                     {isExpired && (
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-lg">
-                        <div className="bg-red-500 text-white px-3 py-1 rounded text-sm font-semibold">
+                      <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/20">
+                        <div className="rounded bg-red-500 px-3 py-1 text-sm font-semibold text-white">
                           EXPIRED
                         </div>
                       </div>
@@ -195,13 +361,29 @@ export default function QrCodeGeneration() {
                 <CardFooter className="flex flex-wrap justify-center gap-2 p-6 pt-0">
                   <Button
                     className="gap-1"
-                    onClick={() => {
-                      setRemainingTime(validityDuration * 60);
-                      setIsExpired(false);
+                    disabled={isAddingValidity || !existingQrCodeId}
+                    onClick={async () => {
+                      if (isAddingValidity || !existingQrCodeId) return;
+                      try {
+                        await addSecondValidity({
+                          qr_code_id: existingQrCodeId,
+                        });
+                        toast.success(
+                          "Second validity window added successfully!"
+                        );
+                        // Refetch QR codes list to update cache
+                        refetchQrCodes();
+                      } catch (e: unknown) {
+                        toast.error(
+                          e instanceof AxiosError && e.response?.data?.message
+                            ? e.response.data.message
+                            : "Failed to add second validity window."
+                        );
+                      }
                     }}
                   >
-                    <RefreshCw className="h-4 w-4" />
-                    {isExpired ? "Generate New QR" : "Regenerate QR"}
+                    <Plus className="h-4 w-4" />
+                    Add Second Validity
                   </Button>
                   <Button variant="outline" className="gap-1">
                     <Download className="h-4 w-4" />
@@ -214,186 +396,37 @@ export default function QrCodeGeneration() {
                 </CardFooter>
               </Card>
 
-              {/* Settings Panel */}
+              {/* Right column: Geolocation + Status */}
               <div className="space-y-6">
                 <Card>
                   <CardHeader>
-                    <CardTitle>Settings</CardTitle>
+                    <CardTitle>Geolocation Validation</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-6">
-                    {/* Validity Duration */}
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <Label htmlFor="validity-duration">
-                          Validity Duration
-                        </Label>
-                        <span className="text-sm font-medium">
-                          {validityDuration} minutes
-                        </span>
-                      </div>
-                      <Slider
-                        id="validity-duration"
-                        min={5}
-                        max={120}
-                        step={5}
-                        value={[validityDuration]}
-                        onValueChange={(value: number[]) =>
-                          setValidityDuration(value[0])
-                        }
-                        className="py-2"
+                  <CardContent className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="geo-validation">
+                        Require valid location
+                      </Label>
+                      <Switch
+                        id="geo-validation"
+                        checked={geoValidation}
+                        onCheckedChange={setGeoValidation}
                       />
-                      <div className="flex flex-wrap gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setValidityDuration(5)}
-                          className={
-                            validityDuration === 5 ? "bg-primary/10" : ""
-                          }
-                        >
-                          5 min
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setValidityDuration(15)}
-                          className={
-                            validityDuration === 15 ? "bg-primary/10" : ""
-                          }
-                        >
-                          15 min
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setValidityDuration(30)}
-                          className={
-                            validityDuration === 30 ? "bg-primary/10" : ""
-                          }
-                        >
-                          30 min
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setValidityDuration(60)}
-                          className={
-                            validityDuration === 60 ? "bg-primary/10" : ""
-                          }
-                        >
-                          1 hour
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setValidityDuration(120)}
-                          className={
-                            validityDuration === 120 ? "bg-primary/10" : ""
-                          }
-                        >
-                          2 hours
-                        </Button>
-                      </div>
                     </div>
-
-                    {/* Attendance Type */}
-                    <div className="space-y-2">
-                      <Label>Attendance Type</Label>
-                      <RadioGroup
-                        value={attendanceType}
-                        onValueChange={setAttendanceType}
-                        className="flex gap-4"
-                      >
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="mandatory" id="mandatory" />
-                          <Label htmlFor="mandatory">Mandatory</Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="optional" id="optional" />
-                          <Label htmlFor="optional">Optional</Label>
-                        </div>
-                      </RadioGroup>
-                    </div>
-
-                    {/* Geolocation Validation */}
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <Label htmlFor="geo-validation">
-                          Geolocation Validation
-                        </Label>
-                        <Switch
-                          id="geo-validation"
-                          checked={geoValidation}
-                          onCheckedChange={setGeoValidation}
+                    {geoValidation && (
+                      <div className="flex items-center gap-2">
+                        <Input
+                          id="geo-radius"
+                          type="number"
+                          value={geoRadius}
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                            setGeoRadius(Number.parseInt(e.target.value))
+                          }
+                          className="w-24"
                         />
+                        <Label htmlFor="geo-radius">meters radius</Label>
                       </div>
-                      {geoValidation && (
-                        <div className="flex items-center gap-2">
-                          <Input
-                            id="geo-radius"
-                            type="number"
-                            value={geoRadius}
-                            onChange={(
-                              e: React.ChangeEvent<HTMLInputElement>
-                            ) => setGeoRadius(Number.parseInt(e.target.value))}
-                            className="w-24"
-                          />
-                          <Label htmlFor="geo-radius">meters radius</Label>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Auto-expire Options */}
-                    <div className="space-y-2">
-                      <Label>Auto-expire Options</Label>
-                      <div className="space-y-2">
-                        <div className="flex items-center space-x-2">
-                          <Checkbox
-                            id="after-class"
-                            checked={autoExpireOptions.afterClass}
-                            onCheckedChange={(checked: boolean) =>
-                              setAutoExpireOptions({
-                                ...autoExpireOptions,
-                                afterClass: !!checked,
-                              })
-                            }
-                          />
-                          <Label htmlFor="after-class">
-                            Expire after class end time
-                          </Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Checkbox
-                            id="after-limit"
-                            checked={autoExpireOptions.afterLimit}
-                            onCheckedChange={(checked: boolean) =>
-                              setAutoExpireOptions({
-                                ...autoExpireOptions,
-                                afterLimit: !!checked,
-                              })
-                            }
-                          />
-                          <Label htmlFor="after-limit">
-                            Expire after attendance limit reached
-                          </Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Checkbox
-                            id="after-date"
-                            checked={autoExpireOptions.afterDate}
-                            onCheckedChange={(checked: boolean) =>
-                              setAutoExpireOptions({
-                                ...autoExpireOptions,
-                                afterDate: !!checked,
-                              })
-                            }
-                          />
-                          <Label htmlFor="after-date">
-                            Expire after specific date/time
-                          </Label>
-                        </div>
-                      </div>
-                    </div>
+                    )}
                   </CardContent>
                 </Card>
 
@@ -406,9 +439,7 @@ export default function QrCodeGeneration() {
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium">
-                        24/45 students checked in (53%)
-                      </span>
+                      <span className="text-sm font-medium"></span>
                       <Badge
                         variant="outline"
                         className="bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-400"
@@ -416,44 +447,19 @@ export default function QrCodeGeneration() {
                         Live
                       </Badge>
                     </div>
-                    <Progress value={53} className="h-2 bg-muted" />
+
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
                         <Label>Recent Check-ins</Label>
-                        <span className="text-xs text-muted-foreground">
+                        <span
+                          suppressHydrationWarning
+                          className="text-muted-foreground text-xs"
+                        >
                           Last updated: {format(new Date(), "hh:mm:ss a")}
                         </span>
                       </div>
-                      <ScrollArea className="h-[140px] rounded-md border p-2 bg-card">
-                        <div className="space-y-2">
-                          {recentCheckins.map(student => (
-                            <div
-                              key={student.id}
-                              className="flex items-center justify-between rounded-md p-2 hover:bg-muted"
-                            >
-                              <div className="flex items-center gap-2">
-                                <Avatar className="h-8 w-8">
-                                  <AvatarImage
-                                    src={student.avatar || "/placeholder.svg"}
-                                    alt={student.name}
-                                  />
-                                  <AvatarFallback>
-                                    {student.name
-                                      .split(" ")
-                                      .map(n => n[0])
-                                      .join("")}
-                                  </AvatarFallback>
-                                </Avatar>
-                                <span className="text-sm font-medium">
-                                  {student.name}
-                                </span>
-                              </div>
-                              <span className="text-xs text-muted-foreground">
-                                {student.timestamp}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
+                      <ScrollArea className="bg-card h-[140px] rounded-md border p-2">
+                        <div className="space-y-2"></div>
                       </ScrollArea>
                       <Button
                         variant="outline"

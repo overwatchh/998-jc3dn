@@ -1,10 +1,11 @@
 "use client";
+
+import { Header } from "@/components/header";
 import { ThemeProvider } from "@/components/theme-provider";
-import { ReactQueryProvider } from "@/lib/queryClient";
 import { Toaster } from "@/components/ui/sonner";
+import { ReactQueryProvider } from "@/lib/queryClient";
 import { ReactNode } from "react";
 import "./globals.css";
-import { Header } from "@/components/header";
 
 interface RootLayoutProps {
   children: ReactNode;
@@ -17,7 +18,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
         {/* Add necessary head elements here, like meta tags, title, etc. */}
         <title>QR Attendance System</title>
       </head>
-      <body className="flex flex-col h-screen overflow-scroll">
+      <body className="flex h-screen flex-col overflow-scroll">
         <ReactQueryProvider>
           <ThemeProvider
             attribute="class"

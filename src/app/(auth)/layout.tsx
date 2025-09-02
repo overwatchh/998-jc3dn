@@ -1,7 +1,13 @@
+"use client";
+
 export default function AuthLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return <div className="min-h-screen grid place-items-center">{children}</div>;
+  return (
+    <div className="flex grow flex-col items-center justify-center">
+      {children}
+    </div>
+  );
 }

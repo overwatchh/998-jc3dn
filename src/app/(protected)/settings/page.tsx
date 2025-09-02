@@ -49,7 +49,7 @@ export default function SettingsScreen() {
   }
 
   return (
-    <div className="p-4 space-y-6">
+    <div className="space-y-6 p-4">
       {/* Header */}
       <div className="flex items-center">
         <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
@@ -94,15 +94,15 @@ export default function SettingsScreen() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center">
-            <Shield className="h-5 w-5 mr-2" />
+            <Shield className="mr-2 h-5 w-5" />
             Privacy & Security
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <Collapsible open={privacyExpanded} onOpenChange={setPrivacyExpanded}>
-            <CollapsibleTrigger className="flex items-center justify-between w-full p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+            <CollapsibleTrigger className="flex w-full items-center justify-between rounded-lg bg-gray-50 p-3 transition-colors hover:bg-gray-100">
               <div className="flex items-center">
-                <MapPin className="h-4 w-4 mr-2 text-gray-600" />
+                <MapPin className="mr-2 h-4 w-4 text-gray-600" />
                 <span className="text-sm font-medium">
                   Location & Privacy Policy
                 </span>
@@ -111,11 +111,11 @@ export default function SettingsScreen() {
                 className={`h-4 w-4 text-gray-600 transition-transform ${privacyExpanded ? "rotate-180" : ""}`}
               />
             </CollapsibleTrigger>
-            <CollapsibleContent className="mt-3 p-4 bg-blue-50 rounded-lg">
+            <CollapsibleContent className="mt-3 rounded-lg bg-blue-50 p-4">
               <div className="space-y-4 text-sm text-gray-700">
                 <div>
-                  <div className="flex items-center mb-2">
-                    <Navigation className="h-4 w-4 mr-2 text-blue-600" />
+                  <div className="mb-2 flex items-center">
+                    <Navigation className="mr-2 h-4 w-4 text-blue-600" />
                     <p className="font-medium text-blue-900">
                       High-Accuracy Location Verification
                     </p>
@@ -129,8 +129,8 @@ export default function SettingsScreen() {
                 </div>
 
                 <div>
-                  <div className="flex items-center mb-2">
-                    <KeyRound className="h-4 w-4 mr-2 text-blue-600" />
+                  <div className="mb-2 flex items-center">
+                    <KeyRound className="mr-2 h-4 w-4 text-blue-600" />
                     <p className="font-medium text-blue-900">
                       Two-Step Verification Process
                     </p>
@@ -143,8 +143,8 @@ export default function SettingsScreen() {
                 </div>
 
                 <div>
-                  <div className="flex items-center mb-2">
-                    <Wifi className="h-4 w-4 mr-2 text-blue-600" />
+                  <div className="mb-2 flex items-center">
+                    <Wifi className="mr-2 h-4 w-4 text-blue-600" />
                     <p className="font-medium text-blue-900">
                       State Persistence & Privacy
                     </p>
@@ -158,8 +158,8 @@ export default function SettingsScreen() {
                 </div>
 
                 <div>
-                  <div className="flex items-center mb-2">
-                    <Shield className="h-4 w-4 mr-2 text-blue-600" />
+                  <div className="mb-2 flex items-center">
+                    <Shield className="mr-2 h-4 w-4 text-blue-600" />
                     <p className="font-medium text-blue-900">Data Protection</p>
                   </div>
                   <p>
@@ -174,9 +174,9 @@ export default function SettingsScreen() {
 
           {/* Security Status Indicators */}
           <div className="grid grid-cols-2 gap-3">
-            <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+            <div className="flex items-center justify-between rounded-lg bg-green-50 p-3">
               <div className="flex items-center">
-                <KeyRound className="h-4 w-4 mr-2 text-green-600" />
+                <KeyRound className="mr-2 h-4 w-4 text-green-600" />
                 <div>
                   <p className="text-sm font-medium text-green-900">
                     Two-Step Auth
@@ -184,12 +184,12 @@ export default function SettingsScreen() {
                   <p className="text-xs text-green-700">Active</p>
                 </div>
               </div>
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+              <div className="h-2 w-2 rounded-full bg-green-500"></div>
             </div>
 
-            <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+            <div className="flex items-center justify-between rounded-lg bg-green-50 p-3">
               <div className="flex items-center">
-                <Navigation className="h-4 w-4 mr-2 text-green-600" />
+                <Navigation className="mr-2 h-4 w-4 text-green-600" />
                 <div>
                   <p className="text-sm font-medium text-green-900">
                     High-Accuracy GPS
@@ -197,7 +197,7 @@ export default function SettingsScreen() {
                   <p className="text-xs text-green-700">Enabled</p>
                 </div>
               </div>
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+              <div className="h-2 w-2 rounded-full bg-green-500"></div>
             </div>
           </div>
         </CardContent>
@@ -206,7 +206,7 @@ export default function SettingsScreen() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center">
-            <Palette className="h-5 w-5 mr-2" />
+            <Palette className="mr-2 h-5 w-5" />
             App Preferences
           </CardTitle>
         </CardHeader>
@@ -226,10 +226,10 @@ export default function SettingsScreen() {
           <Separator />
           <div className="flex items-center justify-between">
             <div className="flex items-center">
-              <Globe className="h-4 w-4 mr-2" />
+              <Globe className="mr-2 h-4 w-4" />
               <div>
                 <p className="text-sm font-medium">Language</p>
-                <p className="text-xs text-primary/60">App display language</p>
+                <p className="text-primary/60 text-xs">App display language</p>
               </div>
             </div>
             <Button variant="outline" size="sm">
@@ -249,15 +249,15 @@ export default function SettingsScreen() {
             variant="outline"
             className="w-full justify-start bg-transparent"
           >
-            <Lock className="h-4 w-4 mr-2" />
+            <Lock className="mr-2 h-4 w-4" />
             Change Password
           </Button>
           <Button
             variant="outline"
-            className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50 bg-transparent"
+            className="w-full justify-start bg-transparent text-red-600 hover:bg-red-50 hover:text-red-700"
             onClick={handleSignout}
           >
-            <LogOut className="h-4 w-4 mr-2" />
+            <LogOut className="mr-2 h-4 w-4" />
             Sign Out
           </Button>
         </CardContent>
