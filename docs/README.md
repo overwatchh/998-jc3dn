@@ -6,12 +6,12 @@ Welcome to the QR Attendance System documentation. This system includes comprehe
 
 ### 🚀 Getting Started
 - **[Quick Reference](QUICK_REFERENCE.md)** - Commands, APIs, and quick fixes
-- **[Testing Guide](../TESTING_GUIDE.md)** - Step-by-step testing instructions
-- **[System Setup](../EMAIL_REMINDER_SYSTEM.md)** - Installation and configuration
+- **[Testing Guide](TESTING_GUIDE.md)** - Step-by-step testing instructions
+- **[System Setup](EMAIL_REMINDER_SYSTEM.md)** - Installation and configuration
 
 ### 📧 Email Reminder System
 - **[Complete Documentation](EMAIL_REMINDER_SYSTEM_DOCUMENTATION.md)** - Full system documentation
-- **[System Flow Explanation](../SYSTEM_FLOW_EXPLANATION.md)** - How the system works
+- **[System Flow Explanation](SYSTEM_FLOW_EXPLANATION.md)** - How the system works
 
 ### 🔧 Technical Reference
 - **[API Examples](../api-test-examples.http)** - REST API testing examples
@@ -73,14 +73,15 @@ QR Scan → Database → Attendance Calculation → Email Decision → Send Emai
 ## 📁 File Structure
 ```
 docs/
-├── README.md                              # This file
+├── README.md                              # This file (documentation index)
 ├── QUICK_REFERENCE.md                     # Quick commands and references
-└── EMAIL_REMINDER_SYSTEM_DOCUMENTATION.md # Complete system documentation
-
-Root Files:
+├── EMAIL_REMINDER_SYSTEM_DOCUMENTATION.md # Complete system documentation
 ├── EMAIL_REMINDER_SYSTEM.md              # Implementation guide
 ├── TESTING_GUIDE.md                      # Testing procedures
 ├── SYSTEM_FLOW_EXPLANATION.md            # System workflow
+└── QR_ATTENDANCE_SYSTEM_DOCUMENTATION.md # Original system docs
+
+Root Files:
 ├── api-test-examples.http                # API examples
 └── test-*.js                             # Testing scripts
 ```
