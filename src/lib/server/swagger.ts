@@ -68,10 +68,15 @@ export const getApiDocs = async () => {
             "Administrative endpoints for managing users, roles, courses, and system settings.",
         },
         {
+          name: "Common",
+          description:
+            "These endpoints are accessible to all authenticated users",
+        },
+        {
           name: "Statistics",
           description:
             "Endpoints that provide analytical data and attendance statistics for both lecturers and admins.",
-        },
+        }        
       ],
     },
   });
