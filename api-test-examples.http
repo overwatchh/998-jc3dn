@@ -1,0 +1,69 @@
+# API Testing Examples for Attendance Reminder System
+# Use VS Code REST Client extension or curl commands
+
+### 1. Test Cron Endpoint (Daily Automated Processing)
+GET http://localhost:3000/api/cron/attendance-reminders
+Authorization: Bearer test-secret-key-123
+
+### 2. Process All Reminders (Admin)
+POST http://localhost:3000/api/admin/attendance/reminders
+Content-Type: application/json
+Cookie: better-auth.session_token=YOUR_SESSION_TOKEN
+
+{
+  "action": "process_all"
+}
+
+### 3. Process Reminders for Specific Course
+POST http://localhost:3000/api/admin/attendance/reminders
+Content-Type: application/json
+Cookie: better-auth.session_token=YOUR_SESSION_TOKEN
+
+{
+  "action": "process_course",
+  "courseId": 1
+}
+
+### 4. Process Reminder for Specific Student
+POST http://localhost:3000/api/admin/attendance/reminders
+Content-Type: application/json
+Cookie: better-auth.session_token=YOUR_SESSION_TOKEN
+
+{
+  "action": "process_student",
+  "studentId": "user-id-here",
+  "courseId": 1
+}
+
+### 5. Get Email History
+GET http://localhost:3000/api/admin/attendance/reminders?action=history&limit=10
+Cookie: better-auth.session_token=YOUR_SESSION_TOKEN
+
+### 6. Get Attendance Statistics
+GET http://localhost:3000/api/admin/attendance/reminders?action=statistics&courseId=1
+Cookie: better-auth.session_token=YOUR_SESSION_TOKEN
+
+### 7. Enable Email Reminders for Course
+POST http://localhost:3000/api/admin/attendance/settings
+Content-Type: application/json
+Cookie: better-auth.session_token=YOUR_SESSION_TOKEN
+
+{
+  "courseId": 1,
+  "action": "enable"
+}
+
+### 8. Update Course Settings
+PUT http://localhost:3000/api/admin/attendance/settings
+Content-Type: application/json
+Cookie: better-auth.session_token=YOUR_SESSION_TOKEN
+
+{
+  "courseId": 1,
+  "settings": {
+    "lectureCount": 13,
+    "labCount": 12,
+    "attendanceThreshold": 0.80,
+    "emailEnabled": true
+  }
+}

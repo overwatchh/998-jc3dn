@@ -203,3 +203,54 @@ CREATE TABLE checkin (
     CONSTRAINT fk_check_student FOREIGN KEY (student_id) REFERENCES user(id),
     CONSTRAINT fk_check_qrss FOREIGN KEY (qr_code_study_session_id) REFERENCES qr_code_study_session(id)
 );
+
+-- Email reminder settings table
+CREATE TABLE email_reminder_settings (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    subject_id INT NOT NULL,
+    lecture_count INT NOT NULL DEFAULT 13,
+    lab_count INT NOT NULL DEFAULT 12,
+    attendance_threshold DECIMAL(3,2) NOT NULL DEFAULT 0.80,
+    email_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (subject_id) REFERENCES subject(id),
+    UNIQUE(subject_id)
+);
+
+-- Email reminder logs to track sent reminders
+CREATE TABLE email_reminder_logs (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    student_id VARCHAR(36) NOT NULL,
+    subject_id INT NOT NULL,
+    reminder_type ENUM('first_absence', 'second_absence', 'critical_absence') NOT NULL,
+    session_type ENUM('lecture', 'lab') NOT NULL,
+    missed_count INT NOT NULL,
+    total_sessions INT NOT NULL,
+    attendance_percentage DECIMAL(5,2) NOT NULL,
+    email_subject TEXT NOT NULL,
+    email_body TEXT NOT NULL,
+    sent_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    email_status ENUM('sent', 'failed', 'pending') NOT NULL DEFAULT 'pending',
+    FOREIGN KEY (student_id) REFERENCES `user` (`id`),
+    FOREIGN KEY (subject_id) REFERENCES subject(id),
+    INDEX idx_student_subject (student_id, subject_id),
+    INDEX idx_sent_at (sent_at)
+);
+
+-- Student attendance summary cache table (for performance)
+CREATE TABLE student_attendance_summary (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    student_id VARCHAR(36) NOT NULL,
+    subject_id INT NOT NULL,
+    session_type ENUM('lecture', 'lab') NOT NULL,
+    total_sessions INT NOT NULL DEFAULT 0,
+    attended_sessions INT NOT NULL DEFAULT 0,
+    missed_sessions INT NOT NULL DEFAULT 0,
+    attendance_percentage DECIMAL(5,2) NOT NULL DEFAULT 0.00,
+    last_updated DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (student_id) REFERENCES `user` (`id`),
+    FOREIGN KEY (subject_id) REFERENCES subject(id),
+    UNIQUE(student_id, subject_id, session_type),
+    INDEX idx_student_subject (student_id, subject_id)
+);
