@@ -70,11 +70,21 @@ export type AbsentListResponse = Array<{
   email: string;
 }>;
 
-export type CheckInListResponse = Array<{
+// Live check-in list (lecturer) GET /api/lecturer/study-session/{id}/checkin-list
+export type LiveCheckinStudent = {
   student_id: string;
-  name: string;
+  student_name: string;
+  student_email: string;
   checkin_time: string;
-}>;
+  validity_count: number; // 1 for first window, 2 for second
+};
+
+export type LiveCheckinResponse = {
+  message: string;
+  validity_count: number | null;
+  count: number;
+  data: LiveCheckinStudent[];
+};
 
 // Lecturer GET /lecturer/study-session/{id}/student-list
 export type StudentListResponse = Array<{

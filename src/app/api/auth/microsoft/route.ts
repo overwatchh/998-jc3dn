@@ -23,11 +23,14 @@ export async function GET(req: NextRequest) {
       ? returnToParam
       : "/";
 
+  // Prefer explicit base URL (e.g., ngrok) when provided to avoid defaulting to localhost
+  const externalOrigin = process.env.BASE_URL ?? req.nextUrl.origin;
+
   const response = await auth.api.signInSocial({
     body: {
       provider: "microsoft",
       // Ensure absolute URL so redirect returns to the correct domain (e.g., ngrok)
-      callbackURL: new URL(safeReturnTo, req.nextUrl.origin).toString(),
+      callbackURL: new URL(safeReturnTo, externalOrigin).toString(),
     },
     asResponse: false,
   });

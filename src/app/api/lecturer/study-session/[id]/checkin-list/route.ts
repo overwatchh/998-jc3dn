@@ -97,9 +97,9 @@ export async function GET(
       );
     }
 
-    // Step 2: Detect current active validity
-    const validitySql = `
-      SELECT v.id AS validity_id, v.count AS validity_count, v.start_time, v.end_time
+    // Step 2: Detect current active validity (if any) and also fetch all check-ins across both windows
+    const currentValiditySql = `
+      SELECT v.id AS validity_id, v.count AS validity_count
       FROM validity v
       WHERE v.qr_code_id = (
         SELECT qr_code_id FROM qr_code_study_session
@@ -108,42 +108,35 @@ export async function GET(
         AND NOW() BETWEEN v.start_time AND v.end_time
       LIMIT 1
     `;
-    const validities = await rawQuery<{
+    const currentValidityRows = await rawQuery<{
       validity_id: number;
       validity_count: number;
-      start_time: string;
-      end_time: string;
-    }>(validitySql, [studySessionId, week_number]);
+    }>(currentValiditySql, [studySessionId, week_number]);
 
-    if (validities.length === 0) {
-      return NextResponse.json({
-        message: "No active validity window right now",
-        validity_count: null,
-        count: 0,
-        data: [],
-      });
-    }
+    const currentValidityCount =
+      currentValidityRows.length > 0 ? currentValidityRows[0].validity_count : null;
 
-    const { validity_id, validity_count } = validities[0];
-
-    // Step 3: Fetch students checked in for this validity
+    // Step 3: Fetch students checked in for this QR (all validities), include validity_count
     const studentsSql = `
       SELECT 
         u.id AS student_id,
         u.name AS student_name,
         u.email AS student_email,
-        c.checkin_time
+        c.checkin_time,
+        v.count AS validity_count
       FROM checkin c
       JOIN user u 
         ON c.student_id = u.id
+      JOIN validity v
+        ON v.id = c.validity_id
       WHERE c.qr_code_study_session_id = ?
-        AND c.validity_id = ?
+      ORDER BY c.checkin_time DESC
     `;
-    const students = await rawQuery(studentsSql, [qrssRows[0].id, validity_id]);
+    const students = await rawQuery(studentsSql, [qrssRows[0].id]);
 
     return NextResponse.json({
       message: "Fetched checked in students successfully",
-      validity_count: validity_count,
+      validity_count: currentValidityCount,
       count: students.length,
       data: students,
     });
