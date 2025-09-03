@@ -16,7 +16,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { AxiosError } from "axios";
 import { ArrowRight, Eye, EyeOff, User } from "lucide-react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -50,10 +50,12 @@ export function LoginForm() {
     isError: _isError,
   } = useLogin();
 
+  const searchParams = useSearchParams();
+  const callbackURL = searchParams.get("callbackURL") || "/";
+
   const handleEmailLogin: SubmitHandler<SigninInputs> = async data => {
     try {
-      await login(data);
-      router.push("/");
+      await login({ ...data, callbackURL });
     } catch (err: unknown) {
       let message = "An unexpected error occurred.";
       if (err instanceof AxiosError) {
@@ -64,9 +66,10 @@ export function LoginForm() {
   };
 
   const router = useRouter();
-
   const handleMicrosoftLogin = async () => {
-    router.push("/api/auth/microsoft");
+    router.push(
+      "/api/auth/microsoft?callbackURL=" + encodeURIComponent(callbackURL)
+    );
   };
 
   return (

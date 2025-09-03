@@ -15,6 +15,7 @@ import {
   ChevronDown,
   Globe,
   KeyRound,
+  Loader2,
   Lock,
   LogOut,
   MapPin,
@@ -42,6 +43,10 @@ export default function SettingsScreen() {
   }, []);
   if (!mounted) {
     return null; // or a loading state
+  }
+
+  if (!session?.user) {
+    return null;
   }
 
   async function handleSignout(): Promise<void> {
@@ -258,7 +263,11 @@ export default function SettingsScreen() {
             onClick={handleSignout}
           >
             <LogOut className="mr-2 h-4 w-4" />
-            Sign Out
+            {logout.isPending ? (
+              <Loader2 className="animate-spin" />
+            ) : (
+              "Sign Out"
+            )}
           </Button>
         </CardContent>
       </Card>

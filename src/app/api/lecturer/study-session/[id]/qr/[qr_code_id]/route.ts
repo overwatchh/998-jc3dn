@@ -85,25 +85,46 @@ export async function GET(
 
     const redirect_path = "/scan";
 
-    // Query QR code info
-    const qrSql = `
+    // Prefer the currently active validity window, otherwise use the latest end_time
+    const activeSql = `
       SELECT 
         qrs.study_session_id,
-        qrs.week_number,        
+        qrs.week_number,
         v.end_time AS valid_until
       FROM qr_code_study_session qrs
       JOIN qr_code qc ON qrs.qr_code_id = qc.id
       JOIN validity v ON v.qr_code_id = qc.id
       WHERE qrs.study_session_id = ? AND qc.id = ?
-      ORDER BY v.count ASC
+        AND NOW() BETWEEN v.start_time AND v.end_time
+      ORDER BY v.count DESC
+      LIMIT 1
+    `;
+    const fallbackSql = `
+      SELECT 
+        qrs.study_session_id,
+        qrs.week_number,
+        v.end_time AS valid_until
+      FROM qr_code_study_session qrs
+      JOIN qr_code qc ON qrs.qr_code_id = qc.id
+      JOIN validity v ON v.qr_code_id = qc.id
+      WHERE qrs.study_session_id = ? AND qc.id = ?
+      ORDER BY v.end_time DESC
       LIMIT 1
     `;
 
-    const rows = await rawQuery<{
+    let rows = await rawQuery<{
       study_session_id: number;
       week_number: number;
       valid_until: string;
-    }>(qrSql, [studySessionId, qrId]);
+    }>(activeSql, [studySessionId, qrId]);
+
+    if (rows.length === 0) {
+      rows = await rawQuery(activeSql.replace("ORDER BY v.count DESC", "ORDER BY v.end_time DESC"), [studySessionId, qrId]);
+    }
+
+    if (rows.length === 0) {
+      rows = await rawQuery(fallbackSql, [studySessionId, qrId]);
+    }
 
     if (rows.length === 0) {
       return NextResponse.json(

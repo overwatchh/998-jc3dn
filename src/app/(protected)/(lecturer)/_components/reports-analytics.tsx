@@ -47,6 +47,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useCurrentUser } from "@/hooks/useAuth";
 import { format } from "date-fns";
 import {
   ArrowDown,
@@ -91,11 +92,13 @@ export default function ReportsAnalytics() {
     }
   }, [courses, selectedCourseId]);
 
+  const { data } = useCurrentUser();
+
   return (
     <main className="flex flex-1 flex-col gap-4 p-3 sm:p-4 md:gap-6 md:p-6">
       <div className="flex items-center">
         <h1 className="text-xl font-semibold sm:text-2xl md:text-3xl">
-          Attendance Reports & Analytics
+          Welcome, {data?.user?.name}!
         </h1>
       </div>
 
@@ -117,7 +120,7 @@ export default function ReportsAnalytics() {
                 </SelectTrigger>
                 <SelectContent>
                   {(courses ?? []).map(c => (
-                    <SelectItem key={c.id} value={String(c.id)}>
+                    <SelectItem key={c.id + c.code} value={String(c.id)}>
                       {c.code} - {c.name}
                     </SelectItem>
                   ))}

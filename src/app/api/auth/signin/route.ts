@@ -36,13 +36,14 @@ import { NextRequest, NextResponse } from "next/server";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { email, password, rememberMe } = body;
+    const { email, password, rememberMe, callbackURL } = body;
 
     const response = await auth.api.signInEmail({
       body: {
         email,
         password,
         rememberMe,
+        callbackURL,
       },
       asResponse: true,
     });

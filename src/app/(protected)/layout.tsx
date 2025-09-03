@@ -1,17 +1,29 @@
-import { BottomNavigation } from "@/components/bottom-navigation";
-import { auth } from "@/lib/server/auth";
-import { Role } from "@/types";
-import { headers } from "next/headers";
+"use client";
 
-export default async function ProtectedLayout({
+import { BottomNavigation } from "@/components/bottom-navigation";
+import { useCurrentUser } from "@/hooks/useAuth";
+import { useFullPath } from "@/hooks/useFullPath";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+
+export default function ProtectedLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
-  const role = session?.user.role as Role;
+  const router = useRouter();
+
+  const { encodedFullPath: callbackURL } = useFullPath();
+
+  const { data: session, isPending } = useCurrentUser();
+
+  useEffect(() => {
+    if (!isPending && !session?.user) {
+      router.push(`/login?callbackURL=${callbackURL}`);
+    }
+  }, [session, router, callbackURL, isPending]);
+
+  const role = session?.user?.role;
 
   return (
     <div className="flex grow flex-col pb-20">

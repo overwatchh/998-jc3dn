@@ -21,7 +21,7 @@ export default function DashboardPage() {
 
   if (!data) redirect("/login");
 
-  const userRole = data.user.role;
+  const userRole = data.user?.role;
 
   switch (userRole) {
     case Roles.STUDENT:

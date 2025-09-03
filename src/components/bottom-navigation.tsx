@@ -80,13 +80,6 @@ export function BottomNavigation({ role }: Props) {
       role: ["lecturer"],
     },
     {
-      id: "report",
-      icon: FileText,
-      label: "Report",
-      href: "/report",
-      role: ["lecturer"],
-    },
-    {
       id: "records",
       icon: FileText,
       label: "Records",
