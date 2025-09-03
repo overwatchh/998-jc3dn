@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - master
-      - feat/qr-generation
+      - feat/qr-scan-student
     paths-ignore:
       - src/lib/server/db_schema/db_*.sql
 
