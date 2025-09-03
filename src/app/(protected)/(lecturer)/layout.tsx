@@ -7,13 +7,11 @@ const Layout = async ({ children }: { children: React.ReactNode }) => {
   const session = await auth.api.getSession({
     headers: await headers(),
   });
-  if (!session) {
-    redirect("/login");
-  }
-  if (session.user.role !== Roles.LECTURER) {
+
+  if (session && session.user.role !== Roles.LECTURER) {
     redirect("/dashboard");
   }
-  return <div className="flex grow flex-col">{children}</div>;
+  return <div>{children}</div>;
 };
 
 export default Layout;

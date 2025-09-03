@@ -1,6 +1,7 @@
 "use client";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import useGeolocation from "@/hooks/useGeolocation";
 import { useSearchParams } from "next/navigation";
@@ -17,7 +18,10 @@ enum Screen {
 
 const CheckinPage = () => {
   const [screen, setScreen] = useState<Screen>(Screen.FIRST_CHECKIN);
+  const [firstCheckedIn, setFirstCheckedIn] = useState(false);
+  const [secondCheckedIn, setSecondCheckedIn] = useState(false);
   const searchParams = useSearchParams();
+  const [locationEnabled, setLocationEnabled] = useState(false);
   const qrCodeId = searchParams.get("qr_code_id");
 
   const {
@@ -25,7 +29,7 @@ const CheckinPage = () => {
     isPending: isCheckinStatusPending,
     error: checkinStatusError,
   } = useGetCheckinStatus(qrCodeId);
-  const location = useGeolocation();
+  const location = useGeolocation(locationEnabled);
   const { mutateAsync: checkin, isPending: isCheckinPending } =
     useStudentQRCheckin();
 
@@ -63,6 +67,37 @@ const CheckinPage = () => {
     );
   }
 
+  // Prompt for location permission before requesting it
+  if (!isCheckinStatusPending && !locationEnabled) {
+    return (
+      <div className="space-y-6">
+        <div className="text-center">
+          <h1 className="text-foreground text-2xl font-bold">
+            Allow Location Access
+          </h1>
+          <p className="text-muted-foreground mt-2">
+            We need your location to verify your attendance.
+          </p>
+        </div>
+
+        <Card>
+          <CardContent className="space-y-4 p-6">
+            <p className="text-muted-foreground text-sm">
+              To continue, please grant permission to access your GPS location.
+              You can change this later in your browser settings.
+            </p>
+            <Button
+              className="h-12 w-full text-lg font-semibold"
+              onClick={() => setLocationEnabled(true)}
+            >
+              Enable Location
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   if (location.error) {
     return (
       <div className="space-y-6">
@@ -94,7 +129,7 @@ const CheckinPage = () => {
     return (
       <div className="flex min-h-[400px] flex-col items-center justify-center space-y-4">
         <div className="border-primary h-8 w-8 animate-spin rounded-full border-b-2"></div>
-        <p className="text-muted-foreground">Getting check-in status...</p>
+        <p className="text-muted-foreground">Loading...</p>
       </div>
     );
   }
@@ -114,6 +149,11 @@ const CheckinPage = () => {
       long: location.position.longitude,
       qr_code_id: parseInt(qrCodeId, 10),
     });
+    if (screen === Screen.FIRST_CHECKIN) {
+      setFirstCheckedIn(true);
+    } else if (screen === Screen.SECOND_CHECKIN) {
+      setSecondCheckedIn(true);
+    }
   };
 
   switch (screen) {
@@ -124,11 +164,25 @@ const CheckinPage = () => {
           location={location}
           handleCheckin={handleCheckin}
           qrCodeId={qrCodeId}
+          roomLabel={
+            checkinStatus?.location?.building_number &&
+            checkinStatus?.location?.room_number
+              ? `Building ${checkinStatus.location.building_number}, Room ${checkinStatus.location.room_number}`
+              : undefined
+          }
+          radiusMeters={checkinStatus?.location?.radius ?? null}
+          disableAfterSuccess={firstCheckedIn}
         />
       );
 
     case Screen.SECOND_CHECKIN:
-      return <SecondCheckinScreen handleCheckin={handleCheckin} />;
+      return (
+        <SecondCheckinScreen
+          handleCheckin={handleCheckin}
+          isCheckingIn={isCheckinPending}
+          disabled={secondCheckedIn}
+        />
+      );
 
     default:
       break;
