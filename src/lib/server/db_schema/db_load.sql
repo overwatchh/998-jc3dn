@@ -246,7 +246,7 @@ INSERT INTO validity (id, qr_code_id, count) VALUES
 
 -- Special seed: qr_code_id = 4 has first validity lasting only 1 minute from now
 INSERT INTO validity (qr_code_id, count, start_time, end_time)
-VALUES (4, 1, NOW(), DATE_ADD(NOW(), INTERVAL 1 MINUTE));
+VALUES (4, 1, NOW(), DATE_ADD(NOW(), INTERVAL 3 MINUTE));
 -- QR Code - Study Session mapping
 -- CSCI935 week 1 lucture, tutorial
 INSERT INTO qr_code_study_session (id, study_session_id, qr_code_id,week_number) VALUES
