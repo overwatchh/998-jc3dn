@@ -1,5 +1,5 @@
 import { auth } from "@/lib/server/auth";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 /**
  * @openapi
@@ -16,11 +16,12 @@ import { NextResponse } from "next/server";
  *         description: Internal Server Error
  */
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const callbackURL = req.nextUrl.searchParams.get("callbackURL") || "/";
   const response = await auth.api.signInSocial({
     body: {
       provider: "microsoft",
-      callbackURL: "/",
+      callbackURL,
     },
     asResponse: false,
   });

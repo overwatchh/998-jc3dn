@@ -12,7 +12,7 @@ export const useCurrentUser = () => {
     const { data } = await apiClient.get("/auth/me");
     return data;
   };
-  return useQuery<{ user: User }>({
+  return useQuery<{ user: User | null }>({
     queryKey: [CURRENT_USER_QUERY_KEY],
     queryFn,
   });
@@ -20,16 +20,23 @@ export const useCurrentUser = () => {
 
 // Login mutation
 export const useLogin = () => {
+  const router = useRouter();
   return useMutation({
     mutationFn: async (credentials: {
       email: string;
       password: string;
       rememberMe: boolean;
+      callbackURL?: string | null;
     }) => {
       const response = await apiClient.post("/auth/signin", credentials);
+      console.log(response);
       return response.data;
     },
-    onSuccess: () => {
+    onSuccess: data => {
+      if (data.redirect) {
+        router.push(data.url);
+      }
+
       // Invalidate the currentUser query to refetch user data
       queryClient.invalidateQueries({ queryKey: [CURRENT_USER_QUERY_KEY] });
     },

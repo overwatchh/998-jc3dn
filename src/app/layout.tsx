@@ -4,6 +4,7 @@ import { Header } from "@/components/header";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { ReactQueryProvider } from "@/lib/queryClient";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { ReactNode } from "react";
 import "./globals.css";
 
@@ -30,6 +31,8 @@ export default function RootLayout({ children }: RootLayoutProps) {
             {children}
             <Toaster richColors />
           </ThemeProvider>
+
+          <ReactQueryDevtools initialIsOpen={false} />
         </ReactQueryProvider>
       </body>
     </html>

@@ -1,4 +1,5 @@
 import { auth } from "@/lib/server/auth";
+import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 
@@ -24,6 +25,7 @@ export async function POST() {
     });
 
     const data = await response.json();
+    revalidatePath("/login");
 
     return new NextResponse(JSON.stringify(data), {
       status: response.status,

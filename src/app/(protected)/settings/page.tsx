@@ -15,6 +15,7 @@ import {
   ChevronDown,
   Globe,
   KeyRound,
+  Loader2,
   Lock,
   LogOut,
   MapPin,
@@ -35,13 +36,14 @@ export default function SettingsScreen() {
 
   const [privacyExpanded, setPrivacyExpanded] = useState(false);
 
-  // Ensure component is mounted to avoid hydration mismatch
+  // Ensure component is mounted to avoid hydration mismatch (caused by next-themes)
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     setMounted(true);
   }, []);
+
   if (!mounted) {
-    return null; // or a loading state
+    return null;
   }
 
   async function handleSignout(): Promise<void> {
@@ -61,8 +63,8 @@ export default function SettingsScreen() {
       <Card>
         <CardContent className="p-6">
           <div className="flex items-center space-x-4">
-            <Avatar key={session?.user.image} className="h-16 w-16">
-              {session?.user.image ? (
+            <Avatar key={session?.user?.image} className="h-16 w-16">
+              {session?.user?.image ? (
                 <Image
                   src={session.user.image}
                   alt={session.user.name}
@@ -71,16 +73,16 @@ export default function SettingsScreen() {
                 />
               ) : (
                 <AvatarFallback className="text-lg">
-                  {session?.user.name.charAt(0) ?? "A"}
+                  {session?.user?.name.charAt(0) ?? "A"}
                 </AvatarFallback>
               )}
             </Avatar>
             <div className="flex-1">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                {session?.user.name}
+                {session?.user?.name}
               </h3>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                {session?.user.email}
+                {session?.user?.email}
               </p>
               <p className="text-sm text-gray-600 dark:text-gray-400">
                 Computer Science Major
@@ -258,7 +260,11 @@ export default function SettingsScreen() {
             onClick={handleSignout}
           >
             <LogOut className="mr-2 h-4 w-4" />
-            Sign Out
+            {logout.isPending ? (
+              <Loader2 className="animate-spin" />
+            ) : (
+              "Sign Out"
+            )}
           </Button>
         </CardContent>
       </Card>

@@ -63,6 +63,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
+    "@tanstack/react-query-devtools": "^5.85.9",
     "@trivago/prettier-plugin-sort-imports": "^5.2.2",
     "@types/node": "^20.19.10",
     "@types/qrcode": "^1.5.5",

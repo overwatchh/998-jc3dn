@@ -67,11 +67,12 @@ export async function GET() {
     headers: await headers(),
   });
 
-  if (!session || !session.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  // Return an unauthorized error will mess with revalidateQueries in the client. Return null instead.
+  // if (!session || !session.user) {
+  //   return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  // }
 
   return NextResponse.json({
-    user: session.user,
+    user: session?.user ?? null,
   });
 }

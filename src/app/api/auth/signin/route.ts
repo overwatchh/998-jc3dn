@@ -1,5 +1,4 @@
 import { auth } from "@/lib/server/auth";
-import { NextRequest, NextResponse } from "next/server";
 
 /**
  * @openapi
@@ -33,31 +32,30 @@ import { NextRequest, NextResponse } from "next/server";
  *       401:
  *         description: Invalid credentials
  */
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { email, password, rememberMe } = body;
+    const { email, password, rememberMe, callbackURL } = body;
 
     const response = await auth.api.signInEmail({
       body: {
         email,
         password,
         rememberMe,
+        callbackURL,
       },
       asResponse: true,
     });
 
     const data = await response.json();
+    console.log(data);
 
-    return new NextResponse(JSON.stringify(data), {
+    return new Response(JSON.stringify(data), {
       status: response.status,
       headers: Object.fromEntries(response.headers.entries()),
     });
   } catch (error) {
     console.log("error login", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }
