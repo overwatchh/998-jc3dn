@@ -96,7 +96,7 @@ export function StudentDashboard() {
 
       {/* Scan QR Code Button */}
       <Button
-        onClick={() => redirect("/scan")}
+        onClick={() => redirect("/scan-qr")}
         className="bg-primary hover:bg-primary/90 text-primary-foreground h-14 w-full text-lg font-semibold"
       >
         <QrCode className="mr-3 h-6 w-6" />

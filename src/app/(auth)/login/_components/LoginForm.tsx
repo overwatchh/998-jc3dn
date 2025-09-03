@@ -16,7 +16,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { AxiosError } from "axios";
 import { ArrowRight, Eye, EyeOff, User } from "lucide-react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -36,7 +36,7 @@ const defaulValues: SigninInputs = {
   rememberMe: true,
 };
 
-export function LoginForm() {
+export function LoginForm({ returnTo }: { returnTo?: string }) {
   const form = useForm<SigninInputs>({
     defaultValues: defaulValues,
     resolver: zodResolver(signinSchema),
@@ -50,10 +50,19 @@ export function LoginForm() {
     isError: _isError,
   } = useLogin();
 
+  const searchParams = useSearchParams();
+  const returnToParam = searchParams.get("returnTo");
+  const computedReturnTo = returnTo ?? returnToParam ?? "/";
+  const safeReturnTo =
+    computedReturnTo && computedReturnTo.startsWith("/") && !computedReturnTo.startsWith("//")
+      ? computedReturnTo
+      : "/";
+
   const handleEmailLogin: SubmitHandler<SigninInputs> = async data => {
     try {
       await login(data);
-      router.push("/");
+      // Force a full navigation so auth cookies are definitely present on the next request (ngrok/mobile)
+      window.location.assign(safeReturnTo);
     } catch (err: unknown) {
       let message = "An unexpected error occurred.";
       if (err instanceof AxiosError) {
@@ -66,7 +75,9 @@ export function LoginForm() {
   const router = useRouter();
 
   const handleMicrosoftLogin = async () => {
-    router.push("/api/auth/microsoft");
+    const target = new URL("/api/auth/microsoft", window.location.origin);
+    target.searchParams.set("returnTo", safeReturnTo);
+    router.push(target.toString());
   };
 
   return (

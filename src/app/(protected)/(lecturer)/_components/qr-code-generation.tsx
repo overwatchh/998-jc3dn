@@ -21,9 +21,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Tabs } from "@/components/ui/tabs";
-import apiClient from "@/lib/api/apiClient";
-import { GenerateQrResponse } from "@/types/qr-code";
 import { AxiosError } from "axios";
 import { format } from "date-fns";
 import {
@@ -32,7 +29,7 @@ import {
   Download,
   FileText,
   Loader2,
-  RefreshCw,
+  Plus,
   Share2,
 } from "lucide-react";
 import Image from "next/image";
@@ -40,8 +37,10 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useCountdown } from "../hooks/useCountdown";
 import {
+  useAddSecondValidity,
   useGenerateQr,
   useGetCourses,
+  useGetQrCode,
   useGetQrCodes,
 } from "../qr-generation/queries";
 import { QRGenScreens } from "../qr-generation/types";
@@ -49,9 +48,11 @@ import { QRGenScreens } from "../qr-generation/types";
 export function QrCodeGeneration() {
   const { setCurrentScreen, setSelectedCourse, selectedCourse } =
     useQrGenContext();
-  const [qrType, setQrType] = useState("check-in");
+
   const [geoValidation, setGeoValidation] = useState(false);
   const [geoRadius, setGeoRadius] = useState(100);
+  const [hasGeneratedQrForCurrentWeek, setHasGeneratedQrForCurrentWeek] =
+    useState(false);
 
   // Courses for subject selection
   const { data: courses, isLoading: isCoursesLoading } = useGetCourses();
@@ -84,32 +85,28 @@ export function QrCodeGeneration() {
 
   // Real-time data
   const sessionId = selectedCourse?.sessionId || 0;
-  // const { data: studentList } = useGetStudentList(sessionId, {
-  //   enabled: !!selectedCourse,
-  //   refetchInterval: 30000,
-  // });
 
-  // NOTE: Not implemented yet
-  // const { data: checkedInList } = useGetCheckedInStudents(sessionId, {
-  //   enabled: !!selectedCourse,
-  //   refetchInterval: 5000,
-  // });
+  const { mutateAsync: generateQr, isPending: isGenerating } =
+    useGenerateQr(sessionId);
 
-  // const totalStudents = studentList?.length ?? 0;
-  // const presentStudents = checkedInList?.length ?? 0;
-  // const presentPercent = totalStudents
-  //   ? Math.round((presentStudents / totalStudents) * 100)
-  //   : 0;
-  //
-
-  const [qrCode, setQrCode] = useState<GenerateQrResponse>();
-  const { mutateAsync: generateQr } = useGenerateQr(sessionId);
+  const { mutateAsync: addSecondValidity, isPending: isAddingValidity } =
+    useAddSecondValidity(sessionId);
 
   // Use the hook to get existing QR codes for the selected week
-  const { data: qrCodesData, refetch: refetchQrCodes } = useGetQrCodes(
+  const {
+    data: qrCodesData,
+    isLoading: isQrCodesLoading,
+    refetch: refetchQrCodes,
+  } = useGetQrCodes(sessionId, selectedCourse?.weekNumber, {
+    enabled: !!selectedCourse,
+  });
+
+  // Get the existing QR code if one exists
+  const existingQrCodeId = qrCodesData?.data?.[0]?.qr_code_id;
+  const { data: qrCode, isLoading: isQrCodeLoading } = useGetQrCode(
     sessionId,
-    selectedCourse?.weekNumber,
-    { enabled: !!selectedCourse }
+    existingQrCodeId!,
+    { enabled: !!selectedCourse && !!existingQrCodeId }
   );
 
   // Get all existing QR codes for this session to determine used weeks
@@ -139,123 +136,73 @@ export function QrCodeGeneration() {
     if (!selectedCourse && courses && courses.length > 0) {
       setSelectedCourse({
         sessionId: courses[0].id,
-        weekNumber: nextAvailableWeek,
+        weekNumber: 1, // Initially set to week 1
       });
     }
   }, [courses, selectedCourse, setSelectedCourse, nextAvailableWeek]);
 
-  // Auto-update to next available week when session changes
+  // Handle timer setup when QR code changes
   useEffect(() => {
-    if (selectedCourse && usedWeeks.size > 0) {
-      const currentWeek = selectedCourse.weekNumber;
-      if (usedWeeks.has(currentWeek) && nextAvailableWeek !== currentWeek) {
-        setSelectedCourse({
-          ...selectedCourse,
-          weekNumber: nextAvailableWeek,
-        });
-      }
+    if (qrCode?.valid_until) {
+      const remaining = Math.max(
+        0,
+        Math.floor((new Date(qrCode.valid_until).getTime() - Date.now()) / 1000)
+      );
+      setRemainingTime(remaining);
+      setIsExpired(remaining <= 0);
     }
-  }, [selectedCourse, usedWeeks, nextAvailableWeek, setSelectedCourse]);
+  }, [qrCode, setRemainingTime, setIsExpired]);
 
-  // Handle QR code fetching and generation
+  // Reset hasGeneratedQrForCurrentWeek when selectedCourse or weekNumber changes
   useEffect(() => {
-    if (!selectedCourse) return;
+    setHasGeneratedQrForCurrentWeek(false);
+  }, [selectedCourse?.sessionId, selectedCourse?.weekNumber]);
 
-    let cancelled = false;
+  // Auto-generate QR if no existing one found and not currently generating
+  useEffect(() => {
+    if (
+      !selectedCourse ||
+      isGenerating ||
+      isQrCodeLoading ||
+      isQrCodesLoading ||
+      hasGeneratedQrForCurrentWeek
+    ) {
+      return;
+    }
 
-    async function fetchExistingOrGenerate() {
-      try {
-        // Check if a QR already exists for this session and week
-        const existing = qrCodesData?.data?.[0];
-        if (existing) {
-          // Fetch QR base64 for the existing QR id
-          const existingQr = await apiClient.get<GenerateQrResponse>(
-            `/lecturer/study-session/${sessionId}/qr/${existing.qr_code_id}`
-          );
-          if (cancelled) return;
-          setQrCode(existingQr.data);
-          // Set timer based on valid_until
-          const remaining = Math.max(
-            0,
-            Math.floor(
-              (new Date(existingQr.data.valid_until).getTime() - Date.now()) /
-                1000
-            )
-          );
-          setRemainingTime(remaining);
-          setIsExpired(remaining <= 0);
-          return;
-        }
-
-        // No existing QR found, generate a new one
-        const data = await generateQr({
-          week_number: selectedCourse?.weekNumber || 1,
-          duration: validityDuration,
-          radius: geoValidation ? geoRadius : undefined,
-        });
-        if (cancelled) return;
-        setQrCode(data);
-        const remaining = Math.max(
-          0,
-          Math.floor((new Date(data.valid_until).getTime() - Date.now()) / 1000)
-        );
-        setRemainingTime(remaining);
-        setIsExpired(remaining <= 0);
-
-        // Refetch QR codes list to update cache
-        refetchQrCodes();
-      } catch (e: unknown) {
-        // Handle race condition: if QR was created by another request
-        if (e instanceof AxiosError && e.response?.status === 409) {
-          // Refetch the QR codes and try to get the existing one
-          const { data: updatedQrCodes } = await refetchQrCodes();
-          const existing = updatedQrCodes?.data?.[0];
-          if (existing && !cancelled) {
-            try {
-              const existingQr = await apiClient.get<GenerateQrResponse>(
-                `/lecturer/study-session/${sessionId}/qr/${existing.qr_code_id}`
-              );
-              setQrCode(existingQr.data);
-              const remaining = Math.max(
-                0,
-                Math.floor(
-                  (new Date(existingQr.data.valid_until).getTime() -
-                    Date.now()) /
-                    1000
-                )
-              );
-              setRemainingTime(remaining);
-              setIsExpired(remaining <= 0);
-              return;
-            } catch (_e) {
-              // fallthrough to error message
-            }
+    // If we have QR codes data and no existing QR, generate a new one
+    if (qrCodesData && !existingQrCodeId) {
+      generateQr({
+        week_number: selectedCourse.weekNumber,
+        duration: validityDuration,
+        radius: geoValidation ? geoRadius : undefined,
+      })
+        .then(() => {
+          setHasGeneratedQrForCurrentWeek(true);
+        })
+        .catch((e: unknown) => {
+          // Only show error if it's not a 409 (already exists)
+          if (!(e instanceof AxiosError && e.response?.status === 409)) {
+            toast.error(
+              e instanceof AxiosError && e.response?.data?.message
+                ? e.response.data.message
+                : "Failed to generate QR code."
+            );
           }
-        }
-        if (e instanceof AxiosError && e.response?.data?.message) {
-          toast.error(e.response.data.message);
-        } else {
-          toast.error("An unknown error occurred.");
-        }
-      }
+        });
     }
-
-    fetchExistingOrGenerate();
-
-    return () => {
-      cancelled = true;
-    };
   }, [
     selectedCourse,
-    sessionId,
+    isGenerating,
+    isQrCodeLoading,
+    isQrCodesLoading,
+    qrCodesData,
+    existingQrCodeId,
     generateQr,
     validityDuration,
     geoValidation,
     geoRadius,
-    qrCodesData,
-    refetchQrCodes,
-    setRemainingTime,
-    setIsExpired,
+    hasGeneratedQrForCurrentWeek,
   ]);
 
   return (
@@ -281,25 +228,87 @@ export function QrCodeGeneration() {
             </div>
 
             {/* QR Code Type Selector */}
-            <Tabs value={qrType} onValueChange={setQrType} className="mt-6">
-              {/* <TabsList className="grid w-full max-w-md grid-cols-2">
-                <TabsTrigger value="check-in">Check-in QR</TabsTrigger>
-                <TabsTrigger value="throughout">Throughout QR</TabsTrigger>
-              </TabsList> */}
-              <div className="text-muted-foreground mt-2 text-sm">
-                {qrType === "check-in" ? (
-                  <p>
-                    Generate a QR code for initial attendance at the beginning
-                    of class.
-                  </p>
-                ) : (
-                  <p>
-                    Generate QR codes for ongoing attendance checks throughout
-                    the class session.
-                  </p>
-                )}
+            <div className="text-muted-foreground mt-6 text-sm">
+              <p>
+                Generate a QR code for initial attendance at the beginning of
+                class.
+              </p>
+            </div>
+
+            {/* Subject and Week Selection */}
+            <div className="mt-4 grid gap-4 md:grid-cols-2">
+              <div>
+                <Label className="mb-2 block">Subject</Label>
+                <Select
+                  value={selectedCourse ? String(selectedCourse.sessionId) : ""}
+                  onValueChange={value =>
+                    setSelectedCourse({
+                      sessionId: Number(value),
+                      weekNumber: selectedCourse?.weekNumber ?? 1,
+                    })
+                  }
+                  disabled={isCoursesLoading}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select subject" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(courses ?? []).map(c => (
+                      <SelectItem key={c.id + c.code} value={String(c.id)}>
+                        {c.code} - {c.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-            </Tabs>
+              <div>
+                <Label className="mb-2 block">
+                  Week
+                  <span className="text-muted-foreground text-xs font-normal">
+                    ({usedWeeks.size}/13 created)
+                  </span>
+                </Label>
+                <Select
+                  value={
+                    selectedCourse ? String(selectedCourse.weekNumber) : ""
+                  }
+                  onValueChange={value =>
+                    setSelectedCourse({
+                      sessionId: selectedCourse?.sessionId ?? 0,
+                      weekNumber: Number(value),
+                    })
+                  }
+                  disabled={!selectedCourse}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select week" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {usedWeeks.size >= 13 ? (
+                      <div className="text-muted-foreground p-2 text-center text-sm">
+                        All weeks have been created
+                      </div>
+                    ) : (
+                      Array.from({ length: 13 }, (_, i) => i + 1).map(week => {
+                        const isUsed = usedWeeks.has(week);
+                        const isNextAvailable = week === nextAvailableWeek;
+                        return (
+                          <SelectItem
+                            key={week}
+                            value={String(week)}
+                            disabled={isUsed}
+                          >
+                            Week {week}
+                            {isUsed && " (Created)"}
+                            {isNextAvailable && !isUsed && " (Recommended)"}
+                          </SelectItem>
+                        );
+                      })
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
 
             {/* Subject and Week Selection */}
             <div className="mt-4 grid gap-4 md:grid-cols-2">
@@ -393,10 +402,9 @@ export function QrCodeGeneration() {
                 </CardHeader>
                 <CardContent className="flex flex-col items-center justify-center p-6 pt-6">
                   <div className="relative mb-4 rounded-lg border bg-white p-2 shadow-sm">
-                    {qrCode?.qr_url ? (
+                    {qrCode?.qr_url && !isGenerating && !isQrCodeLoading ? (
                       <Image
-                        // src="https://upload.wikimedia.org/wikipedia/commons/2/2f/Rickrolling_QR_code.png"
-                        src={qrCode?.qr_url}
+                        src={qrCode.qr_url}
                         width={256}
                         height={256}
                         alt="QR Code"
@@ -428,74 +436,29 @@ export function QrCodeGeneration() {
                 <CardFooter className="flex flex-wrap justify-center gap-2 p-6 pt-0">
                   <Button
                     className="gap-1"
+                    disabled={isAddingValidity || !existingQrCodeId}
                     onClick={async () => {
-                      setRemainingTime(validityDuration * 60);
-                      setIsExpired(false);
+                      if (isAddingValidity || !existingQrCodeId) return;
                       try {
-                        const data = await generateQr({
-                          week_number: selectedCourse?.weekNumber || 1,
-                          duration: validityDuration,
-                          radius: geoValidation ? geoRadius : undefined,
+                        await addSecondValidity({
+                          qr_code_id: existingQrCodeId,
                         });
-                        setQrCode(data);
-                        const remaining = Math.max(
-                          0,
-                          Math.floor(
-                            (new Date(data.valid_until).getTime() -
-                              Date.now()) /
-                              1000
-                          )
+                        toast.success(
+                          "Second validity window added successfully!"
                         );
-                        setRemainingTime(remaining);
-                        setIsExpired(remaining <= 0);
-
                         // Refetch QR codes list to update cache
                         refetchQrCodes();
                       } catch (e: unknown) {
-                        // Handle race condition: if QR was created by another request
-                        if (
-                          e instanceof AxiosError &&
-                          e.response?.status === 409
-                        ) {
-                          const { data: updatedQrCodes } =
-                            await refetchQrCodes();
-                          const existing = updatedQrCodes?.data?.[0];
-                          if (existing) {
-                            try {
-                              const existingQr =
-                                await apiClient.get<GenerateQrResponse>(
-                                  `/lecturer/study-session/${sessionId}/qr/${existing.qr_code_id}`
-                                );
-                              setQrCode(existingQr.data);
-                              const remaining = Math.max(
-                                0,
-                                Math.floor(
-                                  (new Date(
-                                    existingQr.data.valid_until
-                                  ).getTime() -
-                                    Date.now()) /
-                                    1000
-                                )
-                              );
-                              setRemainingTime(remaining);
-                              setIsExpired(remaining <= 0);
-                              return;
-                            } catch {
-                              // ignore; will fall back to toast below
-                            }
-                          }
-                        }
-                        // show generic error
                         toast.error(
                           e instanceof AxiosError && e.response?.data?.message
                             ? e.response.data.message
-                            : "An unknown error occurred."
+                            : "Failed to add second validity window."
                         );
                       }
                     }}
                   >
-                    <RefreshCw className="h-4 w-4" />
-                    {isExpired ? "Generate New QR" : "Regenerate QR"}
+                    <Plus className="h-4 w-4" />
+                    Add Second Validity
                   </Button>
                   <Button variant="outline" className="gap-1">
                     <Download className="h-4 w-4" />
@@ -551,10 +514,7 @@ export function QrCodeGeneration() {
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium">
-                        {/* {presentStudents}/{totalStudents} students checked in ( */}
-                        {/* {presentPercent}%) */}
-                      </span>
+                      <span className="text-sm font-medium"></span>
                       <Badge
                         variant="outline"
                         className="bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-400"
@@ -562,7 +522,6 @@ export function QrCodeGeneration() {
                         Live
                       </Badge>
                     </div>
-                    {/* <Progress value={presentPercent} className="bg-muted h-2" /> */}
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
                         <Label>Recent Check-ins</Label>
@@ -574,35 +533,7 @@ export function QrCodeGeneration() {
                         </span>
                       </div>
                       <ScrollArea className="bg-card h-[140px] rounded-md border p-2">
-                        <div className="space-y-2">
-                          {/* {(checkedInList ?? []).map(s => ( */}
-                          {/*   <div */}
-                          {/*     key={s.student_id + s.checkin_time} */}
-                          {/*     className="hover:bg-muted flex items-center justify-between rounded-md p-2" */}
-                          {/*   > */}
-                          {/*     <div className="flex items-center gap-2"> */}
-                          {/*       <Avatar className="h-8 w-8"> */}
-                          {/*         <AvatarImage */}
-                          {/*           src={"/placeholder.svg"} */}
-                          {/*           alt={s.name} */}
-                          {/*         /> */}
-                          {/*         <AvatarFallback> */}
-                          {/*           {s.name */}
-                          {/*             .split(" ") */}
-                          {/*             .map(n => n[0]) */}
-                          {/*             .join("")} */}
-                          {/*         </AvatarFallback> */}
-                          {/*       </Avatar> */}
-                          {/*       <span className="text-sm font-medium"> */}
-                          {/*         {s.name} */}
-                          {/*       </span> */}
-                          {/*     </div> */}
-                          {/*     <span className="text-muted-foreground text-xs"> */}
-                          {/*       {format(new Date(s.checkin_time), "hh:mm a")} */}
-                          {/*     </span> */}
-                          {/*   </div> */}
-                          {/* ))} */}
-                        </div>
+                        <div className="space-y-2"></div>
                       </ScrollArea>
                       <Button
                         variant="outline"

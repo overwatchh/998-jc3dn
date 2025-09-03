@@ -87,13 +87,6 @@ export function BottomNavigation({ role }: Props) {
       role: ["lecturer"],
     },
     {
-      id: "scan",
-      icon: QrCode,
-      label: "Scan",
-      href: "/scan",
-      role: ["student"],
-    },
-    {
       id: "records",
       icon: FileText,
       label: "Records",

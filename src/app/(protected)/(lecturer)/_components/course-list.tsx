@@ -45,7 +45,7 @@ export function CoursesList({ courses }: Props) {
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6 lg:grid-cols-3">
           {courses.map(course => (
             <Card
-              key={course.id}
+              key={course.code + course.id}
               onClick={() => handleCourseSelection(course)}
               className="flex cursor-pointer flex-col transition-shadow duration-200 hover:brightness-90 dark:hover:brightness-125"
             >
