@@ -2,6 +2,7 @@
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import useGeolocation from "@/hooks/useGeolocation";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -22,6 +23,7 @@ const CheckinPage = () => {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [authChecked, setAuthChecked] = useState(false);
+  const [locationEnabled, setLocationEnabled] = useState(false);
   const qrCodeId = searchParams.get("qr_code_id");
 
   const {
@@ -29,7 +31,7 @@ const CheckinPage = () => {
     isPending: isCheckinStatusPending,
     error: checkinStatusError,
   } = useGetCheckinStatus(qrCodeId);
-  const location = useGeolocation(authChecked);
+  const location = useGeolocation(authChecked && locationEnabled);
   const { mutateAsync: checkin, isPending: isCheckinPending } =
     useStudentQRCheckin();
 
@@ -83,6 +85,35 @@ const CheckinPage = () => {
             page.
           </p>
         </div>
+      </div>
+    );
+  }
+
+  // Prompt for location permission before requesting it
+  if (authChecked && !isCheckinStatusPending && !locationEnabled) {
+    return (
+      <div className="space-y-6">
+        <div className="text-center">
+          <h1 className="text-foreground text-2xl font-bold">Allow Location Access</h1>
+          <p className="text-muted-foreground mt-2">
+            We need your location to verify your attendance.
+          </p>
+        </div>
+
+        <Card>
+          <CardContent className="p-6 space-y-4">
+            <p className="text-sm text-muted-foreground">
+              To continue, please grant permission to access your GPS location.
+              You can change this later in your browser settings.
+            </p>
+            <Button
+              className="h-12 w-full text-lg font-semibold"
+              onClick={() => setLocationEnabled(true)}
+            >
+              Enable Location
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
