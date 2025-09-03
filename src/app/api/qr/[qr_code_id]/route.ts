@@ -47,15 +47,33 @@ export async function GET(req: NextRequest,
     try {
         const { qr_code_id } = await context.params;
         const qrId = parseInt(qr_code_id, 10);
+        // Fetch validity count and optionally room location + radius
         const sql = `
-      SELECT COUNT(*) AS validity_count
-      FROM validity
-      WHERE qr_code_id = ?
+      SELECT 
+        (SELECT COUNT(*) FROM validity v WHERE v.qr_code_id = qc.id) AS validity_count,
+        r.latitude AS latitude,
+        r.longitude AS longitude,
+        qc.valid_radius AS radius,
+        r.building_number AS building_number,
+        r.room_number AS room_number
+      FROM qr_code qc
+      LEFT JOIN qr_code_study_session qcss ON qcss.qr_code_id = qc.id
+      LEFT JOIN study_session ss ON ss.id = qcss.study_session_id
+      LEFT JOIN room r ON r.id = ss.room_id
+      WHERE qc.id = ?
+      LIMIT 1
     `;
-        const [result] = await rawQuery<{ validity_count: number }>(sql, [qrId]);
+        const [result] = await rawQuery<{ validity_count: number; latitude: number | null; longitude: number | null; radius: number | null; building_number: string | null; room_number: string | null }>(sql, [qrId]);
         return NextResponse.json({
             message: "Fetched QR info successfully",
             validity_count: result?.validity_count ?? 0,
+            location: result && result.latitude !== null && result.longitude !== null ? {
+              latitude: Number(result.latitude),
+              longitude: Number(result.longitude),
+              radius: result.radius !== null ? Number(result.radius) : null,
+              building_number: result.building_number ?? null,
+              room_number: result.room_number ?? null,
+            } : null,
         });
     } catch (error) {
         console.error(error);

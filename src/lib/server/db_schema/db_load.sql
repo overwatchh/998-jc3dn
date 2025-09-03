@@ -77,7 +77,7 @@ INSERT INTO room (building_number, room_number, description, latitude, longitude
 ('22', '103', 'Building 22', -34.404630436746494, 150.87661222539015, 1),
 ('40', '103', 'Building 40', -34.4062537916668, 150.87683726956962, 1),
 ('35', '103', 'Building 35', -34.40582005010667, 150.88081766767468, 1),
-('67', '202', 'Building 67', -34.40458820292591, 150.87731246467433, 1);
+('12', '2', 'Nha cua Duong', -34.40458820292591, 150.87731246467433, 1);
 
 -- Semesters
 INSERT INTO semester (id, name, year) VALUES
@@ -235,19 +235,28 @@ INSERT INTO lecturer_study_session (study_session_id, lecturer_id) VALUES
 INSERT INTO qr_code (id) VALUES
 (1),
 (2),
-(3);
+(3),
+(4);
 
 -- Validity records for qr codes
 INSERT INTO validity (id, qr_code_id, count) VALUES
 (1, 1, 1),
 (2, 2, 1),
 (3, 3, 1);
+
+-- Special seed: qr_code_id = 4 has first validity lasting only 1 minute from now
+INSERT INTO validity (qr_code_id, count, start_time, end_time)
+VALUES (4, 1, NOW(), DATE_ADD(NOW(), INTERVAL 1 MINUTE));
 -- QR Code - Study Session mapping
 -- CSCI935 week 1 lucture, tutorial
 INSERT INTO qr_code_study_session (id, study_session_id, qr_code_id,week_number) VALUES
 (1, 13, 1, 1),
 (2, 14, 2, 1),
 (3, 15, 3, 1);
+
+-- Map qr_code_id = 4 to study_session_id = 10 (set to today in seeds), week 1
+INSERT INTO qr_code_study_session (study_session_id, qr_code_id, week_number)
+VALUES (10, 4, 1);
 
 -- Checkin records for students
 -- Student 3 checked in to CSCI935 tutorial week 1 on Wednesday on the first attendance checkin

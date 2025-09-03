@@ -5,9 +5,11 @@ import { CheckCircle, Clock, Info } from "lucide-react";
 
 interface Props {
   handleCheckin: () => void;
+  isCheckingIn?: boolean;
+  disabled?: boolean;
 }
 
-export const SecondCheckinScreen = ({ handleCheckin }: Props) => {
+export const SecondCheckinScreen = ({ handleCheckin, isCheckingIn, disabled }: Props) => {
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -62,9 +64,10 @@ export const SecondCheckinScreen = ({ handleCheckin }: Props) => {
         onClick={handleCheckin}
         className="h-12 w-full text-lg font-semibold"
         size="lg"
+        disabled={!!disabled || !!isCheckingIn}
       >
         <CheckCircle className="mr-2 h-5 w-5" />
-        Confirm Second Check-in
+        {isCheckingIn ? "Checking in..." : "Confirm Second Check-in"}
       </Button>
 
       {/* Info Alert */}
