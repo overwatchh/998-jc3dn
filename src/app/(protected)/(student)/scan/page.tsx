@@ -3,7 +3,7 @@
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Card, CardContent } from "@/components/ui/card";
 import useGeolocation from "@/hooks/useGeolocation";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { FirstCheckinScreen } from "./_components/first-checkin-screen";
 import { SecondCheckinScreen } from "./_components/second-checkin-screen";
@@ -17,7 +17,11 @@ enum Screen {
 
 const CheckinPage = () => {
   const [screen, setScreen] = useState<Screen>(Screen.FIRST_CHECKIN);
+  const [firstCheckedIn, setFirstCheckedIn] = useState(false);
+  const [secondCheckedIn, setSecondCheckedIn] = useState(false);
   const searchParams = useSearchParams();
+  const router = useRouter();
+  const [authChecked, setAuthChecked] = useState(false);
   const qrCodeId = searchParams.get("qr_code_id");
 
   const {
@@ -25,9 +29,28 @@ const CheckinPage = () => {
     isPending: isCheckinStatusPending,
     error: checkinStatusError,
   } = useGetCheckinStatus(qrCodeId);
-  const location = useGeolocation();
+  const location = useGeolocation(authChecked);
   const { mutateAsync: checkin, isPending: isCheckinPending } =
     useStudentQRCheckin();
+
+  // Client-side auth guard to avoid Edge/redirect issues under ngrok/mobile
+  useEffect(() => {
+    const enforceAuth = async () => {
+      const currentPath = `/scan${qrCodeId ? `?qr_code_id=${encodeURIComponent(qrCodeId)}` : ""}`;
+      try {
+        const res = await fetch("/api/auth/me", { credentials: "include", cache: "no-store" });
+        if (!res.ok) {
+          router.replace(`/login?returnTo=${encodeURIComponent(currentPath)}`);
+          return;
+        }
+        setAuthChecked(true);
+      } catch {
+        router.replace(`/login?returnTo=${encodeURIComponent(currentPath)}`);
+      }
+    };
+    enforceAuth();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [qrCodeId]);
 
   useEffect(() => {
     switch (checkinStatus?.validity_count) {
@@ -90,11 +113,11 @@ const CheckinPage = () => {
     );
   }
 
-  if (isCheckinStatusPending) {
+  if (!authChecked || isCheckinStatusPending) {
     return (
       <div className="flex min-h-[400px] flex-col items-center justify-center space-y-4">
         <div className="border-primary h-8 w-8 animate-spin rounded-full border-b-2"></div>
-        <p className="text-muted-foreground">Getting check-in status...</p>
+        <p className="text-muted-foreground">Loading...</p>
       </div>
     );
   }
@@ -114,6 +137,11 @@ const CheckinPage = () => {
       long: location.position.longitude,
       qr_code_id: parseInt(qrCodeId, 10),
     });
+    if (screen === Screen.FIRST_CHECKIN) {
+      setFirstCheckedIn(true);
+    } else if (screen === Screen.SECOND_CHECKIN) {
+      setSecondCheckedIn(true);
+    }
   };
 
   switch (screen) {
@@ -124,11 +152,24 @@ const CheckinPage = () => {
           location={location}
           handleCheckin={handleCheckin}
           qrCodeId={qrCodeId}
+          roomLabel={
+            checkinStatus?.location?.building_number && checkinStatus?.location?.room_number
+              ? `Building ${checkinStatus.location.building_number}, Room ${checkinStatus.location.room_number}`
+              : undefined
+          }
+          radiusMeters={checkinStatus?.location?.radius ?? null}
+          disableAfterSuccess={firstCheckedIn}
         />
       );
 
     case Screen.SECOND_CHECKIN:
-      return <SecondCheckinScreen handleCheckin={handleCheckin} />;
+      return (
+        <SecondCheckinScreen
+          handleCheckin={handleCheckin}
+          isCheckingIn={isCheckinPending}
+          disabled={secondCheckedIn}
+        />
+      );
 
     default:
       break;
