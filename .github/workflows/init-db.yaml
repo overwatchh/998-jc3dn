@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+      - feat/qr-scan-student
     paths:
       - src/lib/server/db_schema/db_*.sql
 
