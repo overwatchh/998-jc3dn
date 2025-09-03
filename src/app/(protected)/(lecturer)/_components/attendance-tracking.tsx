@@ -88,7 +88,7 @@ export function AttendanceTrackingScreen() {
     }
   }, [courses, selectedSessionId]);
 
-  const { data: checkedIn } = useGetCheckedInStudents(selectedSessionId ?? 0, {
+  const { data: checkedIn } = useGetCheckedInStudents(selectedSessionId ?? 0,undefined, {
     enabled: Boolean(selectedSessionId),
     refetchInterval: 5000,
   });
@@ -373,7 +373,7 @@ function CheckinTimelineCard() {
 }
 
 type AttendanceTableProps = {
-  checkedIn: Array<{ student_id: string; name: string; checkin_time: string }>;
+  checkedIn: Array<{ student_id: string; student_name: string; checkin_time: string }>;
   totalEnrolled: number;
 };
 
@@ -382,7 +382,7 @@ function AttendanceTable({ checkedIn, totalEnrolled }: AttendanceTableProps) {
     () =>
       (checkedIn ?? []).map(s => ({
         id: s.student_id,
-        name: s.name,
+        name: s.student_name,
         avatar: "/placeholder.svg?height=32&width=32",
         checkInTime: new Date(s.checkin_time).toLocaleTimeString(),
         checkInType: "QR Code",

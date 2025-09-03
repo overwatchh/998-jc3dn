@@ -122,7 +122,7 @@ export const useGetCheckedInStudents = (
       `/lecturer/study-session/${id}/checkin-list`,
       weekNumber !== undefined ? { params: { week_number: weekNumber } } : {}
     );
-    return data;
+    return data.data;
   };
   return useQuery({
     queryKey: [CHECKED_IN_STUDENTS_QUERY_KEY, id, weekNumber],

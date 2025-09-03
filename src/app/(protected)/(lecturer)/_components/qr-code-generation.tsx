@@ -306,82 +306,7 @@ export function QrCodeGeneration() {
                 </Select>
               </div>
             </div>
-
-            {/* Subject and Week Selection */}
-            <div className="mt-4 grid gap-4 md:grid-cols-2">
-              <div>
-                <Label className="mb-2 block">Subject</Label>
-                <Select
-                  value={selectedCourse ? String(selectedCourse.sessionId) : ""}
-                  onValueChange={value =>
-                    setSelectedCourse({
-                      sessionId: Number(value),
-                      weekNumber: selectedCourse?.weekNumber ?? 1,
-                    })
-                  }
-                  disabled={isCoursesLoading}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select subject" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(courses ?? []).map(c => (
-                      <SelectItem key={c.id} value={String(c.id)}>
-                        {c.code} - {c.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label className="mb-2 block">
-                  Week
-                  <span className="text-muted-foreground text-xs font-normal">
-                    ({usedWeeks.size}/13 created)
-                  </span>
-                </Label>
-                <Select
-                  value={
-                    selectedCourse ? String(selectedCourse.weekNumber) : ""
-                  }
-                  onValueChange={value =>
-                    setSelectedCourse({
-                      sessionId: selectedCourse?.sessionId ?? 0,
-                      weekNumber: Number(value),
-                    })
-                  }
-                  disabled={!selectedCourse}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select week" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {usedWeeks.size >= 13 ? (
-                      <div className="text-muted-foreground p-2 text-center text-sm">
-                        All weeks have been created
-                      </div>
-                    ) : (
-                      Array.from({ length: 13 }, (_, i) => i + 1).map(week => {
-                        const isUsed = usedWeeks.has(week);
-                        const isNextAvailable = week === nextAvailableWeek;
-                        return (
-                          <SelectItem
-                            key={week}
-                            value={String(week)}
-                            disabled={isUsed}
-                          >
-                            Week {week}
-                            {isUsed && " (Created)"}
-                            {isNextAvailable && !isUsed && " (Recommended)"}
-                          </SelectItem>
-                        );
-                      })
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
+            
             <div className="mt-6 grid gap-6 md:grid-cols-2">
               {/* QR Code Display Card */}
               <Card className="overflow-hidden">
@@ -594,8 +519,8 @@ export function QrCodeGeneration() {
                       </div>
                       <ScrollArea className="bg-card h-[140px] rounded-md border p-2">
                         <div className="space-y-2">
-                          {liveCheckins && liveCheckins.count > 0 ? (
-                            liveCheckins.data.map((s) => (
+                          {liveCheckins && liveCheckins.length > 0 ? (
+                            liveCheckins.map((s) => (
                               <div
                                 key={`${s.student_id}-${s.checkin_time}`}
                                 className="flex items-center justify-between text-sm"
