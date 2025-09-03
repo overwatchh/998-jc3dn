@@ -1,13 +1,18 @@
 import { auth } from "@/lib/server/auth";
 import { Roles } from "@/types";
 import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 
 const Layout = async ({ children }: { children: React.ReactNode }) => {
   const session = await auth.api.getSession({
     headers: await headers(),
   });
-  // Server-side redirects disabled to prevent ngrok/mobile cookie race loops.
-  // Client pages are responsible for redirecting unauthenticated users.
+  if (!session) {
+    redirect("/login");
+  }
+  if (session.user.role !== Roles.STUDENT) {
+    redirect("/dashboard");
+  }
   return <div>{children}</div>;
 };
 

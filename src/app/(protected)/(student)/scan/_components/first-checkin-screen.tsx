@@ -10,9 +10,6 @@ interface Props {
   location: UseGeolocationReturn;
   handleCheckin: () => void;
   isCheckingIn: boolean;
-  roomLabel?: string;
-  radiusMeters?: number | null;
-  disableAfterSuccess?: boolean;
 }
 
 export const FirstCheckinScreen = ({
@@ -20,9 +17,6 @@ export const FirstCheckinScreen = ({
   isCheckingIn,
   handleCheckin,
   qrCodeId,
-  roomLabel,
-  radiusMeters,
-  disableAfterSuccess,
 }: Props) => {
   const isLocationReady = location.position && !location.loading;
   const isLocationError = location.error;
@@ -50,18 +44,6 @@ export const FirstCheckinScreen = ({
             <span className="text-sm font-medium">QR Code ID</span>
             <Badge variant="outline">{qrCodeId}</Badge>
           </div>
-          {roomLabel && (
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">Room</span>
-              <Badge variant="secondary">{roomLabel}</Badge>
-            </div>
-          )}
-          {typeof radiusMeters !== "undefined" && radiusMeters !== null && (
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">Allowed radius</span>
-              <Badge variant="secondary">{Math.round(radiusMeters)} m</Badge>
-            </div>
-          )}
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium">Status</span>
             <Badge
@@ -123,7 +105,7 @@ export const FirstCheckinScreen = ({
       {/* Check-in Button */}
       <Button
         onClick={handleCheckin}
-        disabled={!isLocationReady || isCheckingIn || !!disableAfterSuccess}
+        disabled={!isLocationReady}
         className="h-12 w-full text-lg font-semibold"
         size="lg"
       >

@@ -7,17 +7,12 @@ export interface UseGeolocationReturn {
   loading: boolean;
 }
 
-export const useGeolocation = (enabled: boolean = true): UseGeolocationReturn => {
+export const useGeolocation = (): UseGeolocationReturn => {
   const [position, setPosition] = useState<GeolocationCoords | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState<boolean>(enabled);
+  const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    if (!enabled) {
-      // Do not request permission when disabled
-      setLoading(false);
-      return;
-    }
     if (!navigator.geolocation) {
       setError("Geolocation is not supported by your browser");
       setLoading(false);
@@ -53,7 +48,7 @@ export const useGeolocation = (enabled: boolean = true): UseGeolocationReturn =>
     return () => {
       navigator.geolocation.clearWatch(watchId);
     };
-  }, [enabled]);
+  }, []);
 
   return { position, error, loading };
 };

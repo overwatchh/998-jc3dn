@@ -36,7 +36,7 @@ const defaulValues: SigninInputs = {
   rememberMe: true,
 };
 
-export function LoginForm({ returnTo }: { returnTo?: string }) {
+export function LoginForm() {
   const form = useForm<SigninInputs>({
     defaultValues: defaulValues,
     resolver: zodResolver(signinSchema),
@@ -51,20 +51,11 @@ export function LoginForm({ returnTo }: { returnTo?: string }) {
   } = useLogin();
 
   const searchParams = useSearchParams();
-  const returnToParam = searchParams.get("returnTo");
-  const computedReturnTo = returnTo ?? returnToParam ?? "/";
-  const safeReturnTo =
-    computedReturnTo &&
-    computedReturnTo.startsWith("/") &&
-    !computedReturnTo.startsWith("//")
-      ? computedReturnTo
-      : "/";
+  const callbackURL = searchParams.get("callbackURL") || "/";
 
   const handleEmailLogin: SubmitHandler<SigninInputs> = async data => {
     try {
-      await login(data);
-      // Force a full navigation so auth cookies are definitely present on the next request (ngrok/mobile)
-      window.location.assign(safeReturnTo);
+      await login({ ...data, callbackURL });
     } catch (err: unknown) {
       let message = "An unexpected error occurred.";
       if (err instanceof AxiosError) {
@@ -77,9 +68,9 @@ export function LoginForm({ returnTo }: { returnTo?: string }) {
   const router = useRouter();
 
   const handleMicrosoftLogin = async () => {
-    const target = new URL("/api/auth/microsoft", window.location.origin);
-    target.searchParams.set("returnTo", safeReturnTo);
-    router.push(target.toString());
+    router.push(
+      "/api/auth/microsoft?callbackURL=" + encodeURIComponent(callbackURL)
+    );
   };
 
   return (

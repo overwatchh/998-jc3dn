@@ -1,6 +1,6 @@
 // src/app/api/auth/google/route.ts
 import { auth } from "@/lib/server/auth";
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
 /**
  * @openapi
@@ -16,17 +16,11 @@ import { NextRequest, NextResponse } from "next/server";
  *       500:
  *         description: Internal Server Error
  */
-export async function GET(req: NextRequest) {
-  const returnToParam = req.nextUrl.searchParams.get("returnTo");
-  const safeReturnTo =
-    returnToParam && returnToParam.startsWith("/") && !returnToParam.startsWith("//")
-      ? returnToParam
-      : "/";
-
+export async function GET() {
   const response = await auth.api.signInSocial({
     body: {
       provider: "google",
-      callbackURL: new URL(safeReturnTo, req.nextUrl.origin).toString(),
+      callbackURL: "/",
     },
     asResponse: false,
   });
