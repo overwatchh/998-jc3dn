@@ -229,6 +229,6 @@ INSERT INTO lecturer_study_session (study_session_id, lecturer_id) VALUES
 (23, 'hrEpeIa27ITirYij0FJRAYgbMledKcuw'),
 (24, 'hrEpeIa27ITirYij0FJRAYgbMledKcuw'),
 -- khoa teaches study session 26 and 10 and 25
-(26, 'I9vweFqQtLTzP7UqemwUlwWIuOYs3hJ6'), (10, 'I9vweFqQtLTzP7UqemwUlwWIuOYs3hJ6'), (25, 'hrEpeIa27ITirYij0FJRAYgbMledKcuw');
+(26, 'I9vweFqQtLTzP7UqemwUlwWIuOYs3hJ6'), (10, 'I9vweFqQtLTzP7UqemwUlwWIuOYs3hJ6'), (25, 'I9vweFqQtLTzP7UqemwUlwWIuOYs3hJ6');
 
 
