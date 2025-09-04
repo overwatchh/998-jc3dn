@@ -2,7 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CourseSessionResponse } from "@/types/course";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Clock } from "lucide-react";
 import { useQrGenContext } from "../qr-generation/qr-gen-context";
 import { QRGenScreens } from "../qr-generation/types";
 
@@ -22,6 +22,14 @@ export function CoursesList({ courses }: Props) {
       weekNumber: 1,
     });
     setCurrentScreen(QRGenScreens.QR_CODE_GENERATION);
+  }
+
+  function getTypeBadgeClass(sessionType: string) {
+    const t = sessionType.toLowerCase();
+    if (t === "lecture") return "bg-blue-600 text-white";
+    if (t === "tutorial") return "bg-amber-600 text-white";
+    if (t === "lab") return "bg-emerald-600 text-white";
+    return "bg-muted text-foreground";
   }
 
   return (
@@ -53,13 +61,27 @@ export function CoursesList({ courses }: Props) {
                 <CardTitle className="mb-2 text-lg leading-tight">
                   {course.name}
                 </CardTitle>
-                <Badge variant="secondary" className="w-fit">
-                  {course.code}
-                </Badge>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge variant="secondary" className="w-fit">
+                    {course.code}
+                  </Badge>
+                  <Badge
+                    variant="default"
+                    className={`w-fit ${getTypeBadgeClass(course.sessionType)}`}
+                  >
+                    {course.sessionType}
+                  </Badge>
+                </div>
               </CardHeader>
               <CardContent className="mt-auto pt-0">
                 <div className="text-muted-foreground flex items-center justify-between text-sm">
-                  <span>Course ID: {course.id}</span>
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-4 w-4" />
+                    <span>
+                      {course.dayOfWeek ? `${course.dayOfWeek}, ` : ""}
+                      {course.startTime} – {course.endTime}
+                    </span>
+                  </div>
                 </div>
               </CardContent>
             </Card>

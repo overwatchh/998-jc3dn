@@ -62,6 +62,10 @@ export type CourseSessionResponse = Array<{
   id: number;
   name: string;
   code: string;
+  sessionType: string; // lecture | tutorial
+  startTime: string; // HH:mm
+  endTime: string; // HH:mm
+  dayOfWeek: string; // e.g., Monday
 }>;
 
 export type AbsentListResponse = Array<{
