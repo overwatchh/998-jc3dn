@@ -171,7 +171,7 @@ INSERT INTO study_session (id, type, day_of_week, start_time, end_time, room_id)
 (23, 'tutorial', 'Monday', '14:00:00', '16:00:00', 3),
 -- Machine Learning Applications
 (24, 'lecture', 'Friday', '09:00:00', '11:00:00', 4),
-(25, 'tutorial', 'Tuesday', '15:00:00', '17:00:00', 5),
+(25, 'tutorial', 'Thursday', '12:00:00', '15:00:00', 5),
 (26, 'lecture', 'Thursday', '00:30:00', '15:30:00', 6), -- create QR code all day
 (27, 'tutorial', 'Wednesday', '13:30:00', '15:30:00', 7),
 (28, 'lecture', 'Thursday', '13:30:00', '15:30:00', 8),
@@ -228,8 +228,7 @@ INSERT INTO lecturer_study_session (study_session_id, lecturer_id) VALUES
 (22, 'hrEpeIa27ITirYij0FJRAYgbMledKcuw'),
 (23, 'hrEpeIa27ITirYij0FJRAYgbMledKcuw'),
 (24, 'hrEpeIa27ITirYij0FJRAYgbMledKcuw'),
-(25, 'hrEpeIa27ITirYij0FJRAYgbMledKcuw'),
--- khoa teaches study session 26 and 10
-(26, 'I9vweFqQtLTzP7UqemwUlwWIuOYs3hJ6'), (10, 'I9vweFqQtLTzP7UqemwUlwWIuOYs3hJ6');
+-- khoa teaches study session 26 and 10 and 25
+(26, 'I9vweFqQtLTzP7UqemwUlwWIuOYs3hJ6'), (10, 'I9vweFqQtLTzP7UqemwUlwWIuOYs3hJ6'), (25, 'hrEpeIa27ITirYij0FJRAYgbMledKcuw');
 
 
