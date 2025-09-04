@@ -3,8 +3,7 @@ name: Execute SQL scripts on Cloud SQL
 on:
   push:
     branches:
-      - master
-      - demo-week6
+      - master      
     paths:
       - src/lib/server/db_schema/db_*.sql
 

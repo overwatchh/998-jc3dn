@@ -9,9 +9,7 @@
     "lint": "next lint",
     "format": "prettier . --write",
     "clean": "rm -rf node_modules .next package-lock.json",
-    "check": "tsc --noEmit && npm run lint",
-    "auth:migrate": "dotenv -e .env.local -- npx @better-auth/cli migrate",
-    "db:init": "bash src/scripts/init-db.sh"
+    "check": "tsc --noEmit && npm run lint"    
   },
   "dependencies": {
     "@better-fetch/fetch": "^1.1.18",
