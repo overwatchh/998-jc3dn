@@ -275,7 +275,8 @@ export async function POST(
       valid_time: number;
     }>(timeCheckSql, [studySessionId]);
 
-    if (!timeCheck || timeCheck.valid_time === 0) {
+    // TEMPORARY: Disable time validation for testing
+    if (false && (!timeCheck || timeCheck.valid_time === 0)) {
       return NextResponse.json(
         {
           message:

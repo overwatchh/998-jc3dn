@@ -178,37 +178,41 @@ export async function POST(req: NextRequest) {
       { status: 404 }
     );
   }
-  // set currentWindow to second window if there are two windows
-  // default to first window if only one window
-  const currentWindow: ValidityRow =
-    windows.length === 1 ? windows[0] : windows[1];
+  // Find the current active validity window
   const now = new Date();
-  const validStart = new Date(currentWindow.start_time);
-  const validEnd = new Date(currentWindow.end_time);
-  const isValidTime = now >= validStart && now <= validEnd;
+  let currentWindow: ValidityRow | null = null;
+  
+  for (const window of windows) {
+    const validStart = new Date(window.start_time);
+    const validEnd = new Date(window.end_time);
+    if (now >= validStart && now <= validEnd) {
+      currentWindow = window;
+      break;
+    }
+  }
+  
+  const isValidTime = currentWindow !== null;
 
-  if (!isValidTime) {
-    const startTime = new Date(currentWindow.start_time)
-      .toLocaleString("en-GB", { hour12: false }) // local zone
-      .replace(",", "");
-
-    const endTime = new Date(currentWindow.end_time)
-      .toLocaleString("en-GB", { hour12: false }) // local zone
-      .replace(",", "");
+  if (!isValidTime || !currentWindow) {
+    // Show all available windows if none are currently active
+    const windowInfo = windows.map(w => ({
+      start_time: new Date(w.start_time).toLocaleString("en-GB", { hour12: false }).replace(",", ""),
+      end_time: new Date(w.end_time).toLocaleString("en-GB", { hour12: false }).replace(",", ""),
+      count: w.count
+    }));
+    
     return NextResponse.json(
       {
-        message: `You are not within the valid check-in time.`,
+        message: `You are not within any valid check-in time window.`,
         ...studySessionDetails,
-        start_time: startTime,
-        end_time: endTime,
+        available_windows: windowInfo,
       },
       { status: 403 }
     );
   }
 
   // Step 3: Prevent duplicate check-in for this validity window ---
-  // NOTE: The current schema PK (student_id, qr_code_study_session_id) allows only ONE total check-in per QR+session+student.
-  // We still guard "per window" logically here, but a second window check-in will also be blocked by the PK.
+  // The schema PK (student_id, qr_code_study_session_id, validity_id) allows one check-in per validity window.
   const [dupInWindow] = await rawQuery<{ checkin_time: number }>(
     `
     SELECT checkin_time
