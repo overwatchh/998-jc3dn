@@ -47,7 +47,7 @@ export type QrCodeValidity = {
 
 export type QrCodeWithValidities = {
   qr_code_id: number;
-  valid_radius: number;
+  valid_radius: number | null;
   createdAt: string; // ISO datetime
   week_number: number;
   validities: QrCodeValidity[];

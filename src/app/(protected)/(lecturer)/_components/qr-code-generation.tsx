@@ -52,7 +52,7 @@ export function QrCodeGeneration() {
 
   const [geoValidation, setGeoValidation] = useState(false);
   const [geoRadius, setGeoRadius] = useState(100);
-  const [_hasGeneratedQrForCurrentWeek, setHasGeneratedQrForCurrentWeek] =
+  const [hasGeneratedQrForCurrentWeek, setHasGeneratedQrForCurrentWeek] =
     useState(false);
 
   // Courses for subject selection
@@ -306,7 +306,7 @@ export function QrCodeGeneration() {
                 </Select>
               </div>
             </div>
-
+            
             <div className="mt-6 grid gap-6 md:grid-cols-2">
               {/* QR Code Display Card */}
               <Card className="overflow-hidden">
@@ -442,6 +442,9 @@ export function QrCodeGeneration() {
                       <Select
                         value={String(validityDuration)}
                         onValueChange={(v) => setValidityDuration(Number(v))}
+                        disabled={
+                          isGenerating || hasQr || hasGeneratedQrForCurrentWeek
+                        }
                       >
                         <SelectTrigger className="w-40">
                           <SelectValue placeholder="Select minutes" />
@@ -507,7 +510,6 @@ export function QrCodeGeneration() {
                         Live
                       </Badge>
                     </div>
-
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
                         <Label>Recent Check-ins</Label>

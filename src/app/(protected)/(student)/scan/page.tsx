@@ -33,6 +33,7 @@ const CheckinPage = () => {
   const { mutateAsync: checkin, isPending: isCheckinPending } =
     useStudentQRCheckin();
 
+  // Start QR scanning when camera is ready and in scanning state
   useEffect(() => {
     switch (checkinStatus?.validity_count) {
       case QRStatusEnum.FIRST_CHECKIN:

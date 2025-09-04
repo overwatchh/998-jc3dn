@@ -3,6 +3,12 @@
 import SwaggerUI from "swagger-ui-react";
 import "swagger-ui-react/swagger-ui.css";
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 type Props = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   spec: Record<string, any>;

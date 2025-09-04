@@ -85,6 +85,10 @@ export const useGetCourses = () => {
         id: ss.study_session_id,
         name: subject.subject_name,
         code: subject.subject_code,
+        sessionType: ss.session_type,
+        startTime: ss.start_time.slice(0, 5),
+        endTime: ss.end_time.slice(0, 5),
+        dayOfWeek: ss.day_of_week,
       }))
     );
     return flattened;

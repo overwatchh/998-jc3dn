@@ -42,8 +42,7 @@ import QRCode from "qrcode";
  *               radius:
  *                 type: number
  *                 example: 100
- *                 description: Maximum distance (in meters) allowed between student's location and the classroom
- *                 default: 100
+ *                 description: Optional. If provided, enforces maximum distance (in meters) from the classroom. If omitted, location validation is disabled.
  *     responses:
  *       200:
  *         description: QR code successfully generated
@@ -419,7 +418,7 @@ export async function GET(
     qrSql += " ORDER BY qc.createdAt DESC, v.count ASC";
     interface QrCodeWithValidity {
       qr_code_id: number;
-      valid_radius: number;
+      valid_radius: number | null;
       createdAt: string;
       week_number: number;
       validity_id: number;
@@ -434,7 +433,7 @@ export async function GET(
       number,
       {
         qr_code_id: number;
-        valid_radius: number;
+        valid_radius: number | null;
         createdAt: string;
         week_number: number;
         validities: {
