@@ -150,7 +150,7 @@ INSERT INTO study_session (id, type, day_of_week, start_time, end_time, room_id)
 (8, 'tutorial', 'Thursday', '10:00:00', '12:00:00', 8),
 (9, 'tutorial', 'Friday', '14:00:00', '16:00:00', 9),
 -- MTS9307
-(10, 'lecture', 'Wednesday', '13:00:00', '15:00:00', 10),
+(10, 'lecture', 'Thursday', '00:00:00', '15:00:00', 10), -- create QR code all day
 (11, 'tutorial', 'Friday', '13:00:00', '15:00:00', 1),
 (12, 'tutorial', 'Thursday', '08:00:00', '10:00:00', 2),
 -- CSCI935, CSCI435
@@ -229,7 +229,7 @@ INSERT INTO lecturer_study_session (study_session_id, lecturer_id) VALUES
 (23, 'hrEpeIa27ITirYij0FJRAYgbMledKcuw'),
 (24, 'hrEpeIa27ITirYij0FJRAYgbMledKcuw'),
 (25, 'hrEpeIa27ITirYij0FJRAYgbMledKcuw'),
--- khoa teaches study session 26 and 4
+-- khoa teaches study session 26 and 10
 (26, 'I9vweFqQtLTzP7UqemwUlwWIuOYs3hJ6'), (10, 'I9vweFqQtLTzP7UqemwUlwWIuOYs3hJ6');
 
 
