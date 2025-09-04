@@ -52,7 +52,7 @@ export function QrCodeGeneration() {
 
   const [geoValidation, setGeoValidation] = useState(false);
   const [geoRadius, setGeoRadius] = useState(100);
-  const [_hasGeneratedQrForCurrentWeek, setHasGeneratedQrForCurrentWeek] =
+  const [hasGeneratedQrForCurrentWeek, setHasGeneratedQrForCurrentWeek] =
     useState(false);
 
   // Courses for subject selection
@@ -442,6 +442,9 @@ export function QrCodeGeneration() {
                       <Select
                         value={String(validityDuration)}
                         onValueChange={(v) => setValidityDuration(Number(v))}
+                        disabled={
+                          isGenerating || hasQr || hasGeneratedQrForCurrentWeek
+                        }
                       >
                         <SelectTrigger className="w-40">
                           <SelectValue placeholder="Select minutes" />
