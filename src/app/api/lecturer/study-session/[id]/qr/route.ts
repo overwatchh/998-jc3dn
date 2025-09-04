@@ -298,7 +298,7 @@ export async function POST(
       INSERT INTO qr_code (createdAt, valid_radius)
       VALUES (?, ?)
     `;
-    const qrResult: any = await rawQuery(insertQrSql, [now, radius ?? null]);
+    const qrResult: any = await rawQuery(insertQrSql, [now, radius ?? 100]);
     const qrCodeId = qrResult.insertId;
     // Step 4: Generate QR URL
     const redirectPath = "/scan";
