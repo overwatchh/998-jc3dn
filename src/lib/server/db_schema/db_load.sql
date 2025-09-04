@@ -150,7 +150,7 @@ INSERT INTO study_session (id, type, day_of_week, start_time, end_time, room_id)
 (8, 'tutorial', 'Thursday', '10:00:00', '12:00:00', 8),
 (9, 'tutorial', 'Friday', '14:00:00', '16:00:00', 9),
 -- MTS9307
-(10, 'lecture', 'Thursday', '00:00:00', '15:00:00', 10), -- create QR code all day
+(10, 'lecture', 'Thursday', '11:00:00', '13:00:00', 10), -- create QR code all day
 (11, 'tutorial', 'Friday', '13:00:00', '15:00:00', 1),
 (12, 'tutorial', 'Thursday', '08:00:00', '10:00:00', 2),
 -- CSCI935, CSCI435
@@ -172,7 +172,7 @@ INSERT INTO study_session (id, type, day_of_week, start_time, end_time, room_id)
 -- Machine Learning Applications
 (24, 'lecture', 'Friday', '09:00:00', '11:00:00', 4),
 (25, 'tutorial', 'Thursday', '12:00:00', '15:00:00', 5),
-(26, 'lecture', 'Thursday', '00:30:00', '15:30:00', 6), -- create QR code all day
+(26, 'lecture', 'Thursday', '13:00:00', '15:30:00', 6), -- create QR code all day
 (27, 'tutorial', 'Wednesday', '13:30:00', '15:30:00', 7),
 (28, 'lecture', 'Thursday', '13:30:00', '15:30:00', 8),
 (29, 'lecture', 'Thursday', '13:30:00', '15:30:00', 9);
