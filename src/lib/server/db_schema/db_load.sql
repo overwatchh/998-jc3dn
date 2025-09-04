@@ -172,7 +172,7 @@ INSERT INTO study_session (id, type, day_of_week, start_time, end_time, room_id)
 -- Machine Learning Applications
 (24, 'lecture', 'Friday', '09:00:00', '11:00:00', 4),
 (25, 'tutorial', 'Tuesday', '15:00:00', '17:00:00', 5),
-(26, 'lecture', 'Thursday', '12:30:00', '15:30:00', 6),
+(26, 'lecture', 'Thursday', '00:30:00', '15:30:00', 6), -- create QR code all day
 (27, 'tutorial', 'Wednesday', '13:30:00', '15:30:00', 7),
 (28, 'lecture', 'Thursday', '13:30:00', '15:30:00', 8),
 (29, 'lecture', 'Thursday', '13:30:00', '15:30:00', 9);
