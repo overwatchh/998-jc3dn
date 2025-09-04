@@ -4,7 +4,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import useGeolocation from "@/hooks/useGeolocation";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { FirstCheckinScreen } from "./_components/first-checkin-screen";
 import { SecondCheckinScreen } from "./_components/second-checkin-screen";
@@ -21,8 +21,6 @@ const CheckinPage = () => {
   const [firstCheckedIn, setFirstCheckedIn] = useState(false);
   const [secondCheckedIn, setSecondCheckedIn] = useState(false);
   const searchParams = useSearchParams();
-  const router = useRouter();
-  const [authChecked, setAuthChecked] = useState(false);
   const [locationEnabled, setLocationEnabled] = useState(false);
   const qrCodeId = searchParams.get("qr_code_id");
 
@@ -31,28 +29,9 @@ const CheckinPage = () => {
     isPending: isCheckinStatusPending,
     error: checkinStatusError,
   } = useGetCheckinStatus(qrCodeId);
-  const location = useGeolocation(authChecked && locationEnabled);
+  const location = useGeolocation(locationEnabled);
   const { mutateAsync: checkin, isPending: isCheckinPending } =
     useStudentQRCheckin();
-
-  // Client-side auth guard to avoid Edge/redirect issues under ngrok/mobile
-  useEffect(() => {
-    const enforceAuth = async () => {
-      const currentPath = `/scan${qrCodeId ? `?qr_code_id=${encodeURIComponent(qrCodeId)}` : ""}`;
-      try {
-        const res = await fetch("/api/auth/me", { credentials: "include", cache: "no-store" });
-        if (!res.ok) {
-          router.replace(`/login?returnTo=${encodeURIComponent(currentPath)}`);
-          return;
-        }
-        setAuthChecked(true);
-      } catch {
-        router.replace(`/login?returnTo=${encodeURIComponent(currentPath)}`);
-      }
-    };
-    enforceAuth();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [qrCodeId]);
 
   // Start QR scanning when camera is ready and in scanning state
   useEffect(() => {
@@ -147,7 +126,7 @@ const CheckinPage = () => {
     );
   }
 
-  if (!authChecked || isCheckinStatusPending) {
+  if (isCheckinStatusPending) {
     return (
       <div className="flex min-h-[400px] flex-col items-center justify-center space-y-4">
         <div className="border-primary h-8 w-8 animate-spin rounded-full border-b-2"></div>

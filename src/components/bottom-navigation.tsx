@@ -54,6 +54,7 @@ function NavItem({ item, className = "" }: NavItemProps) {
 interface Props {
   role: Role;
 }
+
 export function BottomNavigation({ role }: Props) {
   const navItems: NavItem[] = [
     {

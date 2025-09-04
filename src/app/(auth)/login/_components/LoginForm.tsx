@@ -36,7 +36,7 @@ const defaulValues: SigninInputs = {
   rememberMe: true,
 };
 
-export function LoginForm({ returnTo }: { returnTo?: string }) {
+export function LoginForm() {
   const form = useForm<SigninInputs>({
     defaultValues: defaulValues,
     resolver: zodResolver(signinSchema),
