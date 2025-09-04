@@ -519,8 +519,8 @@ export function QrCodeGeneration() {
                       </div>
                       <ScrollArea className="bg-card h-[140px] rounded-md border p-2">
                         <div className="space-y-2">
-                          {liveCheckins && liveCheckins.length > 0 ? (
-                            liveCheckins.map((s) => (
+                          {liveCheckins && liveCheckins.count > 0 ? (
+                            liveCheckins.data.map((s) => (
                               <div
                                 key={`${s.student_id}-${s.checkin_time}`}
                                 className="flex items-center justify-between text-sm"

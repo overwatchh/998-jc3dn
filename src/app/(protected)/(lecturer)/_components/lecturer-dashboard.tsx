@@ -1,22 +1,11 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import ReportsAnalytics from "./reports-analytics";
 
 export function InstructorDashboard() {
   return (
     <div className="bg-background text-foreground space-y-6 p-4">
-      <h1 className="text-2xl font-bold">Lecturer Dashboard</h1>
-      <Card>
-        <CardHeader>
-          <CardTitle>Welcome, Lecturer!</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p>
-            This is the lecturer&apos;s view. You can manage your courses and
-            students here.
-          </p>
-        </CardContent>
-      </Card>
+      <ReportsAnalytics />
     </div>
   );
 }

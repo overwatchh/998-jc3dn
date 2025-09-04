@@ -7,10 +7,8 @@ const Layout = async ({ children }: { children: React.ReactNode }) => {
   const session = await auth.api.getSession({
     headers: await headers(),
   });
-  if (!session) {
-    redirect("/login");
-  }
-  if (session.user.role !== Roles.ADMIN) {
+
+  if (session && session.user.role !== Roles.ADMIN) {
     redirect("/dashboard");
   }
   return <div>{children}</div>;

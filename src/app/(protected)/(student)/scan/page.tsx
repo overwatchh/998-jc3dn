@@ -1,8 +1,8 @@
 "use client";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import useGeolocation from "@/hooks/useGeolocation";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -90,19 +90,21 @@ const CheckinPage = () => {
   }
 
   // Prompt for location permission before requesting it
-  if (authChecked && !isCheckinStatusPending && !locationEnabled) {
+  if (!isCheckinStatusPending && !locationEnabled) {
     return (
       <div className="space-y-6">
         <div className="text-center">
-          <h1 className="text-foreground text-2xl font-bold">Allow Location Access</h1>
+          <h1 className="text-foreground text-2xl font-bold">
+            Allow Location Access
+          </h1>
           <p className="text-muted-foreground mt-2">
             We need your location to verify your attendance.
           </p>
         </div>
 
         <Card>
-          <CardContent className="p-6 space-y-4">
-            <p className="text-sm text-muted-foreground">
+          <CardContent className="space-y-4 p-6">
+            <p className="text-muted-foreground text-sm">
               To continue, please grant permission to access your GPS location.
               You can change this later in your browser settings.
             </p>
@@ -185,7 +187,8 @@ const CheckinPage = () => {
           handleCheckin={handleCheckin}
           qrCodeId={qrCodeId}
           roomLabel={
-            checkinStatus?.location?.building_number && checkinStatus?.location?.room_number
+            checkinStatus?.location?.building_number &&
+            checkinStatus?.location?.room_number
               ? `Building ${checkinStatus.location.building_number}, Room ${checkinStatus.location.room_number}`
               : undefined
           }

@@ -88,10 +88,14 @@ export function AttendanceTrackingScreen() {
     }
   }, [courses, selectedSessionId]);
 
-  const { data: checkedIn } = useGetCheckedInStudents(selectedSessionId ?? 0,undefined, {
-    enabled: Boolean(selectedSessionId),
-    refetchInterval: 5000,
-  });
+  const { data: checkedIn } = useGetCheckedInStudents(
+    selectedSessionId ?? 0,
+    undefined,
+    {
+      enabled: Boolean(selectedSessionId),
+      refetchInterval: 5000,
+    }
+  );
   const { data: studentList } = useGetStudentList(selectedSessionId ?? 0, {
     enabled: Boolean(selectedSessionId),
   });
@@ -196,7 +200,7 @@ export function AttendanceTrackingScreen() {
 
           {view === "list" ? (
             <AttendanceTable
-              checkedIn={checkedIn ?? []}
+              checkedIn={checkedIn?.data ?? []}
               totalEnrolled={studentList?.length ?? 0}
             />
           ) : (
@@ -373,7 +377,11 @@ function CheckinTimelineCard() {
 }
 
 type AttendanceTableProps = {
-  checkedIn: Array<{ student_id: string; student_name: string; checkin_time: string }>;
+  checkedIn: Array<{
+    student_id: string;
+    student_name: string;
+    checkin_time: string;
+  }>;
   totalEnrolled: number;
 };
 
