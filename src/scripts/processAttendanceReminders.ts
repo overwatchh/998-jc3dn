@@ -1,22 +1,22 @@
 #!/usr/bin/env tsx
 
 import { attendanceReminderService } from '../services/server/attendanceReminderService';
-import { emailService } from '../services/server/emailService';
+import { emailJSAttendanceService } from '../services/server/emailJSAttendanceService';
 
 async function main() {
   console.log('🚀 Starting attendance reminder processing...');
   console.log('📅 Date:', new Date().toISOString());
   
   try {
-    console.log('🔧 Testing email service connection...');
-    const emailConnectionOk = await emailService.testConnection();
+    console.log('🔧 Initializing EmailJS service...');
+    const emailJSInitialized = await emailJSAttendanceService.initialize();
     
-    if (!emailConnectionOk) {
-      console.error('❌ Email service connection failed. Aborting.');
+    if (!emailJSInitialized) {
+      console.error('❌ EmailJS initialization failed. Aborting.');
       process.exit(1);
     }
     
-    console.log('✅ Email service connection successful');
+    console.log('✅ EmailJS service initialized successfully');
     
     console.log('📊 Processing attendance reminders...');
     const result = await attendanceReminderService.processAllReminders();

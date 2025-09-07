@@ -1,6 +1,7 @@
 import nodemailer from 'nodemailer';
 import { rawQuery } from '@/lib/server/query';
 import { RowDataPacket } from 'mysql2';
+import { getEmailConfigByAddress, detectEmailProvider, EMAIL_PROVIDERS, EmailProvider } from '@/config/emailProviders';
 
 export interface EmailConfig {
   host: string;

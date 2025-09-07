@@ -3,7 +3,7 @@ import { RowDataPacket } from "mysql2";
 
 export interface AttendanceStats {
   studentId: string;
-  courseId: number;
+  subjectId: number;
   sessionType: 'lecture' | 'lab';
   totalSessions: number;
   attendedSessions: number;
@@ -16,7 +16,7 @@ export interface AttendanceStats {
 
 interface AttendanceRow extends RowDataPacket {
   student_id: string;
-  course_id: number;
+  subject_id: number;
   session_type: 'lecture' | 'lab';
   total_sessions: number;
   attended_sessions: number;
@@ -24,8 +24,8 @@ interface AttendanceRow extends RowDataPacket {
   attendance_percentage: number;
 }
 
-interface CourseSettingsRow extends RowDataPacket {
-  course_id: number;
+interface SubjectSettingsRow extends RowDataPacket {
+  subject_id: number;
   lecture_count: number;
   lab_count: number;
   attendance_threshold: number;
@@ -33,26 +33,25 @@ interface CourseSettingsRow extends RowDataPacket {
 
 export class AttendanceCalculationService {
   
-  async calculateAttendanceForStudent(studentId: string, courseId: number): Promise<AttendanceStats[]> {
-    const courseSettings = await this.getCourseSettings(courseId);
+  async calculateAttendanceForStudent(studentId: string, subjectId: number): Promise<AttendanceStats[]> {
+    const subjectSettings = await this.getSubjectSettings(subjectId);
     const stats: AttendanceStats[] = [];
 
     for (const sessionType of ['lecture', 'lab'] as const) {
-      const totalSessions = sessionType === 'lecture' 
-        ? courseSettings.lecture_count 
-        : courseSettings.lab_count;
+      // Use actual session count instead of hardcoded values
+      const totalSessions = await this.getActualSessionCount(subjectId, sessionType);
 
-      const attendedSessions = await this.getAttendedSessions(studentId, courseId, sessionType);
+      const attendedSessions = await this.getAttendedSessions(studentId, subjectId, sessionType);
       const missedSessions = totalSessions - attendedSessions;
       const attendancePercentage = totalSessions > 0 ? (attendedSessions / totalSessions) * 100 : 0;
       
-      const allowableMisses = Math.floor(totalSessions * (1 - courseSettings.attendance_threshold));
+      const allowableMisses = Math.floor(totalSessions * (1 - subjectSettings.attendance_threshold));
       const remainingAllowableMisses = Math.max(0, allowableMisses - missedSessions);
-      const isAboveThreshold = attendancePercentage >= (courseSettings.attendance_threshold * 100);
+      const isAboveThreshold = attendancePercentage >= (subjectSettings.attendance_threshold * 100);
 
       stats.push({
         studentId,
-        courseId,
+        subjectId,
         sessionType,
         totalSessions,
         attendedSessions,
@@ -67,30 +66,30 @@ export class AttendanceCalculationService {
     return stats;
   }
 
-  async calculateAttendanceForAllStudents(courseId: number): Promise<AttendanceStats[]> {
-    const students = await this.getEnrolledStudents(courseId);
+  async calculateAttendanceForAllStudents(subjectId: number): Promise<AttendanceStats[]> {
+    const students = await this.getEnrolledStudents(subjectId);
     const allStats: AttendanceStats[] = [];
 
     for (const student of students) {
-      const studentStats = await this.calculateAttendanceForStudent(student.student_id, courseId);
+      const studentStats = await this.calculateAttendanceForStudent(student.student_id, subjectId);
       allStats.push(...studentStats);
     }
 
     return allStats;
   }
 
-  async getStudentsBelowThreshold(courseId: number): Promise<AttendanceStats[]> {
-    const allStats = await this.calculateAttendanceForAllStudents(courseId);
+  async getStudentsBelowThreshold(subjectId: number): Promise<AttendanceStats[]> {
+    const allStats = await this.calculateAttendanceForAllStudents(subjectId);
     return allStats.filter(stat => !stat.isAboveThreshold);
   }
 
-  async updateAttendanceSummaryCache(studentId: string, courseId: number): Promise<void> {
-    const stats = await this.calculateAttendanceForStudent(studentId, courseId);
+  async updateAttendanceSummaryCache(studentId: string, subjectId: number): Promise<void> {
+    const stats = await this.calculateAttendanceForStudent(studentId, subjectId);
 
     for (const stat of stats) {
       const query = `
         INSERT INTO student_attendance_summary (
-          student_id, course_id, session_type, total_sessions, 
+          student_id, subject_id, session_type, total_sessions, 
           attended_sessions, missed_sessions, attendance_percentage
         ) VALUES (?, ?, ?, ?, ?, ?, ?)
         ON DUPLICATE KEY UPDATE
@@ -103,7 +102,7 @@ export class AttendanceCalculationService {
 
       await rawQuery(query, [
         stat.studentId,
-        stat.courseId,
+        stat.subjectId,
         stat.sessionType,
         stat.totalSessions,
         stat.attendedSessions,
@@ -113,22 +112,22 @@ export class AttendanceCalculationService {
     }
   }
 
-  private async getCourseSettings(courseId: number): Promise<CourseSettingsRow> {
+  private async getSubjectSettings(subjectId: number): Promise<SubjectSettingsRow> {
     const query = `
-      SELECT course_id, lecture_count, lab_count, attendance_threshold
+      SELECT subject_id, lecture_count, lab_count, attendance_threshold
       FROM email_reminder_settings 
-      WHERE course_id = ?
+      WHERE subject_id = ?
     `;
     
-    const results = await rawQuery<CourseSettingsRow>(query, [courseId]);
+    const results = await rawQuery<SubjectSettingsRow>(query, [subjectId]);
     
     if (results.length === 0) {
       return {
-        course_id: courseId,
+        subject_id: subjectId,
         lecture_count: 13,
         lab_count: 12,
         attendance_threshold: 0.80
-      } as CourseSettingsRow;
+      } as SubjectSettingsRow;
     }
     
     return results[0];
@@ -136,69 +135,87 @@ export class AttendanceCalculationService {
 
   private async getAttendedSessions(
     studentId: string, 
-    courseId: number, 
+    subjectId: number, 
     sessionType: 'lecture' | 'lab'
   ): Promise<number> {
     const query = `
-      SELECT COUNT(DISTINCT a.session_id) as attended_count
-      FROM attendance a
-      JOIN course_sessions cs ON a.session_id = cs.id
-      WHERE a.student_id = ? 
-        AND cs.course_id = ? 
-        AND cs.type = ?
+      SELECT COUNT(DISTINCT c.student_id) as attended_count
+      FROM checkin c
+      JOIN qr_code_study_session qcss ON c.qr_code_study_session_id = qcss.id
+      JOIN study_session ss ON qcss.study_session_id = ss.id
+      JOIN subject_study_session sss ON ss.id = sss.study_session_id
+      WHERE c.student_id = ? 
+        AND sss.subject_id = ? 
+        AND ss.type = ?
     `;
     
     const results = await rawQuery<{ attended_count: number } & RowDataPacket>(
       query, 
-      [studentId, courseId, sessionType]
+      [studentId, subjectId, sessionType]
     );
     
     return results[0]?.attended_count || 0;
   }
 
-  private async getEnrolledStudents(courseId: number): Promise<{ student_id: string }[]> {
+  private async getEnrolledStudents(subjectId: number): Promise<{ student_id: string }[]> {
     const query = `
       SELECT student_id 
-      FROM enrollments 
-      WHERE course_id = ?
+      FROM enrolment 
+      WHERE subject_id = ?
     `;
     
-    return await rawQuery<{ student_id: string } & RowDataPacket>(query, [courseId]);
+    return await rawQuery<{ student_id: string } & RowDataPacket>(query, [subjectId]);
   }
 
-  async getAttendanceSummaryFromCache(studentId: string, courseId: number): Promise<AttendanceRow[]> {
+  private async getActualSessionCount(subjectId: number, sessionType: 'lecture' | 'lab'): Promise<number> {
+    const query = `
+      SELECT COUNT(DISTINCT ss.id) as session_count
+      FROM study_session ss
+      JOIN subject_study_session sss ON ss.id = sss.study_session_id
+      WHERE sss.subject_id = ? AND ss.type = ?
+    `;
+    
+    const results = await rawQuery<{ session_count: number } & RowDataPacket>(
+      query, 
+      [subjectId, sessionType]
+    );
+    
+    return results[0]?.session_count || 0;
+  }
+
+  async getAttendanceSummaryFromCache(studentId: string, subjectId: number): Promise<AttendanceRow[]> {
     const query = `
       SELECT 
         student_id,
-        course_id,
+        subject_id,
         session_type,
         total_sessions,
         attended_sessions,
         missed_sessions,
         attendance_percentage
       FROM student_attendance_summary
-      WHERE student_id = ? AND course_id = ?
+      WHERE student_id = ? AND subject_id = ?
     `;
     
-    return await rawQuery<AttendanceRow>(query, [studentId, courseId]);
+    return await rawQuery<AttendanceRow>(query, [studentId, subjectId]);
   }
 
-  async refreshAllAttendanceSummaries(courseId?: number): Promise<void> {
-    let students: { student_id: string; course_id: number }[];
+  async refreshAllAttendanceSummaries(subjectId?: number): Promise<void> {
+    let students: { student_id: string; subject_id: number }[];
     
-    if (courseId) {
-      students = await rawQuery<{ student_id: string; course_id: number } & RowDataPacket>(
-        'SELECT student_id, course_id FROM enrollments WHERE course_id = ?',
-        [courseId]
+    if (subjectId) {
+      students = await rawQuery<{ student_id: string; subject_id: number } & RowDataPacket>(
+        'SELECT student_id, subject_id FROM enrolment WHERE subject_id = ?',
+        [subjectId]
       );
     } else {
-      students = await rawQuery<{ student_id: string; course_id: number } & RowDataPacket>(
-        'SELECT student_id, course_id FROM enrollments'
+      students = await rawQuery<{ student_id: string; subject_id: number } & RowDataPacket>(
+        'SELECT student_id, subject_id FROM enrolment'
       );
     }
 
-    for (const { student_id, course_id } of students) {
-      await this.updateAttendanceSummaryCache(student_id, course_id);
+    for (const { student_id, subject_id } of students) {
+      await this.updateAttendanceSummaryCache(student_id, subject_id);
     }
   }
 }

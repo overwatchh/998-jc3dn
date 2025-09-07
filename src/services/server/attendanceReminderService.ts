@@ -1,5 +1,5 @@
 import { attendanceCalculationService, AttendanceStats } from './attendanceCalculationService';
-import { emailService, EmailReminderData } from './emailService';
+import { emailJSAttendanceService, AttendanceEmailData } from './emailJSAttendanceService';
 import { rawQuery } from '@/lib/server/query';
 import { RowDataPacket } from 'mysql2';
 
@@ -79,7 +79,7 @@ export class AttendanceReminderService {
     }
   }
 
-  async processCourseReminders(courseId: number): Promise<ReminderProcessingResult> {
+  async processCourseReminders(subjectId: number): Promise<ReminderProcessingResult> {
     const result: ReminderProcessingResult = {
       totalStudentsProcessed: 0,
       emailsSent: 0,
@@ -89,11 +89,20 @@ export class AttendanceReminderService {
     };
 
     try {
-      await attendanceCalculationService.refreshAllAttendanceSummaries(courseId);
+      await attendanceCalculationService.refreshAllAttendanceSummaries(subjectId);
       
-      const belowThresholdStats = await attendanceCalculationService.getStudentsBelowThreshold(courseId);
+      const belowThresholdStats = await attendanceCalculationService.getStudentsBelowThreshold(subjectId);
       
+      // Deduplicate by student ID - only process each student once
+      const uniqueStudentStats = new Map<string, AttendanceStats>();
       for (const stat of belowThresholdStats) {
+        if (!uniqueStudentStats.has(stat.studentId) || 
+            stat.attendancePercentage < uniqueStudentStats.get(stat.studentId)!.attendancePercentage) {
+          uniqueStudentStats.set(stat.studentId, stat);
+        }
+      }
+      
+      for (const stat of uniqueStudentStats.values()) {
         result.totalStudentsProcessed++;
         
         try {
@@ -104,28 +113,30 @@ export class AttendanceReminderService {
             continue;
           }
 
-          const hasRecentEmail = await emailService.hasRecentEmailBeenSent(
-            stat.studentId,
-            stat.courseId,
-            reminderType,
+          // Check if we've already sent an email for this student/subject in the last 6 hours
+          const recentEmailExists = await this.hasRecentEmailBeenSent(
+            stat.studentId, 
+            stat.subjectId, 
+            reminderType, 
             stat.sessionType,
-            24 
+            6 // 6 hour window
           );
-
-          if (hasRecentEmail) {
+          
+          if (recentEmailExists) {
+            console.log(`⏭️  Skipping ${stat.studentId} - recent ${reminderType} email already sent`);
             result.studentsSkipped++;
             continue;
           }
 
-          const studentCourseInfo = await emailService.getStudentCourseInfo(stat.studentId, stat.courseId);
+          const studentCourseInfo = await this.getStudentCourseInfo(stat.studentId, stat.subjectId);
           
           if (!studentCourseInfo) {
-            result.errors.push(`Could not find student/course info for ${stat.studentId}/${stat.courseId}`);
+            result.errors.push(`Could not find student/course info for ${stat.studentId}/${stat.subjectId}`);
             result.emailsFailed++;
             continue;
           }
 
-          const reminderData: EmailReminderData = {
+          const reminderData: AttendanceEmailData = {
             studentName: studentCourseInfo.student_name,
             studentEmail: studentCourseInfo.student_email,
             courseName: studentCourseInfo.course_name,
@@ -134,16 +145,23 @@ export class AttendanceReminderService {
             missedSessions: stat.missedSessions,
             totalSessions: stat.totalSessions,
             remainingAllowableMisses: stat.remainingAllowableMisses,
-            sessionType: stat.sessionType,
-            lecturerName: studentCourseInfo.lecturer_name,
-            lecturerEmail: studentCourseInfo.lecturer_email
+            reminderType: reminderType
           };
 
-          const emailSent = await emailService.sendAttendanceReminder(
+          const emailSent = await emailJSAttendanceService.sendAttendanceReminder(reminderData);
+
+          // Log the email attempt
+          await this.logEmailSent(
             stat.studentId,
-            stat.courseId,
+            stat.subjectId,
             reminderType,
-            reminderData
+            stat.sessionType,
+            `Attendance Notice - ${studentCourseInfo.course_name}`,
+            'Email sent via EmailJS',
+            emailSent ? 'sent' : 'failed',
+            stat.missedSessions,
+            stat.totalSessions,
+            stat.attendancePercentage
           );
 
           if (emailSent) {
@@ -166,50 +184,63 @@ export class AttendanceReminderService {
     }
   }
 
-  async processStudentReminder(studentId: string, courseId: number): Promise<boolean> {
+  async processStudentReminder(studentId: string, subjectId: number): Promise<boolean> {
     try {
-      await attendanceCalculationService.updateAttendanceSummaryCache(studentId, courseId);
+      await attendanceCalculationService.updateAttendanceSummaryCache(studentId, subjectId);
       
-      const stats = await attendanceCalculationService.calculateAttendanceForStudent(studentId, courseId);
+      const stats = await attendanceCalculationService.calculateAttendanceForStudent(studentId, subjectId);
       
       for (const stat of stats) {
         if (!stat.isAboveThreshold) {
           const reminderType = this.determineReminderType(stat);
           
           if (reminderType) {
-            const hasRecentEmail = await emailService.hasRecentEmailBeenSent(
-              studentId,
-              courseId,
-              reminderType,
+            // Check if we've already sent an email for this student/subject in the last 6 hours
+            const recentEmailExists = await this.hasRecentEmailBeenSent(
+              studentId, 
+              subjectId, 
+              reminderType, 
               stat.sessionType,
-              24
+              6 // 6 hour window
             );
+            
+            if (recentEmailExists) {
+              console.log(`⏭️  Skipping ${studentId} - recent ${reminderType} email already sent`);
+              return false;
+            }
+            
+            const studentCourseInfo = await this.getStudentCourseInfo(studentId, subjectId);
+            
+            if (studentCourseInfo) {
+              const reminderData: AttendanceEmailData = {
+                studentName: studentCourseInfo.student_name,
+                studentEmail: studentCourseInfo.student_email,
+                courseName: studentCourseInfo.course_name,
+                courseCode: studentCourseInfo.course_code,
+                attendancePercentage: stat.attendancePercentage,
+                missedSessions: stat.missedSessions,
+                totalSessions: stat.totalSessions,
+                remainingAllowableMisses: stat.remainingAllowableMisses,
+                reminderType: reminderType
+              };
 
-            if (!hasRecentEmail) {
-              const studentCourseInfo = await emailService.getStudentCourseInfo(studentId, courseId);
+              const emailSent = await emailJSAttendanceService.sendAttendanceReminder(reminderData);
               
-              if (studentCourseInfo) {
-                const reminderData: EmailReminderData = {
-                  studentName: studentCourseInfo.student_name,
-                  studentEmail: studentCourseInfo.student_email,
-                  courseName: studentCourseInfo.course_name,
-                  courseCode: studentCourseInfo.course_code,
-                  attendancePercentage: stat.attendancePercentage,
-                  missedSessions: stat.missedSessions,
-                  totalSessions: stat.totalSessions,
-                  remainingAllowableMisses: stat.remainingAllowableMisses,
-                  sessionType: stat.sessionType,
-                  lecturerName: studentCourseInfo.lecturer_name,
-                  lecturerEmail: studentCourseInfo.lecturer_email
-                };
-
-                return await emailService.sendAttendanceReminder(
-                  studentId,
-                  courseId,
-                  reminderType,
-                  reminderData
-                );
-              }
+              // Log the email attempt
+              await this.logEmailSent(
+                studentId,
+                subjectId,
+                reminderType,
+                stat.sessionType,
+                `Attendance Notice - ${studentCourseInfo.course_name}`,
+                'Email sent via EmailJS',
+                emailSent ? 'sent' : 'failed',
+                stat.missedSessions,
+                stat.totalSessions,
+                stat.attendancePercentage
+              );
+              
+              return emailSent;
             }
           }
         }
@@ -217,7 +248,7 @@ export class AttendanceReminderService {
       
       return true;
     } catch (error) {
-      console.error(`Failed to process student reminder for ${studentId}/${courseId}:`, error);
+      console.error(`Failed to process student reminder for ${studentId}/${subjectId}:`, error);
       return false;
     }
   }
@@ -247,40 +278,67 @@ export class AttendanceReminderService {
     return null;
   }
 
+  private async getStudentCourseInfo(studentId: string, subjectId: number) {
+    const query = `
+      SELECT 
+        u.name as student_name,
+        u.email as student_email,
+        s.name as course_name,
+        s.code as course_code,
+        lecturer.name as lecturer_name,
+        lecturer.email as lecturer_email
+      FROM user u
+      JOIN enrolment e ON u.id = e.student_id
+      JOIN subject s ON e.subject_id = s.id
+      LEFT JOIN (
+        SELECT DISTINCT lss.lecturer_id, sss.subject_id
+        FROM lecturer_study_session lss
+        JOIN study_session ss ON lss.study_session_id = ss.id
+        JOIN subject_study_session sss ON ss.id = sss.study_session_id
+      ) lecturer_mapping ON s.id = lecturer_mapping.subject_id
+      LEFT JOIN user lecturer ON lecturer_mapping.lecturer_id = lecturer.id
+      WHERE u.id = ? AND s.id = ?
+      LIMIT 1
+    `;
+    
+    const results = await rawQuery(query, [studentId, subjectId]);
+    return results.length > 0 ? results[0] : null;
+  }
+
   private async getActiveCoursesWithEmailEnabled(): Promise<CourseWithSettings[]> {
     const query = `
-      SELECT c.id, c.name, c.code, COALESCE(ers.email_enabled, TRUE) as email_enabled
-      FROM courses c
-      LEFT JOIN email_reminder_settings ers ON c.id = ers.course_id
-      WHERE c.status = 'active'
+      SELECT s.id, s.name, s.code, COALESCE(ers.email_enabled, TRUE) as email_enabled
+      FROM subject s
+      LEFT JOIN email_reminder_settings ers ON s.id = ers.subject_id
+      WHERE s.status = 'active'
         AND COALESCE(ers.email_enabled, TRUE) = TRUE
     `;
     
     return await rawQuery<CourseWithSettings>(query);
   }
 
-  async enableEmailReminders(courseId: number): Promise<void> {
+  async enableEmailReminders(subjectId: number): Promise<void> {
     const query = `
-      INSERT INTO email_reminder_settings (course_id, email_enabled)
+      INSERT INTO email_reminder_settings (subject_id, email_enabled)
       VALUES (?, TRUE)
       ON DUPLICATE KEY UPDATE email_enabled = TRUE
     `;
     
-    await rawQuery(query, [courseId]);
+    await rawQuery(query, [subjectId]);
   }
 
-  async disableEmailReminders(courseId: number): Promise<void> {
+  async disableEmailReminders(subjectId: number): Promise<void> {
     const query = `
-      INSERT INTO email_reminder_settings (course_id, email_enabled)
+      INSERT INTO email_reminder_settings (subject_id, email_enabled)
       VALUES (?, FALSE)
       ON DUPLICATE KEY UPDATE email_enabled = FALSE
     `;
     
-    await rawQuery(query, [courseId]);
+    await rawQuery(query, [subjectId]);
   }
 
-  async updateCourseSettings(
-    courseId: number,
+  async updateSubjectSettings(
+    subjectId: number,
     settings: {
       lectureCount?: number;
       labCount?: number;
@@ -315,20 +373,20 @@ export class AttendanceReminderService {
       return;
     }
 
-    values.push(courseId);
+    values.push(subjectId);
 
     const query = `
-      INSERT INTO email_reminder_settings (course_id, ${setParts.map(p => p.split(' = ')[0]).join(', ')})
+      INSERT INTO email_reminder_settings (subject_id, ${setParts.map(p => p.split(' = ')[0]).join(', ')})
       VALUES (?, ${setParts.map(() => '?').join(', ')})
       ON DUPLICATE KEY UPDATE ${setParts.join(', ')}, updated_at = CURRENT_TIMESTAMP
     `;
 
-    await rawQuery(query, [courseId, ...values.slice(0, -1)]);
+    await rawQuery(query, [subjectId, ...values.slice(0, -1)]);
   }
 
   async getEmailReminderHistory(
     studentId?: string,
-    courseId?: number,
+    subjectId?: number,
     limit: number = 50
   ): Promise<EmailReminderHistory[]> {
     const whereConditions: string[] = [];
@@ -339,9 +397,9 @@ export class AttendanceReminderService {
       queryParams.push(studentId);
     }
 
-    if (courseId) {
-      whereConditions.push('erl.course_id = ?');
-      queryParams.push(courseId);
+    if (subjectId) {
+      whereConditions.push('erl.subject_id = ?');
+      queryParams.push(subjectId);
     }
 
     const whereClause = whereConditions.length > 0 
@@ -353,11 +411,11 @@ export class AttendanceReminderService {
         erl.*,
         u.name as student_name,
         u.email as student_email,
-        c.name as course_name,
-        c.code as course_code
+        s.name as course_name,
+        s.code as course_code
       FROM email_reminder_logs erl
       JOIN user u ON erl.student_id = u.id
-      JOIN courses c ON erl.course_id = c.id
+      JOIN subject s ON erl.subject_id = s.id
       ${whereClause}
       ORDER BY erl.sent_at DESC
       LIMIT ?
@@ -367,32 +425,91 @@ export class AttendanceReminderService {
     return await rawQuery(query, queryParams);
   }
 
-  async getAttendanceStatistics(courseId?: number): Promise<AttendanceStatistics[]> {
+  async getAttendanceStatistics(subjectId?: number): Promise<AttendanceStatistics[]> {
     let whereClause = '';
     const queryParams: unknown[] = [];
 
-    if (courseId) {
-      whereClause = 'WHERE c.id = ?';
-      queryParams.push(courseId);
+    if (subjectId) {
+      whereClause = 'WHERE s.id = ?';
+      queryParams.push(subjectId);
     }
 
     const query = `
       SELECT 
-        c.id as course_id,
-        c.name as course_name,
-        c.code as course_code,
+        s.id as course_id,
+        s.name as course_name,
+        s.code as course_code,
         COUNT(DISTINCT e.student_id) as total_students,
         COUNT(DISTINCT CASE WHEN sas.attendance_percentage < 80 THEN sas.student_id END) as students_below_threshold,
         AVG(sas.attendance_percentage) as average_attendance_percentage
-      FROM courses c
-      JOIN enrollments e ON c.id = e.course_id
-      LEFT JOIN student_attendance_summary sas ON e.student_id = sas.student_id AND e.course_id = sas.course_id
+      FROM subject s
+      JOIN enrolment e ON s.id = e.subject_id
+      LEFT JOIN student_attendance_summary sas ON e.student_id = sas.student_id AND e.subject_id = sas.course_id
       ${whereClause}
-      GROUP BY c.id, c.name, c.code
-      ORDER BY c.name
+      GROUP BY s.id, s.name, s.code
+      ORDER BY s.name
     `;
 
     return await rawQuery(query, queryParams);
+  }
+
+  async hasRecentEmailBeenSent(
+    studentId: string,
+    subjectId: number,
+    reminderType: 'first_absence' | 'second_absence' | 'critical_absence',
+    sessionType: 'lecture' | 'lab',
+    hoursWindow: number = 6
+  ): Promise<boolean> {
+    const query = `
+      SELECT COUNT(*) as count
+      FROM email_reminder_logs
+      WHERE student_id = ? 
+        AND subject_id = ? 
+        AND reminder_type = ?
+        AND session_type = ?
+        AND email_status = 'sent'
+        AND sent_at > DATE_SUB(NOW(), INTERVAL ? HOUR)
+    `;
+
+    const results = await rawQuery<{ count: number } & RowDataPacket>(
+      query,
+      [studentId, subjectId, reminderType, sessionType, hoursWindow]
+    );
+
+    return (results[0]?.count || 0) > 0;
+  }
+
+  async logEmailSent(
+    studentId: string,
+    subjectId: number,
+    reminderType: 'first_absence' | 'second_absence' | 'critical_absence',
+    sessionType: 'lecture' | 'lab',
+    emailSubject: string,
+    emailBody: string,
+    emailStatus: 'sent' | 'failed' | 'pending',
+    missedCount: number,
+    totalSessions: number,
+    attendancePercentage: number
+  ): Promise<void> {
+    const query = `
+      INSERT INTO email_reminder_logs (
+        student_id, subject_id, reminder_type, session_type, missed_count,
+        total_sessions, attendance_percentage, email_subject, email_body, email_status
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `;
+
+    await rawQuery(query, [
+      studentId,
+      subjectId,
+      reminderType,
+      sessionType,
+      missedCount,
+      totalSessions,
+      attendancePercentage,
+      emailSubject,
+      emailBody,
+      emailStatus
+    ]);
   }
 }
 
