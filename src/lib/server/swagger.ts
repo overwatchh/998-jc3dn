@@ -1,4 +1,5 @@
 import { createSwaggerSpec } from "next-swagger-doc";
+
 const isProd = process.env.NODE_ENV === "production";
 const productionURL = "https://jc3dn-qr-attendance-kosgs4isma-ts.a.run.app";
 export const getApiDocs = async () => {
@@ -68,10 +69,15 @@ export const getApiDocs = async () => {
             "Administrative endpoints for managing users, roles, courses, and system settings.",
         },
         {
+          name: "Common",
+          description:
+            "These endpoints are accessible to all authenticated users",
+        },
+        {
           name: "Statistics",
           description:
             "Endpoints that provide analytical data and attendance statistics for both lecturers and admins.",
-        },
+        }        
       ],
     },
   });

@@ -2,6 +2,7 @@
 import { auth } from "@/lib/server/auth";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
+
 /**
  * @openapi
  * /api/auth/me:
@@ -66,11 +67,12 @@ export async function GET() {
     headers: await headers(),
   });
 
-  if (!session || !session.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  // Return unauthorized here will mess with invalidateQueries refetch. Just return null instead.
+  // if (!session || !session.user) {
+  //   return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  // }
 
   return NextResponse.json({
-    user: session.user,
+    user: session?.user ?? null,
   });
 }

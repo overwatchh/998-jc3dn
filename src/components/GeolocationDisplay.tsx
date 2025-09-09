@@ -48,8 +48,8 @@ export default function GeolocationDisplay() {
   }, []);
 
   return (
-    <div className="mt-4 p-4 border rounded">
-      <h3 className="font-bold mb-2">Current Location:</h3>
+    <div className="mt-4 rounded border p-4">
+      <h3 className="mb-2 font-bold">Current Location:</h3>
       {loading && <p>Loading location...</p>}
       {error && (
         <div className="text-red-600">
@@ -58,7 +58,7 @@ export default function GeolocationDisplay() {
         </div>
       )}
       {location && !loading && !error && (
-        <div className="text-blue-800 bg-blue-100 p-2 rounded">
+        <div className="rounded bg-blue-100 p-2 text-blue-800">
           <p>Latitude: {location.latitude}</p>
           <p>Longitude: {location.longitude}</p>
         </div>

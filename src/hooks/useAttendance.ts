@@ -1,7 +1,7 @@
-import { useQuery, useMutation } from "@tanstack/react-query";
 import apiClient from "@/lib/api/apiClient";
-import { AttendanceRecord } from "@/types";
 import { queryClient } from "@/lib/queryClient";
+import { AttendanceRecord } from "@/types";
+import { useQuery, useMutation } from "@tanstack/react-query";
 
 // Mark attendance for a lecture
 export const useMarkAttendance = () => {
@@ -66,8 +66,7 @@ export const useUpdateAttendanceRecord = () => {
       const response = await apiClient.put(`/attendance/${recordId}`, data);
       return response.data;
     },
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    onSuccess: (_, _variables) => {
+    onSuccess: () => {
       // Invalidate specific attendance record queries
       queryClient.invalidateQueries({ queryKey: ["attendance"] });
     },

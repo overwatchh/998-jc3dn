@@ -88,13 +88,12 @@
  *                   type: string
  *                   example: Unauthorised access. Student role required.
  */
-
-import { NextResponse } from "next/server";
 import { auth } from "@/lib/server/auth";
 import { rawQuery } from "@/lib/server/query";
-import { headers } from "next/headers";
 import { ApiArrayResponse } from "@/types/api";
-import { RawSubjectRow, GroupedSubject } from "./type";
+import { headers } from "next/headers";
+import { NextResponse } from "next/server";
+import { GroupedSubject, RawSubjectRow } from "./type";
 
 export async function GET() {
   const session = await auth.api.getSession({ headers: await headers() });
