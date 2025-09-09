@@ -41,7 +41,7 @@ export class EmailJSService {
     from_name: string;
     subject: string;
     message: string;
-    [key: string]: any;
+    [key: string]: string | number;
   }): Promise<boolean> {
     if (!this.initialized) {
       console.error('❌ EmailJS not initialized');
@@ -59,7 +59,7 @@ export class EmailJSService {
       console.log('✅ Email sent successfully via EmailJS:', response.status);
       return true;
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('❌ Failed to send email via EmailJS:', error);
       return false;
     }

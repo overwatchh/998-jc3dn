@@ -3,10 +3,9 @@
  * Runs continuously and sends emails automatically when lectures end
  */
 
-import { attendanceReminderService } from '../services/server/attendanceReminderService';
-import { emailJSAttendanceService } from '../services/server/emailJSAttendanceService';
+import { findPartialAttendanceAlerts } from '@/lib/services/attendanceService';
+import { emailService } from '@/lib/services/emailService';
 import { rawQuery } from '@/lib/server/query';
-import { db } from '@/lib/server/db';
 
 interface ActiveSession {
   id: number;
@@ -32,8 +31,8 @@ class AutomaticAttendanceMonitor {
 
     console.log('🚀 Starting Automatic Attendance Monitor...');
     
-    // Initialize email service
-    const emailInitialized = await emailJSAttendanceService.initialize();
+    // Test email service connection
+    const emailInitialized = await emailService.testConnection();
     if (!emailInitialized) {
       console.error('❌ Failed to initialize email service');
       return;
@@ -127,19 +126,34 @@ class AutomaticAttendanceMonitor {
     try {
       console.log(`📊 Processing attendance for ${session.subject_name}...`);
       
-      // Process reminders for students below threshold
-      const result = await attendanceReminderService.processCourseReminders(session.subject_id);
+      // Find partial attendance alerts for this session
+      const alerts = await findPartialAttendanceAlerts();
+      
+      let emailsSent = 0;
+      let emailsFailed = 0;
+      
+      // Filter alerts for this specific session and send emails
+      for (const alert of alerts) {
+        if (alert.subject_code === session.subject_code) {
+          try {
+            const success = await emailService.sendPartialAttendanceReminder(alert);
+            if (success) {
+              emailsSent++;
+              console.log(`✅ Email sent to ${alert.student_name} (${alert.student_email})`);
+            } else {
+              emailsFailed++;
+              console.log(`❌ Failed to send email to ${alert.student_name}`);
+            }
+          } catch (error) {
+            emailsFailed++;
+            console.log(`❌ Error sending email to ${alert.student_name}:`, error);
+          }
+        }
+      }
       
       console.log(`📧 Email Results for ${session.subject_name}:`);
-      console.log(`   Students Processed: ${result.totalStudentsProcessed}`);
-      console.log(`   Emails Sent: ${result.emailsSent}`);
-      console.log(`   Emails Failed: ${result.emailsFailed}`);
-      console.log(`   Students Skipped: ${result.studentsSkipped}`);
-      
-      if (result.errors.length > 0) {
-        console.log('⚠️  Errors:');
-        result.errors.forEach(error => console.log(`     ${error}`));
-      }
+      console.log(`   Emails Sent: ${emailsSent}`);
+      console.log(`   Emails Failed: ${emailsFailed}`);
 
     } catch (error) {
       console.error(`❌ Error processing session ${session.subject_name}:`, error);

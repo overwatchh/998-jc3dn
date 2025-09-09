@@ -141,7 +141,7 @@ export async function calculateSessionAttendance(
  * Only triggered AFTER the entire lecture/session is completely over
  */
 export async function findPartialAttendanceAlerts(): Promise<PartialAttendanceAlert[]> {
-  const currentTime = new Date();
+  const _currentTime = new Date();
   
   const partialAttendanceStudents = await rawQuery<{
     student_id: string;

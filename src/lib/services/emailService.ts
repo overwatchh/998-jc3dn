@@ -1,15 +1,6 @@
 import nodemailer from 'nodemailer';
 import { PartialAttendanceAlert } from './attendanceService';
 
-interface EmailConfig {
-  host: string;
-  port: number;
-  secure: boolean;
-  auth: {
-    user: string;
-    pass: string;
-  };
-}
 
 interface EmailOptions {
   to: string;
@@ -176,7 +167,12 @@ This is an automated attendance notification from the QR Attendance System.
   async sendWeeklyAttendanceSummary(
     studentEmail: string,
     studentName: string,
-    summaryData: any[]
+    summaryData: {
+      subject_code: string;
+      week_number: number;
+      session_type: string;
+      attendance_percentage: number;
+    }[]
   ): Promise<boolean> {
     const subject = `📊 Weekly Attendance Summary`;
     
