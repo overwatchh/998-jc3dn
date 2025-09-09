@@ -1,9 +1,11 @@
 import { auth } from "@/lib/server/auth";
-import { NextResponse } from "next/server";
-import { rawQuery } from "@/lib/server/query"; // Update based on your DB client
-import { headers } from "next/headers";
+import { rawQuery } from "@/lib/server/query";
 import { ApiArrayResponse } from "@/types/api";
+// Update based on your DB client
+import { headers } from "next/headers";
+import { NextResponse } from "next/server";
 import { GroupedSubject, RawSubjectRow } from "./type";
+
 /**
  * @openapi
  * /api/student/subjects:

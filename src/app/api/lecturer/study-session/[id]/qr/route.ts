@@ -1,10 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/server/auth";
-import { rawQuery } from "@/lib/server/query"; // Replace with your DB access method (e.g., mysql2)
-import QRCode from "qrcode";
-import { headers } from "next/headers";
+import { rawQuery } from "@/lib/server/query";
 import { GenerateQrRequestBody, GenerateQrResponse } from "@/types/qr-code";
+import { headers } from "next/headers";
+import { NextRequest, NextResponse } from "next/server";
+// Replace with your DB access method (e.g., mysql2)
+import QRCode from "qrcode";
 
 /**
  * @openapi
@@ -41,8 +42,7 @@ import { GenerateQrRequestBody, GenerateQrResponse } from "@/types/qr-code";
  *               radius:
  *                 type: number
  *                 example: 100
- *                 description: Maximum distance (in meters) allowed between student's location and the classroom
- *                 default: 100
+ *                 description: Optional. If provided, enforces maximum distance (in meters) from the classroom. If omitted, location validation is disabled.
  *     responses:
  *       200:
  *         description: QR code successfully generated
@@ -418,7 +418,7 @@ export async function GET(
     qrSql += " ORDER BY qc.createdAt DESC, v.count ASC";
     interface QrCodeWithValidity {
       qr_code_id: number;
-      valid_radius: number;
+      valid_radius: number | null;
       createdAt: string;
       week_number: number;
       validity_id: number;
@@ -433,7 +433,7 @@ export async function GET(
       number,
       {
         qr_code_id: number;
-        valid_radius: number;
+        valid_radius: number | null;
         createdAt: string;
         week_number: number;
         validities: {

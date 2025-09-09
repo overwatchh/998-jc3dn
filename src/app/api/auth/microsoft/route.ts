@@ -1,5 +1,6 @@
 import { auth } from "@/lib/server/auth";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+
 /**
  * @openapi
  * /api/auth/microsoft:
@@ -15,11 +16,14 @@ import { NextResponse } from "next/server";
  *         description: Internal Server Error
  */
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const callbackURL = req.nextUrl.searchParams.get("callbackURL") || "/";
+
   const response = await auth.api.signInSocial({
     body: {
       provider: "microsoft",
-      callbackURL: "/",
+      // Ensure absolute URL so redirect returns to the correct domain (e.g., ngrok)
+      callbackURL,
     },
     asResponse: false,
   });

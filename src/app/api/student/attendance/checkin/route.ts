@@ -3,6 +3,7 @@ import { auth } from "@/lib/server/auth";
 import { rawQuery } from "@/lib/server/query";
 import { z } from "zod";
 import { headers } from "next/headers";
+import { haversineDistance } from "@/lib/server/util";
 /**
  * @openapi
  * /api/student/attendance/checkin:
@@ -76,7 +77,7 @@ export async function POST(req: NextRequest) {
   const schema = z.object({
     qr_code_id: z.number(),
     lat: z.number(),
-    long: z.number()    
+    long: z.number(),
   });
   const parsed = schema.safeParse(body);
   if (!parsed.success) {
@@ -206,7 +207,33 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Step 3: Prevent duplicate check-in for this validity window ---
+  // Step 3: Verify geofence (distance) if room location and radius are configured ---
+  if (
+    qrRow.room_latitude !== null &&
+    qrRow.room_longitude !== null &&
+    qrRow.valid_radius !== null
+  ) {
+    const distanceMeters = haversineDistance(
+      qrRow.room_latitude,
+      qrRow.room_longitude,
+      lat,
+      long
+    );
+    const withinRadius = distanceMeters <= Number(qrRow.valid_radius);
+    if (!withinRadius) {
+      return NextResponse.json(
+        {
+          message: "You are not within the allowed location radius.",
+          allowed_radius_m: Number(qrRow.valid_radius),
+          your_distance_m: Math.round(distanceMeters),
+          ...studySessionDetails,
+        },
+        { status: 403 }
+      );
+    }
+  }
+
+  // Step 4: Prevent duplicate check-in for this validity window ---
   // NOTE: The current schema PK (student_id, qr_code_study_session_id) allows only ONE total check-in per QR+session+student.
   // We still guard "per window" logically here, but a second window check-in will also be blocked by the PK.
   const [dupInWindow] = await rawQuery<{ checkin_time: number }>(
@@ -233,7 +260,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Step 4: Insert check-in
+  // Step 5: Insert check-in
   await rawQuery(
     `
     INSERT INTO checkin
@@ -246,7 +273,7 @@ export async function POST(req: NextRequest) {
       currentWindow.id,
       now,
       lat,
-      long,      
+      long,
     ]
   );
 

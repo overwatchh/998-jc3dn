@@ -3,7 +3,9 @@ name: Execute SQL scripts on Cloud SQL
 on:
   push:
     branches:
-      - db-deployment      
+      - master      
+    paths:
+      - src/lib/server/db_schema/db_*.sql
 
 jobs:
   execute-sql:
@@ -11,19 +13,19 @@ jobs:
     environment: Production
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4      
+        uses: actions/checkout@v4
 
       - name: Download Cloud SQL Auth Proxy
         run: |
           curl -o cloud-sql-proxy https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.18.0/cloud-sql-proxy.linux.amd64
-          chmod +x cloud-sql-proxy      
-                 
+          chmod +x cloud-sql-proxy
+
       - name: Write GCP key to file
         run: |
-              echo '${{ secrets.GCP_SA_KEY }}' | tr -d '\r' > sa-key.json
+          echo '${{ secrets.GCP_SA_KEY }}' | tr -d '\r' > sa-key.json
 
       - name: Start Cloud SQL Auth Proxy
-        run: |                    
+        run: |
           # Build the connection name from secrets
           INSTANCE_CONNECTION_NAME="${{ secrets.GCP_PROJECT_ID }}:${{ secrets.GCP_REGION }}:${{ secrets.DB_INSTANCE }}"          
 

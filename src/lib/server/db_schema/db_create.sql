@@ -143,7 +143,7 @@ CREATE TABLE lecturer_study_session (
 CREATE TABLE qr_code (
     id INT AUTO_INCREMENT PRIMARY KEY,    
     createdAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    valid_radius DECIMAL(5,2) DEFAULT 500.00
+    valid_radius DECIMAL(10,2) DEFAULT 100.00
 );
 
 -- Validity table
