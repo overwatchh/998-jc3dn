@@ -212,8 +212,8 @@ INSERT INTO student_study_session (student_id, study_session_id) VALUES
 INSERT INTO lecturer_study_session (study_session_id, lecturer_id) VALUES
 -- lec1 
 (10, 'hrEpeIa27ITirYij0FJRAYgbMledKcuw'),
--- lec2
-(11, 'Pl3aUloS8SowYGhvBTnUH2nocxPPXE41'),
+-- lec2 and khoa teaches study session 11
+(11, 'Pl3aUloS8SowYGhvBTnUH2nocxPPXE41'), (11, 'I9vweFqQtLTzP7UqemwUlwWIuOYs3hJ6'),
 -- lec3
 (13, 'QNZ4aS743Pn4hUsd0dskFnnAUQ3JIxaw'),
 -- lec1 teaches study sesion 14-25
