@@ -7,10 +7,8 @@ export default async function LoginPage() {
   const session = await auth.api.getSession({
     headers: await headers(),
   });
-
   if (session) {
-    redirect("/");
+    redirect("/dashboard");
   }
-
   return <LoginForm />;
 }

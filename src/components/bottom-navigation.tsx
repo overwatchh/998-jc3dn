@@ -54,6 +54,7 @@ function NavItem({ item, className = "" }: NavItemProps) {
 interface Props {
   role: Role;
 }
+
 export function BottomNavigation({ role }: Props) {
   const navItems: NavItem[] = [
     {
@@ -77,13 +78,6 @@ export function BottomNavigation({ role }: Props) {
       label: "QR Code Generation",
       shortLabel: "QR",
       href: "/qr-generation",
-      role: ["lecturer"],
-    },
-    {
-      id: "report",
-      icon: FileText,
-      label: "Report",
-      href: "/report",
       role: ["lecturer"],
     },
     {

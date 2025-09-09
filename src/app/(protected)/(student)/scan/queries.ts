@@ -10,6 +10,13 @@ export enum QRStatusEnum {
 interface QRStatusResponse {
   message: string;
   validity_count: QRStatusEnum;
+  location?: {
+    latitude: number;
+    longitude: number;
+    radius: number | null;
+    building_number: string | null;
+    room_number: string | null;
+  } | null;
 }
 
 const CHECKIN_STATUS_QUERY_KEY = ["checkin-status"];

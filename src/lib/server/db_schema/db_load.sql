@@ -71,13 +71,14 @@ INSERT INTO room (building_number, room_number, description, latitude, longitude
 ('17', '101', 'Library', -34.406735319735034, 150.87855122064795, 1),
 ('20', '102', 'Building 20', -34.405756696459065, 150.8784914211785, 1),
 ('14', '201', 'Building 14', -34.40637101770338, 150.8801386108864, 1),
-('17', '202', 'Building 17', -34.40727843969014, 150.87895838559652, 1),
+('17', '202', 'Building 17', -34.40689043969014, 150.87804938559652, 1),
 ('2', '103', 'Building 2', -34.40661777021882, 150.88137803896953, 1),
-('3', '103', 'Building 3', -34.40599667280061, 150.8823234816749, 1),
+('3', '213', 'Building 3', -34.40620183243544, 150.88242181118372, 1),
 ('22', '103', 'Building 22', -34.404630436746494, 150.87661222539015, 1),
 ('40', '103', 'Building 40', -34.4062537916668, 150.87683726956962, 1),
 ('35', '103', 'Building 35', -34.40582005010667, 150.88081766767468, 1),
-('67', '202', 'Building 67', -34.40458820292591, 150.87731246467433, 1);
+('12', '2', 'Nha cua Duong', -34.406946, 150.878454, 1);
+
 
 -- Semesters
 INSERT INTO semester (id, name, year) VALUES
@@ -149,8 +150,8 @@ INSERT INTO study_session (id, type, day_of_week, start_time, end_time, room_id)
 (8, 'tutorial', 'Thursday', '10:00:00', '12:00:00', 8),
 (9, 'tutorial', 'Friday', '14:00:00', '16:00:00', 9),
 -- MTS9307
-(10, 'lecture', DAYNAME(CURDATE()), '00:00:01', '23:59:59', 10), -- For testing, set to today's date so that the qr code query is valid
-(11, 'tutorial', 'Tuesday', '10:00:00', '12:00:00', 1),
+(10, 'lecture', 'Thursday', '00:00:00', '15:00:00', 10), -- create QR code all day
+(11, 'tutorial', 'Friday', '13:00:00', '15:00:00', 1),
 (12, 'tutorial', 'Thursday', '08:00:00', '10:00:00', 2),
 -- CSCI935, CSCI435
 (13, 'lecture', 'Friday', '09:00:00', '11:00:00', 3),
@@ -170,8 +171,8 @@ INSERT INTO study_session (id, type, day_of_week, start_time, end_time, room_id)
 (23, 'tutorial', 'Monday', '14:00:00', '16:00:00', 3),
 -- Machine Learning Applications
 (24, 'lecture', 'Friday', '09:00:00', '11:00:00', 4),
-(25, 'tutorial', 'Tuesday', '15:00:00', '17:00:00', 5),
-(26, 'lecture', 'Thursday', '13:30:00', '15:30:00', 6),
+(25, 'tutorial', 'Thursday', '12:00:00', '15:00:00', 5),
+(26, 'lecture', 'Thursday', '00:30:00', '15:30:00', 6), -- create QR code all day
 (27, 'tutorial', 'Wednesday', '13:30:00', '15:30:00', 7),
 (28, 'lecture', 'Thursday', '13:30:00', '15:30:00', 8),
 (29, 'lecture', 'Thursday', '13:30:00', '15:30:00', 9);
@@ -211,8 +212,8 @@ INSERT INTO student_study_session (student_id, study_session_id) VALUES
 INSERT INTO lecturer_study_session (study_session_id, lecturer_id) VALUES
 -- lec1 
 (10, 'hrEpeIa27ITirYij0FJRAYgbMledKcuw'),
--- lec2 and khoa teaches study session 11
-(11, 'Pl3aUloS8SowYGhvBTnUH2nocxPPXE41'), (11, 'I9vweFqQtLTzP7UqemwUlwWIuOYs3hJ6'),
+-- lec2
+(11, 'Pl3aUloS8SowYGhvBTnUH2nocxPPXE41'),
 -- lec3
 (13, 'QNZ4aS743Pn4hUsd0dskFnnAUQ3JIxaw'),
 -- lec1 teaches study sesion 14-25
@@ -227,31 +228,7 @@ INSERT INTO lecturer_study_session (study_session_id, lecturer_id) VALUES
 (22, 'hrEpeIa27ITirYij0FJRAYgbMledKcuw'),
 (23, 'hrEpeIa27ITirYij0FJRAYgbMledKcuw'),
 (24, 'hrEpeIa27ITirYij0FJRAYgbMledKcuw'),
-(25, 'hrEpeIa27ITirYij0FJRAYgbMledKcuw'),
--- khoa teaches study session 26 and 4
-(26, 'I9vweFqQtLTzP7UqemwUlwWIuOYs3hJ6'), (10, 'I9vweFqQtLTzP7UqemwUlwWIuOYs3hJ6');
+-- khoa teaches study session 26 and 10 and 25
+(26, 'I9vweFqQtLTzP7UqemwUlwWIuOYs3hJ6'), (10, 'I9vweFqQtLTzP7UqemwUlwWIuOYs3hJ6'), (25, 'I9vweFqQtLTzP7UqemwUlwWIuOYs3hJ6');
 
--- QR Codes 
-INSERT INTO qr_code (id) VALUES
-(1),
-(2),
-(3);
-
--- Validity records for qr codes
-INSERT INTO validity (id, qr_code_id, count) VALUES
-(1, 1, 1),
-(2, 2, 1),
-(3, 3, 1);
--- QR Code - Study Session mapping
--- CSCI935 week 1 lucture, tutorial
-INSERT INTO qr_code_study_session (id, study_session_id, qr_code_id,week_number) VALUES
-(1, 13, 1, 1),
-(2, 14, 2, 1),
-(3, 15, 3, 1);
-
--- Checkin records for students
--- Student 3 checked in to CSCI935 tutorial week 1 on Wednesday on the first attendance checkin
--- qr_code_study_session_id = 2=> qr_code_id=2 => validity_id=2 for the first checkin window with count=1
-INSERT INTO checkin (student_id, qr_code_study_session_id, validity_id) VALUES
-('UbM08mzzakyMBZFaQ46MB4ocQpd0gNUp', 2, 2);
 

@@ -9,10 +9,10 @@ const CURRENT_USER_QUERY_KEY = ["currentUser"];
 // Get current user (me) query
 export const useCurrentUser = () => {
   const queryFn = async () => {
-    const { data } = await apiClient.get("/auth/me");
+    const { data } = await apiClient.get<{ user: User | null }>("/auth/me");
     return data;
   };
-  return useQuery<{ user: User }>({
+  return useQuery({
     queryKey: [CURRENT_USER_QUERY_KEY],
     queryFn,
   });
@@ -20,18 +20,23 @@ export const useCurrentUser = () => {
 
 // Login mutation
 export const useLogin = () => {
+  const router = useRouter();
   return useMutation({
     mutationFn: async (credentials: {
       email: string;
       password: string;
       rememberMe: boolean;
+      callbackURL: string;
     }) => {
       const response = await apiClient.post("/auth/signin", credentials);
       return response.data;
     },
-    onSuccess: () => {
-      // Invalidate the currentUser query to refetch user data
+    onSuccess: res => {
       queryClient.invalidateQueries({ queryKey: [CURRENT_USER_QUERY_KEY] });
+
+      if (res.redirect) {
+        router.push(res.url);
+      }
     },
   });
 };
@@ -49,7 +54,6 @@ export const useRegister = () => {
       return response.data;
     },
     onSuccess: () => {
-      // Invalidate the currentUser query to refetch user data
       queryClient.invalidateQueries({ queryKey: [CURRENT_USER_QUERY_KEY] });
     },
   });
@@ -64,7 +68,6 @@ export const useLogout = () => {
       return response.data;
     },
     onSuccess: () => {
-      // Invalidate the currentUser query to refetch user data
       queryClient.invalidateQueries({ queryKey: [CURRENT_USER_QUERY_KEY] });
       router.push("/login");
     },

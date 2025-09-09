@@ -1,7 +1,7 @@
 import apiClient from "@/lib/api/apiClient";
 import {
   AbsentListResponse,
-  CheckInListResponse,
+  LiveCheckinResponse,
   CourseSessionResponse,
   StudentListResponse,
   LecturerSubjectsResponse,
@@ -85,6 +85,10 @@ export const useGetCourses = () => {
         id: ss.study_session_id,
         name: subject.subject_name,
         code: subject.subject_code,
+        sessionType: ss.session_type,
+        startTime: ss.start_time.slice(0, 5),
+        endTime: ss.end_time.slice(0, 5),
+        dayOfWeek: ss.day_of_week,
       }))
     );
     return flattened;
@@ -114,16 +118,18 @@ export const useGetAbsentStudents = (id: number) => {
 const CHECKED_IN_STUDENTS_QUERY_KEY = ["checkedInStudents"];
 export const useGetCheckedInStudents = (
   id: number,
+  weekNumber?: number,
   options?: { enabled?: boolean; refetchInterval?: number }
 ) => {
   const queryFn = async () => {
-    const { data } = await apiClient.get<CheckInListResponse>(
-      `/lecturer/study-session/${id}/checkin-list`
+    const { data } = await apiClient.get<LiveCheckinResponse>(
+      `/lecturer/study-session/${id}/checkin-list`,
+      weekNumber !== undefined ? { params: { week_number: weekNumber } } : {}
     );
     return data;
   };
   return useQuery({
-    queryKey: [CHECKED_IN_STUDENTS_QUERY_KEY, id],
+    queryKey: [CHECKED_IN_STUDENTS_QUERY_KEY, id, weekNumber],
     queryFn,
     enabled: options?.enabled,
     refetchInterval: options?.refetchInterval,
