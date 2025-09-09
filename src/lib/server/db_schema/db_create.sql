@@ -203,5 +203,3 @@ CREATE TABLE checkin (
     CONSTRAINT fk_check_student FOREIGN KEY (student_id) REFERENCES user(id),
     CONSTRAINT fk_check_qrss FOREIGN KEY (qr_code_study_session_id) REFERENCES qr_code_study_session(id)
 );
-
-UPDATE user SET role = 'lecturer' WHERE email = 'dks695@uowmail.edu.au';
