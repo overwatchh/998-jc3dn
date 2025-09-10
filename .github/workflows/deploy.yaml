@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master      
+      - demo-week8
     paths-ignore:
       - src/lib/server/db_schema/db_*.sql
 
