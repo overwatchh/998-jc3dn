@@ -143,7 +143,10 @@ CREATE TABLE lecturer_study_session (
 CREATE TABLE qr_code (
     id INT AUTO_INCREMENT PRIMARY KEY,    
     createdAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    valid_radius DECIMAL(10,2) DEFAULT 100.00
+    validate_geo BOOLEAN DEFAULT True,
+    valid_room_id INT NOT NULL DEFAULT 1,    -- Room where QR code is valid selected by lecturer
+    valid_radius DECIMAL(10,2) DEFAULT 100.00,
+    CONSTRAINT fk_qr_code_valid_room FOREIGN KEY (valid_room_id) REFERENCES room(id)
 );
 
 -- Validity table
@@ -198,6 +201,7 @@ CREATE TABLE checkin (
     validity_id INT NOT NULL,
     latitude DECIMAL(18,14),
     longitude DECIMAL(18,14),    
+    join_online BOOLEAN DEFAULT FALSE,
     PRIMARY KEY (student_id, qr_code_study_session_id, validity_id),
     CONSTRAINT fk_check_validity FOREIGN KEY (validity_id) REFERENCES validity(id),
     CONSTRAINT fk_check_student FOREIGN KEY (student_id) REFERENCES user(id),
