@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <diagram program="umlet" version="15.1">
-  <help_text>time2HasValidityRoomRegistersstatusdateEnrollmentCheckinsIDID2BuildingIDnumberdistancescodesessionsessiondistanceAttendsJoinsorialTutLabLecturenumber1HasIDIDatname1TeachesthreshHastimeEventTeachstotoyear// Uncomment the following line to change the fontsize and font:
+  <help_text>atgeotime2HasValidityRoomRegistersstatusdateEnrollmentCheckinsIDID2BuildingIDnumberdistancescodesessionsessiondistanceAttendsJoinsorialTutLabLecturenumber1HasIDIDatname1TeachesthreshHastimeEventTeachstotoyear// Uncomment the following line to change the fontsize and font:
 // fontsize=14
 // fontfamily=SansSerif //possible: SansSerif,Serif,Monospaced
 
@@ -437,6 +437,7 @@ Checkins &gt;</panel_attributes>
 checkin_time
 latitude
 longitude
+join_online
 bg=#dddddd
 </panel_attributes>
     <additional_attributes/>
@@ -454,6 +455,7 @@ bg=#dddddd
 id ID
 createdAt
 valid_radius
+validate_geo
 bg=#dddddd
 </panel_attributes>
     <additional_attributes/>
@@ -584,5 +586,20 @@ r1=
 m2=2
 In period &gt;</panel_attributes>
     <additional_attributes>10.0;20.0;580.0;20.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>756</x>
+      <y>266</y>
+      <w>112</w>
+      <h>196</h>
+    </coordinates>
+    <panel_attributes>lt=-
+m1=*
+r1=
+m2=1
+Valid at &gt;</panel_attributes>
+    <additional_attributes>10.0;260.0;60.0;110.0;140.0;10.0</additional_attributes>
   </element>
 </diagram>

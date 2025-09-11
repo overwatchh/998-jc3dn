@@ -125,6 +125,7 @@ export async function GET() {
       ss.type AS session_type,
       ro.building_number AS building_number,
       ro.room_number AS room_number,
+      ro.id AS room_id,
       ro.description AS room_description,
       cam.name AS campus_name
     
@@ -175,6 +176,7 @@ ORDER BY sub.id,
         location: {
           building_number: row.building_number,
           room_number: row.room_number,
+          room_id: row.room_id,
           room_description: row.room_description,
           campus_name: row.campus_name,
         },

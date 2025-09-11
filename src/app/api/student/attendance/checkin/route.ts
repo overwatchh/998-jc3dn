@@ -1,9 +1,10 @@
-import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/server/auth";
 import { rawQuery } from "@/lib/server/query";
-import { z } from "zod";
-import { headers } from "next/headers";
 import { haversineDistance } from "@/lib/server/util";
+import { headers } from "next/headers";
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+
 /**
  * @openapi
  * /api/student/attendance/checkin:
@@ -26,12 +27,18 @@ import { haversineDistance } from "@/lib/server/util";
  *               qr_code_id:
  *                 type: integer
  *                 description: The numeric QR code identifier
+ *                 example: 1
  *               lat:
  *                 type: number
  *                 description: Student's latitude when checking in
  *               long:
  *                 type: number
  *                 description: Student's longitude when checking in
+ *               join_online:
+ *                 type: boolean
+ *                 description: Whether the student is joining online
+ *                 example: false
+ *
  *     responses:
  *       200:
  *         description: Check-in successful
@@ -52,10 +59,11 @@ type QrSessionRow = {
   subject_id: number;
   subject_code: string;
   subject_name: string;
-  room_id: number | null;
-  room_latitude: number | null;
-  room_longitude: number | null;
-  valid_radius: number | null;
+  room_id: number;
+  room_latitude: number;
+  room_longitude: number;
+  valid_radius: number;
+  validate_geo: boolean;
 };
 
 type ValidityRow = {
@@ -78,6 +86,7 @@ export async function POST(req: NextRequest) {
     qr_code_id: z.number(),
     lat: z.number(),
     long: z.number(),
+    join_online: z.boolean().optional(),
   });
   const parsed = schema.safeParse(body);
   if (!parsed.success) {
@@ -87,7 +96,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { qr_code_id, lat, long } = parsed.data;
+  const { qr_code_id, lat, long, join_online } = parsed.data;
 
   // Step 1: From qr_code_id, figure out study session, week, subject, and whether the student is allowed ---
   const [qrRow] = await rawQuery<QrSessionRow>(
@@ -103,7 +112,8 @@ export async function POST(req: NextRequest) {
       ss.room_id,
       r.latitude AS room_latitude,
       r.longitude AS room_longitude,
-      qc.valid_radius
+      qc.valid_radius,
+      qc.validate_geo
     FROM qr_code_study_session qrss
     JOIN study_session ss           ON ss.id = qrss.study_session_id
     JOIN subject_study_session sss  ON sss.study_session_id = ss.id
@@ -207,12 +217,8 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Step 3: Verify geofence (distance) if room location and radius are configured ---
-  if (
-    qrRow.room_latitude !== null &&
-    qrRow.room_longitude !== null &&
-    qrRow.valid_radius !== null
-  ) {
+  // Step 3: Verify geofence (distance) if validate_geo is set to true for the QR code
+  if (qrRow.validate_geo) {
     const distanceMeters = haversineDistance(
       qrRow.room_latitude,
       qrRow.room_longitude,
@@ -264,8 +270,8 @@ export async function POST(req: NextRequest) {
   await rawQuery(
     `
     INSERT INTO checkin
-      (student_id, qr_code_study_session_id, validity_id, checkin_time, latitude, longitude)
-    VALUES (?, ?, ?, ?, ?, ?)
+      (student_id, qr_code_study_session_id, validity_id, checkin_time, latitude, longitude, join_online)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
     `,
     [
       studentId,
@@ -274,6 +280,7 @@ export async function POST(req: NextRequest) {
       now,
       lat,
       long,
+      join_online ?? false
     ]
   );
 
