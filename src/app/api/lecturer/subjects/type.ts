@@ -11,6 +11,7 @@ export interface RawSubjectRow extends RowDataPacket {
   end_time: string;
   session_type: "lecture" | "tutorial";
   building_number: string;
+  room_id: number;
   room_number: string;
   room_description: string;
   campus_name: string;
@@ -31,6 +32,7 @@ export interface GroupedSubject extends RowDataPacket {
     location: {
       building_number: string;
       room_number: string;
+      room_id: number;
       room_description: string;
       campus_name: string;
     };
