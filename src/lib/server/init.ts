@@ -27,6 +27,7 @@ export function initializeServer() {
 }
 
 // Auto-initialize when this module is imported
-if (typeof window === 'undefined') { // Only run on server-side
+// Only run on server-side and NOT during build phase
+if (typeof window === 'undefined' && process.env.NEXT_PHASE !== 'phase-production-build') {
   initializeServer();
 }
