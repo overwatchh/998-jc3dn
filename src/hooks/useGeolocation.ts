@@ -7,7 +7,9 @@ export interface UseGeolocationReturn {
   loading: boolean;
 }
 
-export const useGeolocation = (enabled: boolean = true): UseGeolocationReturn => {
+export const useGeolocation = (
+  enabled: boolean = true
+): UseGeolocationReturn => {
   const [position, setPosition] = useState<GeolocationCoords | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(enabled);

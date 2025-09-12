@@ -9,7 +9,11 @@ interface Props {
   disabled?: boolean;
 }
 
-export const SecondCheckinScreen = ({ handleCheckin, isCheckingIn, disabled }: Props) => {
+export const SecondCheckinScreen = ({
+  handleCheckin,
+  isCheckingIn,
+  disabled,
+}: Props) => {
   return (
     <div className="space-y-6">
       {/* Header */}

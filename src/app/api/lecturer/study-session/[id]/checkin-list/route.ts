@@ -1,7 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/server/auth";
-import { rawQuery } from "@/lib/server/query"; // Replace with your DB access method (e.g., mysql2)
+import { rawQuery } from "@/lib/server/query";
+// Replace with your DB access method (e.g., mysql2)
 import { headers } from "next/headers";
+import { NextRequest, NextResponse } from "next/server";
+
 /**
  * @openapi
  * /api/lecturer/study-session/{id}/checkin-list:
@@ -114,7 +116,9 @@ export async function GET(
     }>(currentValiditySql, [studySessionId, week_number]);
 
     const currentValidityCount =
-      currentValidityRows.length > 0 ? currentValidityRows[0].validity_count : null;
+      currentValidityRows.length > 0
+        ? currentValidityRows[0].validity_count
+        : null;
 
     // Step 3: Fetch students checked in for this QR (all validities), include validity_count
     const studentsSql = `

@@ -28,7 +28,6 @@ import {
   Calendar,
   Download,
   FileText,
-  
   Plus,
   Share2,
 } from "lucide-react";
@@ -110,11 +109,13 @@ export function QrCodeGeneration() {
 
   // Get the existing QR code if one exists
   const existingQrCodeId = qrCodesData?.data?.[0]?.qr_code_id;
-  const { data: qrCode, isLoading: isQrCodeLoading, refetch: refetchQrCode } = useGetQrCode(
-    sessionId,
-    existingQrCodeId!,
-    { enabled: !!selectedCourse && !!existingQrCodeId }
-  );
+  const {
+    data: qrCode,
+    isLoading: isQrCodeLoading,
+    refetch: refetchQrCode,
+  } = useGetQrCode(sessionId, existingQrCodeId!, {
+    enabled: !!selectedCourse && !!existingQrCodeId,
+  });
 
   // Get all existing QR codes for this session to determine used weeks
   const { data: allQrCodesData } = useGetQrCodes(
@@ -124,12 +125,14 @@ export function QrCodeGeneration() {
   );
 
   // Live check-ins for current session/week
-  const {
-    data: liveCheckins,
-  } = useGetCheckedInStudents(sessionId, selectedCourse?.weekNumber, {
-    enabled: !!selectedCourse && !!existingQrCodeId, // only when QR exists
-    refetchInterval: 5000, // 5s polling
-  });
+  const { data: liveCheckins } = useGetCheckedInStudents(
+    sessionId,
+    selectedCourse?.weekNumber,
+    {
+      enabled: !!selectedCourse && !!existingQrCodeId, // only when QR exists
+      refetchInterval: 5000, // 5s polling
+    }
+  );
 
   // Get used weeks and calculate next available week
   const usedWeeks = useMemo(() => {
@@ -147,7 +150,10 @@ export function QrCodeGeneration() {
   }, [usedWeeks]);
 
   // Whether a QR exists for the selected week
-  const hasQr = useMemo(() => !!(existingQrCodeId && qrCode?.qr_url), [existingQrCodeId, qrCode]);
+  const hasQr = useMemo(
+    () => !!(existingQrCodeId && qrCode?.qr_url),
+    [existingQrCodeId, qrCode]
+  );
 
   // Determine validity states for enabling/disabling actions
   const { isFirstExpired, hasSecondValidity } = useMemo(() => {
@@ -164,7 +170,9 @@ export function QrCodeGeneration() {
 
   // Can add second validity as soon as the first is expired locally or by DB, and none exists yet
   const canAddSecondValidity = useMemo(() => {
-    return !!existingQrCodeId && (isFirstExpired || isExpired) && !hasSecondValidity;
+    return (
+      !!existingQrCodeId && (isFirstExpired || isExpired) && !hasSecondValidity
+    );
   }, [existingQrCodeId, isFirstExpired, isExpired, hasSecondValidity]);
 
   // Ensure a default course is selected if none
@@ -198,7 +206,12 @@ export function QrCodeGeneration() {
   useEffect(() => {
     setRemainingTime(0);
     setIsExpired(true);
-  }, [selectedCourse?.sessionId, selectedCourse?.weekNumber, setRemainingTime, setIsExpired]);
+  }, [
+    selectedCourse?.sessionId,
+    selectedCourse?.weekNumber,
+    setRemainingTime,
+    setIsExpired,
+  ]);
 
   // Manual-only generation: removed auto-generate effect so QR is created only on button click
 
@@ -306,7 +319,7 @@ export function QrCodeGeneration() {
                 </Select>
               </div>
             </div>
-            
+
             <div className="mt-6 grid gap-6 md:grid-cols-2">
               {/* QR Code Display Card */}
               <Card className="overflow-hidden">
@@ -336,7 +349,10 @@ export function QrCodeGeneration() {
                       <div className="text-muted-foreground grid h-64 w-64 place-items-center px-4 text-center text-sm">
                         <span>
                           QR code has not been generated. Click
-                          <span className="font-semibold"> Generate QR ({validityDuration} min) </span>
+                          <span className="font-semibold">
+                            {" "}
+                            Generate QR ({validityDuration} min){" "}
+                          </span>
                           to create one.
                         </span>
                       </div>
@@ -368,7 +384,9 @@ export function QrCodeGeneration() {
                 <CardFooter className="flex flex-wrap justify-center gap-2 p-6 pt-0">
                   <Button
                     className="gap-1"
-                    disabled={isGenerating || !selectedCourse || !!existingQrCodeId}
+                    disabled={
+                      isGenerating || !selectedCourse || !!existingQrCodeId
+                    }
                     onClick={async () => {
                       if (!selectedCourse || isGenerating) return;
                       try {
@@ -378,7 +396,9 @@ export function QrCodeGeneration() {
                           radius: geoValidation ? geoRadius : undefined,
                         });
                         setHasGeneratedQrForCurrentWeek(true);
-                        toast.success(`QR generated for ${validityDuration} minutes.`);
+                        toast.success(
+                          `QR generated for ${validityDuration} minutes.`
+                        );
                         // Timer will sync from valid_until via qrCode query
                         refetchQrCodes();
                       } catch (e: unknown) {
@@ -441,7 +461,7 @@ export function QrCodeGeneration() {
                     <div className="flex items-center gap-2">
                       <Select
                         value={String(validityDuration)}
-                        onValueChange={(v) => setValidityDuration(Number(v))}
+                        onValueChange={v => setValidityDuration(Number(v))}
                         disabled={
                           isGenerating || hasQr || hasGeneratedQrForCurrentWeek
                         }
@@ -450,7 +470,7 @@ export function QrCodeGeneration() {
                           <SelectValue placeholder="Select minutes" />
                         </SelectTrigger>
                         <SelectContent>
-                          {[1, 2, 3, 5, 10, 15, 20, 30].map((m) => (
+                          {[1, 2, 3, 5, 10, 15, 20, 30].map(m => (
                             <SelectItem key={m} value={String(m)}>
                               {m} minutes
                             </SelectItem>
@@ -523,17 +543,21 @@ export function QrCodeGeneration() {
                       <ScrollArea className="bg-card h-[140px] rounded-md border p-2">
                         <div className="space-y-2">
                           {liveCheckins && liveCheckins.count > 0 ? (
-                            liveCheckins.data.map((s) => (
+                            liveCheckins.data.map(s => (
                               <div
                                 key={`${s.student_id}-${s.checkin_time}`}
                                 className="flex items-center justify-between text-sm"
                               >
                                 <span className="font-medium">
                                   {s.student_name}
-                                  <span className="text-muted-foreground ml-2 text-xs">{s.validity_count}/2</span>
+                                  <span className="text-muted-foreground ml-2 text-xs">
+                                    {s.validity_count}/2
+                                  </span>
                                 </span>
                                 <span className="text-muted-foreground">
-                                  {new Date(s.checkin_time).toLocaleTimeString()}
+                                  {new Date(
+                                    s.checkin_time
+                                  ).toLocaleTimeString()}
                                 </span>
                               </div>
                             ))

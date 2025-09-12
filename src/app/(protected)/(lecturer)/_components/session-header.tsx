@@ -1,11 +1,17 @@
 "use client";
 
 import { Card } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Calendar } from "lucide-react";
+import { useEffect, useMemo } from "react";
 import { useQrGenContext } from "../qr-generation/qr-gen-context";
 import { useGetCourses, useGetQrCodes } from "../qr-generation/queries";
-import { useEffect, useMemo } from "react";
 
 export function SessionHeader() {
   const { selectedCourse, setSelectedCourse } = useQrGenContext();
@@ -47,10 +53,10 @@ export function SessionHeader() {
   const currentCourse = courses?.find(c => c.id === selectedCourse?.sessionId);
 
   return (
-    <Card className="bg-white border-gray-200 mx-0 py-0">
-      <div className="grid grid-cols-1 divide-y lg:grid-cols-3 lg:divide-y-0 lg:divide-x divide-gray-200">
+    <Card className="mx-0 border-gray-200 bg-white py-0">
+      <div className="grid grid-cols-1 divide-y divide-gray-200 lg:grid-cols-3 lg:divide-x lg:divide-y-0">
         {/* Subject Section */}
-        <div className="p-4 space-y-2 px-4 py-4">
+        <div className="space-y-2 p-4 px-4 py-4">
           <div className="flex items-center gap-2">
             <Calendar className="h-4 w-4 text-gray-500" />
             <h3 className="text-sm font-medium text-gray-700">Subject</h3>
@@ -65,12 +71,16 @@ export function SessionHeader() {
             }
             disabled={isCoursesLoading}
           >
-            <SelectTrigger className="bg-white border-gray-200 text-gray-900 w-full">
+            <SelectTrigger className="w-full border-gray-200 bg-white text-gray-900">
               <SelectValue placeholder="Select subject" />
             </SelectTrigger>
-            <SelectContent className="bg-white border-gray-200">
+            <SelectContent className="border-gray-200 bg-white">
               {(courses ?? []).map(c => (
-                <SelectItem key={c.id + c.code} value={String(c.id)} className="text-gray-900 hover:bg-gray-50">
+                <SelectItem
+                  key={c.id + c.code}
+                  value={String(c.id)}
+                  className="text-gray-900 hover:bg-gray-50"
+                >
                   {c.code} - {c.name}
                 </SelectItem>
               ))}
@@ -79,7 +89,7 @@ export function SessionHeader() {
         </div>
 
         {/* Week Section */}
-        <div className="p-4 space-y-2">
+        <div className="space-y-2 p-4">
           <div className="flex items-center gap-2">
             <Calendar className="h-4 w-4 text-gray-500" />
             <h3 className="text-sm font-medium text-gray-700">Week</h3>
@@ -94,10 +104,10 @@ export function SessionHeader() {
             }
             disabled={!selectedCourse}
           >
-            <SelectTrigger className="bg-white border-gray-200 text-gray-900 w-full">
+            <SelectTrigger className="w-full border-gray-200 bg-white text-gray-900">
               <SelectValue placeholder="Select week" />
             </SelectTrigger>
-            <SelectContent className="bg-white border-gray-200">
+            <SelectContent className="border-gray-200 bg-white">
               {Array.from({ length: 13 }, (_, i) => i + 1).map(week => {
                 const isUsed = usedWeeks.has(week);
                 const isNextAvailable = week === nextAvailableWeek;
@@ -119,25 +129,23 @@ export function SessionHeader() {
         </div>
 
         {/* Study Session Section */}
-        <div className="p-4 space-y-2">
+        <div className="space-y-2 p-4">
           <div className="flex items-center gap-2">
             <Calendar className="h-4 w-4 text-gray-500" />
             <h3 className="text-sm font-medium text-gray-700">Study Session</h3>
           </div>
           <div className="pt-2">
             <p className="font-semibold text-gray-900">
-              {currentCourse 
+              {currentCourse
                 ? `${currentCourse.code} - Week ${selectedCourse?.weekNumber || 1}`
-                : "No session selected"
-              }
+                : "No session selected"}
             </p>
-            <div className="flex items-center gap-2 text-sm text-gray-600 mt-1">
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+            <div className="mt-1 flex items-center gap-2 text-sm text-gray-600">
+              <div className="h-2 w-2 rounded-full bg-green-500"></div>
               <span>
-                {currentCourse 
+                {currentCourse
                   ? `${currentCourse.dayOfWeek ? `${currentCourse.dayOfWeek}, ` : ""}${currentCourse.startTime} - ${currentCourse.endTime}`
-                  : "No schedule"
-                }
+                  : "No schedule"}
               </span>
             </div>
           </div>

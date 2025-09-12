@@ -1,10 +1,5 @@
 "use client";
 
-import { TimeWindowSelector } from "./time-window-selector";
-import { RoomSelector } from "./room-selector";
-import { SessionHeader } from "./session-header";
-import { useState, useCallback, useEffect } from "react";
-import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,31 +11,46 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Download, Share2, Users, QrCode, ArrowLeft } from "lucide-react";
-import { useQrGenContext } from "../qr-generation/qr-gen-context";
-import { QRGenScreens } from "../qr-generation/types";
-import { useGenerateQr, useGetCourses, useGetCheckedInStudents, useGetQrCodes, useGetQrCode, useUpdateQr, useGetLecturerRooms } from "../qr-generation/queries";
-import { toast } from "sonner";
 import { AxiosError } from "axios";
-import Image from "next/image";
 import { format } from "date-fns";
+import { ArrowLeft, Download, QrCode, Share2, Users } from "lucide-react";
+import Image from "next/image";
+import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
+import { useQrGenContext } from "../qr-generation/qr-gen-context";
+import {
+  useGenerateQr,
+  useGetCheckedInStudents,
+  useGetCourses,
+  useGetLecturerRooms,
+  useGetQrCode,
+  useGetQrCodes,
+  useUpdateQr,
+} from "../qr-generation/queries";
+import { QRGenScreens } from "../qr-generation/types";
+import { RoomSelector } from "./room-selector";
+import { SessionHeader } from "./session-header";
+import { TimeWindowSelector } from "./time-window-selector";
 
 export function NewQrGeneration() {
   const { setCurrentScreen, selectedCourse } = useQrGenContext();
   const { data: courses } = useGetCourses();
-  
+
   // Get current course info
   const currentCourse = courses?.find(c => c.id === selectedCourse?.sessionId);
-  
+
   // Set default class times based on course schedule
   const classStartTime = new Date();
   const classEndTime = new Date();
-  
+
   if (currentCourse) {
-    const [startHour, startMin] = currentCourse.startTime.split(':').map(Number);
-    const [endHour, endMin] = currentCourse.endTime.split(':').map(Number);
-    
+    const [startHour, startMin] = currentCourse.startTime
+      .split(":")
+      .map(Number);
+    const [endHour, endMin] = currentCourse.endTime.split(":").map(Number);
+
     classStartTime.setHours(startHour, startMin, 0, 0);
     classEndTime.setHours(endHour, endMin, 0, 0);
   } else {
@@ -49,8 +59,8 @@ export function NewQrGeneration() {
   }
 
   const [windows, setWindows] = useState<{
-    entryWindow: { start: Date; end: Date }
-    exitWindow: { start: Date; end: Date }
+    entryWindow: { start: Date; end: Date };
+    exitWindow: { start: Date; end: Date };
   } | null>(null);
 
   const [qrGenerated, setQrGenerated] = useState(false);
@@ -59,8 +69,12 @@ export function NewQrGeneration() {
   const [validateGeo, setValidateGeo] = useState(true);
   const [radius, setRadius] = useState(100);
 
-  const { mutateAsync: generateQr, isPending: isGenerating } = useGenerateQr(selectedCourse?.sessionId || 0);
-  const { mutateAsync: updateQr, isPending: isUpdating } = useUpdateQr(selectedCourse?.sessionId || 0);
+  const { mutateAsync: generateQr, isPending: isGenerating } = useGenerateQr(
+    selectedCourse?.sessionId || 0
+  );
+  const { mutateAsync: updateQr, isPending: isUpdating } = useUpdateQr(
+    selectedCourse?.sessionId || 0
+  );
   const { data: roomsData } = useGetLecturerRooms();
 
   // Fetch existing QR for this session/week
@@ -70,11 +84,12 @@ export function NewQrGeneration() {
     { enabled: !!selectedCourse }
   );
   const existingQrId = existingQrList?.data?.[0]?.qr_code_id;
-  const {
-    data: existingQrData,
-    refetch: refetchExistingQr,
-  } = useGetQrCode(selectedCourse?.sessionId || 0, existingQrId || 0, { enabled: !!existingQrId });
-  
+  const { data: existingQrData, refetch: refetchExistingQr } = useGetQrCode(
+    selectedCourse?.sessionId || 0,
+    existingQrId || 0,
+    { enabled: !!existingQrId }
+  );
+
   // Get live check-ins data
   const { data: checkedInData } = useGetCheckedInStudents(
     selectedCourse?.sessionId || 0,
@@ -87,12 +102,12 @@ export function NewQrGeneration() {
 
   const handleWindowChange = useCallback(
     (newWindows: {
-      entryWindow: { start: Date; end: Date }
-      exitWindow: { start: Date; end: Date }
+      entryWindow: { start: Date; end: Date };
+      exitWindow: { start: Date; end: Date };
     }) => {
       setWindows(newWindows);
     },
-    [],
+    []
   );
 
   const handleRoomSelect = useCallback((roomId: number) => {
@@ -153,7 +168,9 @@ export function NewQrGeneration() {
 
   const updateQRCode = async () => {
     if (!selectedCourse || !windows || !selectedRoomId || !existingQrId) {
-      toast.error("Please select a room, configure time windows, and ensure an existing QR");
+      toast.error(
+        "Please select a room, configure time windows, and ensure an existing QR"
+      );
       return;
     }
 
@@ -201,16 +218,17 @@ export function NewQrGeneration() {
     ? roomsData?.data.find(r => r.id === selectedRoomId)
     : undefined;
 
-  const formatTimeHHMM = (date?: Date) => (date ? date.toTimeString().slice(0, 5) : "--:--");
+  const formatTimeHHMM = (date?: Date) =>
+    date ? date.toTimeString().slice(0, 5) : "--:--";
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="p-4 lg:p-6 space-y-6">
+      <div className="space-y-6 p-4 lg:p-6">
         <div className="flex items-center gap-3">
           <Button
             variant="ghost"
             size="sm"
-            className="text-gray-600 hover:text-gray-900 hover:bg-gray-100 p-2"
+            className="p-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900"
             onClick={() => setCurrentScreen(QRGenScreens.COURSE_SELECTION)}
           >
             <ArrowLeft className="h-4 w-4" />
@@ -221,37 +239,40 @@ export function NewQrGeneration() {
 
         <SessionHeader />
 
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-          <div className="lg:col-span-2 space-y-6 order-2 lg:order-1">
-            <RoomSelector 
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
+          <div className="order-2 space-y-6 lg:order-1 lg:col-span-2">
+            <RoomSelector
               onRoomSelect={handleRoomSelect}
               validateGeo={validateGeo}
               onValidateGeoChange={setValidateGeo}
               radius={radius}
               onRadiusChange={setRadius}
             />
-
           </div>
 
-          <div className="lg:col-span-3 space-y-6 order-1 lg:order-2">
+          <div className="order-1 space-y-6 lg:order-2 lg:col-span-3">
             {qrGenerated ? (
               <>
                 {/* QR Code First when available */}
                 <div className="relative">
-                  <div className="absolute -top-3 left-4 bg-white px-2 z-10">
-                    <span className="text-xs font-medium text-green-600 bg-green-50 px-2 py-1 rounded-full">
+                  <div className="absolute -top-3 left-4 z-10 bg-white px-2">
+                    <span className="rounded-full bg-green-50 px-2 py-1 text-xs font-medium text-green-600">
                       QR Code
                     </span>
                   </div>
-                  <Card className="bg-white border-gray-200">
-                    <CardHeader className="text-center pb-4">
-                      <CardTitle className="text-xl font-semibold text-gray-900">QR Code</CardTitle>
-                      <p className="text-sm text-gray-600 mt-2">Show or update the attendance QR code</p>
+                  <Card className="border-gray-200 bg-white">
+                    <CardHeader className="pb-4 text-center">
+                      <CardTitle className="text-xl font-semibold text-gray-900">
+                        QR Code
+                      </CardTitle>
+                      <p className="mt-2 text-sm text-gray-600">
+                        Show or update the attendance QR code
+                      </p>
                     </CardHeader>
                     <CardContent className="space-y-6">
                       <div className="text-center">
                         {qrUrl ? (
-                          <div className="w-48 h-48 mx-auto bg-white rounded-lg flex items-center justify-center border-2 shadow-lg">
+                          <div className="mx-auto flex h-48 w-48 items-center justify-center rounded-lg border-2 bg-white shadow-lg">
                             <Image
                               src={qrUrl}
                               alt="QR Code"
@@ -262,50 +283,105 @@ export function NewQrGeneration() {
                           </div>
                         ) : null}
                       </div>
-                      <div className="max-w-md mx-auto space-y-3">
+                      <div className="mx-auto max-w-md space-y-3">
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <Button
-                              className="w-full bg-black text-white hover:bg-gray-800 h-10 text-sm font-medium"
-                              disabled={isUpdating || !selectedRoomId || !windows || !existingQrId}
+                              className="h-10 w-full bg-black text-sm font-medium text-white hover:bg-gray-800"
+                              disabled={
+                                isUpdating ||
+                                !selectedRoomId ||
+                                !windows ||
+                                !existingQrId
+                              }
                             >
-                              {isUpdating ? "Updating QR Code..." : "Update QR Code"}
+                              {isUpdating
+                                ? "Updating QR Code..."
+                                : "Update QR Code"}
                             </Button>
                           </AlertDialogTrigger>
                           <AlertDialogContent>
                             <AlertDialogHeader>
-                              <AlertDialogTitle>Confirm Update</AlertDialogTitle>
+                              <AlertDialogTitle>
+                                Confirm Update
+                              </AlertDialogTitle>
                               <AlertDialogDescription>
-                                Please review the details below before updating the QR code.
+                                Please review the details below before updating
+                                the QR code.
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <div className="space-y-2 text-sm text-gray-700">
-                              <div className="flex justify-between"><span className="text-gray-500">Course week</span><span className="font-medium">{selectedCourse?.weekNumber}</span></div>
-                              <div className="flex justify-between"><span className="text-gray-500">Room</span><span className="font-medium">{selectedRoom ? `${selectedRoom.building_number} ${selectedRoom.room_number}` : "-"}</span></div>
-                              <div className="flex justify-between"><span className="text-gray-500">Geo validation</span><span className="font-medium">{validateGeo ? "Enabled" : "Disabled"}</span></div>
-                              <div className="flex justify-between"><span className="text-gray-500">Radius</span><span className="font-medium">{radius} m</span></div>
-                              <div className="flex justify-between"><span className="text-gray-500">Entry window</span><span className="font-medium">{formatTimeHHMM(windows?.entryWindow.start)} - {formatTimeHHMM(windows?.entryWindow.end)}</span></div>
-                              <div className="flex justify-between"><span className="text-gray-500">Exit window</span><span className="font-medium">{formatTimeHHMM(windows?.exitWindow.start)} - {formatTimeHHMM(windows?.exitWindow.end)}</span></div>
+                              <div className="flex justify-between">
+                                <span className="text-gray-500">
+                                  Course week
+                                </span>
+                                <span className="font-medium">
+                                  {selectedCourse?.weekNumber}
+                                </span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-gray-500">Room</span>
+                                <span className="font-medium">
+                                  {selectedRoom
+                                    ? `${selectedRoom.building_number} ${selectedRoom.room_number}`
+                                    : "-"}
+                                </span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-gray-500">
+                                  Geo validation
+                                </span>
+                                <span className="font-medium">
+                                  {validateGeo ? "Enabled" : "Disabled"}
+                                </span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-gray-500">Radius</span>
+                                <span className="font-medium">{radius} m</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-gray-500">
+                                  Entry window
+                                </span>
+                                <span className="font-medium">
+                                  {formatTimeHHMM(windows?.entryWindow.start)} -{" "}
+                                  {formatTimeHHMM(windows?.entryWindow.end)}
+                                </span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-gray-500">
+                                  Exit window
+                                </span>
+                                <span className="font-medium">
+                                  {formatTimeHHMM(windows?.exitWindow.start)} -{" "}
+                                  {formatTimeHHMM(windows?.exitWindow.end)}
+                                </span>
+                              </div>
                             </div>
                             <AlertDialogFooter>
                               <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction onClick={updateQRCode} disabled={isUpdating}>Confirm</AlertDialogAction>
+                              <AlertDialogAction
+                                onClick={updateQRCode}
+                                disabled={isUpdating}
+                              >
+                                Confirm
+                              </AlertDialogAction>
                             </AlertDialogFooter>
                           </AlertDialogContent>
                         </AlertDialog>
                         <div className="flex gap-3">
                           <Button
                             variant="outline"
-                            className="flex-1 border-gray-300 text-gray-700 hover:bg-gray-50 bg-transparent"
+                            className="flex-1 border-gray-300 bg-transparent text-gray-700 hover:bg-gray-50"
                           >
-                            <Download className="h-4 w-4 mr-2" />
+                            <Download className="mr-2 h-4 w-4" />
                             Download
                           </Button>
                           <Button
                             variant="outline"
-                            className="flex-1 border-gray-300 text-gray-700 hover:bg-gray-50 bg-transparent"
+                            className="flex-1 border-gray-300 bg-transparent text-gray-700 hover:bg-gray-50"
                           >
-                            <Share2 className="h-4 w-4 mr-2" />
+                            <Share2 className="mr-2 h-4 w-4" />
                             Share
                           </Button>
                         </div>
@@ -317,7 +393,7 @@ export function NewQrGeneration() {
                 {/* Time Windows Second when QR exists */}
                 <div className="relative">
                   <div className="absolute -top-3 left-4 bg-white px-2">
-                    <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded-full">
+                    <span className="rounded-full bg-blue-50 px-2 py-1 text-xs font-medium text-blue-600">
                       Time Windows
                     </span>
                   </div>
@@ -333,7 +409,7 @@ export function NewQrGeneration() {
                 {/* Step 1: Time Windows Configuration */}
                 <div className="relative">
                   <div className="absolute -top-3 left-4 bg-white px-2">
-                    <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded-full">
+                    <span className="rounded-full bg-blue-50 px-2 py-1 text-xs font-medium text-blue-600">
                       Step 1: Configure Time Windows
                     </span>
                   </div>
@@ -346,96 +422,166 @@ export function NewQrGeneration() {
 
                 {/* Step 2: QR Code Generation */}
                 <div className="relative">
-                  <div className="absolute -top-3 left-4 bg-white px-2 z-10">
-                    <span className="text-xs font-medium text-green-600 bg-green-50 px-2 py-1 rounded-full">
+                  <div className="absolute -top-3 left-4 z-10 bg-white px-2">
+                    <span className="rounded-full bg-green-50 px-2 py-1 text-xs font-medium text-green-600">
                       Step 2: Generate QR Code
                     </span>
                   </div>
-                  <Card className="bg-white border-gray-200">
-                    <CardHeader className="text-center pb-4">
-                      <CardTitle className="text-xl font-semibold text-gray-900">QR Code Generation</CardTitle>
-                      <p className="text-sm text-gray-600 mt-2">Generate attendance QR code for your session</p>
+                  <Card className="border-gray-200 bg-white">
+                    <CardHeader className="pb-4 text-center">
+                      <CardTitle className="text-xl font-semibold text-gray-900">
+                        QR Code Generation
+                      </CardTitle>
+                      <p className="mt-2 text-sm text-gray-600">
+                        Generate attendance QR code for your session
+                      </p>
                     </CardHeader>
                     <CardContent className="space-y-6">
                       <div className="text-center">
-                        <div className="w-48 h-48 mx-auto bg-gray-100 rounded-lg flex items-center justify-center border-2 border-dashed">
-                          <div className="text-gray-400 text-center">
-                            <QrCode className="h-16 w-16 mx-auto mb-3" />
-                            <p className="text-sm font-medium">QR code has not been generated</p>
-                            <p className="text-xs">Complete configuration above and click Generate</p>
+                        <div className="mx-auto flex h-48 w-48 items-center justify-center rounded-lg border-2 border-dashed bg-gray-100">
+                          <div className="text-center text-gray-400">
+                            <QrCode className="mx-auto mb-3 h-16 w-16" />
+                            <p className="text-sm font-medium">
+                              QR code has not been generated
+                            </p>
+                            <p className="text-xs">
+                              Complete configuration above and click Generate
+                            </p>
                           </div>
                         </div>
                       </div>
 
                       {/* Configuration Status */}
-                      <div className="bg-gray-50 rounded-lg p-4">
-                        <h4 className="text-sm font-medium text-gray-900 mb-3">Configuration Status</h4>
+                      <div className="rounded-lg bg-gray-50 p-4">
+                        <h4 className="mb-3 text-sm font-medium text-gray-900">
+                          Configuration Status
+                        </h4>
                         <div className="space-y-2">
                           <div className="flex items-center gap-2">
                             {selectedRoomId ? (
-                              <div className="w-5 h-5 bg-green-100 rounded-full flex items-center justify-center">
-                                <span className="text-green-600 text-xs">✓</span>
+                              <div className="flex h-5 w-5 items-center justify-center rounded-full bg-green-100">
+                                <span className="text-xs text-green-600">
+                                  ✓
+                                </span>
                               </div>
                             ) : (
-                              <div className="w-5 h-5 bg-gray-200 rounded-full flex items-center justify-center">
-                                <span className="text-gray-400 text-xs">○</span>
+                              <div className="flex h-5 w-5 items-center justify-center rounded-full bg-gray-200">
+                                <span className="text-xs text-gray-400">○</span>
                               </div>
                             )}
-                            <span className={`text-sm ${selectedRoomId ? 'text-green-600' : 'text-gray-500'}`}>
+                            <span
+                              className={`text-sm ${selectedRoomId ? "text-green-600" : "text-gray-500"}`}
+                            >
                               Room selected
                             </span>
                           </div>
                           <div className="flex items-center gap-2">
                             {windows ? (
-                              <div className="w-5 h-5 bg-green-100 rounded-full flex items-center justify-center">
-                                <span className="text-green-600 text-xs">✓</span>
+                              <div className="flex h-5 w-5 items-center justify-center rounded-full bg-green-100">
+                                <span className="text-xs text-green-600">
+                                  ✓
+                                </span>
                               </div>
                             ) : (
-                              <div className="w-5 h-5 bg-gray-200 rounded-full flex items-center justify-center">
-                                <span className="text-gray-400 text-xs">○</span>
+                              <div className="flex h-5 w-5 items-center justify-center rounded-full bg-gray-200">
+                                <span className="text-xs text-gray-400">○</span>
                               </div>
                             )}
-                            <span className={`text-sm ${windows ? 'text-green-600' : 'text-gray-500'}`}>
+                            <span
+                              className={`text-sm ${windows ? "text-green-600" : "text-gray-500"}`}
+                            >
                               Time windows configured
                             </span>
                           </div>
                         </div>
                       </div>
 
-                      <div className="max-w-md mx-auto">
+                      <div className="mx-auto max-w-md">
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
-                            <Button 
-                              className="w-full bg-black text-white hover:bg-gray-800 h-12 text-base font-medium"
-                              disabled={isGenerating || !selectedRoomId || !windows}
+                            <Button
+                              className="h-12 w-full bg-black text-base font-medium text-white hover:bg-gray-800"
+                              disabled={
+                                isGenerating || !selectedRoomId || !windows
+                              }
                             >
-                              <QrCode className="h-5 w-5 mr-2" />
-                              {isGenerating ? "Generating QR Code..." : "Generate QR Code"}
+                              <QrCode className="mr-2 h-5 w-5" />
+                              {isGenerating
+                                ? "Generating QR Code..."
+                                : "Generate QR Code"}
                             </Button>
                           </AlertDialogTrigger>
                           <AlertDialogContent>
                             <AlertDialogHeader>
-                              <AlertDialogTitle>Confirm QR Generation</AlertDialogTitle>
+                              <AlertDialogTitle>
+                                Confirm QR Generation
+                              </AlertDialogTitle>
                               <AlertDialogDescription>
-                                Please review the details below before generating the QR code.
+                                Please review the details below before
+                                generating the QR code.
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <div className="space-y-2 text-sm text-gray-700">
-                              <div className="flex justify-between"><span className="text-gray-500">Course week</span><span className="font-medium">{selectedCourse?.weekNumber}</span></div>
-                              <div className="flex justify-between"><span className="text-gray-500">Room</span><span className="font-medium">{selectedRoom ? `${selectedRoom.building_number} ${selectedRoom.room_number}` : "-"}</span></div>
-                              <div className="flex justify-between"><span className="text-gray-500">Geo validation</span><span className="font-medium">{validateGeo ? "Enabled" : "Disabled"}</span></div>
-                              <div className="flex justify-between"><span className="text-gray-500">Radius</span><span className="font-medium">{radius} m</span></div>
-                              <div className="flex justify-between"><span className="text-gray-500">Entry window</span><span className="font-medium">{formatTimeHHMM(windows?.entryWindow.start)} - {formatTimeHHMM(windows?.entryWindow.end)}</span></div>
-                              <div className="flex justify-between"><span className="text-gray-500">Exit window</span><span className="font-medium">{formatTimeHHMM(windows?.exitWindow.start)} - {formatTimeHHMM(windows?.exitWindow.end)}</span></div>
+                              <div className="flex justify-between">
+                                <span className="text-gray-500">
+                                  Course week
+                                </span>
+                                <span className="font-medium">
+                                  {selectedCourse?.weekNumber}
+                                </span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-gray-500">Room</span>
+                                <span className="font-medium">
+                                  {selectedRoom
+                                    ? `${selectedRoom.building_number} ${selectedRoom.room_number}`
+                                    : "-"}
+                                </span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-gray-500">
+                                  Geo validation
+                                </span>
+                                <span className="font-medium">
+                                  {validateGeo ? "Enabled" : "Disabled"}
+                                </span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-gray-500">Radius</span>
+                                <span className="font-medium">{radius} m</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-gray-500">
+                                  Entry window
+                                </span>
+                                <span className="font-medium">
+                                  {formatTimeHHMM(windows?.entryWindow.start)} -{" "}
+                                  {formatTimeHHMM(windows?.entryWindow.end)}
+                                </span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-gray-500">
+                                  Exit window
+                                </span>
+                                <span className="font-medium">
+                                  {formatTimeHHMM(windows?.exitWindow.start)} -{" "}
+                                  {formatTimeHHMM(windows?.exitWindow.end)}
+                                </span>
+                              </div>
                             </div>
                             <AlertDialogFooter>
                               <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction onClick={generateQRCode} disabled={isGenerating}>Confirm</AlertDialogAction>
+                              <AlertDialogAction
+                                onClick={generateQRCode}
+                                disabled={isGenerating}
+                              >
+                                Confirm
+                              </AlertDialogAction>
                             </AlertDialogFooter>
                           </AlertDialogContent>
                         </AlertDialog>
                         {(!selectedRoomId || !windows) && (
-                          <p className="text-xs text-red-500 text-center mt-2">
+                          <p className="mt-2 text-center text-xs text-red-500">
                             Please complete all configuration steps above
                           </p>
                         )}
@@ -448,23 +594,27 @@ export function NewQrGeneration() {
           </div>
         </div>
 
-        <Card className="bg-white border-gray-200">
+        <Card className="border-gray-200 bg-white">
           <CardHeader className="pb-4">
             <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2 text-gray-900 text-base font-medium">
+              <CardTitle className="flex items-center gap-2 text-base font-medium text-gray-900">
                 <Users className="h-4 w-4" />
                 Live Attendance
               </CardTitle>
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                  <span className="text-gray-700 text-sm">Live</span>
-                  <span className="text-gray-500 text-xs">
+                  <div className="h-2 w-2 rounded-full bg-blue-500"></div>
+                  <span className="text-sm text-gray-700">Live</span>
+                  <span className="text-xs text-gray-500">
                     Last updated: {format(new Date(), "hh:mm:ss a")}
                   </span>
                 </div>
-                <Button variant="ghost" size="sm" className="text-gray-600 hover:text-gray-900">
-                  <Users className="h-4 w-4 mr-1" />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-gray-600 hover:text-gray-900"
+                >
+                  <Users className="mr-1 h-4 w-4" />
                   View All Attendance
                 </Button>
               </div>
@@ -474,14 +624,18 @@ export function NewQrGeneration() {
           <CardContent className="pb-4">
             {qrGenerated && checkedInData && checkedInData.count > 0 ? (
               <div className="space-y-3">
-                {checkedInData.data.slice(0, 5).map((student) => (
-                  <div 
+                {checkedInData.data.slice(0, 5).map(student => (
+                  <div
                     key={`${student.student_id}-${student.checkin_time}`}
-                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                    className="flex items-center justify-between rounded-lg bg-gray-50 p-3"
                   >
                     <div>
-                      <p className="font-medium text-gray-900">{student.student_name}</p>
-                      <p className="text-sm text-gray-500">{student.student_id}</p>
+                      <p className="font-medium text-gray-900">
+                        {student.student_name}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        {student.student_id}
+                      </p>
                     </div>
                     <div className="text-right">
                       <p className="text-sm text-gray-600">
@@ -500,16 +654,17 @@ export function NewQrGeneration() {
                 )}
               </div>
             ) : (
-              <div className="bg-gray-50 rounded-lg p-6 text-center">
-                <Users className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                <p className="text-gray-600 text-sm mb-1">
-                  {qrGenerated ? "No check-ins yet" : "QR code has not been generated"}
+              <div className="rounded-lg bg-gray-50 p-6 text-center">
+                <Users className="mx-auto mb-2 h-8 w-8 text-gray-400" />
+                <p className="mb-1 text-sm text-gray-600">
+                  {qrGenerated
+                    ? "No check-ins yet"
+                    : "QR code has not been generated"}
                 </p>
-                <p className="text-gray-500 text-xs">
-                  {qrGenerated 
+                <p className="text-xs text-gray-500">
+                  {qrGenerated
                     ? "Students will appear here once they start scanning"
-                    : "Check-ins will appear here once students start scanning"
-                  }
+                    : "Check-ins will appear here once students start scanning"}
                 </p>
               </div>
             )}

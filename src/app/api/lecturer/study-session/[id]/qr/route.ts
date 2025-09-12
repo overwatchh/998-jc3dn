@@ -459,7 +459,7 @@ export async function POST(
     // Create QR code record
     const createdAt = new Date();
     const validateGeoFlag =
-    typeof validate_geo === "boolean" ? validate_geo : true;
+      typeof validate_geo === "boolean" ? validate_geo : true;
     const insertQrSql = `
       INSERT INTO qr_code (createdAt, valid_radius, validate_geo, valid_room_id)
       VALUES (?, ?, ?, ?)

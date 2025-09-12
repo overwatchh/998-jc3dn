@@ -1,24 +1,30 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import type React from "react";
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
 
 interface TimeWindow {
-  start: Date
-  end: Date
+  start: Date;
+  end: Date;
 }
 
 interface TimeWindowSelectorProps {
-  classStartTime: Date
-  classEndTime: Date
+  classStartTime: Date;
+  classEndTime: Date;
   onChange: (windows: {
-    entryWindow: TimeWindow
-    exitWindow: TimeWindow
-  }) => void
+    entryWindow: TimeWindow;
+    exitWindow: TimeWindow;
+  }) => void;
 }
 
 const DURATION_OPTIONS = [
@@ -27,134 +33,197 @@ const DURATION_OPTIONS = [
   { value: 30, label: "30 minutes" },
   { value: 45, label: "45 minutes" },
   { value: 60, label: "60 minutes" },
-]
+];
 
-export function TimeWindowSelector({ classStartTime, classEndTime, onChange }: TimeWindowSelectorProps) {
-  const timelineStart = new Date(classStartTime.getTime() - 60 * 60 * 1000)
-  const timelineEnd = new Date(classEndTime.getTime() + 60 * 60 * 1000)
-  const totalDuration = timelineEnd.getTime() - timelineStart.getTime()
+export function TimeWindowSelector({
+  classStartTime,
+  classEndTime,
+  onChange,
+}: TimeWindowSelectorProps) {
+  const timelineStart = new Date(classStartTime.getTime() - 60 * 60 * 1000);
+  const timelineEnd = new Date(classEndTime.getTime() + 60 * 60 * 1000);
+  const totalDuration = timelineEnd.getTime() - timelineStart.getTime();
 
-  const [entryStartTime, setEntryStartTime] = useState(new Date(classStartTime.getTime() - 15 * 60 * 1000))
-  const [entryDuration, setEntryDuration] = useState(30)
-  const [exitStartTime, setExitStartTime] = useState(new Date(classEndTime.getTime() - 15 * 60 * 1000))
-  const [exitDuration, setExitDuration] = useState(30)
-  const [isDragging, setIsDragging] = useState<"entry" | "exit" | null>(null)
+  const [entryStartTime, setEntryStartTime] = useState(
+    new Date(classStartTime.getTime() - 15 * 60 * 1000)
+  );
+  const [entryDuration, setEntryDuration] = useState(30);
+  const [exitStartTime, setExitStartTime] = useState(
+    new Date(classEndTime.getTime() - 15 * 60 * 1000)
+  );
+  const [exitDuration, setExitDuration] = useState(30);
+  const [isDragging, setIsDragging] = useState<"entry" | "exit" | null>(null);
 
-  const isUpdatingRef = useRef(false)
-  const timelineRef = useRef<HTMLDivElement>(null)
+  const isUpdatingRef = useRef(false);
+  const timelineRef = useRef<HTMLDivElement>(null);
 
   // Utility functions
   const timeToPercentage = useCallback(
     (time: Date) => {
-      return ((time.getTime() - timelineStart.getTime()) / totalDuration) * 100
+      return ((time.getTime() - timelineStart.getTime()) / totalDuration) * 100;
     },
-    [timelineStart, totalDuration],
-  )
+    [timelineStart, totalDuration]
+  );
 
   const percentageToTime = useCallback(
     (percentage: number) => {
-      return new Date(timelineStart.getTime() + (percentage / 100) * totalDuration)
+      return new Date(
+        timelineStart.getTime() + (percentage / 100) * totalDuration
+      );
     },
-    [timelineStart, totalDuration],
-  )
+    [timelineStart, totalDuration]
+  );
 
   const formatTime = useCallback((date: Date) => {
     return date.toLocaleTimeString("en-US", {
       hour: "2-digit",
       minute: "2-digit",
       hour12: false,
-    })
-  }, [])
+    });
+  }, []);
 
   const getEntryEndTime = useCallback(
     () => new Date(entryStartTime.getTime() + entryDuration * 60 * 1000),
-    [entryStartTime, entryDuration],
-  )
+    [entryStartTime, entryDuration]
+  );
 
   const getExitEndTime = useCallback(
     () => new Date(exitStartTime.getTime() + exitDuration * 60 * 1000),
-    [exitStartTime, exitDuration],
-  )
+    [exitStartTime, exitDuration]
+  );
 
   const validateEntryPosition = useCallback(
-    (newStartTime: Date, currentExitStart: Date, currentEntryDuration: number) => {
-      const entryEndTime = new Date(newStartTime.getTime() + currentEntryDuration * 60 * 1000)
+    (
+      newStartTime: Date,
+      currentExitStart: Date,
+      currentEntryDuration: number
+    ) => {
+      const entryEndTime = new Date(
+        newStartTime.getTime() + currentEntryDuration * 60 * 1000
+      );
 
-      const minStart = timelineStart
+      const minStart = timelineStart;
       // Entry window can extend past class start, but class start must be within the window
-      const maxStartBasedOnClassTime = new Date(classStartTime.getTime()) // Allow starting at class time
-      const maxStartBasedOnExit = new Date(currentExitStart.getTime() - currentEntryDuration * 60 * 1000)
-      const maxStartBasedOnTimeline = new Date(timelineEnd.getTime() - currentEntryDuration * 60 * 1000)
+      const maxStartBasedOnClassTime = new Date(classStartTime.getTime()); // Allow starting at class time
+      const maxStartBasedOnExit = new Date(
+        currentExitStart.getTime() - currentEntryDuration * 60 * 1000
+      );
+      const maxStartBasedOnTimeline = new Date(
+        timelineEnd.getTime() - currentEntryDuration * 60 * 1000
+      );
 
       // Ensure class start time falls within the entry window
       if (entryEndTime.getTime() < classStartTime.getTime()) {
         // If entry window would end before class starts, adjust to include class start
-        return new Date(classStartTime.getTime() - currentEntryDuration * 60 * 1000)
+        return new Date(
+          classStartTime.getTime() - currentEntryDuration * 60 * 1000
+        );
       }
 
-      const maxStart = new Date(Math.min(maxStartBasedOnExit.getTime(), maxStartBasedOnTimeline.getTime()))
+      const maxStart = new Date(
+        Math.min(
+          maxStartBasedOnExit.getTime(),
+          maxStartBasedOnTimeline.getTime()
+        )
+      );
 
-      return new Date(Math.max(minStart.getTime(), Math.min(newStartTime.getTime(), maxStart.getTime())))
+      return new Date(
+        Math.max(
+          minStart.getTime(),
+          Math.min(newStartTime.getTime(), maxStart.getTime())
+        )
+      );
     },
-    [classStartTime, timelineStart, timelineEnd],
-  )
+    [classStartTime, timelineStart, timelineEnd]
+  );
 
   const validateExitPosition = useCallback(
-    (newStartTime: Date, currentEntryStart: Date, currentEntryDuration: number, currentExitDuration: number) => {
-      const entryEndTime = new Date(currentEntryStart.getTime() + currentEntryDuration * 60 * 1000)
-      const minStart = entryEndTime
-      const maxStartBasedOnClassEnd = new Date(classEndTime.getTime())
-      const maxStartBasedOnTimeline = new Date(timelineEnd.getTime() - currentExitDuration * 60 * 1000)
+    (
+      newStartTime: Date,
+      currentEntryStart: Date,
+      currentEntryDuration: number,
+      currentExitDuration: number
+    ) => {
+      const entryEndTime = new Date(
+        currentEntryStart.getTime() + currentEntryDuration * 60 * 1000
+      );
+      const minStart = entryEndTime;
+      const maxStartBasedOnClassEnd = new Date(classEndTime.getTime());
+      const maxStartBasedOnTimeline = new Date(
+        timelineEnd.getTime() - currentExitDuration * 60 * 1000
+      );
 
-      const maxStart = new Date(Math.min(maxStartBasedOnClassEnd.getTime(), maxStartBasedOnTimeline.getTime()))
+      const maxStart = new Date(
+        Math.min(
+          maxStartBasedOnClassEnd.getTime(),
+          maxStartBasedOnTimeline.getTime()
+        )
+      );
 
-      return new Date(Math.max(minStart.getTime(), Math.min(newStartTime.getTime(), maxStart.getTime())))
+      return new Date(
+        Math.max(
+          minStart.getTime(),
+          Math.min(newStartTime.getTime(), maxStart.getTime())
+        )
+      );
     },
-    [classEndTime, timelineEnd],
-  )
+    [classEndTime, timelineEnd]
+  );
 
   const handleMouseDown = useCallback(
     (windowType: "entry" | "exit") => (e: React.MouseEvent) => {
-      e.preventDefault()
-      e.stopPropagation()
-      setIsDragging(windowType)
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragging(windowType);
     },
-    [],
-  )
+    []
+  );
 
   const handleTouchStart = useCallback(
     (windowType: "entry" | "exit") => (e: React.TouchEvent) => {
-      e.preventDefault()
-      e.stopPropagation()
-      setIsDragging(windowType)
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragging(windowType);
     },
-    [],
-  )
+    []
+  );
 
   const handleMouseMove = useCallback(
     (e: MouseEvent) => {
-      if (!isDragging || isUpdatingRef.current || !timelineRef.current) return
+      if (!isDragging || isUpdatingRef.current || !timelineRef.current) return;
 
-      const rect = timelineRef.current.getBoundingClientRect()
-      const percentage = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100))
+      const rect = timelineRef.current.getBoundingClientRect();
+      const percentage = Math.max(
+        0,
+        Math.min(100, ((e.clientX - rect.left) / rect.width) * 100)
+      );
 
-      const newTime = percentageToTime(percentage)
-      const minutes = newTime.getMinutes()
-      const snappedMinutes = Math.round(minutes / 5) * 5
-      const snappedTime = new Date(newTime)
-      snappedTime.setMinutes(snappedMinutes, 0, 0)
+      const newTime = percentageToTime(percentage);
+      const minutes = newTime.getMinutes();
+      const snappedMinutes = Math.round(minutes / 5) * 5;
+      const snappedTime = new Date(newTime);
+      snappedTime.setMinutes(snappedMinutes, 0, 0);
 
-      isUpdatingRef.current = true
+      isUpdatingRef.current = true;
 
       if (isDragging === "entry") {
-        const validatedTime = validateEntryPosition(snappedTime, exitStartTime, entryDuration)
-        setEntryStartTime(validatedTime)
+        const validatedTime = validateEntryPosition(
+          snappedTime,
+          exitStartTime,
+          entryDuration
+        );
+        setEntryStartTime(validatedTime);
       } else if (isDragging === "exit") {
-        const validatedTime = validateExitPosition(snappedTime, entryStartTime, entryDuration, exitDuration)
-        setExitStartTime(validatedTime)
+        const validatedTime = validateExitPosition(
+          snappedTime,
+          entryStartTime,
+          entryDuration,
+          exitDuration
+        );
+        setExitStartTime(validatedTime);
       }
 
-      isUpdatingRef.current = false
+      isUpdatingRef.current = false;
     },
     [
       isDragging,
@@ -165,34 +234,46 @@ export function TimeWindowSelector({ classStartTime, classEndTime, onChange }: T
       percentageToTime,
       validateEntryPosition,
       validateExitPosition,
-    ],
-  )
+    ]
+  );
 
   const handleTouchMove = useCallback(
     (e: TouchEvent) => {
-      if (!isDragging || isUpdatingRef.current || !timelineRef.current) return
+      if (!isDragging || isUpdatingRef.current || !timelineRef.current) return;
 
-      const rect = timelineRef.current.getBoundingClientRect()
-      const touch = e.touches[0]
-      const percentage = Math.max(0, Math.min(100, ((touch.clientX - rect.left) / rect.width) * 100))
+      const rect = timelineRef.current.getBoundingClientRect();
+      const touch = e.touches[0];
+      const percentage = Math.max(
+        0,
+        Math.min(100, ((touch.clientX - rect.left) / rect.width) * 100)
+      );
 
-      const newTime = percentageToTime(percentage)
-      const minutes = newTime.getMinutes()
-      const snappedMinutes = Math.round(minutes / 5) * 5
-      const snappedTime = new Date(newTime)
-      snappedTime.setMinutes(snappedMinutes, 0, 0)
+      const newTime = percentageToTime(percentage);
+      const minutes = newTime.getMinutes();
+      const snappedMinutes = Math.round(minutes / 5) * 5;
+      const snappedTime = new Date(newTime);
+      snappedTime.setMinutes(snappedMinutes, 0, 0);
 
-      isUpdatingRef.current = true
+      isUpdatingRef.current = true;
 
       if (isDragging === "entry") {
-        const validatedTime = validateEntryPosition(snappedTime, exitStartTime, entryDuration)
-        setEntryStartTime(validatedTime)
+        const validatedTime = validateEntryPosition(
+          snappedTime,
+          exitStartTime,
+          entryDuration
+        );
+        setEntryStartTime(validatedTime);
       } else if (isDragging === "exit") {
-        const validatedTime = validateExitPosition(snappedTime, entryStartTime, entryDuration, exitDuration)
-        setExitStartTime(validatedTime)
+        const validatedTime = validateExitPosition(
+          snappedTime,
+          entryStartTime,
+          entryDuration,
+          exitDuration
+        );
+        setExitStartTime(validatedTime);
       }
 
-      isUpdatingRef.current = false
+      isUpdatingRef.current = false;
     },
     [
       isDragging,
@@ -203,95 +284,114 @@ export function TimeWindowSelector({ classStartTime, classEndTime, onChange }: T
       percentageToTime,
       validateEntryPosition,
       validateExitPosition,
-    ],
-  )
+    ]
+  );
 
   const handleMouseUp = useCallback(() => {
-    setIsDragging(null)
-  }, [])
+    setIsDragging(null);
+  }, []);
 
   const handleTouchEnd = useCallback(() => {
-    setIsDragging(null)
-  }, [])
+    setIsDragging(null);
+  }, []);
 
   useEffect(() => {
     if (isDragging) {
-      document.addEventListener("mousemove", handleMouseMove)
-      document.addEventListener("mouseup", handleMouseUp)
-      document.addEventListener("touchmove", handleTouchMove, { passive: false })
-      document.addEventListener("touchend", handleTouchEnd)
+      document.addEventListener("mousemove", handleMouseMove);
+      document.addEventListener("mouseup", handleMouseUp);
+      document.addEventListener("touchmove", handleTouchMove, {
+        passive: false,
+      });
+      document.addEventListener("touchend", handleTouchEnd);
       return () => {
-        document.removeEventListener("mousemove", handleMouseMove)
-        document.removeEventListener("mouseup", handleMouseUp)
-        document.removeEventListener("touchmove", handleTouchMove)
-        document.removeEventListener("touchend", handleTouchEnd)
-      }
+        document.removeEventListener("mousemove", handleMouseMove);
+        document.removeEventListener("mouseup", handleMouseUp);
+        document.removeEventListener("touchmove", handleTouchMove);
+        document.removeEventListener("touchend", handleTouchEnd);
+      };
     }
-  }, [isDragging, handleMouseMove, handleMouseUp, handleTouchMove, handleTouchEnd])
+  }, [
+    isDragging,
+    handleMouseMove,
+    handleMouseUp,
+    handleTouchMove,
+    handleTouchEnd,
+  ]);
 
   // Duration change handlers
   const handleEntryDurationChange = useCallback(
     (newDuration: string) => {
-      if (isUpdatingRef.current) return
+      if (isUpdatingRef.current) return;
 
-      isUpdatingRef.current = true
-      const duration = Number.parseInt(newDuration)
-      setEntryDuration(duration)
-      const validatedTime = validateEntryPosition(entryStartTime, exitStartTime, duration)
-      setEntryStartTime(validatedTime)
-      isUpdatingRef.current = false
+      isUpdatingRef.current = true;
+      const duration = Number.parseInt(newDuration);
+      setEntryDuration(duration);
+      const validatedTime = validateEntryPosition(
+        entryStartTime,
+        exitStartTime,
+        duration
+      );
+      setEntryStartTime(validatedTime);
+      isUpdatingRef.current = false;
     },
-    [entryStartTime, exitStartTime, validateEntryPosition],
-  )
+    [entryStartTime, exitStartTime, validateEntryPosition]
+  );
 
   const handleExitDurationChange = useCallback(
     (newDuration: string) => {
-      if (isUpdatingRef.current) return
+      if (isUpdatingRef.current) return;
 
-      isUpdatingRef.current = true
-      const duration = Number.parseInt(newDuration)
-      setExitDuration(duration)
-      const validatedTime = validateExitPosition(exitStartTime, entryStartTime, entryDuration, duration)
-      setExitStartTime(validatedTime)
-      isUpdatingRef.current = false
+      isUpdatingRef.current = true;
+      const duration = Number.parseInt(newDuration);
+      setExitDuration(duration);
+      const validatedTime = validateExitPosition(
+        exitStartTime,
+        entryStartTime,
+        entryDuration,
+        duration
+      );
+      setExitStartTime(validatedTime);
+      isUpdatingRef.current = false;
     },
-    [exitStartTime, entryStartTime, entryDuration, validateExitPosition],
-  )
+    [exitStartTime, entryStartTime, entryDuration, validateExitPosition]
+  );
 
   const applyPreset = useCallback(
     (preset: "early" | "standard" | "flexible") => {
-      if (isUpdatingRef.current) return
+      if (isUpdatingRef.current) return;
 
-      isUpdatingRef.current = true
+      isUpdatingRef.current = true;
 
       switch (preset) {
         case "early":
-          setEntryStartTime(new Date(classStartTime.getTime() - 5 * 60 * 1000))
-          setEntryDuration(15)
-          setExitStartTime(new Date(classEndTime.getTime() - 5 * 60 * 1000))
-          setExitDuration(15)
-          break
+          setEntryStartTime(new Date(classStartTime.getTime() - 5 * 60 * 1000));
+          setEntryDuration(15);
+          setExitStartTime(new Date(classEndTime.getTime() - 5 * 60 * 1000));
+          setExitDuration(15);
+          break;
         case "standard":
-          setEntryStartTime(new Date(classStartTime.getTime() - 0 * 60 * 1000))
-          setEntryDuration(15)
-          setExitStartTime(new Date(classEndTime.getTime() - 15 * 60 * 1000))
-          setExitDuration(15)
-          break
+          setEntryStartTime(new Date(classStartTime.getTime() - 0 * 60 * 1000));
+          setEntryDuration(15);
+          setExitStartTime(new Date(classEndTime.getTime() - 15 * 60 * 1000));
+          setExitDuration(15);
+          break;
         case "flexible":
-          setEntryStartTime(new Date(classStartTime.getTime() - 10 * 60 * 1000))
-          setEntryDuration(30)
-          setExitStartTime(new Date(classEndTime.getTime() - 10 * 60 * 1000))
-          setExitDuration(30)
-          break
+          setEntryStartTime(
+            new Date(classStartTime.getTime() - 10 * 60 * 1000)
+          );
+          setEntryDuration(30);
+          setExitStartTime(new Date(classEndTime.getTime() - 10 * 60 * 1000));
+          setExitDuration(30);
+          break;
       }
 
-      isUpdatingRef.current = false
+      isUpdatingRef.current = false;
     },
-    [classStartTime, classEndTime],
-  )
+    [classStartTime, classEndTime]
+  );
 
   useEffect(() => {
-    if (isUpdatingRef.current) return
+    if (isUpdatingRef.current) return;
 
     const timeoutId = setTimeout(() => {
       onChange({
@@ -303,42 +403,73 @@ export function TimeWindowSelector({ classStartTime, classEndTime, onChange }: T
           start: exitStartTime,
           end: getExitEndTime(),
         },
-      })
-    }, 100)
+      });
+    }, 100);
 
-    return () => clearTimeout(timeoutId)
-  }, [entryStartTime, entryDuration, exitStartTime, exitDuration, onChange, getEntryEndTime, getExitEndTime])
+    return () => clearTimeout(timeoutId);
+  }, [
+    entryStartTime,
+    entryDuration,
+    exitStartTime,
+    exitDuration,
+    onChange,
+    getEntryEndTime,
+    getExitEndTime,
+  ]);
 
   const generateTimeMarkers = useCallback(() => {
-    const markers = []
-    const startHour = new Date(classStartTime)
-    startHour.setHours(classStartTime.getHours() - 1, 0, 0, 0)
+    const markers = [];
+    const startHour = new Date(classStartTime);
+    startHour.setHours(classStartTime.getHours() - 1, 0, 0, 0);
 
-    const endHour = new Date(classEndTime)
-    endHour.setHours(classEndTime.getHours() + 1, 0, 0, 0)
+    const endHour = new Date(classEndTime);
+    endHour.setHours(classEndTime.getHours() + 1, 0, 0, 0);
 
-    for (let time = new Date(startHour); time <= endHour; time.setHours(time.getHours() + 1)) {
-      markers.push(new Date(time))
+    for (
+      let time = new Date(startHour);
+      time <= endHour;
+      time.setHours(time.getHours() + 1)
+    ) {
+      markers.push(new Date(time));
     }
 
-    return markers
-  }, [classStartTime, classEndTime])
+    return markers;
+  }, [classStartTime, classEndTime]);
 
   return (
-    <Card className="bg-white border-gray-200">
+    <Card className="border-gray-200 bg-white">
       <CardHeader className="pb-4">
-        <CardTitle className="text-lg font-semibold text-gray-900">Check-in Time Windows</CardTitle>
-        <p className="text-sm text-gray-600">Configure when students can check in and out of class</p>
+        <CardTitle className="text-lg font-semibold text-gray-900">
+          Check-in Time Windows
+        </CardTitle>
+        <p className="text-sm text-gray-600">
+          Configure when students can check in and out of class
+        </p>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="flex gap-2">
-          <Button onClick={() => applyPreset("early")} variant="outline" size="sm" className="text-xs">
+          <Button
+            onClick={() => applyPreset("early")}
+            variant="outline"
+            size="sm"
+            className="text-xs"
+          >
             Early Entry
           </Button>
-          <Button onClick={() => applyPreset("standard")} variant="outline" size="sm" className="text-xs">
+          <Button
+            onClick={() => applyPreset("standard")}
+            variant="outline"
+            size="sm"
+            className="text-xs"
+          >
             Standard
           </Button>
-          <Button onClick={() => applyPreset("flexible")} variant="outline" size="sm" className="text-xs">
+          <Button
+            onClick={() => applyPreset("flexible")}
+            variant="outline"
+            size="sm"
+            className="text-xs"
+          >
             Flexible
           </Button>
         </div>
@@ -346,45 +477,56 @@ export function TimeWindowSelector({ classStartTime, classEndTime, onChange }: T
         <div className="space-y-3">
           <div className="relative overflow-x-auto">
             <div className="min-w-[600px] flex-row px-5">
-              <div className="relative h-12 mb-3">
+              <div className="relative mb-3 h-12">
                 {/* Entry Handle */}
                 <div
-                  className={`absolute top-0 transform -translate-x-1/2 cursor-move z-30 ${
+                  className={`absolute top-0 z-30 -translate-x-1/2 transform cursor-move ${
                     isDragging === "entry" ? "scale-105" : ""
                   } transition-transform`}
-                  style={{ left: `${timeToPercentage(entryStartTime)}%`, touchAction: "none" }}
+                  style={{
+                    left: `${timeToPercentage(entryStartTime)}%`,
+                    touchAction: "none",
+                  }}
                   onMouseDown={handleMouseDown("entry")}
                   onTouchStart={handleTouchStart("entry")}
                 >
-                  <div className="bg-green-600 text-white px-2 py-1 rounded text-xs font-medium shadow-md min-w-[80px] text-center">
+                  <div className="min-w-[80px] rounded bg-green-600 px-2 py-1 text-center text-xs font-medium text-white shadow-md">
                     <div className="font-semibold">Entry</div>
                     <div className="text-[10px] opacity-90">
-                      {formatTime(entryStartTime)} - {formatTime(getEntryEndTime())}
+                      {formatTime(entryStartTime)} -{" "}
+                      {formatTime(getEntryEndTime())}
                     </div>
                   </div>
-                  <div className="w-0.5 h-6 bg-green-600 mx-auto"></div>
+                  <div className="mx-auto h-6 w-0.5 bg-green-600"></div>
                 </div>
 
                 {/* Exit Handle */}
                 <div
-                  className={`absolute top-0 transform -translate-x-1/2 cursor-move z-30 ${
+                  className={`absolute top-0 z-30 -translate-x-1/2 transform cursor-move ${
                     isDragging === "exit" ? "scale-105" : ""
                   } transition-transform`}
-                  style={{ left: `${timeToPercentage(exitStartTime)}%`, touchAction: "none" }}
+                  style={{
+                    left: `${timeToPercentage(exitStartTime)}%`,
+                    touchAction: "none",
+                  }}
                   onMouseDown={handleMouseDown("exit")}
                   onTouchStart={handleTouchStart("exit")}
                 >
-                  <div className="bg-blue-600 text-white px-2 py-1 rounded text-xs font-medium shadow-md min-w-[80px] text-center">
+                  <div className="min-w-[80px] rounded bg-blue-600 px-2 py-1 text-center text-xs font-medium text-white shadow-md">
                     <div className="font-semibold">Exit</div>
                     <div className="text-[10px] opacity-90">
-                      {formatTime(exitStartTime)} - {formatTime(getExitEndTime())}
+                      {formatTime(exitStartTime)} -{" "}
+                      {formatTime(getExitEndTime())}
                     </div>
                   </div>
-                  <div className="w-0.5 h-6 bg-blue-600 mx-auto"></div>
+                  <div className="mx-auto h-6 w-0.5 bg-blue-600"></div>
                 </div>
               </div>
 
-              <div ref={timelineRef} className="relative h-8 bg-gray-100 rounded-lg border border-gray-300 select-none">
+              <div
+                ref={timelineRef}
+                className="relative h-8 rounded-lg border border-gray-300 bg-gray-100 select-none"
+              >
                 {/* Hour markers */}
                 {generateTimeMarkers().map((markerTime, index) => (
                   <div
@@ -396,24 +538,24 @@ export function TimeWindowSelector({ classStartTime, classEndTime, onChange }: T
 
                 {/* Class start/end markers */}
                 <div
-                  className="absolute top-0 bottom-0 w-1 bg-blue-500 z-10 rounded-sm"
+                  className="absolute top-0 bottom-0 z-10 w-1 rounded-sm bg-blue-500"
                   style={{ left: `${timeToPercentage(classStartTime)}%` }}
                 />
                 <div
-                  className="absolute top-0 bottom-0 w-1 bg-blue-500 z-10 rounded-sm"
+                  className="absolute top-0 bottom-0 z-10 w-1 rounded-sm bg-blue-500"
                   style={{ left: `${timeToPercentage(classEndTime)}%` }}
                 />
 
                 {/* Window blocks */}
                 <div
-                  className="absolute top-1 bottom-1 bg-green-500 rounded-sm z-20 opacity-80"
+                  className="absolute top-1 bottom-1 z-20 rounded-sm bg-green-500 opacity-80"
                   style={{
                     left: `${timeToPercentage(entryStartTime)}%`,
                     width: `${((entryDuration * 60 * 1000) / totalDuration) * 100}%`,
                   }}
                 />
                 <div
-                  className="absolute top-1 bottom-1 bg-blue-500 rounded-sm z-20 opacity-80"
+                  className="absolute top-1 bottom-1 z-20 rounded-sm bg-blue-500 opacity-80"
                   style={{
                     left: `${timeToPercentage(exitStartTime)}%`,
                     width: `${((exitDuration * 60 * 1000) / totalDuration) * 100}%`,
@@ -422,27 +564,29 @@ export function TimeWindowSelector({ classStartTime, classEndTime, onChange }: T
               </div>
 
               {/* Time labels */}
-              <div className="relative h-4 mt-2">
+              <div className="relative mt-2 h-4">
                 {generateTimeMarkers().map((markerTime, index) => (
                   <div
                     key={index}
-                    className="absolute top-0 transform -translate-x-1/2"
+                    className="absolute top-0 -translate-x-1/2 transform"
                     style={{ left: `${timeToPercentage(markerTime)}%` }}
                   >
-                    <div className="text-xs text-gray-600 whitespace-nowrap">{formatTime(markerTime)}</div>
+                    <div className="text-xs whitespace-nowrap text-gray-600">
+                      {formatTime(markerTime)}
+                    </div>
                   </div>
                 ))}
               </div>
 
-              <div className="relative h-4 mt-1">
+              <div className="relative mt-1 h-4">
                 <div
-                  className="absolute top-0 left-1/2 transform -translate-x-1/2 text-xs font-medium text-blue-600 whitespace-nowrap"
+                  className="absolute top-0 left-1/2 -translate-x-1/2 transform text-xs font-medium whitespace-nowrap text-blue-600"
                   style={{ left: `${timeToPercentage(classStartTime)}%` }}
                 >
                   Class Start
                 </div>
                 <div
-                  className="absolute top-0 left-1/2 transform -translate-x-1/2 text-xs font-medium text-blue-600 whitespace-nowrap"
+                  className="absolute top-0 left-1/2 -translate-x-1/2 transform text-xs font-medium whitespace-nowrap text-blue-600"
                   style={{ left: `${timeToPercentage(classEndTime)}%` }}
                 >
                   Class End
@@ -452,19 +596,24 @@ export function TimeWindowSelector({ classStartTime, classEndTime, onChange }: T
           </div>
         </div>
 
-        <div className="bg-gray-50 rounded-lg p-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="rounded-lg bg-gray-50 p-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-green-600 rounded-full"></div>
-                <Label className="text-sm font-medium text-gray-900">Entry Window</Label>
+                <div className="h-3 w-3 rounded-full bg-green-600"></div>
+                <Label className="text-sm font-medium text-gray-900">
+                  Entry Window
+                </Label>
               </div>
-              <Select value={entryDuration.toString()} onValueChange={handleEntryDurationChange}>
-                <SelectTrigger className="bg-white border-gray-300 text-gray-900 h-8">
+              <Select
+                value={entryDuration.toString()}
+                onValueChange={handleEntryDurationChange}
+              >
+                <SelectTrigger className="h-8 border-gray-300 bg-white text-gray-900">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="bg-white border-gray-200">
-                  {DURATION_OPTIONS.map((option) => (
+                <SelectContent className="border-gray-200 bg-white">
+                  {DURATION_OPTIONS.map(option => (
                     <SelectItem
                       key={option.value}
                       value={option.value.toString()}
@@ -482,15 +631,20 @@ export function TimeWindowSelector({ classStartTime, classEndTime, onChange }: T
 
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-blue-600 rounded-full"></div>
-                <Label className="text-sm font-medium text-gray-900">Exit Window</Label>
+                <div className="h-3 w-3 rounded-full bg-blue-600"></div>
+                <Label className="text-sm font-medium text-gray-900">
+                  Exit Window
+                </Label>
               </div>
-              <Select value={exitDuration.toString()} onValueChange={handleExitDurationChange}>
-                <SelectTrigger className="bg-white border-gray-300 text-gray-900 h-8">
+              <Select
+                value={exitDuration.toString()}
+                onValueChange={handleExitDurationChange}
+              >
+                <SelectTrigger className="h-8 border-gray-300 bg-white text-gray-900">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="bg-white border-gray-200">
-                  {DURATION_OPTIONS.map((option) => (
+                <SelectContent className="border-gray-200 bg-white">
+                  {DURATION_OPTIONS.map(option => (
                     <SelectItem
                       key={option.value}
                       value={option.value.toString()}
@@ -509,5 +663,5 @@ export function TimeWindowSelector({ classStartTime, classEndTime, onChange }: T
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }

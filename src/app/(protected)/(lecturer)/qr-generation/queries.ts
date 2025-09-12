@@ -1,4 +1,5 @@
 import apiClient from "@/lib/api/apiClient";
+import { ApiArrayResponse } from "@/types/api";
 import {
   AbsentListResponse,
   LiveCheckinResponse,
@@ -12,7 +13,6 @@ import {
   GetQrCodesResponse,
   UpdateQrRequestBody,
 } from "@/types/qr-code";
-import { ApiArrayResponse } from "@/types/api";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 // Room types
@@ -250,7 +250,8 @@ export const useGetLecturerSubjects = () => {
 const LECTURER_ROOMS_QUERY_KEY = ["lecturerRooms"];
 export const useGetLecturerRooms = () => {
   const queryFn = async () => {
-    const { data } = await apiClient.get<ApiArrayResponse<RoomRow[]>>("/lecturer/rooms");
+    const { data } =
+      await apiClient.get<ApiArrayResponse<RoomRow[]>>("/lecturer/rooms");
     return data;
   };
   return useQuery({

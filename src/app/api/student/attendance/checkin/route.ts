@@ -280,7 +280,7 @@ export async function POST(req: NextRequest) {
       now,
       lat,
       long,
-      join_online ?? false
+      join_online ?? false,
     ]
   );
 

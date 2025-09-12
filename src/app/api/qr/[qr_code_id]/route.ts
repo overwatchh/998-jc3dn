@@ -134,7 +134,7 @@ export async function GET(
       radius: number | null;
       building_number: string | null;
       room_number: string | null;
-      room_id:number;
+      room_id: number;
     }>(sql, [qrId]);
     // query validites information
     const validitiesSql = `
@@ -184,12 +184,12 @@ export async function GET(
       location:
         result && result.latitude !== null && result.longitude !== null
           ? {
-            latitude: Number(result.latitude),
-            longitude: Number(result.longitude),
-            building_number: result.building_number ?? null,
-            room_number: result.room_number ?? null,
-            room_id:result.room_id ?? null,
-          }
+              latitude: Number(result.latitude),
+              longitude: Number(result.longitude),
+              building_number: result.building_number ?? null,
+              room_number: result.room_number ?? null,
+              room_id: result.room_id ?? null,
+            }
           : null,
     });
   } catch (error) {

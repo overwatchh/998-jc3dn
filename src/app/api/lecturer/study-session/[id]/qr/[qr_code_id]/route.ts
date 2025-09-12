@@ -119,7 +119,10 @@ export async function GET(
     }>(activeSql, [studySessionId, qrId]);
 
     if (rows.length === 0) {
-      rows = await rawQuery(activeSql.replace("ORDER BY v.count DESC", "ORDER BY v.end_time DESC"), [studySessionId, qrId]);
+      rows = await rawQuery(
+        activeSql.replace("ORDER BY v.count DESC", "ORDER BY v.end_time DESC"),
+        [studySessionId, qrId]
+      );
     }
 
     if (rows.length === 0) {
