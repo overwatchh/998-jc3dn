@@ -10,8 +10,22 @@ import {
   GenerateQrRequestBody,
   GenerateQrResponse,
   GetQrCodesResponse,
+  UpdateQrRequestBody,
 } from "@/types/qr-code";
+import { ApiArrayResponse } from "@/types/api";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+
+// Room types
+type RoomRow = {
+  id: number;
+  building_number: string;
+  room_number: string;
+  description: string | null;
+  latitude: string | null;
+  longitude: string | null;
+  campus_id: number;
+  campus_name: string;
+};
 
 const QR_CODE_GENERATION_QUERY_KEY = ["qrCodeGeneration"];
 
@@ -64,6 +78,27 @@ export const useAddSecondValidity = (id: number) => {
   };
   return useMutation({
     mutationKey: [QR_CODE_GENERATION_QUERY_KEY, id, "addValidity"],
+    mutationFn,
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: [["qrCodes"], id],
+      });
+    },
+  });
+};
+
+// Update existing QR code (PUT /lecturer/study-session/{id}/qr)
+export const useUpdateQr = (id: number) => {
+  const queryClient = useQueryClient();
+  const mutationFn = async (args: UpdateQrRequestBody) => {
+    const { data } = await apiClient.put<{ message: string }>(
+      `/lecturer/study-session/${id}/qr`,
+      args
+    );
+    return data;
+  };
+  return useMutation({
+    mutationKey: [QR_CODE_GENERATION_QUERY_KEY, id, "update"],
     mutationFn,
     onSuccess: () => {
       queryClient.invalidateQueries({
@@ -207,6 +242,19 @@ export const useGetLecturerSubjects = () => {
   };
   return useQuery({
     queryKey: [LECTURER_SUBJECTS_QUERY_KEY],
+    queryFn,
+  });
+};
+
+// Get all rooms for lecturer
+const LECTURER_ROOMS_QUERY_KEY = ["lecturerRooms"];
+export const useGetLecturerRooms = () => {
+  const queryFn = async () => {
+    const { data } = await apiClient.get<ApiArrayResponse<RoomRow[]>>("/lecturer/rooms");
+    return data;
+  };
+  return useQuery({
+    queryKey: [LECTURER_ROOMS_QUERY_KEY],
     queryFn,
   });
 };

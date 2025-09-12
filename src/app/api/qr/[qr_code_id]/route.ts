@@ -4,8 +4,12 @@
  *   get:
  *     tags:
  *       - Common
- *     summary: Get validity window count for a QR code
- *     description: Returns the number of validity windows associated with the given QR code.
+ *     summary: Get QR code validity windows and location/geofence info
+ *     description: |
+ *       Returns information about a QR code including its validity windows,
+ *       whether geolocation validation is enabled, the geofence radius, and
+ *       room/location metadata. Also includes which validity window is
+ *       currently active (if any).
  *     parameters:
  *       - name: qr_code_id
  *         in: path
@@ -15,7 +19,7 @@
  *           type: integer
  *     responses:
  *       200:
- *         description: Successfully fetched validity window count
+ *         description: Successfully fetched QR code info
  *         content:
  *           application/json:
  *             schema:
@@ -24,9 +28,67 @@
  *                 message:
  *                   type: string
  *                   example: Fetched QR info successfully
+ *                 validate_geo:
+ *                   type: boolean
+ *                   description: Whether geolocation validation is enforced for this QR code.
+ *                   example: true
+ *                 validities:
+ *                   type: array
+ *                   description: Validity windows during which the QR code can be used.
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                         description: Validity row ID.
+ *                         example: 101
+ *                       count:
+ *                         type: integer
+ *                         description: Order of the window (1 = first, 2 = second).
+ *                         example: 1
+ *                       start_time:
+ *                         type: string
+ *                         format: date-time
+ *                         example: "2025-09-10T09:30:00.000Z"
+ *                       end_time:
+ *                         type: string
+ *                         format: date-time
+ *                         example: "2025-09-10T10:00:00.000Z"
  *                 validity_count:
  *                   type: integer
- *                   example: 2
+ *                   description: |
+ *                     Indicates which validity window is currently active.
+ *                     0 = none active, 1 = first window active, 2 = second window active.
+ *                   enum: [0, 1, 2]
+ *                   example: 1
+ *                 radius:
+ *                   type: number
+ *                   nullable: true
+ *                   description: Geofence radius in meters (null if not set).
+ *                   example: 100
+ *                 location:
+ *                   type: object
+ *                   nullable: true
+ *                   description: Room and geolocation metadata if available.
+ *                   properties:
+ *                     latitude:
+ *                       type: number
+ *                       example: 51.5074
+ *                     longitude:
+ *                       type: number
+ *                       example: -0.1278
+ *                     building_number:
+ *                       type: string
+ *                       nullable: true
+ *                       example: "12A"
+ *                     room_number:
+ *                       type: string
+ *                       nullable: true
+ *                       example: "B305"
+ *                     room_id:
+ *                       type: integer
+ *                       nullable: true
+ *                       example: 45
  *       500:
  *         description: Internal Server Error
  *         content:
