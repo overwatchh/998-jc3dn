@@ -3,7 +3,7 @@
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import useGeolocation from "@/hooks/useGeolocation";
+import { useGeolocation } from "@/hooks/useGeolocation";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { FirstCheckinScreen } from "./_components/first-checkin-screen";

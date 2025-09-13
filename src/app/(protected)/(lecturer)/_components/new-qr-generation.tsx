@@ -198,53 +198,15 @@ export function NewQrGeneration() {
     [roomsData?.data, selectedRoomId]
   );
 
-  const handleDownload = useCallback(async () => {
-    if (!qrUrl) return;
-    try {
-      const res = await fetch(qrUrl);
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `attendance-qr-${selectedCourse?.weekNumber ?? ""}.png`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-      toast.success("QR image downloaded");
-    } catch {
-      toast.error("Failed to download QR image");
-    }
-  }, [qrUrl, selectedCourse?.weekNumber]);
+  function handleDownload(): void {
+    //TODO: Implement download functionality
+    return;
+  }
 
-  const handleShare = useCallback(async () => {
-    if (!qrUrl) return;
-    try {
-      type WebShareNavigator = Navigator & {
-        share?: (data: {
-          title?: string;
-          text?: string;
-          url?: string;
-        }) => Promise<void>;
-      };
-      const nav =
-        typeof navigator !== "undefined"
-          ? (navigator as WebShareNavigator)
-          : undefined;
-      if (nav?.share) {
-        await nav.share({ title: "Attendance QR", url: qrUrl });
-      } else if (navigator?.clipboard?.writeText) {
-        await navigator.clipboard.writeText(qrUrl);
-        toast.success("QR link copied to clipboard");
-      } else {
-        toast.message("Sharing not supported", {
-          description: "Copy the link manually.",
-        });
-      }
-    } catch {
-      toast.error("Failed to share QR link");
-    }
-  }, [qrUrl]);
+  function handleShare(): void {
+    //TODO: Implement share functionality
+    return;
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">

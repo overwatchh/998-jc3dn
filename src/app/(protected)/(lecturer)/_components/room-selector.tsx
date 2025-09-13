@@ -10,7 +10,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { MapPin, Building, Hash, Shield } from "lucide-react";
+import { MapPin, Shield } from "lucide-react";
 import { useState } from "react";
 import { useGetLecturerRooms } from "../qr-generation/queries";
 
