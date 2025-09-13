@@ -59,5 +59,3 @@ export const useGeolocation = (
 
   return { position, error, loading };
 };
-
-export default useGeolocation;

@@ -17,7 +17,7 @@ import { AxiosError } from "axios";
 import { format } from "date-fns";
 import { ArrowLeft, Download, QrCode, Share2, Users } from "lucide-react";
 import Image from "next/image";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useQrGenContext } from "../qr-generation/qr-gen-context";
 import {
@@ -41,33 +41,46 @@ export function NewQrGeneration() {
   // Get current course info
   const currentCourse = courses?.find(c => c.id === selectedCourse?.sessionId);
 
-  // Set default class times based on course schedule
-  const classStartTime = new Date();
-  const classEndTime = new Date();
+  // Helpers & derived values
+  type TimeWindow = { start: Date; end: Date };
+  type Windows = { entryWindow: TimeWindow; exitWindow: TimeWindow };
 
-  if (currentCourse) {
-    const [startHour, startMin] = currentCourse.startTime
-      .split(":")
-      .map(Number);
-    const [endHour, endMin] = currentCourse.endTime.split(":").map(Number);
+  const { classStartTime, classEndTime } = useMemo(() => {
+    // Set default class times based on course schedule
+    const start = new Date();
+    const end = new Date();
+    if (currentCourse) {
+      const [startHour, startMin] = currentCourse.startTime
+        .split(":")
+        .map(Number);
+      const [endHour, endMin] = currentCourse.endTime.split(":").map(Number);
+      start.setHours(startHour, startMin, 0, 0);
+      end.setHours(endHour, endMin, 0, 0);
+    } else {
+      start.setHours(9, 0, 0, 0);
+      end.setHours(11, 0, 0, 0);
+    }
+    return { classStartTime: start, classEndTime: end };
+  }, [currentCourse]);
 
-    classStartTime.setHours(startHour, startMin, 0, 0);
-    classEndTime.setHours(endHour, endMin, 0, 0);
-  } else {
-    classStartTime.setHours(9, 0, 0, 0);
-    classEndTime.setHours(11, 0, 0, 0);
-  }
+  const formatHHMM = (date?: Date) => (date ? format(date, "HH:mm") : "--:--");
+  const buildValidities = (w: Windows) => [
+    {
+      start_time: formatHHMM(w.entryWindow.start),
+      end_time: formatHHMM(w.entryWindow.end),
+    },
+    {
+      start_time: formatHHMM(w.exitWindow.start),
+      end_time: formatHHMM(w.exitWindow.end),
+    },
+  ];
 
-  const [windows, setWindows] = useState<{
-    entryWindow: { start: Date; end: Date };
-    exitWindow: { start: Date; end: Date };
-  } | null>(null);
-
-  const [qrGenerated, setQrGenerated] = useState(false);
+  const [windows, setWindows] = useState<Windows | null>(null);
   const [qrUrl, setQrUrl] = useState<string>("");
   const [selectedRoomId, setSelectedRoomId] = useState<number | null>(null);
   const [validateGeo, setValidateGeo] = useState(true);
   const [radius, setRadius] = useState(100);
+  const qrGenerated = useMemo(() => Boolean(qrUrl), [qrUrl]);
 
   const { mutateAsync: generateQr, isPending: isGenerating } = useGenerateQr(
     selectedCourse?.sessionId || 0
@@ -100,15 +113,9 @@ export function NewQrGeneration() {
     }
   );
 
-  const handleWindowChange = useCallback(
-    (newWindows: {
-      entryWindow: { start: Date; end: Date };
-      exitWindow: { start: Date; end: Date };
-    }) => {
-      setWindows(newWindows);
-    },
-    []
-  );
+  const handleWindowChange = useCallback((newWindows: Windows) => {
+    setWindows(newWindows);
+  }, []);
 
   const handleRoomSelect = useCallback((roomId: number) => {
     setSelectedRoomId(roomId);
@@ -118,7 +125,6 @@ export function NewQrGeneration() {
   useEffect(() => {
     if (!qrGenerated && existingQrData?.qr_url) {
       setQrUrl(existingQrData.qr_url);
-      setQrGenerated(true);
     }
   }, [existingQrData?.qr_url, qrGenerated]);
 
@@ -129,22 +135,8 @@ export function NewQrGeneration() {
     }
 
     try {
-      // Format time windows for API
-      const formatTime = (date: Date) => {
-        return date.toTimeString().slice(0, 5); // HH:MM format
-      };
-
-      const validities = [
-        {
-          start_time: formatTime(windows.entryWindow.start),
-          end_time: formatTime(windows.entryWindow.end),
-        },
-        {
-          start_time: formatTime(windows.exitWindow.start),
-          end_time: formatTime(windows.exitWindow.end),
-        },
-      ];
-
+      // Build API payload
+      const validities = buildValidities(windows);
       const response = await generateQr({
         week_number: selectedCourse.weekNumber,
         radius,
@@ -154,7 +146,6 @@ export function NewQrGeneration() {
       });
 
       setQrUrl(response.qr_url);
-      setQrGenerated(true);
       toast.success("QR code generated successfully!");
     } catch (error) {
       console.error("Error generating QR:", error);
@@ -175,21 +166,7 @@ export function NewQrGeneration() {
     }
 
     try {
-      const formatTime = (date: Date) => {
-        return date.toTimeString().slice(0, 5);
-      };
-
-      const validities = [
-        {
-          start_time: formatTime(windows.entryWindow.start),
-          end_time: formatTime(windows.entryWindow.end),
-        },
-        {
-          start_time: formatTime(windows.exitWindow.start),
-          end_time: formatTime(windows.exitWindow.end),
-        },
-      ];
-
+      const validities = buildValidities(windows);
       await updateQr({
         qr_code_id: existingQrId,
         radius,
@@ -198,11 +175,10 @@ export function NewQrGeneration() {
         validities,
       });
 
-      await refetchExistingQr();
-      if (existingQrData?.qr_url) {
-        setQrUrl(existingQrData.qr_url);
+      const refreshed = await refetchExistingQr();
+      if (refreshed.data?.qr_url) {
+        setQrUrl(refreshed.data.qr_url);
       }
-      setQrGenerated(true);
       toast.success("QR code updated successfully!");
     } catch (error) {
       console.error("Error updating QR:", error);
@@ -214,12 +190,61 @@ export function NewQrGeneration() {
     }
   };
 
-  const selectedRoom = selectedRoomId
-    ? roomsData?.data.find(r => r.id === selectedRoomId)
-    : undefined;
+  const selectedRoom = useMemo(
+    () =>
+      selectedRoomId
+        ? roomsData?.data.find(r => r.id === selectedRoomId)
+        : undefined,
+    [roomsData?.data, selectedRoomId]
+  );
 
-  const formatTimeHHMM = (date?: Date) =>
-    date ? date.toTimeString().slice(0, 5) : "--:--";
+  const handleDownload = useCallback(async () => {
+    if (!qrUrl) return;
+    try {
+      const res = await fetch(qrUrl);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `attendance-qr-${selectedCourse?.weekNumber ?? ""}.png`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      toast.success("QR image downloaded");
+    } catch {
+      toast.error("Failed to download QR image");
+    }
+  }, [qrUrl, selectedCourse?.weekNumber]);
+
+  const handleShare = useCallback(async () => {
+    if (!qrUrl) return;
+    try {
+      type WebShareNavigator = Navigator & {
+        share?: (data: {
+          title?: string;
+          text?: string;
+          url?: string;
+        }) => Promise<void>;
+      };
+      const nav =
+        typeof navigator !== "undefined"
+          ? (navigator as WebShareNavigator)
+          : undefined;
+      if (nav?.share) {
+        await nav.share({ title: "Attendance QR", url: qrUrl });
+      } else if (navigator?.clipboard?.writeText) {
+        await navigator.clipboard.writeText(qrUrl);
+        toast.success("QR link copied to clipboard");
+      } else {
+        toast.message("Sharing not supported", {
+          description: "Copy the link manually.",
+        });
+      }
+    } catch {
+      toast.error("Failed to share QR link");
+    }
+  }, [qrUrl]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -344,8 +369,8 @@ export function NewQrGeneration() {
                                   Entry window
                                 </span>
                                 <span className="font-medium">
-                                  {formatTimeHHMM(windows?.entryWindow.start)} -{" "}
-                                  {formatTimeHHMM(windows?.entryWindow.end)}
+                                  {formatHHMM(windows?.entryWindow.start)} -{" "}
+                                  {formatHHMM(windows?.entryWindow.end)}
                                 </span>
                               </div>
                               <div className="flex justify-between">
@@ -353,8 +378,8 @@ export function NewQrGeneration() {
                                   Exit window
                                 </span>
                                 <span className="font-medium">
-                                  {formatTimeHHMM(windows?.exitWindow.start)} -{" "}
-                                  {formatTimeHHMM(windows?.exitWindow.end)}
+                                  {formatHHMM(windows?.exitWindow.start)} -{" "}
+                                  {formatHHMM(windows?.exitWindow.end)}
                                 </span>
                               </div>
                             </div>
@@ -373,6 +398,8 @@ export function NewQrGeneration() {
                           <Button
                             variant="outline"
                             className="flex-1 border-gray-300 bg-transparent text-gray-700 hover:bg-gray-50"
+                            onClick={handleDownload}
+                            disabled={!qrUrl}
                           >
                             <Download className="mr-2 h-4 w-4" />
                             Download
@@ -380,6 +407,8 @@ export function NewQrGeneration() {
                           <Button
                             variant="outline"
                             className="flex-1 border-gray-300 bg-transparent text-gray-700 hover:bg-gray-50"
+                            onClick={handleShare}
+                            disabled={!qrUrl}
                           >
                             <Share2 className="mr-2 h-4 w-4" />
                             Share
@@ -555,8 +584,8 @@ export function NewQrGeneration() {
                                   Entry window
                                 </span>
                                 <span className="font-medium">
-                                  {formatTimeHHMM(windows?.entryWindow.start)} -{" "}
-                                  {formatTimeHHMM(windows?.entryWindow.end)}
+                                  {formatHHMM(windows?.entryWindow.start)} -{" "}
+                                  {formatHHMM(windows?.entryWindow.end)}
                                 </span>
                               </div>
                               <div className="flex justify-between">
@@ -564,8 +593,8 @@ export function NewQrGeneration() {
                                   Exit window
                                 </span>
                                 <span className="font-medium">
-                                  {formatTimeHHMM(windows?.exitWindow.start)} -{" "}
-                                  {formatTimeHHMM(windows?.exitWindow.end)}
+                                  {formatHHMM(windows?.exitWindow.start)} -{" "}
+                                  {formatHHMM(windows?.exitWindow.end)}
                                 </span>
                               </div>
                             </div>
