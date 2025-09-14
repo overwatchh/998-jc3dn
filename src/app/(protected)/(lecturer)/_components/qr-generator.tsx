@@ -34,6 +34,9 @@ export const QRGenerator = () => {
     selectedRoom,
     validateGeo,
     radius,
+    setWindows,
+    qrGenerated: ctxQrGenerated,
+    setQrGenerated,
   } = useQrGenContext();
   const { mutateAsync: generateQr, isPending: isGenerating } = useGenerateQr(
     selectedCourse?.sessionId || 0
@@ -55,9 +58,13 @@ export const QRGenerator = () => {
     { enabled: !!existingQrId }
   );
   const [qrUrl, setQrUrl] = useState<string>("");
-  const qrGenerated = useMemo(() => Boolean(qrUrl), [qrUrl]);
+  const qrGenerated = useMemo(
+    () => Boolean(qrUrl) || ctxQrGenerated,
+    [qrUrl, ctxQrGenerated]
+  );
 
-  const selectedRoomId = 1; // Example state
+  // Respect lecturer's selected room from context
+  const selectedRoomId = selectedRoom?.id ?? 0;
 
   const { classStartTime, classEndTime } = useMemo(() => {
     // Set default class times based on course schedule
@@ -77,16 +84,39 @@ export const QRGenerator = () => {
     return { classStartTime: start, classEndTime: end };
   }, [currentCourse]);
 
-  const handleWindowChange = () => {
-    // Example state
+  const handleWindowChange = (w: Windows) => {
+    // Keep windows in shared context so other components can react
+    setWindows(w);
   };
 
   function handleDownload(): void {
-    throw new Error("Function not implemented.");
+    if (!qrUrl) return;
+    try {
+      const link = document.createElement("a");
+      link.href = qrUrl;
+      link.download = "attendance-qr.png";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch {
+      toast.error("Unable to download QR image");
+    }
   }
 
-  function handleShare(): void {
-    throw new Error("Function not implemented.");
+  async function handleShare(): Promise<void> {
+    if (!qrUrl) return;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: "Attendance QR", url: qrUrl });
+      } else if (navigator.clipboard) {
+        await navigator.clipboard.writeText(qrUrl);
+        toast.success("QR link copied to clipboard");
+      } else {
+        toast.message("QR URL", { description: qrUrl });
+      }
+    } catch {
+      // user cancelled or share failed
+    }
   }
 
   const buildValidities = (w: Windows) => [
@@ -118,6 +148,7 @@ export const QRGenerator = () => {
       });
 
       setQrUrl(response.qr_url);
+      setQrGenerated(true);
       toast.success("QR code generated successfully!");
     } catch (error) {
       console.error("Error generating QR:", error);
@@ -151,6 +182,7 @@ export const QRGenerator = () => {
       if (refreshed.data?.qr_url) {
         setQrUrl(refreshed.data.qr_url);
       }
+      setQrGenerated(true);
       toast.success("QR code updated successfully!");
     } catch (error) {
       console.error("Error updating QR:", error);
@@ -165,44 +197,118 @@ export const QRGenerator = () => {
   useEffect(() => {
     if (!qrGenerated && existingQrData?.qr_url) {
       setQrUrl(existingQrData.qr_url);
+      setQrGenerated(true);
     }
-  }, [existingQrData?.qr_url, qrGenerated]);
+  }, [existingQrData?.qr_url, qrGenerated, setQrGenerated]);
 
   return (
     <div className="order-1 space-y-6 lg:order-2 lg:col-span-3">
-      {qrGenerated ? (
-        <>
-          {/* QR Code First when available */}
-          <div className="relative">
-            <div className="absolute -top-3 left-4 z-10 bg-transparent">
-              <span className="rounded-full bg-green-50 px-2 py-1 text-xs font-medium text-green-600">
-                QR Code
-              </span>
-            </div>
-            <Card className="border-gray-200 bg-white">
-              <CardHeader className="pb-4 text-center">
-                <CardTitle className="text-xl font-semibold text-gray-900">
-                  QR Code
-                </CardTitle>
-                <p className="mt-2 text-sm text-gray-600">
-                  Show or update the attendance QR code
-                </p>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="text-center">
-                  {qrUrl ? (
-                    <div className="mx-auto flex h-48 w-48 items-center justify-center rounded-lg border-2 bg-white shadow-lg">
-                      <Image
-                        src={qrUrl}
-                        alt="QR Code"
-                        width={180}
-                        height={180}
-                        className="rounded"
-                      />
-                    </div>
-                  ) : null}
+      {/* Section 1: Time Windows - always first to avoid layout shifts */}
+      <div className="relative">
+        <div className="absolute -top-3 left-4 bg-transparent px-2">
+          <span className="rounded-full bg-blue-50 px-2 py-1 text-xs font-medium text-blue-600">
+            Configure Time Windows
+          </span>
+        </div>
+        <TimeWindowSelector
+          classStartTime={classStartTime}
+          classEndTime={classEndTime}
+          onChange={handleWindowChange}
+        />
+      </div>
+
+      {/* Section 2: QR - always second, content switches based on qrGenerated */}
+      <div className="relative">
+        <div className="absolute -top-3 left-4 z-10 bg-transparent px-2">
+          <span className="rounded-full bg-green-50 px-2 py-1 text-xs font-medium text-green-600">
+            {qrGenerated ? "QR Code" : "Generate QR Code"}
+          </span>
+        </div>
+        <Card className="border-gray-200 bg-white">
+          <CardHeader className="pb-4 text-center">
+            <CardTitle className="text-xl font-semibold text-gray-900">
+              {qrGenerated ? "QR Code" : "QR Code Generation"}
+            </CardTitle>
+            <p className="mt-2 text-sm text-gray-600">
+              {qrGenerated
+                ? "Show or update the attendance QR code"
+                : "Generate attendance QR code for your session"}
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="text-center">
+              {qrGenerated && qrUrl ? (
+                <div className="mx-auto flex h-48 w-48 items-center justify-center rounded-lg border-2 bg-white shadow-lg">
+                  <Image
+                    src={qrUrl}
+                    alt="QR Code"
+                    width={180}
+                    height={180}
+                    className="rounded"
+                  />
                 </div>
-                <div className="mx-auto max-w-md space-y-3">
+              ) : (
+                <div className="mx-auto flex h-48 w-48 items-center justify-center rounded-lg border-2 border-dashed bg-gray-100">
+                  <div className="text-center text-gray-400">
+                    <QrCode className="mx-auto mb-3 h-16 w-16" />
+                    <p className="text-sm font-medium">
+                      QR code has not been generated
+                    </p>
+                    <p className="text-xs">
+                      Complete configuration above and click Generate
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Configuration Status */}
+            {!qrGenerated && (
+              <div className="rounded-lg bg-gray-50 p-4">
+                <h4 className="mb-3 text-sm font-medium text-gray-900">
+                  Configuration Status
+                </h4>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    {selectedRoomId ? (
+                      <div className="flex h-5 w-5 items-center justify-center rounded-full bg-green-100">
+                        <span className="text-xs text-green-600">✓</span>
+                      </div>
+                    ) : (
+                      <div className="flex h-5 w-5 items-center justify-center rounded-full bg-gray-200">
+                        <span className="text-xs text-gray-400">○</span>
+                      </div>
+                    )}
+                    <span
+                      className={`text-sm ${selectedRoomId ? "text-green-600" : "text-gray-500"}`}
+                    >
+                      Room selected
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {windows ? (
+                      <div className="flex h-5 w-5 items-center justify-center rounded-full bg-green-100">
+                        <span className="text-xs text-green-600">✓</span>
+                      </div>
+                    ) : (
+                      <div className="flex h-5 w-5 items-center justify-center rounded-full bg-gray-200">
+                        <span className="text-xs text-gray-400">○</span>
+                      </div>
+                    )}
+                    <span
+                      className={`text-sm ${windows ? "text-green-600" : "text-gray-500"}`}
+                    >
+                      Time windows configured
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Action area */}
+            <div className="mx-auto max-w-md space-y-3">
+              {qrGenerated ? (
+                <>
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
                       <Button
@@ -296,114 +402,9 @@ export const QRGenerator = () => {
                       Share
                     </Button>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Time Windows Second when QR exists */}
-          <div className="relative">
-            <div className="absolute -top-3 left-4 bg-white px-2">
-              <span className="rounded-full bg-blue-50 px-2 py-1 text-xs font-medium text-blue-600">
-                Time Windows
-              </span>
-            </div>
-            <TimeWindowSelector
-              classStartTime={classStartTime}
-              classEndTime={classEndTime}
-              onChange={handleWindowChange}
-            />
-          </div>
-        </>
-      ) : (
-        <>
-          {/* Step 1: Time Windows Configuration */}
-          <div className="relative">
-            <div className="absolute -top-3 left-4 bg-white px-2">
-              <span className="rounded-full bg-blue-50 px-2 py-1 text-xs font-medium text-blue-600">
-                Step 1: Configure Time Windows
-              </span>
-            </div>
-            <TimeWindowSelector
-              classStartTime={classStartTime}
-              classEndTime={classEndTime}
-              onChange={handleWindowChange}
-            />
-          </div>
-
-          {/* Step 2: QR Code Generation */}
-          <div className="relative">
-            <div className="absolute -top-3 left-4 z-10 bg-white px-2">
-              <span className="rounded-full bg-green-50 px-2 py-1 text-xs font-medium text-green-600">
-                Step 2: Generate QR Code
-              </span>
-            </div>
-            <Card className="border-gray-200 bg-white">
-              <CardHeader className="pb-4 text-center">
-                <CardTitle className="text-xl font-semibold text-gray-900">
-                  QR Code Generation
-                </CardTitle>
-                <p className="mt-2 text-sm text-gray-600">
-                  Generate attendance QR code for your session
-                </p>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="text-center">
-                  <div className="mx-auto flex h-48 w-48 items-center justify-center rounded-lg border-2 border-dashed bg-gray-100">
-                    <div className="text-center text-gray-400">
-                      <QrCode className="mx-auto mb-3 h-16 w-16" />
-                      <p className="text-sm font-medium">
-                        QR code has not been generated
-                      </p>
-                      <p className="text-xs">
-                        Complete configuration above and click Generate
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Configuration Status */}
-                <div className="rounded-lg bg-gray-50 p-4">
-                  <h4 className="mb-3 text-sm font-medium text-gray-900">
-                    Configuration Status
-                  </h4>
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      {selectedRoomId ? (
-                        <div className="flex h-5 w-5 items-center justify-center rounded-full bg-green-100">
-                          <span className="text-xs text-green-600">✓</span>
-                        </div>
-                      ) : (
-                        <div className="flex h-5 w-5 items-center justify-center rounded-full bg-gray-200">
-                          <span className="text-xs text-gray-400">○</span>
-                        </div>
-                      )}
-                      <span
-                        className={`text-sm ${selectedRoomId ? "text-green-600" : "text-gray-500"}`}
-                      >
-                        Room selected
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {windows ? (
-                        <div className="flex h-5 w-5 items-center justify-center rounded-full bg-green-100">
-                          <span className="text-xs text-green-600">✓</span>
-                        </div>
-                      ) : (
-                        <div className="flex h-5 w-5 items-center justify-center rounded-full bg-gray-200">
-                          <span className="text-xs text-gray-400">○</span>
-                        </div>
-                      )}
-                      <span
-                        className={`text-sm ${windows ? "text-green-600" : "text-gray-500"}`}
-                      >
-                        Time windows configured
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mx-auto max-w-md">
+                </>
+              ) : (
+                <>
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
                       <Button
@@ -482,12 +483,12 @@ export const QRGenerator = () => {
                       Please complete all configuration steps above
                     </p>
                   )}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </>
-      )}
+                </>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };
