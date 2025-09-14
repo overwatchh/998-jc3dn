@@ -153,7 +153,7 @@ INSERT INTO study_session (id, type, day_of_week, start_time, end_time, room_id)
 (10, 'lecture', 'Thursday', '12:00:00', '15:00:00', 10), -- create QR code all day
 (11, 'tutorial', 'Friday', '13:00:00', '15:00:00', 1),
 (12, 'tutorial', 'Thursday', '08:00:00', '10:00:00', 2),
--- CSCI935, CSCI435
+-- CSCI935
 (13, 'lecture', 'Friday', '09:00:00', '11:00:00', 3),
 (14, 'tutorial', 'Wednesday', '15:00:00', '17:00:00', 4),
 (15, 'tutorial', 'Thursday', '16:00:00', '18:00:00', 5),
@@ -177,6 +177,12 @@ INSERT INTO study_session (id, type, day_of_week, start_time, end_time, room_id)
 (28, 'lecture', 'Thursday', '13:30:00', '15:30:00', 8),
 (29, 'lecture', 'Thursday', '13:30:00', '15:30:00', 9);
 
+-- CSCI435 (separate sessions from CSCI935 to avoid shared study_session_id)
+INSERT INTO study_session (id, type, day_of_week, start_time, end_time, room_id) VALUES
+(30, 'lecture', 'Friday', '09:00:00', '11:00:00', 3),
+(31, 'tutorial', 'Wednesday', '15:00:00', '17:00:00', 4),
+(32, 'tutorial', 'Thursday', '16:00:00', '18:00:00', 5);
+
 
 -- Subject-StudySession
 INSERT INTO subject_study_session (subject_id, study_session_id) VALUES
@@ -185,7 +191,8 @@ INSERT INTO subject_study_session (subject_id, study_session_id) VALUES
 (3, 7), (3, 8), (3, 9),
 (4, 10), (4, 11), (4, 12),
 (5, 13), (5, 14), (5, 15),
-(6, 13), (6, 14), (6, 15),
+-- CSCI435 mapped to its own sessions (30, 31, 32)
+(6, 30), (6, 31), (6, 32),
 (7, 16), (7, 17),
 (8, 18), (8, 19),
 (9, 20), (9, 21),
@@ -230,5 +237,11 @@ INSERT INTO lecturer_study_session (study_session_id, lecturer_id) VALUES
 (24, 'hrEpeIa27ITirYij0FJRAYgbMledKcuw'),
 -- khoa teaches study session 26 and 10 and 25
 (26, 'I9vweFqQtLTzP7UqemwUlwWIuOYs3hJ6'), (10, 'I9vweFqQtLTzP7UqemwUlwWIuOYs3hJ6'), (25, 'I9vweFqQtLTzP7UqemwUlwWIuOYs3hJ6');
+
+-- Assign lecturers for the new CSCI435 sessions similar to CSCI935
+INSERT INTO lecturer_study_session (study_session_id, lecturer_id) VALUES
+(30, 'QNZ4aS743Pn4hUsd0dskFnnAUQ3JIxaw'), -- lecture by lec3
+(31, 'hrEpeIa27ITirYij0FJRAYgbMledKcuw'), -- tutorial by lec1
+(32, 'Pl3aUloS8SowYGhvBTnUH2nocxPPXE41'); -- tutorial by lec2
 
 
