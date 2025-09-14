@@ -52,7 +52,7 @@ function NavItem({ item, className = "" }: NavItemProps) {
 }
 
 interface Props {
-  role: Role;
+  role?: Role;
 }
 
 export function BottomNavigation({ role }: Props) {
@@ -104,8 +104,12 @@ export function BottomNavigation({ role }: Props) {
     },
   ];
 
-  const filteredNavItems = navItems.filter(item => item.role.includes(role));
+  const filteredNavItems = role ? navItems.filter(item => item.role.includes(role)) : [];
   const itemCount = filteredNavItems.length;
+
+  if (!role || itemCount === 0) {
+    return null;
+  }
 
   return (
     <div className="bg-background border-border fixed right-0 bottom-0 left-0 z-50 border-t">

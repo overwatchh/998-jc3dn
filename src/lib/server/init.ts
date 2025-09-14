@@ -1,6 +1,5 @@
 // Server initialization - runs when the Next.js app starts
-import { initializeSchedulerFromEnv } from './email-scheduler';
-import { initializeEnhancedSchedulerFromEnv } from './enhanced-email-scheduler';
+import { initializeLectureEndScheduler } from './lecture-end-scheduler';
 
 let initialized = false;
 
@@ -12,15 +11,12 @@ export function initializeServer() {
   console.log('🔧 Initializing QR Attendance System server...');
   
   try {
-    // Use the original scheduler for stable performance during presentations
-    // initializeSchedulerFromEnv();
-    
-    // Enhanced scheduler available for production use
-    initializeEnhancedSchedulerFromEnv();
+    // Initialize automatic lecture end scheduler
+    initializeLectureEndScheduler();
     
     initialized = true;
     console.log('✅ Server initialization completed successfully');
-    console.log('⚡ Real-time email processing active for multiple classes');
+    console.log('📧 Email system ready with automatic lecture end triggers');
   } catch (error) {
     console.error('❌ Server initialization failed:', error);
   }
