@@ -11,7 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type React from "react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 interface TimeWindow {
   start: Date;
@@ -40,9 +40,18 @@ export function TimeWindowSelector({
   classEndTime,
   onChange,
 }: TimeWindowSelectorProps) {
-  const timelineStart = new Date(classStartTime.getTime() - 60 * 60 * 1000);
-  const timelineEnd = new Date(classEndTime.getTime() + 60 * 60 * 1000);
-  const totalDuration = timelineEnd.getTime() - timelineStart.getTime();
+  const timelineStart = useMemo(
+    () => new Date(classStartTime.getTime() - 60 * 60 * 1000),
+    [classStartTime]
+  );
+  const timelineEnd = useMemo(
+    () => new Date(classEndTime.getTime() + 60 * 60 * 1000),
+    [classEndTime]
+  );
+  const totalDuration = useMemo(
+    () => timelineEnd.getTime() - timelineStart.getTime(),
+    [timelineStart, timelineEnd]
+  );
 
   const [entryStartTime, setEntryStartTime] = useState(
     new Date(classStartTime.getTime() - 15 * 60 * 1000)
@@ -104,7 +113,6 @@ export function TimeWindowSelector({
 
       const minStart = timelineStart;
       // Entry window can extend past class start, but class start must be within the window
-      const maxStartBasedOnClassTime = new Date(classStartTime.getTime()); // Allow starting at class time
       const maxStartBasedOnExit = new Date(
         currentExitStart.getTime() - currentEntryDuration * 60 * 1000
       );
@@ -370,7 +378,7 @@ export function TimeWindowSelector({
           setExitDuration(15);
           break;
         case "standard":
-          setEntryStartTime(new Date(classStartTime.getTime() - 0 * 60 * 1000));
+          setEntryStartTime(new Date(classStartTime.getTime()));
           setEntryDuration(15);
           setExitStartTime(new Date(classEndTime.getTime() - 15 * 60 * 1000));
           setExitDuration(15);
