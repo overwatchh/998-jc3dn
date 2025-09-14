@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatHHMM } from "@/lib/utils";
 import { AxiosError } from "axios";
-import { Download, QrCode, Share2 } from "lucide-react";
+import { Download, Loader2, QrCode, Share2 } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -35,7 +35,6 @@ export const QRGenerator = () => {
     validateGeo,
     radius,
     setWindows,
-    qrGenerated: ctxQrGenerated,
     setQrGenerated,
   } = useQrGenContext();
   const { mutateAsync: generateQr, isPending: isGenerating } = useGenerateQr(
@@ -46,22 +45,33 @@ export const QRGenerator = () => {
   );
 
   // Fetch existing QR for this session/week
-  const { data: existingQrList } = useGetQrCodes(
+  const {
+    data: existingQrList,
+    isFetching: isFetchingQrList,
+    isLoading: isLoadingQrList,
+  } = useGetQrCodes(
     selectedCourse?.sessionId || 0,
     selectedCourse?.weekNumber,
     { enabled: !!selectedCourse }
   );
   const existingQrId = existingQrList?.data?.[0]?.qr_code_id;
-  const { data: existingQrData, refetch: refetchExistingQr } = useGetQrCode(
-    selectedCourse?.sessionId || 0,
-    existingQrId || 0,
-    { enabled: !!existingQrId }
-  );
+  const {
+    data: existingQrData,
+    refetch: refetchExistingQr,
+    isFetching: isFetchingQr,
+    isLoading: isLoadingQr,
+  } = useGetQrCode(selectedCourse?.sessionId || 0, existingQrId || 0, {
+    enabled: !!existingQrId,
+  });
   const [qrUrl, setQrUrl] = useState<string>("");
-  const qrGenerated = useMemo(
-    () => Boolean(qrUrl) || ctxQrGenerated,
-    [qrUrl, ctxQrGenerated]
-  );
+  // QR is considered generated for the CURRENTLY selected week only if we have a URL
+  const qrGenerated = useMemo(() => Boolean(qrUrl), [qrUrl]);
+  const isChecking =
+    !!selectedCourse &&
+    !qrUrl &&
+    (isFetchingQrList ||
+      isLoadingQrList ||
+      (existingQrId ? isFetchingQr || isLoadingQr : false));
 
   // Respect lecturer's selected room from context
   const selectedRoomId = selectedRoom?.id ?? 0;
@@ -193,13 +203,32 @@ export const QRGenerator = () => {
       );
     }
   };
-  // If an existing QR is present for the selected week, show it by default
+  // If an existing QR is present for the selected week, show it by default.
+  // Use the refetch result directly to avoid reading stale data from closures.
   useEffect(() => {
-    if (!qrGenerated && existingQrData?.qr_url) {
-      setQrUrl(existingQrData.qr_url);
-      setQrGenerated(true);
-    }
-  }, [existingQrData?.qr_url, qrGenerated, setQrGenerated]);
+    let cancelled = false;
+    const fetchAndSet = async () => {
+      if (!existingQrId) return;
+      const res = await refetchExistingQr();
+      const url = res.data?.qr_url || existingQrData?.qr_url;
+      if (!cancelled && url) {
+        setQrUrl(url);
+        setQrGenerated(true);
+      }
+    };
+    fetchAndSet();
+    return () => {
+      cancelled = true;
+    };
+  }, [existingQrId, refetchExistingQr, existingQrData?.qr_url, setQrGenerated]);
+
+  // When lecturer switches session/week, reset local QR state first;
+  // we'll repopulate if an existing QR for that week is fetched above.
+  useEffect(() => {
+    setQrUrl("");
+    setQrGenerated(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCourse?.sessionId, selectedCourse?.weekNumber]);
 
   return (
     <div className="order-1 space-y-6 lg:order-2 lg:col-span-3">
@@ -237,7 +266,11 @@ export const QRGenerator = () => {
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="text-center">
-              {qrGenerated && qrUrl ? (
+              {isChecking ? (
+                <div className="mx-auto flex h-48 w-48 items-center justify-center rounded-lg border-2 bg-white shadow-lg">
+                  <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+                </div>
+              ) : qrGenerated && qrUrl ? (
                 <div className="mx-auto flex h-48 w-48 items-center justify-center rounded-lg border-2 bg-white shadow-lg">
                   <Image
                     src={qrUrl}

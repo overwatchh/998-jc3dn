@@ -115,7 +115,6 @@ export function SessionSelector() {
                   <SelectItem
                     key={week}
                     value={String(week)}
-                    disabled={isUsed}
                     className="text-gray-900 hover:bg-gray-50"
                   >
                     Week {week}

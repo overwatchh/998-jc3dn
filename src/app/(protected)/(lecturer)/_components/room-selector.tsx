@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { MapPin, Shield } from "lucide-react";
+import { useEffect, useMemo } from "react";
 import { useQrGenContext } from "../qr-generation/qr-gen-context";
 import { useGetLecturerRooms } from "../qr-generation/queries";
 
@@ -25,16 +26,29 @@ export function RoomSelector() {
   } = useQrGenContext();
 
   const { data: roomsData, isLoading } = useGetLecturerRooms();
-  const rooms = roomsData?.data || [];
+  const rooms = useMemo(() => roomsData?.data ?? [], [roomsData]);
 
   function handleRoomSelect(roomId: string): void {
-    const room = rooms.find(r => r.id === parseInt(roomId));
-    setSelectedRoom(room || null);
+    if (!roomId) {
+      setSelectedRoom(null);
+      return;
+    }
+    const numericId = Number(roomId);
+    const room = rooms.find(r => r.id === numericId) || null;
+    setSelectedRoom(room);
   }
 
   function handleValidateGeoChange(checked: boolean): void {
     setValidateGeo(checked);
   }
+
+  // Auto-select the first available room after rooms are fetched
+  useEffect(() => {
+    if (selectedRoom || rooms.length === 0) return;
+    setSelectedRoom(rooms[0]);
+    // We intentionally don't include setSelectedRoom to avoid unnecessary re-runs
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rooms, selectedRoom]);
 
   return (
     <Card className="border-gray-200 bg-white">
@@ -45,7 +59,11 @@ export function RoomSelector() {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
-        <Select onValueChange={handleRoomSelect} disabled={isLoading}>
+        <Select
+          value={selectedRoom ? String(selectedRoom.id) : ""}
+          onValueChange={handleRoomSelect}
+          disabled={isLoading}
+        >
           <SelectTrigger className="h-auto min-h-[64px] w-full min-w-[360px] border-gray-200 bg-white py-2.5 text-gray-900 data-[state=open]:ring-blue-500">
             {selectedRoom ? (
               <div className="flex w-full flex-col space-y-1 pr-10 text-left">
