@@ -81,7 +81,11 @@ export function SessionSelector() {
                   value={String(c.id)}
                   className="hover:bg-accent hover:text-accent-foreground"
                 >
-                  {c.code} - {c.name}
+                  {c.code} - {c.name} (
+                  {c.sessionType
+                    ? `${c.sessionType.slice(0, 1).toUpperCase()}${c.sessionType.slice(1).toLowerCase()}`
+                    : c.sessionType}
+                  )
                 </SelectItem>
               ))}
             </SelectContent>

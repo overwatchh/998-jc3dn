@@ -223,8 +223,8 @@ INSERT INTO lecturer_study_session (study_session_id, lecturer_id) VALUES
 (11, 'Pl3aUloS8SowYGhvBTnUH2nocxPPXE41'), (11, 'I9vweFqQtLTzP7UqemwUlwWIuOYs3hJ6'),
 -- lec3
 (13, 'QNZ4aS743Pn4hUsd0dskFnnAUQ3JIxaw'),
--- lec1 teaches study sesion 14-25
-(14, 'hrEpeIa27ITirYij0FJRAYgbMledKcuw'),
+-- lec1 teaches study sesion 13 (CSCI935 lecture) and 16-25
+(13, 'hrEpeIa27ITirYij0FJRAYgbMledKcuw'),
 (15, 'Pl3aUloS8SowYGhvBTnUH2nocxPPXE41'),
 (16, 'hrEpeIa27ITirYij0FJRAYgbMledKcuw'),
 (17, 'hrEpeIa27ITirYij0FJRAYgbMledKcuw'),
