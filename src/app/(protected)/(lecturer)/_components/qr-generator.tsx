@@ -227,6 +227,8 @@ export const QRGenerator = () => {
   useEffect(() => {
     setQrUrl("");
     setQrGenerated(false);
+    // Clear windows to avoid stale values from previous subject until selector recalculates
+    setWindows(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCourse?.sessionId, selectedCourse?.weekNumber]);
 
@@ -240,6 +242,7 @@ export const QRGenerator = () => {
           </span>
         </div>
         <TimeWindowSelector
+          key={`${selectedCourse?.sessionId ?? "-"}-${selectedCourse?.weekNumber ?? "-"}`}
           classStartTime={classStartTime}
           classEndTime={classEndTime}
           onChange={handleWindowChange}

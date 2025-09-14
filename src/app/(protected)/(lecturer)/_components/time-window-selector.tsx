@@ -66,6 +66,24 @@ export function TimeWindowSelector({
   const isUpdatingRef = useRef(false);
   const timelineRef = useRef<HTMLDivElement>(null);
 
+  // Reset to defaults whenever the class times change (e.g., when switching subjects)
+  useEffect(() => {
+    // Use milliseconds to prevent unnecessary resets when the times are effectively unchanged
+    const startMs = classStartTime.getTime();
+    const endMs = classEndTime.getTime();
+
+    // Reset dragging state to avoid stuck handlers across subject changes
+    setIsDragging(null);
+
+    // Initialize to defaults relative to new class times
+    setEntryDuration(30);
+    setExitDuration(30);
+    setEntryStartTime(new Date(startMs - 15 * 60 * 1000));
+    setExitStartTime(new Date(endMs - 15 * 60 * 1000));
+    // onChange is triggered by the debounced effect below
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [classStartTime.getTime(), classEndTime.getTime()]);
+
   // Utility functions
   const timeToPercentage = useCallback(
     (time: Date) => {
