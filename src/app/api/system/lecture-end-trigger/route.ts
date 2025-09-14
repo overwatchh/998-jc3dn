@@ -168,6 +168,9 @@ export async function POST(req: NextRequest) {
 
     // Send emails to all students
     for (const student of lectureData.students) {
+      let emailSuccess = false;
+      let errorMessage = null;
+      
       try {
         // Get overall attendance for this student
         const overallAttendance = await calculateStudentOverallAttendance(
@@ -192,6 +195,7 @@ export async function POST(req: NextRequest) {
         // Send email
         await emailService.sendAttendanceReminder(emailData);
         emailsSent++;
+        emailSuccess = true;
 
         emailResults.push({
           studentEmail: student.studentEmail,
@@ -206,12 +210,24 @@ export async function POST(req: NextRequest) {
       } catch (error) {
         console.error(`❌ Failed to send email to ${student.studentEmail}:`, error);
         failedEmails++;
+        errorMessage = error instanceof Error ? error.message : "Unknown error";
 
         emailResults.push({
           studentEmail: student.studentEmail,
           success: false,
-          error: error instanceof Error ? error.message : "Unknown error",
+          error: errorMessage,
         });
+      }
+      
+      // Log email attempt to database
+      try {
+        await rawQuery(
+          `INSERT INTO email_log (study_session_id, week_number, student_id, student_email, success, error_message)
+           VALUES (?, ?, ?, ?, ?, ?)`,
+          [study_session_id, week_number, student.studentId, student.studentEmail, emailSuccess ? 1 : 0, errorMessage]
+        );
+      } catch (logError) {
+        console.warn('Failed to log email attempt:', logError);
       }
     }
 
