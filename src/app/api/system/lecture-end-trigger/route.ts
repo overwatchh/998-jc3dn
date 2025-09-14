@@ -13,7 +13,33 @@ import {
  *     tags:
  *       - System
  *     summary: Trigger attendance emails when a lecture ends
- *     description: This endpoint is called when a lecture ends. It checks if both QR validities are complete and sends attendance reminder emails to all students.
+ *     description: |
+ *       **Automatic Email Reminder System**
+ *       
+ *       This endpoint is automatically called by the system scheduler when a lecture ends. It performs the following operations:
+ *       
+ *       1. **Validates lecture completion** - Ensures all QR codes have expired
+ *       2. **Calculates multi-week attendance** - Aggregates current and historical attendance data
+ *       3. **Sends personalized emails** - Delivers attendance reports to all enrolled students
+ *       4. **Logs all activity** - Records email attempts in the database for auditing
+ *       
+ *       **Multi-Week Attendance Tracking:**
+ *       - Current week: 0% (no QR), 45% (1 QR), 90% (2 QRs)
+ *       - Historical data: Aggregated across all previous weeks
+ *       - Risk assessment: Identifies students below attendance threshold
+ *       
+ *       **Email Content:**
+ *       - Current week attendance percentage
+ *       - Overall attendance across all weeks
+ *       - Number of classes student can still miss
+ *       - Warning messages for at-risk students
+ *       
+ *       **System Requirements:**
+ *       - SMTP configuration must be properly set
+ *       - System authentication key required
+ *       - Only processes lecture-type sessions
+ *     security:
+ *       - SystemKey: []
  *     requestBody:
  *       required: true
  *       content:
@@ -28,21 +54,112 @@ import {
  *               study_session_id:
  *                 type: integer
  *                 description: The study session ID for the lecture
+ *                 example: 101
  *               week_number:
  *                 type: integer
- *                 description: The week number of the lecture
+ *                 description: The week number of the lecture (1-13)
+ *                 example: 6
+ *                 minimum: 1
+ *                 maximum: 13
  *               system_key:
  *                 type: string
- *                 description: System authentication key
+ *                 description: System authentication key (from environment SYSTEM_EMAIL_KEY)
+ *                 example: "attendance_email_system_2024"
  *     responses:
  *       200:
- *         description: Lecture end processing completed
+ *         description: Lecture end processing completed successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Lecture end processing completed"
+ *                 study_session_id:
+ *                   type: integer
+ *                   example: 101
+ *                 week_number:
+ *                   type: integer
+ *                   example: 6
+ *                 subject:
+ *                   type: string
+ *                   example: "CSCI301 - Software Engineering"
+ *                 total_qr_codes:
+ *                   type: integer
+ *                   example: 2
+ *                 emails_sent:
+ *                   type: integer
+ *                   example: 25
+ *                 failed_emails:
+ *                   type: integer
+ *                   example: 0
+ *                 total_students:
+ *                   type: integer
+ *                   example: 25
+ *                 results:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       studentEmail:
+ *                         type: string
+ *                         example: "student@university.edu"
+ *                       success:
+ *                         type: boolean
+ *                         example: true
+ *                       error:
+ *                         type: string
+ *                         example: null
+ *                 processed_at:
+ *                   type: string
+ *                   format: date-time
+ *                   example: "2024-09-15T01:00:30.123Z"
  *       400:
  *         description: Invalid request or lecture not ready
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   examples:
+ *                     missing_params: "study_session_id and week_number are required"
+ *                     not_lecture: "Session not found or not a lecture"
+ *                     no_qr_codes: "No QR codes found for this lecture"
+ *                     not_complete: "Lecture not complete yet - QR codes still active"
+ *                 active_qr_codes:
+ *                   type: integer
+ *                   description: Number of QR codes still active (if lecture not complete)
+ *                 total_qr_codes:
+ *                   type: integer
+ *                   description: Total number of QR codes for this lecture
  *       401:
- *         description: Invalid system key
+ *         description: Invalid system authentication key
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Unauthorized"
  *       500:
- *         description: Server error
+ *         description: Server error during email processing
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   examples:
+ *                     smtp_error: "Failed to connect to email server"
+ *                     general_error: "Internal server error"
+ *                 error:
+ *                   type: string
+ *                   description: Detailed error message for debugging
  */
 
 export async function POST(req: NextRequest) {
