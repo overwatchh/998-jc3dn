@@ -22,6 +22,9 @@ interface Room {
   campus_name: string;
 }
 
+export type TimeWindow = { start: Date; end: Date };
+export type Windows = { entryWindow: TimeWindow; exitWindow: TimeWindow };
+
 interface QrGenContextType {
   currentScreen: QRGenScreens;
   setCurrentScreen: Dispatch<SetStateAction<QRGenScreens>>;
@@ -34,6 +37,10 @@ interface QrGenContextType {
   setValidateGeo: Dispatch<SetStateAction<boolean>>;
   radius: number;
   setRadius: Dispatch<SetStateAction<number>>;
+  windows: Windows | null;
+  setWindows: Dispatch<SetStateAction<Windows | null>>;
+  qrGenerated: boolean;
+  setQrGenerated: Dispatch<SetStateAction<boolean>>;
 }
 const QrGenContext = createContext<QrGenContextType | undefined>(undefined);
 
@@ -45,16 +52,22 @@ export function QrGenProvider({ children }: { children: React.ReactNode }) {
     SelectedCourse | undefined
   >();
 
+  const [qrGenerated, setQrGenerated] = useState<boolean>(false);
   const { data: courses } = useGetCourses();
   const currentCourse = courses?.find(c => c.id === selectedCourse?.sessionId);
 
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
   const [validateGeo, setValidateGeo] = useState<boolean>(false);
   const [radius, setRadius] = useState(100);
+  const [windows, setWindows] = useState<Windows | null>(null);
 
   return (
     <QrGenContext.Provider
       value={{
+        qrGenerated,
+        setQrGenerated,
+        windows,
+        setWindows,
         selectedRoom,
         setSelectedRoom,
         validateGeo,

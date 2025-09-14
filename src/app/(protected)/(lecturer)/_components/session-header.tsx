@@ -13,7 +13,7 @@ import { useEffect, useMemo } from "react";
 import { useQrGenContext } from "../qr-generation/qr-gen-context";
 import { useGetCourses, useGetQrCodes } from "../qr-generation/queries";
 
-export function SessionHeader() {
+export function SessionSelector() {
   const { selectedCourse, setSelectedCourse } = useQrGenContext();
   const { data: courses, isLoading: isCoursesLoading } = useGetCourses();
 
