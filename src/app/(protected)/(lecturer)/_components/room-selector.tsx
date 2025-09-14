@@ -11,47 +11,30 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { MapPin, Shield } from "lucide-react";
-import { useState } from "react";
+import { useQrGenContext } from "../qr-generation/qr-gen-context";
 import { useGetLecturerRooms } from "../qr-generation/queries";
 
-interface Room {
-  id: number;
-  building_number: string;
-  room_number: string;
-  description: string | null;
-  latitude: string | null;
-  longitude: string | null;
-  campus_id: number;
-  campus_name: string;
-}
+export function RoomSelector() {
+  const {
+    setSelectedRoom,
+    selectedRoom,
+    validateGeo,
+    setValidateGeo,
+    radius,
+    setRadius,
+  } = useQrGenContext();
 
-interface RoomSelectorProps {
-  onRoomSelect?: (roomId: number) => void;
-  validateGeo: boolean;
-  onValidateGeoChange: (enabled: boolean) => void;
-  radius: number;
-  onRadiusChange: (radius: number) => void;
-}
-
-export function RoomSelector({
-  onRoomSelect,
-  validateGeo,
-  onValidateGeoChange,
-  radius,
-  onRadiusChange,
-}: RoomSelectorProps) {
-  const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
   const { data: roomsData, isLoading } = useGetLecturerRooms();
-
   const rooms = roomsData?.data || [];
 
-  const handleRoomSelect = (roomId: string) => {
+  function handleRoomSelect(roomId: string): void {
     const room = rooms.find(r => r.id === parseInt(roomId));
     setSelectedRoom(room || null);
-    if (room && onRoomSelect) {
-      onRoomSelect(room.id);
-    }
-  };
+  }
+
+  function handleValidateGeoChange(checked: boolean): void {
+    setValidateGeo(checked);
+  }
 
   return (
     <Card className="border-gray-200 bg-white">
@@ -125,7 +108,7 @@ export function RoomSelector({
             </div>
             <Switch
               checked={validateGeo}
-              onCheckedChange={onValidateGeoChange}
+              onCheckedChange={handleValidateGeoChange}
             />
           </div>
 
@@ -147,7 +130,7 @@ export function RoomSelector({
                   max="500"
                   step="10"
                   value={radius}
-                  onChange={e => onRadiusChange(parseInt(e.target.value))}
+                  onChange={e => setRadius(parseInt(e.target.value))}
                   className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-gray-200"
                   style={{
                     background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${((radius - 50) / (500 - 50)) * 100}%, #e5e7eb ${((radius - 50) / (500 - 50)) * 100}%, #e5e7eb 100%)`,

@@ -23,8 +23,6 @@ import { useQrGenContext } from "../qr-generation/qr-gen-context";
 import {
   useGenerateQr,
   useGetCheckedInStudents,
-  useGetCourses,
-  useGetLecturerRooms,
   useGetQrCode,
   useGetQrCodes,
   useUpdateQr,
@@ -35,11 +33,16 @@ import { SessionHeader } from "./session-header";
 import { TimeWindowSelector } from "./time-window-selector";
 
 export function NewQrGeneration() {
-  const { setCurrentScreen, selectedCourse } = useQrGenContext();
-  const { data: courses } = useGetCourses();
+  const {
+    selectedRoom,
+    setCurrentScreen,
+    selectedCourse,
+    currentCourse,
+    radius,
+    validateGeo,
+  } = useQrGenContext();
 
-  // Get current course info
-  const currentCourse = courses?.find(c => c.id === selectedCourse?.sessionId);
+  const selectedRoomId = selectedRoom?.id;
 
   // Helpers & derived values
   type TimeWindow = { start: Date; end: Date };
@@ -77,9 +80,6 @@ export function NewQrGeneration() {
 
   const [windows, setWindows] = useState<Windows | null>(null);
   const [qrUrl, setQrUrl] = useState<string>("");
-  const [selectedRoomId, setSelectedRoomId] = useState<number | null>(null);
-  const [validateGeo, setValidateGeo] = useState(true);
-  const [radius, setRadius] = useState(100);
   const qrGenerated = useMemo(() => Boolean(qrUrl), [qrUrl]);
 
   const { mutateAsync: generateQr, isPending: isGenerating } = useGenerateQr(
@@ -88,7 +88,6 @@ export function NewQrGeneration() {
   const { mutateAsync: updateQr, isPending: isUpdating } = useUpdateQr(
     selectedCourse?.sessionId || 0
   );
-  const { data: roomsData } = useGetLecturerRooms();
 
   // Fetch existing QR for this session/week
   const { data: existingQrList } = useGetQrCodes(
@@ -115,10 +114,6 @@ export function NewQrGeneration() {
 
   const handleWindowChange = useCallback((newWindows: Windows) => {
     setWindows(newWindows);
-  }, []);
-
-  const handleRoomSelect = useCallback((roomId: number) => {
-    setSelectedRoomId(roomId);
   }, []);
 
   // If an existing QR is present for the selected week, show it by default
@@ -190,14 +185,6 @@ export function NewQrGeneration() {
     }
   };
 
-  const selectedRoom = useMemo(
-    () =>
-      selectedRoomId
-        ? roomsData?.data.find(r => r.id === selectedRoomId)
-        : undefined,
-    [roomsData?.data, selectedRoomId]
-  );
-
   function handleDownload(): void {
     //TODO: Implement download functionality
     return;
@@ -227,14 +214,9 @@ export function NewQrGeneration() {
         <SessionHeader />
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
+          {/* SELECT ROOM SECTION */}
           <div className="order-2 space-y-6 lg:order-1 lg:col-span-2">
-            <RoomSelector
-              onRoomSelect={handleRoomSelect}
-              validateGeo={validateGeo}
-              onValidateGeoChange={setValidateGeo}
-              radius={radius}
-              onRadiusChange={setRadius}
-            />
+            <RoomSelector />
           </div>
 
           <div className="order-1 space-y-6 lg:order-2 lg:col-span-3">
