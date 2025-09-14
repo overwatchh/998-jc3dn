@@ -53,13 +53,13 @@ export function SessionSelector() {
   const currentCourse = courses?.find(c => c.id === selectedCourse?.sessionId);
 
   return (
-    <Card className="mx-0 border-gray-200 bg-white py-0">
-      <div className="grid grid-cols-1 divide-y divide-gray-200 lg:grid-cols-3 lg:divide-x lg:divide-y-0">
+    <Card className="border-border bg-card mx-0 py-0">
+      <div className="divide-border grid grid-cols-1 divide-y lg:grid-cols-3 lg:divide-x lg:divide-y-0">
         {/* Subject Section */}
         <div className="space-y-2 p-4 px-4 py-4">
           <div className="flex items-center gap-2">
-            <Calendar className="h-4 w-4 text-gray-500" />
-            <h3 className="text-sm font-medium text-gray-700">Subject</h3>
+            <Calendar className="text-muted-foreground h-4 w-4" />
+            <h3 className="text-foreground text-sm font-medium">Subject</h3>
           </div>
           <Select
             value={selectedCourse ? String(selectedCourse.sessionId) : ""}
@@ -71,15 +71,15 @@ export function SessionSelector() {
             }
             disabled={isCoursesLoading}
           >
-            <SelectTrigger className="w-full border-gray-200 bg-white text-gray-900">
+            <SelectTrigger className="border-border bg-background text-foreground w-full">
               <SelectValue placeholder="Select subject" />
             </SelectTrigger>
-            <SelectContent className="border-gray-200 bg-white">
+            <SelectContent className="border-border bg-popover">
               {(courses ?? []).map(c => (
                 <SelectItem
                   key={c.id + c.code}
                   value={String(c.id)}
-                  className="text-gray-900 hover:bg-gray-50"
+                  className="hover:bg-accent hover:text-accent-foreground"
                 >
                   {c.code} - {c.name}
                 </SelectItem>
@@ -91,8 +91,8 @@ export function SessionSelector() {
         {/* Week Section */}
         <div className="space-y-2 p-4">
           <div className="flex items-center gap-2">
-            <Calendar className="h-4 w-4 text-gray-500" />
-            <h3 className="text-sm font-medium text-gray-700">Week</h3>
+            <Calendar className="text-muted-foreground h-4 w-4" />
+            <h3 className="text-foreground text-sm font-medium">Week</h3>
           </div>
           <Select
             value={selectedCourse ? String(selectedCourse.weekNumber) : ""}
@@ -104,10 +104,10 @@ export function SessionSelector() {
             }
             disabled={!selectedCourse}
           >
-            <SelectTrigger className="w-full border-gray-200 bg-white text-gray-900">
+            <SelectTrigger className="border-border bg-background text-foreground w-full">
               <SelectValue placeholder="Select week" />
             </SelectTrigger>
-            <SelectContent className="border-gray-200 bg-white">
+            <SelectContent className="border-border bg-popover">
               {Array.from({ length: 13 }, (_, i) => i + 1).map(week => {
                 const isUsed = usedWeeks.has(week);
                 const isNextAvailable = week === nextAvailableWeek;
@@ -115,7 +115,7 @@ export function SessionSelector() {
                   <SelectItem
                     key={week}
                     value={String(week)}
-                    className="text-gray-900 hover:bg-gray-50"
+                    className="hover:bg-accent hover:text-accent-foreground"
                   >
                     Week {week}
                     {isUsed && " (Created)"}
@@ -130,16 +130,18 @@ export function SessionSelector() {
         {/* Study Session Section */}
         <div className="space-y-2 p-4">
           <div className="flex items-center gap-2">
-            <Calendar className="h-4 w-4 text-gray-500" />
-            <h3 className="text-sm font-medium text-gray-700">Study Session</h3>
+            <Calendar className="text-muted-foreground h-4 w-4" />
+            <h3 className="text-foreground text-sm font-medium">
+              Study Session
+            </h3>
           </div>
           <div className="pt-2">
-            <p className="font-semibold text-gray-900">
+            <p className="text-foreground font-semibold">
               {currentCourse
                 ? `${currentCourse.code} - Week ${selectedCourse?.weekNumber || 1}`
                 : "No session selected"}
             </p>
-            <div className="mt-1 flex items-center gap-2 text-sm text-gray-600">
+            <div className="text-muted-foreground mt-1 flex items-center gap-2 text-sm">
               <div className="h-2 w-2 rounded-full bg-green-500"></div>
               <span>
                 {currentCourse

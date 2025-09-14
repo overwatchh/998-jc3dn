@@ -18,25 +18,25 @@ export const LiveAttendance = () => {
   );
 
   return (
-    <Card className="border-gray-200 bg-white">
+    <Card className="border-border bg-card">
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2 text-base font-medium text-gray-900">
+          <CardTitle className="text-foreground flex items-center gap-2 text-base font-medium">
             <Users className="h-4 w-4" />
             Live Attendance
           </CardTitle>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
               <div className="h-2 w-2 rounded-full bg-blue-500"></div>
-              <span className="text-sm text-gray-700">Live</span>
-              <span className="text-xs text-gray-500">
+              <span className="text-muted-foreground text-sm">Live</span>
+              <span className="text-muted-foreground text-xs">
                 Last updated: {format(new Date(), "hh:mm:ss a")}
               </span>
             </div>
             <Button
               variant="ghost"
               size="sm"
-              className="text-gray-600 hover:text-gray-900"
+              className="text-muted-foreground hover:text-foreground"
             >
               <Users className="mr-1 h-4 w-4" />
               View All Attendance
@@ -51,39 +51,41 @@ export const LiveAttendance = () => {
             {checkedInData.data.slice(0, 5).map(student => (
               <div
                 key={`${student.student_id}-${student.checkin_time}`}
-                className="flex items-center justify-between rounded-lg bg-gray-50 p-3"
+                className="bg-muted flex items-center justify-between rounded-lg p-3"
               >
                 <div>
-                  <p className="font-medium text-gray-900">
+                  <p className="text-foreground font-medium">
                     {student.student_name}
                   </p>
-                  <p className="text-sm text-gray-500">{student.student_id}</p>
+                  <p className="text-muted-foreground text-sm">
+                    {student.student_id}
+                  </p>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm text-gray-600">
+                  <p className="text-muted-foreground text-sm">
                     {new Date(student.checkin_time).toLocaleTimeString()}
                   </p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-muted-foreground text-xs">
                     Window {student.validity_count}/2
                   </p>
                 </div>
               </div>
             ))}
             {checkedInData.count > 5 && (
-              <p className="text-center text-sm text-gray-500">
+              <p className="text-muted-foreground text-center text-sm">
                 +{checkedInData.count - 5} more students checked in
               </p>
             )}
           </div>
         ) : (
-          <div className="rounded-lg bg-gray-50 p-6 text-center">
-            <Users className="mx-auto mb-2 h-8 w-8 text-gray-400" />
-            <p className="mb-1 text-sm text-gray-600">
+          <div className="bg-muted rounded-lg p-6 text-center">
+            <Users className="text-muted-foreground mx-auto mb-2 h-8 w-8" />
+            <p className="text-muted-foreground mb-1 text-sm">
               {qrGenerated
                 ? "No check-ins yet"
                 : "QR code has not been generated"}
             </p>
-            <p className="text-xs text-gray-500">
+            <p className="text-muted-foreground text-xs">
               {qrGenerated
                 ? "Students will appear here once they start scanning"
                 : "Check-ins will appear here once students start scanning"}
@@ -92,23 +94,23 @@ export const LiveAttendance = () => {
         )}
       </CardContent>
 
-      <div className="border-t border-gray-200 px-6 py-4">
+      <div className="border-border border-t px-6 py-4">
         <div className="grid grid-cols-3 gap-4">
           <div className="text-center">
-            <div className="text-2xl font-bold text-gray-900">
+            <div className="text-foreground text-2xl font-bold">
               {checkedInData?.count || 0}
             </div>
-            <div className="text-sm text-gray-600">Present</div>
+            <div className="text-muted-foreground text-sm">Present</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-gray-900">--</div>
-            <div className="text-sm text-gray-600">Total</div>
+            <div className="text-foreground text-2xl font-bold">--</div>
+            <div className="text-muted-foreground text-sm">Total</div>
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-blue-600">
               {checkedInData?.count ? "100%" : "0%"}
             </div>
-            <div className="text-sm text-gray-600">Rate</div>
+            <div className="text-muted-foreground text-sm">Rate</div>
           </div>
         </div>
       </div>

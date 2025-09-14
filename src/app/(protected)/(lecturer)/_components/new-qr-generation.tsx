@@ -16,19 +16,21 @@ export function NewQrGeneration() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="bg-background min-h-screen">
       <div className="space-y-6 p-4 lg:p-6">
         <div className="flex items-center gap-3">
           <Button
             variant="ghost"
             size="sm"
-            className="p-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+            className="text-muted-foreground hover:bg-accent hover:text-accent-foreground p-2"
             onClick={backToCourseSelection}
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
-          <div className="h-4 w-px bg-gray-300" />
-          <span className="text-sm text-gray-500">QR Code Generation</span>
+          <div className="bg-border h-4 w-px" />
+          <span className="text-muted-foreground text-sm">
+            QR Code Generation
+          </span>
         </div>
 
         <SessionSelector />

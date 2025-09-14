@@ -445,12 +445,12 @@ export function TimeWindowSelector({
   }, [classStartTime, classEndTime]);
 
   return (
-    <Card className="border-gray-200 bg-white">
+    <Card className="border-border bg-card">
       <CardHeader className="pb-4">
-        <CardTitle className="text-lg font-semibold text-gray-900">
+        <CardTitle className="text-foreground text-lg font-semibold">
           Check-in Time Windows
         </CardTitle>
-        <p className="text-sm text-gray-600">
+        <p className="text-muted-foreground text-sm">
           Configure when students can check in and out of class
         </p>
       </CardHeader>
@@ -533,13 +533,13 @@ export function TimeWindowSelector({
 
               <div
                 ref={timelineRef}
-                className="relative h-8 rounded-lg border border-gray-300 bg-gray-100 select-none"
+                className="border-border bg-muted relative h-8 rounded-lg border select-none"
               >
                 {/* Hour markers */}
                 {generateTimeMarkers().map((markerTime, index) => (
                   <div
                     key={index}
-                    className="absolute top-0 bottom-0 w-0.5 bg-gray-300"
+                    className="bg-border absolute top-0 bottom-0 w-0.5"
                     style={{ left: `${timeToPercentage(markerTime)}%` }}
                   />
                 ))}
@@ -579,7 +579,7 @@ export function TimeWindowSelector({
                     className="absolute top-0 -translate-x-1/2 transform"
                     style={{ left: `${timeToPercentage(markerTime)}%` }}
                   >
-                    <div className="text-xs whitespace-nowrap text-gray-600">
+                    <div className="text-muted-foreground text-xs whitespace-nowrap">
                       {formatTime(markerTime)}
                     </div>
                   </div>
@@ -604,12 +604,12 @@ export function TimeWindowSelector({
           </div>
         </div>
 
-        <div className="rounded-lg bg-gray-50 p-4">
+        <div className="bg-muted rounded-lg p-4">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <div className="h-3 w-3 rounded-full bg-green-600"></div>
-                <Label className="text-sm font-medium text-gray-900">
+                <Label className="text-foreground text-sm font-medium">
                   Entry Window
                 </Label>
               </div>
@@ -617,22 +617,22 @@ export function TimeWindowSelector({
                 value={entryDuration.toString()}
                 onValueChange={handleEntryDurationChange}
               >
-                <SelectTrigger className="h-8 border-gray-300 bg-white text-gray-900">
+                <SelectTrigger className="border-border bg-background text-foreground h-8">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="border-gray-200 bg-white">
+                <SelectContent className="border-border bg-popover">
                   {DURATION_OPTIONS.map(option => (
                     <SelectItem
                       key={option.value}
                       value={option.value.toString()}
-                      className="text-gray-900 hover:bg-gray-50"
+                      className="hover:bg-accent hover:text-accent-foreground"
                     >
                       {option.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              <div className="text-xs text-gray-600">
+              <div className="text-muted-foreground text-xs">
                 {formatTime(entryStartTime)} - {formatTime(getEntryEndTime())}
               </div>
             </div>
@@ -640,7 +640,7 @@ export function TimeWindowSelector({
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <div className="h-3 w-3 rounded-full bg-blue-600"></div>
-                <Label className="text-sm font-medium text-gray-900">
+                <Label className="text-foreground text-sm font-medium">
                   Exit Window
                 </Label>
               </div>
@@ -648,22 +648,22 @@ export function TimeWindowSelector({
                 value={exitDuration.toString()}
                 onValueChange={handleExitDurationChange}
               >
-                <SelectTrigger className="h-8 border-gray-300 bg-white text-gray-900">
+                <SelectTrigger className="border-border bg-background text-foreground h-8">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="border-gray-200 bg-white">
+                <SelectContent className="border-border bg-popover">
                   {DURATION_OPTIONS.map(option => (
                     <SelectItem
                       key={option.value}
                       value={option.value.toString()}
-                      className="text-gray-900 hover:bg-gray-50"
+                      className="hover:bg-accent hover:text-accent-foreground"
                     >
                       {option.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              <div className="text-xs text-gray-600">
+              <div className="text-muted-foreground text-xs">
                 {formatTime(exitStartTime)} - {formatTime(getExitEndTime())}
               </div>
             </div>

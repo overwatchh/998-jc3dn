@@ -51,9 +51,9 @@ export function RoomSelector() {
   }, [rooms, selectedRoom]);
 
   return (
-    <Card className="border-gray-200 bg-white">
+    <Card className="border-border bg-card">
       <CardHeader className="py-2">
-        <CardTitle className="flex items-center gap-2 text-sm font-medium text-gray-900">
+        <CardTitle className="text-foreground flex items-center gap-2 text-sm font-medium">
           <MapPin className="h-4 w-4" />
           Room & Location Settings
         </CardTitle>
@@ -64,21 +64,21 @@ export function RoomSelector() {
           onValueChange={handleRoomSelect}
           disabled={isLoading}
         >
-          <SelectTrigger className="h-auto min-h-[64px] w-full min-w-[360px] border-gray-200 bg-white py-2.5 text-gray-900 data-[state=open]:ring-blue-500">
+          <SelectTrigger className="border-border bg-background text-foreground data-[state=open]:ring-ring h-auto min-h-[64px] w-full min-w-[360px] py-2.5">
             {selectedRoom ? (
               <div className="flex w-full flex-col space-y-1 pr-10 text-left">
                 <div className="w-full">
-                  <span className="block truncate text-sm leading-tight font-semibold text-gray-900">
+                  <span className="text-foreground block truncate text-sm leading-tight font-semibold">
                     Building {selectedRoom.building_number} • Room{" "}
                     {selectedRoom.room_number}
                   </span>
                 </div>
                 {selectedRoom.description && (
-                  <div className="truncate text-[11px] text-gray-700">
+                  <div className="text-muted-foreground truncate text-[11px]">
                     {selectedRoom.description}
                   </div>
                 )}
-                <div className="w-full truncate text-[11px] text-gray-500">
+                <div className="text-muted-foreground w-full truncate text-[11px]">
                   {selectedRoom.campus_name}
                 </div>
               </div>
@@ -90,23 +90,23 @@ export function RoomSelector() {
               />
             )}
           </SelectTrigger>
-          <SelectContent className="max-w-[380px] border-gray-200 bg-white">
+          <SelectContent className="border-border bg-popover max-w-[380px]">
             {rooms.map(room => (
               <SelectItem
                 key={room.id}
                 value={room.id.toString()}
-                className="text-gray-900 focus:bg-gray-100"
+                className="focus:bg-accent focus:text-accent-foreground"
               >
                 <div className="flex max-w-[340px] flex-col py-1">
-                  <span className="truncate text-sm font-semibold text-gray-900">
+                  <span className="text-foreground truncate text-sm font-semibold">
                     Building {room.building_number} • Room {room.room_number}
                   </span>
                   {room.description && (
-                    <span className="truncate text-xs text-gray-600">
+                    <span className="text-muted-foreground truncate text-xs">
                       {room.description}
                     </span>
                   )}
-                  <span className="truncate text-xs text-gray-400">
+                  <span className="text-muted-foreground truncate text-xs">
                     {room.campus_name}
                   </span>
                 </div>
@@ -119,8 +119,8 @@ export function RoomSelector() {
         <div className="border-t pt-3">
           <div className="mb-2.5 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Shield className="h-4 w-4 text-gray-600" />
-              <Label className="text-sm font-medium text-gray-700">
+              <Shield className="text-muted-foreground h-4 w-4" />
+              <Label className="text-foreground text-sm font-medium">
                 Location Validation
               </Label>
             </div>
@@ -131,12 +131,12 @@ export function RoomSelector() {
           </div>
 
           {validateGeo && (
-            <div className="space-y-2.5 rounded-lg bg-gray-50 p-2.5">
+            <div className="bg-muted space-y-2.5 rounded-lg p-2.5">
               <div className="flex items-center justify-between">
-                <Label className="text-sm text-gray-600">
+                <Label className="text-muted-foreground text-sm">
                   Validation Radius
                 </Label>
-                <span className="text-sm font-medium text-gray-900">
+                <span className="text-foreground text-sm font-medium">
                   {radius}m
                 </span>
               </div>
@@ -149,12 +149,12 @@ export function RoomSelector() {
                   step="10"
                   value={radius}
                   onChange={e => setRadius(parseInt(e.target.value))}
-                  className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-gray-200"
+                  className="bg-secondary h-2 w-full cursor-pointer appearance-none rounded-lg"
                   style={{
-                    background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${((radius - 50) / (500 - 50)) * 100}%, #e5e7eb ${((radius - 50) / (500 - 50)) * 100}%, #e5e7eb 100%)`,
+                    background: `linear-gradient(to right, hsl(var(--primary)) 0%, hsl(var(--primary)) ${((radius - 50) / (500 - 50)) * 100}%, hsl(var(--muted)) ${((radius - 50) / (500 - 50)) * 100}%, hsl(var(--muted)) 100%)`,
                   }}
                 />
-                <div className="flex justify-between text-xs text-gray-500">
+                <div className="text-muted-foreground flex justify-between text-xs">
                   <span>50m</span>
                   <span>500m</span>
                 </div>
@@ -163,16 +163,16 @@ export function RoomSelector() {
               {selectedRoom &&
                 selectedRoom.latitude &&
                 selectedRoom.longitude && (
-                  <div className="rounded border bg-white p-2 text-xs text-gray-600">
+                  <div className="bg-card text-muted-foreground rounded border p-2 text-xs">
                     <div className="mb-0.5 flex items-center gap-1">
                       <MapPin className="h-3 w-3" />
                       <span className="font-medium">Validation Center:</span>
                     </div>
-                    <div className="font-mono text-xs">
+                    <div className="text-foreground font-mono text-xs">
                       {parseFloat(selectedRoom.latitude).toFixed(6)},{" "}
                       {parseFloat(selectedRoom.longitude).toFixed(6)}
                     </div>
-                    <div className="mt-0.5 text-xs text-gray-500">
+                    <div className="text-muted-foreground mt-0.5 text-xs">
                       Students must be within {radius}m of this location to
                       check in
                     </div>

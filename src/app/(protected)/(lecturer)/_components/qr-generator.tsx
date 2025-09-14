@@ -235,7 +235,7 @@ export const QRGenerator = () => {
       {/* Section 1: Time Windows - always first to avoid layout shifts */}
       <div className="relative">
         <div className="absolute -top-3 left-4 bg-transparent px-2">
-          <span className="rounded-full bg-blue-50 px-2 py-1 text-xs font-medium text-blue-600">
+          <span className="bg-accent text-accent-foreground rounded-full px-2 py-1 text-xs font-medium">
             Configure Time Windows
           </span>
         </div>
@@ -249,16 +249,16 @@ export const QRGenerator = () => {
       {/* Section 2: QR - always second, content switches based on qrGenerated */}
       <div className="relative">
         <div className="absolute -top-3 left-4 z-10 bg-transparent px-2">
-          <span className="rounded-full bg-green-50 px-2 py-1 text-xs font-medium text-green-600">
+          <span className="bg-accent text-accent-foreground rounded-full px-2 py-1 text-xs font-medium">
             {qrGenerated ? "QR Code" : "Generate QR Code"}
           </span>
         </div>
-        <Card className="border-gray-200 bg-white">
+        <Card className="border-border bg-card">
           <CardHeader className="pb-4 text-center">
-            <CardTitle className="text-xl font-semibold text-gray-900">
+            <CardTitle className="text-foreground text-xl font-semibold">
               {qrGenerated ? "QR Code" : "QR Code Generation"}
             </CardTitle>
-            <p className="mt-2 text-sm text-gray-600">
+            <p className="text-muted-foreground mt-2 text-sm">
               {qrGenerated
                 ? "Show or update the attendance QR code"
                 : "Generate attendance QR code for your session"}
@@ -267,11 +267,11 @@ export const QRGenerator = () => {
           <CardContent className="space-y-6">
             <div className="text-center">
               {isChecking ? (
-                <div className="mx-auto flex h-48 w-48 items-center justify-center rounded-lg border-2 bg-white shadow-lg">
-                  <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+                <div className="bg-card mx-auto flex h-48 w-48 items-center justify-center rounded-lg border-2 shadow-lg">
+                  <Loader2 className="text-muted-foreground h-8 w-8 animate-spin" />
                 </div>
               ) : qrGenerated && qrUrl ? (
-                <div className="mx-auto flex h-48 w-48 items-center justify-center rounded-lg border-2 bg-white shadow-lg">
+                <div className="bg-card mx-auto flex h-48 w-48 items-center justify-center rounded-lg border-2 shadow-lg">
                   <Image
                     src={qrUrl}
                     alt="QR Code"
@@ -281,8 +281,8 @@ export const QRGenerator = () => {
                   />
                 </div>
               ) : (
-                <div className="mx-auto flex h-48 w-48 items-center justify-center rounded-lg border-2 border-dashed bg-gray-100">
-                  <div className="text-center text-gray-400">
+                <div className="bg-muted mx-auto flex h-48 w-48 items-center justify-center rounded-lg border-2 border-dashed">
+                  <div className="text-muted-foreground text-center">
                     <QrCode className="mx-auto mb-3 h-16 w-16" />
                     <p className="text-sm font-medium">
                       QR code has not been generated
@@ -297,8 +297,8 @@ export const QRGenerator = () => {
 
             {/* Configuration Status */}
             {!qrGenerated && (
-              <div className="rounded-lg bg-gray-50 p-4">
-                <h4 className="mb-3 text-sm font-medium text-gray-900">
+              <div className="bg-muted rounded-lg p-4">
+                <h4 className="text-foreground mb-3 text-sm font-medium">
                   Configuration Status
                 </h4>
                 <div className="space-y-2">
@@ -308,12 +308,12 @@ export const QRGenerator = () => {
                         <span className="text-xs text-green-600">✓</span>
                       </div>
                     ) : (
-                      <div className="flex h-5 w-5 items-center justify-center rounded-full bg-gray-200">
-                        <span className="text-xs text-gray-400">○</span>
+                      <div className="bg-secondary flex h-5 w-5 items-center justify-center rounded-full">
+                        <span className="text-muted-foreground text-xs">○</span>
                       </div>
                     )}
                     <span
-                      className={`text-sm ${selectedRoomId ? "text-green-600" : "text-gray-500"}`}
+                      className={`text-sm ${selectedRoomId ? "text-green-600" : "text-muted-foreground"}`}
                     >
                       Room selected
                     </span>
@@ -324,12 +324,12 @@ export const QRGenerator = () => {
                         <span className="text-xs text-green-600">✓</span>
                       </div>
                     ) : (
-                      <div className="flex h-5 w-5 items-center justify-center rounded-full bg-gray-200">
-                        <span className="text-xs text-gray-400">○</span>
+                      <div className="bg-secondary flex h-5 w-5 items-center justify-center rounded-full">
+                        <span className="text-muted-foreground text-xs">○</span>
                       </div>
                     )}
                     <span
-                      className={`text-sm ${windows ? "text-green-600" : "text-gray-500"}`}
+                      className={`text-sm ${windows ? "text-green-600" : "text-muted-foreground"}`}
                     >
                       Time windows configured
                     </span>
@@ -345,7 +345,7 @@ export const QRGenerator = () => {
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
                       <Button
-                        className="h-10 w-full bg-black text-sm font-medium text-white hover:bg-gray-800"
+                        className="h-10 w-full text-sm font-medium"
                         disabled={
                           isUpdating ||
                           !selectedRoomId ||
@@ -364,15 +364,17 @@ export const QRGenerator = () => {
                           code.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
-                      <div className="space-y-2 text-sm text-gray-700">
+                      <div className="text-foreground space-y-2 text-sm">
                         <div className="flex justify-between">
-                          <span className="text-gray-500">Course week</span>
+                          <span className="text-muted-foreground">
+                            Course week
+                          </span>
                           <span className="font-medium">
                             {selectedCourse?.weekNumber}
                           </span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-gray-500">Room</span>
+                          <span className="text-muted-foreground">Room</span>
                           <span className="font-medium">
                             {selectedRoom
                               ? `${selectedRoom.building_number} ${selectedRoom.room_number}`
@@ -380,24 +382,30 @@ export const QRGenerator = () => {
                           </span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-gray-500">Geo validation</span>
+                          <span className="text-muted-foreground">
+                            Geo validation
+                          </span>
                           <span className="font-medium">
                             {validateGeo ? "Enabled" : "Disabled"}
                           </span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-gray-500">Radius</span>
+                          <span className="text-muted-foreground">Radius</span>
                           <span className="font-medium">{radius} m</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-gray-500">Entry window</span>
+                          <span className="text-muted-foreground">
+                            Entry window
+                          </span>
                           <span className="font-medium">
                             {formatHHMM(windows?.entryWindow.start)} -{" "}
                             {formatHHMM(windows?.entryWindow.end)}
                           </span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-gray-500">Exit window</span>
+                          <span className="text-muted-foreground">
+                            Exit window
+                          </span>
                           <span className="font-medium">
                             {formatHHMM(windows?.exitWindow.start)} -{" "}
                             {formatHHMM(windows?.exitWindow.end)}
@@ -418,7 +426,7 @@ export const QRGenerator = () => {
                   <div className="flex gap-3">
                     <Button
                       variant="outline"
-                      className="flex-1 border-gray-300 bg-transparent text-gray-700 hover:bg-gray-50"
+                      className="flex-1 bg-transparent"
                       onClick={handleDownload}
                       disabled={!qrUrl}
                     >
@@ -427,7 +435,7 @@ export const QRGenerator = () => {
                     </Button>
                     <Button
                       variant="outline"
-                      className="flex-1 border-gray-300 bg-transparent text-gray-700 hover:bg-gray-50"
+                      className="flex-1 bg-transparent"
                       onClick={handleShare}
                       disabled={!qrUrl}
                     >
@@ -441,7 +449,7 @@ export const QRGenerator = () => {
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
                       <Button
-                        className="h-12 w-full bg-black text-base font-medium text-white hover:bg-gray-800"
+                        className="h-12 w-full text-base font-medium"
                         disabled={isGenerating || !selectedRoomId || !windows}
                       >
                         <QrCode className="mr-2 h-5 w-5" />
@@ -460,15 +468,17 @@ export const QRGenerator = () => {
                           QR code.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
-                      <div className="space-y-2 text-sm text-gray-700">
+                      <div className="text-foreground space-y-2 text-sm">
                         <div className="flex justify-between">
-                          <span className="text-gray-500">Course week</span>
+                          <span className="text-muted-foreground">
+                            Course week
+                          </span>
                           <span className="font-medium">
                             {selectedCourse?.weekNumber}
                           </span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-gray-500">Room</span>
+                          <span className="text-muted-foreground">Room</span>
                           <span className="font-medium">
                             {selectedRoom
                               ? `${selectedRoom.building_number} ${selectedRoom.room_number}`
@@ -476,24 +486,30 @@ export const QRGenerator = () => {
                           </span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-gray-500">Geo validation</span>
+                          <span className="text-muted-foreground">
+                            Geo validation
+                          </span>
                           <span className="font-medium">
                             {validateGeo ? "Enabled" : "Disabled"}
                           </span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-gray-500">Radius</span>
+                          <span className="text-muted-foreground">Radius</span>
                           <span className="font-medium">{radius} m</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-gray-500">Entry window</span>
+                          <span className="text-muted-foreground">
+                            Entry window
+                          </span>
                           <span className="font-medium">
                             {formatHHMM(windows?.entryWindow.start)} -{" "}
                             {formatHHMM(windows?.entryWindow.end)}
                           </span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-gray-500">Exit window</span>
+                          <span className="text-muted-foreground">
+                            Exit window
+                          </span>
                           <span className="font-medium">
                             {formatHHMM(windows?.exitWindow.start)} -{" "}
                             {formatHHMM(windows?.exitWindow.end)}
