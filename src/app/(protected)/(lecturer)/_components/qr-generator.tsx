@@ -25,12 +25,12 @@ import {
   useGetQrCodes,
   useUpdateQr,
 } from "../qr-generation/queries";
-import { TimeWindowSelector } from "./time-window-selector";
+
+// TimeWindowSelector moved to the left settings column in NewQrGeneration
 
 export const QRGenerator = () => {
   const {
     windows,
-    currentCourse,
     selectedCourse,
     selectedRoom,
     validateGeo,
@@ -88,28 +88,7 @@ export const QRGenerator = () => {
   // Respect lecturer's selected room from context
   const selectedRoomId = selectedRoom?.id ?? 0;
 
-  const { classStartTime, classEndTime } = useMemo(() => {
-    // Set default class times based on course schedule
-    const start = new Date();
-    const end = new Date();
-    if (currentCourse) {
-      const [startHour, startMin] = currentCourse.startTime
-        .split(":")
-        .map(Number);
-      const [endHour, endMin] = currentCourse.endTime.split(":").map(Number);
-      start.setHours(startHour, startMin, 0, 0);
-      end.setHours(endHour, endMin, 0, 0);
-    } else {
-      start.setHours(9, 0, 0, 0);
-      end.setHours(11, 0, 0, 0);
-    }
-    return { classStartTime: start, classEndTime: end };
-  }, [currentCourse]);
-
-  const handleWindowChange = (w: Windows) => {
-    // Keep windows in shared context so other components can react
-    setWindows(w);
-  };
+  // Time windows are now configured via the left column component
 
   // Helper: format ISO datetime (string) into HH:mm
   const isoToHHMM = (iso?: string | null) =>
@@ -342,23 +321,8 @@ export const QRGenerator = () => {
   }, [successType]);
 
   return (
-    <div className="order-1 space-y-6 lg:order-2 lg:col-span-3">
-      {/* Section 1: Time Windows - always first to avoid layout shifts */}
-      <div className="relative">
-        <div className="absolute -top-3 left-4 bg-transparent px-2">
-          <span className="bg-accent text-accent-foreground rounded-full px-2 py-1 text-xs font-medium">
-            Configure Time Windows
-          </span>
-        </div>
-        <TimeWindowSelector
-          key={`${selectedCourse?.sessionId ?? "-"}-${selectedCourse?.weekNumber ?? "-"}`}
-          classStartTime={classStartTime}
-          classEndTime={classEndTime}
-          onChange={handleWindowChange}
-        />
-      </div>
-
-      {/* Section 2: QR - always second, content switches based on qrGenerated */}
+    <div className="w-full">
+      {/* QR panel (used in a sticky container by parent) */}
       <div className="relative">
         <div className="absolute -top-3 left-4 z-10 bg-transparent px-2">
           <span className="bg-accent text-accent-foreground rounded-full px-2 py-1 text-xs font-medium">
@@ -366,40 +330,40 @@ export const QRGenerator = () => {
           </span>
         </div>
         <Card className="border-border bg-card">
-          <CardHeader className="pb-4 text-center">
-            <CardTitle className="text-foreground text-xl font-semibold">
+          <CardHeader className="pb-3 text-center">
+            <CardTitle className="text-foreground text-base font-semibold">
               {qrGenerated ? "QR Code" : "QR Code Generation"}
             </CardTitle>
-            <p className="text-muted-foreground mt-2 text-sm">
+            <p className="text-muted-foreground mt-1 text-xs">
               {qrGenerated
                 ? "Show or update the attendance QR code"
                 : "Generate attendance QR code for your session"}
             </p>
           </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-4">
             <div className="text-center">
               {isChecking ? (
-                <div className="bg-card mx-auto flex h-48 w-48 items-center justify-center rounded-lg border-2 shadow-lg">
+                <div className="bg-card mx-auto flex aspect-square w-[clamp(240px,40vh,420px)] items-center justify-center rounded-lg border-2 shadow-lg">
                   <Loader2 className="text-muted-foreground h-8 w-8 animate-spin" />
                 </div>
               ) : qrGenerated && qrUrl ? (
-                <div className="bg-card mx-auto flex h-48 w-48 items-center justify-center rounded-lg border-2 shadow-lg">
+                <div className="bg-card mx-auto flex aspect-square w-[clamp(240px,40vh,420px)] items-center justify-center rounded-lg border-2 p-4 shadow-lg">
                   <Image
                     src={qrUrl}
                     alt="QR Code"
-                    width={180}
-                    height={180}
-                    className="rounded"
+                    width={512}
+                    height={512}
+                    className="h-full w-full rounded object-contain"
                   />
                 </div>
               ) : (
-                <div className="bg-muted mx-auto flex h-48 w-48 items-center justify-center rounded-lg border-2 border-dashed">
+                <div className="bg-muted mx-auto flex aspect-square w-[clamp(240px,40vh,420px)] items-center justify-center rounded-lg border-2 border-dashed">
                   <div className="text-muted-foreground text-center">
-                    <QrCode className="mx-auto mb-3 h-16 w-16" />
-                    <p className="text-sm font-medium">
+                    <QrCode className="mx-auto mb-3 h-12 w-12" />
+                    <p className="text-xs font-medium">
                       QR code has not been generated
                     </p>
-                    <p className="text-xs">
+                    <p className="text-[11px]">
                       Complete configuration above and click Generate
                     </p>
                   </div>
@@ -409,11 +373,11 @@ export const QRGenerator = () => {
 
             {/* Configuration Status */}
             {!qrGenerated && (
-              <div className="bg-muted rounded-lg p-4">
-                <h4 className="text-foreground mb-3 text-sm font-medium">
+              <div className="bg-muted rounded-lg p-3">
+                <h4 className="text-foreground mb-2 text-xs font-medium">
                   Configuration Status
                 </h4>
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <div className="flex items-center gap-2">
                     {selectedRoomId ? (
                       <div className="flex h-5 w-5 items-center justify-center rounded-full bg-green-100">
@@ -425,7 +389,7 @@ export const QRGenerator = () => {
                       </div>
                     )}
                     <span
-                      className={`text-sm ${selectedRoomId ? "text-green-600" : "text-muted-foreground"}`}
+                      className={`text-xs ${selectedRoomId ? "text-green-600" : "text-muted-foreground"}`}
                     >
                       Room selected
                     </span>
@@ -441,7 +405,7 @@ export const QRGenerator = () => {
                       </div>
                     )}
                     <span
-                      className={`text-sm ${windows ? "text-green-600" : "text-muted-foreground"}`}
+                      className={`text-xs ${windows ? "text-green-600" : "text-muted-foreground"}`}
                     >
                       Time windows configured
                     </span>
@@ -451,13 +415,13 @@ export const QRGenerator = () => {
             )}
 
             {/* Action area */}
-            <div className="mx-auto max-w-md space-y-3">
+            <div className="mx-auto max-w-sm space-y-2.5">
               {qrGenerated ? (
                 <>
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
                       <Button
-                        className="h-10 w-full text-sm font-medium"
+                        className="h-9 w-full text-sm font-medium"
                         disabled={
                           isUpdating ||
                           !selectedRoomId ||
@@ -570,10 +534,10 @@ export const QRGenerator = () => {
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
-                  <div className="flex gap-3">
+                  <div className="flex gap-2">
                     <Button
                       variant="outline"
-                      className="flex-1 bg-transparent"
+                      className="h-9 flex-1 bg-transparent"
                       onClick={handleDownload}
                       disabled={!qrUrl}
                     >
@@ -582,7 +546,7 @@ export const QRGenerator = () => {
                     </Button>
                     <Button
                       variant="outline"
-                      className="flex-1 bg-transparent"
+                      className="h-9 flex-1 bg-transparent"
                       onClick={handleShare}
                       disabled={!qrUrl}
                     >
@@ -596,7 +560,7 @@ export const QRGenerator = () => {
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
                       <Button
-                        className="h-12 w-full text-base font-medium"
+                        className="h-10 w-full text-sm font-medium"
                         disabled={isGenerating || !selectedRoomId || !windows}
                       >
                         <QrCode className="mr-2 h-5 w-5" />
@@ -675,7 +639,7 @@ export const QRGenerator = () => {
                     </AlertDialogContent>
                   </AlertDialog>
                   {(!selectedRoomId || !windows) && (
-                    <p className="mt-2 text-center text-xs text-red-500">
+                    <p className="mt-2 text-center text-[11px] text-red-500">
                       Please complete all configuration steps above
                     </p>
                   )}
