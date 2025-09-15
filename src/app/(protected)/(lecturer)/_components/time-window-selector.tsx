@@ -26,7 +26,7 @@ const DURATION_OPTIONS = [
   { value: 30, label: "30 minutes" },
   { value: 45, label: "45 minutes" },
   { value: 60, label: "60 minutes" },
-];
+] as const;
 
 export function TimeWindowSelector({
   classStartTime,
