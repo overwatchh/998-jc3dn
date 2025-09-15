@@ -8,14 +8,10 @@ import { QrGenProvider, useQrGenContext } from "./qr-gen-context";
 import { QRGenScreens } from "./types";
 
 export default function Page() {
-  const { data, isLoading, isError } = useGetCourses();
+  const { data, isLoading } = useGetCourses();
 
   if (isLoading) {
     return <LoadingScreen />;
-  }
-
-  if (isError || !data) {
-    throw new Error("Error fetching courses");
   }
 
   function ScreenRenderer() {
