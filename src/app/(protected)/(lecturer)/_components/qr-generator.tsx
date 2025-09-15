@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import apiClient from "@/lib/api/apiClient";
 import { formatHHMM } from "@/lib/utils";
 import { AxiosError } from "axios";
 import { Download, Loader2, QrCode, Share2 } from "lucide-react";
@@ -64,6 +65,13 @@ export const QRGenerator = () => {
     enabled: !!existingQrId,
   });
   const [qrUrl, setQrUrl] = useState<string>("");
+  const [prevInfo, setPrevInfo] = useState<{
+    roomLabel: string | null;
+    validateGeo: boolean | null;
+    radius: number | null;
+    entryWindow: { start: string; end: string } | null;
+    exitWindow: { start: string; end: string } | null;
+  } | null>(null);
   // QR is considered generated for the CURRENTLY selected week only if we have a URL
   const qrGenerated = useMemo(() => Boolean(qrUrl), [qrUrl]);
   const isChecking =
@@ -98,6 +106,10 @@ export const QRGenerator = () => {
     // Keep windows in shared context so other components can react
     setWindows(w);
   };
+
+  // Helper: format ISO datetime (string) into HH:mm
+  const isoToHHMM = (iso?: string | null) =>
+    iso ? formatHHMM(new Date(iso)) : "--:--";
 
   function handleDownload(): void {
     if (!qrUrl) return;
@@ -221,6 +233,90 @@ export const QRGenerator = () => {
       cancelled = true;
     };
   }, [existingQrId, refetchExistingQr, existingQrData?.qr_url, setQrGenerated]);
+
+  // Fetch previous configuration for comparison in update dialog
+  useEffect(() => {
+    let cancelled = false;
+    const run = async () => {
+      if (!existingQrId) {
+        setPrevInfo(null);
+        return;
+      }
+      try {
+        // Prefer the common QR info endpoint for room/geo/radius + windows
+        const { data } = await apiClient.get<{
+          validate_geo: boolean;
+          validities: {
+            id: number;
+            count: number;
+            start_time: string;
+            end_time: string;
+          }[];
+          radius: number | null;
+          location: {
+            building_number: string | null;
+            room_number: string | null;
+            room_id: number | null;
+          } | null;
+        }>(`/qr/${existingQrId}`);
+
+        const first = data.validities.find(v => v.count === 1);
+        const second = data.validities.find(v => v.count === 2);
+        const roomLabel = data.location
+          ? `${data.location.building_number ?? ""} ${data.location.room_number ?? ""}`.trim() ||
+            null
+          : null;
+        if (!cancelled) {
+          setPrevInfo({
+            roomLabel,
+            validateGeo: data.validate_geo ?? null,
+            radius: data.radius ?? null,
+            entryWindow: first
+              ? {
+                  start: isoToHHMM(first.start_time),
+                  end: isoToHHMM(first.end_time),
+                }
+              : null,
+            exitWindow: second
+              ? {
+                  start: isoToHHMM(second.start_time),
+                  end: isoToHHMM(second.end_time),
+                }
+              : null,
+          });
+        }
+      } catch (err) {
+        console.error(err);
+        // Fallback: derive times from existing list if available
+        const v = existingQrList?.data?.[0]?.validities ?? [];
+        const first = v.find(x => x.count === 1);
+        const second = v.find(x => x.count === 2);
+        if (!cancelled) {
+          setPrevInfo({
+            roomLabel: null,
+            validateGeo: null,
+            radius: existingQrList?.data?.[0]?.valid_radius ?? null,
+            entryWindow: first
+              ? {
+                  start: isoToHHMM(first.start_time),
+                  end: isoToHHMM(first.end_time),
+                }
+              : null,
+            exitWindow: second
+              ? {
+                  start: isoToHHMM(second.start_time),
+                  end: isoToHHMM(second.end_time),
+                }
+              : null,
+          });
+        }
+      }
+    };
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [existingQrId, existingQrList?.data]);
 
   // When lecturer switches session/week, reset local QR state first;
   // we'll repopulate if an existing QR for that week is fetched above.
@@ -363,56 +459,91 @@ export const QRGenerator = () => {
                       <AlertDialogHeader>
                         <AlertDialogTitle>Confirm Update</AlertDialogTitle>
                         <AlertDialogDescription>
-                          Please review the details below before updating the QR
-                          code.
+                          Review the changes below. We’ll apply the new settings
+                          to the existing QR for this week.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
-                      <div className="text-foreground space-y-2 text-sm">
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">
-                            Course week
-                          </span>
+                      <div className="text-foreground space-y-3 text-sm">
+                        {/* Week (info only) */}
+                        <div className="flex items-center justify-between">
+                          <span className="text-muted-foreground">Week</span>
                           <span className="font-medium">
                             {selectedCourse?.weekNumber}
                           </span>
                         </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Room</span>
-                          <span className="font-medium">
-                            {selectedRoom
-                              ? `${selectedRoom.building_number} ${selectedRoom.room_number}`
-                              : "-"}
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">
-                            Geo validation
-                          </span>
-                          <span className="font-medium">
-                            {validateGeo ? "Enabled" : "Disabled"}
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Radius</span>
-                          <span className="font-medium">{radius} m</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">
-                            Entry window
-                          </span>
-                          <span className="font-medium">
-                            {formatHHMM(windows?.entryWindow.start)} -{" "}
-                            {formatHHMM(windows?.entryWindow.end)}
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">
-                            Exit window
-                          </span>
-                          <span className="font-medium">
-                            {formatHHMM(windows?.exitWindow.start)} -{" "}
-                            {formatHHMM(windows?.exitWindow.end)}
-                          </span>
+                        {/* Comparison rows */}
+                        <div className="rounded-md border p-3">
+                          <div className="text-muted-foreground mb-2 text-xs font-medium">
+                            Comparison
+                          </div>
+                          <div className="space-y-2">
+                            {/* Room */}
+                            <div className="grid grid-cols-3 items-center gap-2">
+                              <div className="text-muted-foreground">Room</div>
+                              <div className="text-muted-foreground truncate text-right">
+                                {prevInfo?.roomLabel ?? "—"}
+                              </div>
+                              <div className="truncate text-right font-medium">
+                                {selectedRoom
+                                  ? `${selectedRoom.building_number} ${selectedRoom.room_number}`
+                                  : "-"}
+                              </div>
+                            </div>
+                            {/* Geo validation */}
+                            <div className="grid grid-cols-3 items-center gap-2">
+                              <div className="text-muted-foreground">Geo</div>
+                              <div className="text-muted-foreground text-right">
+                                {prevInfo?.validateGeo == null
+                                  ? "—"
+                                  : prevInfo?.validateGeo
+                                    ? "Enabled"
+                                    : "Disabled"}
+                              </div>
+                              <div className="text-right font-medium">
+                                {validateGeo ? "Enabled" : "Disabled"}
+                              </div>
+                            </div>
+                            {/* Radius */}
+                            <div className="grid grid-cols-3 items-center gap-2">
+                              <div className="text-muted-foreground">
+                                Radius
+                              </div>
+                              <div className="text-muted-foreground text-right">
+                                {prevInfo?.radius != null
+                                  ? `${prevInfo.radius} m`
+                                  : "—"}
+                              </div>
+                              <div className="text-right font-medium">
+                                {radius} m
+                              </div>
+                            </div>
+                            {/* Entry window */}
+                            <div className="grid grid-cols-3 items-center gap-2">
+                              <div className="text-muted-foreground">Entry</div>
+                              <div className="text-muted-foreground text-right">
+                                {prevInfo?.entryWindow
+                                  ? `${prevInfo.entryWindow.start} - ${prevInfo.entryWindow.end}`
+                                  : "—"}
+                              </div>
+                              <div className="text-right font-medium">
+                                {formatHHMM(windows?.entryWindow.start)} -{" "}
+                                {formatHHMM(windows?.entryWindow.end)}
+                              </div>
+                            </div>
+                            {/* Exit window */}
+                            <div className="grid grid-cols-3 items-center gap-2">
+                              <div className="text-muted-foreground">Exit</div>
+                              <div className="text-muted-foreground text-right">
+                                {prevInfo?.exitWindow
+                                  ? `${prevInfo.exitWindow.start} - ${prevInfo.exitWindow.end}`
+                                  : "—"}
+                              </div>
+                              <div className="text-right font-medium">
+                                {formatHHMM(windows?.exitWindow.start)} -{" "}
+                                {formatHHMM(windows?.exitWindow.end)}
+                              </div>
+                            </div>
+                          </div>
                         </div>
                       </div>
                       <AlertDialogFooter>
