@@ -12,19 +12,12 @@ import {
 } from "@/components/ui/select";
 import type React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-
-interface TimeWindow {
-  start: Date;
-  end: Date;
-}
+import { Windows } from "../qr-generation/qr-gen-context";
 
 interface TimeWindowSelectorProps {
   classStartTime: Date;
   classEndTime: Date;
-  onChange: (windows: {
-    entryWindow: TimeWindow;
-    exitWindow: TimeWindow;
-  }) => void;
+  onChange: (windows: Windows) => void;
 }
 
 const DURATION_OPTIONS = [
