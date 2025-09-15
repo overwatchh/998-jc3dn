@@ -65,6 +65,10 @@ export const QRGenerator = () => {
     enabled: !!existingQrId,
   });
   const [qrUrl, setQrUrl] = useState<string>("");
+  // Success animation state: shows a brief overlay when create/update succeeds
+  const [successType, setSuccessType] = useState<null | "create" | "update">(
+    null
+  );
   const [prevInfo, setPrevInfo] = useState<{
     roomLabel: string | null;
     validateGeo: boolean | null;
@@ -171,6 +175,7 @@ export const QRGenerator = () => {
 
       setQrUrl(response.qr_url);
       setQrGenerated(true);
+      setSuccessType("create");
       toast.success("QR code generated successfully!");
     } catch (error) {
       console.error("Error generating QR:", error);
@@ -205,6 +210,7 @@ export const QRGenerator = () => {
         setQrUrl(refreshed.data.qr_url);
       }
       setQrGenerated(true);
+      setSuccessType("update");
       toast.success("QR code updated successfully!");
     } catch (error) {
       console.error("Error updating QR:", error);
@@ -327,6 +333,13 @@ export const QRGenerator = () => {
     setWindows(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCourse?.sessionId, selectedCourse?.weekNumber]);
+
+  // Auto-dismiss the success animation after a short delay
+  useEffect(() => {
+    if (!successType) return;
+    const t = setTimeout(() => setSuccessType(null), 1400);
+    return () => clearTimeout(t);
+  }, [successType]);
 
   return (
     <div className="order-1 space-y-6 lg:order-2 lg:col-span-3">
@@ -671,6 +684,103 @@ export const QRGenerator = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Success overlay animation */}
+        {successType && (
+          <div
+            className="absolute inset-0 z-20 flex items-center justify-center bg-black/40 backdrop-blur-[2px]"
+            aria-live="polite"
+            role="status"
+          >
+            <div className="flex flex-col items-center">
+              <div className="success-pop rounded-full bg-white/95 p-4 shadow-2xl ring-1 ring-black/5">
+                <svg
+                  className="success-svg"
+                  width="96"
+                  height="96"
+                  viewBox="0 0 96 96"
+                  aria-hidden
+                >
+                  <circle
+                    cx="48"
+                    cy="48"
+                    r="40"
+                    fill="none"
+                    stroke="#22c55e"
+                    strokeWidth="8"
+                    opacity="0.2"
+                  />
+                  <circle
+                    className="success-ring"
+                    cx="48"
+                    cy="48"
+                    r="40"
+                    fill="none"
+                    stroke="#22c55e"
+                    strokeWidth="8"
+                    strokeLinecap="round"
+                  />
+                  <path
+                    className="success-check"
+                    d="M32 50 L44 62 L66 38"
+                    fill="none"
+                    stroke="#16a34a"
+                    strokeWidth="8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </div>
+              <div className="mt-3 text-center">
+                <div className="text-base font-semibold tracking-tight text-white">
+                  {successType === "create" ? "QR generated" : "QR updated"}
+                </div>
+                <div className="text-xs text-white/80">
+                  {successType === "create"
+                    ? "Share or display it to students"
+                    : "New settings applied successfully"}
+                </div>
+              </div>
+            </div>
+            <style jsx>{`
+              .success-pop {
+                animation: pop-in 240ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+              }
+              .success-svg {
+                filter: drop-shadow(0 6px 18px rgba(22, 163, 74, 0.35));
+              }
+              .success-ring {
+                stroke-dasharray: 260;
+                stroke-dashoffset: 260;
+                animation: draw 700ms ease-out forwards 120ms;
+              }
+              .success-check {
+                stroke-dasharray: 120;
+                stroke-dashoffset: 120;
+                animation: draw 520ms ease-out forwards 360ms;
+              }
+              @keyframes pop-in {
+                0% {
+                  transform: scale(0.85);
+                  opacity: 0;
+                }
+                60% {
+                  transform: scale(1.04);
+                  opacity: 1;
+                }
+                100% {
+                  transform: scale(1);
+                  opacity: 1;
+                }
+              }
+              @keyframes draw {
+                to {
+                  stroke-dashoffset: 0;
+                }
+              }
+            `}</style>
+          </div>
+        )}
       </div>
     </div>
   );
