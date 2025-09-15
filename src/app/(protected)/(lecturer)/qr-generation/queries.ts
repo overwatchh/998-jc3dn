@@ -2,10 +2,10 @@ import apiClient from "@/lib/api/apiClient";
 import { ApiArrayResponse } from "@/types/api";
 import {
   AbsentListResponse,
-  LiveCheckinResponse,
   CourseSessionResponse,
-  StudentListResponse,
   LecturerSubjectsResponse,
+  LiveCheckinResponse,
+  StudentListResponse,
 } from "@/types/course";
 import {
   GenerateQrRequestBody,
@@ -257,5 +257,27 @@ export const useGetLecturerRooms = () => {
   return useQuery({
     queryKey: [LECTURER_ROOMS_QUERY_KEY],
     queryFn,
+  });
+};
+
+// Get room(s) for a particular study session (usually 1)
+const STUDY_SESSION_ROOMS_QUERY_KEY = ["studySessionRooms"] as const;
+export const useGetStudySessionRooms = (
+  studySessionId?: number,
+  options?: { enabled?: boolean }
+) => {
+  const queryFn = async () => {
+    if (!studySessionId) {
+      return { message: "No session", count: 0, data: [] as RoomRow[] };
+    }
+    const { data } = await apiClient.get<ApiArrayResponse<RoomRow[]>>(
+      `/lecturer/study-session/${studySessionId}/rooms`
+    );
+    return data;
+  };
+  return useQuery({
+    queryKey: [STUDY_SESSION_ROOMS_QUERY_KEY, studySessionId],
+    queryFn,
+    enabled: options?.enabled ?? Boolean(studySessionId),
   });
 };

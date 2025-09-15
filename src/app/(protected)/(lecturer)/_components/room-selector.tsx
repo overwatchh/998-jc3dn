@@ -13,7 +13,10 @@ import { Switch } from "@/components/ui/switch";
 import { MapPin, Shield } from "lucide-react";
 import { useEffect, useMemo } from "react";
 import { useQrGenContext } from "../qr-generation/qr-gen-context";
-import { useGetLecturerRooms } from "../qr-generation/queries";
+import {
+  useGetLecturerRooms,
+  useGetStudySessionRooms,
+} from "../qr-generation/queries";
 
 export function RoomSelector() {
   const {
@@ -23,10 +26,21 @@ export function RoomSelector() {
     setValidateGeo,
     radius,
     setRadius,
+    selectedCourse,
   } = useQrGenContext();
 
-  const { data: roomsData, isLoading } = useGetLecturerRooms();
-  const rooms = useMemo(() => roomsData?.data ?? [], [roomsData]);
+  // Prefer rooms for the currently selected study session; fallback to all rooms if needed
+  const sessionId = selectedCourse?.sessionId;
+  const { data: sessionRoomsData, isLoading: isLoadingSessionRooms } =
+    useGetStudySessionRooms(sessionId, { enabled: Boolean(sessionId) });
+  const { data: allRoomsData, isLoading: isLoadingAllRooms } =
+    useGetLecturerRooms();
+  const rooms = useMemo(() => {
+    const list = sessionRoomsData?.data ?? [];
+    return list.length > 0 ? list : (allRoomsData?.data ?? []);
+  }, [sessionRoomsData, allRoomsData]);
+  const isLoading =
+    isLoadingSessionRooms || (rooms.length === 0 && isLoadingAllRooms);
 
   function handleRoomSelect(roomId: string): void {
     if (!roomId) {
@@ -42,13 +56,16 @@ export function RoomSelector() {
     setValidateGeo(checked);
   }
 
-  // Auto-select the first available room after rooms are fetched
+  // Auto-select the first available room after rooms are fetched or session changes.
   useEffect(() => {
-    if (selectedRoom || rooms.length === 0) return;
-    setSelectedRoom(rooms[0]);
+    if (rooms.length === 0) return;
+    // If no selection yet or previous selection not in the filtered list, pick first
+    if (!selectedRoom || !rooms.some(r => r.id === selectedRoom.id)) {
+      setSelectedRoom(rooms[0]);
+    }
     // We intentionally don't include setSelectedRoom to avoid unnecessary re-runs
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rooms, selectedRoom]);
+  }, [rooms, selectedRoom, sessionId]);
 
   return (
     <Card className="border-border bg-card">
