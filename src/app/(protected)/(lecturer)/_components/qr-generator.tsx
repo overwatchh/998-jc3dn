@@ -110,17 +110,70 @@ export const QRGenerator = () => {
 
   async function handleShare(): Promise<void> {
     if (!qrUrl) return;
+    // 1) Try native Web Share (mobile-friendly)
     try {
-      if (navigator.share) {
-        await navigator.share({ title: "Attendance QR", url: qrUrl });
-      } else if (navigator.clipboard) {
+      const shareData = {
+        title: "Attendance QR",
+        text: selectedCourse
+          ? `Week ${selectedCourse.weekNumber} attendance QR`
+          : "Attendance QR",
+        url: qrUrl,
+      };
+      const navShare = navigator as Navigator & {
+        share?: (data: ShareData) => Promise<void>;
+        canShare?: (data?: ShareData) => boolean;
+      };
+      if (navShare?.canShare?.(shareData) || navShare?.share) {
+        await navShare.share?.(shareData);
+        return; // done if user shared
+      }
+    } catch {
+      // user cancelled or share failed; continue to email fallback
+    }
+
+    // 2) Email fallback (opens default mail client with prefilled content)
+    try {
+      const subject = `Attendance QR${selectedCourse ? ` - Week ${selectedCourse.weekNumber}` : ""}`;
+      const isHttp = /^https?:\/\//i.test(qrUrl);
+      const isData = qrUrl.startsWith("data:");
+      const bodyLines: string[] = ["Hello,", ""];
+      if (isHttp) {
+        bodyLines.push(
+          "Here is the attendance QR code link:",
+          qrUrl,
+          "",
+          "If the QR image doesn't load automatically, open the link above in a browser."
+        );
+      } else if (isData) {
+        // Don't include the giant data URL in the email body; instead prompt user to attach the PNG
+        // Proactively download so it's easy to attach
+        handleDownload();
+        bodyLines.push(
+          "The attendance QR code image has been downloaded as 'attendance-qr.png'.",
+          "Please attach it to this email before sending."
+        );
+      } else {
+        bodyLines.push("Attendance QR code");
+      }
+      const mailto = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyLines.join("\n"))}`;
+      // Use location.href so it works on mobile and desktop
+      window.location.href = mailto;
+      toast.success("Opening your email client…");
+      return;
+    } catch {
+      // ignore and try one last fallback
+    }
+
+    // 3) Clipboard as last resort
+    try {
+      if (navigator.clipboard) {
         await navigator.clipboard.writeText(qrUrl);
         toast.success("QR link copied to clipboard");
       } else {
         toast.message("QR URL", { description: qrUrl });
       }
     } catch {
-      // user cancelled or share failed
+      // swallow
     }
   }
 
