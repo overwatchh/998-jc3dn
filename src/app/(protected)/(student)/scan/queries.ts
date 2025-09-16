@@ -11,6 +11,7 @@ export enum QRStatusEnum {
 interface QRStatusResponse {
   message: string;
   validity_count: QRStatusEnum;
+  validate_geo: boolean;
   validities: {
     id: number;
     count: number;

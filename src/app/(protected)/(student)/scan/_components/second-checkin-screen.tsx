@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle, Clock, Info } from "lucide-react";
 
 interface Props {
-  handleCheckin: () => void;
+  handleCheckin: (checkinType?: "In-person" | "Online") => void;
   isCheckingIn?: boolean;
   disabled?: boolean;
 }
@@ -65,7 +65,9 @@ export const SecondCheckinScreen = ({
 
       {/* Check-in Button */}
       <Button
-        onClick={handleCheckin}
+        onClick={() => {
+          handleCheckin();
+        }}
         className="h-12 w-full text-lg font-semibold"
         size="lg"
         disabled={!!disabled || !!isCheckingIn}

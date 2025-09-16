@@ -3,16 +3,29 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { UseGeolocationReturn } from "@/hooks/useGeolocation";
-import { CheckCircle, Loader2, MapPin, QrCode } from "lucide-react";
+import { haversineDistance } from "@/lib/utils";
+import {
+  CheckCircle,
+  Loader2,
+  MapPin,
+  QrCode,
+  Shield,
+  ShieldOff,
+} from "lucide-react";
 
 interface Props {
   qrCodeId: string;
   location: UseGeolocationReturn;
-  handleCheckin: () => void;
+  handleCheckin: (checkinType?: "In-person" | "Online") => void;
   isCheckingIn: boolean;
   roomLabel?: string;
   radiusMeters?: number | null;
   disableAfterSuccess?: boolean;
+  validateGeo: boolean;
+  roomLocation?: {
+    latitude: number;
+    longitude: number;
+  } | null;
 }
 
 export const FirstCheckinScreen = ({
@@ -23,9 +36,27 @@ export const FirstCheckinScreen = ({
   roomLabel,
   radiusMeters,
   disableAfterSuccess,
+  validateGeo,
+  roomLocation,
 }: Props) => {
   const isLocationReady = location.position && !location.loading;
   const isLocationError = location.error;
+
+  // Calculate distance if both user location and room location are available
+  const userDistance =
+    isLocationReady && roomLocation
+      ? haversineDistance(
+          location.position!.latitude,
+          location.position!.longitude,
+          roomLocation.latitude,
+          roomLocation.longitude
+        )
+      : null;
+
+  const isWithinRadius =
+    userDistance !== null && radiusMeters !== null && radiusMeters !== undefined
+      ? userDistance <= radiusMeters
+      : false;
 
   return (
     <div className="space-y-6">
@@ -56,12 +87,57 @@ export const FirstCheckinScreen = ({
               <Badge variant="secondary">{roomLabel}</Badge>
             </div>
           )}
+
+          {/* Geo Validation Status */}
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium">Location validation</span>
+            <Badge
+              variant={validateGeo ? "default" : "secondary"}
+              className={
+                validateGeo
+                  ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
+                  : ""
+              }
+            >
+              {validateGeo ? (
+                <>
+                  <Shield className="mr-1 h-3 w-3" />
+                  Required
+                </>
+              ) : (
+                <>
+                  <ShieldOff className="mr-1 h-3 w-3" />
+                  Optional
+                </>
+              )}
+            </Badge>
+          </div>
+
           {typeof radiusMeters !== "undefined" && radiusMeters !== null && (
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium">Allowed radius</span>
               <Badge variant="secondary">{Math.round(radiusMeters)} m</Badge>
             </div>
           )}
+
+          {/* Distance Information */}
+          {userDistance !== null && (
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium">Your distance</span>
+              <Badge
+                variant={isWithinRadius ? "secondary" : "destructive"}
+                className={
+                  isWithinRadius
+                    ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                    : ""
+                }
+              >
+                {Math.round(userDistance)} m
+                {isWithinRadius && <CheckCircle className="ml-1 h-3 w-3" />}
+              </Badge>
+            </div>
+          )}
+
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium">Status</span>
             <Badge
@@ -109,6 +185,33 @@ export const FirstCheckinScreen = ({
                 <br />
                 Lng: {location.position?.longitude.toFixed(6)}
               </div>
+
+              {/* Location validation status */}
+              {validateGeo &&
+                userDistance !== null &&
+                radiusMeters !== null && (
+                  <div className="mt-3 rounded-md border p-3">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="font-medium">Distance check:</span>
+                      <Badge
+                        variant={isWithinRadius ? "secondary" : "destructive"}
+                        className={
+                          isWithinRadius
+                            ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                            : ""
+                        }
+                      >
+                        {isWithinRadius ? "Within range" : "Too far"}
+                      </Badge>
+                    </div>
+                    {!isWithinRadius && (
+                      <p className="text-muted-foreground mt-1 text-xs">
+                        You need to be within {radiusMeters}m of the session
+                        location.
+                      </p>
+                    )}
+                  </div>
+                )}
             </div>
           )}
 
@@ -122,7 +225,7 @@ export const FirstCheckinScreen = ({
 
       {/* Check-in Button */}
       <Button
-        onClick={handleCheckin}
+        onClick={() => handleCheckin()}
         disabled={!isLocationReady || isCheckingIn || !!disableAfterSuccess}
         className="h-12 w-full text-lg font-semibold"
         size="lg"
@@ -150,8 +253,9 @@ export const FirstCheckinScreen = ({
       {/* Info Alert */}
       <Alert>
         <AlertDescription>
-          Make sure you&apos;re in the correct location before checking in. Your
-          location data helps verify your attendance.
+          {validateGeo
+            ? "Make sure you're in the correct location before checking in. Location validation is required for this session."
+            : "Your location data helps verify your attendance. You can check-in from anywhere for this session."}
         </AlertDescription>
       </Alert>
     </div>

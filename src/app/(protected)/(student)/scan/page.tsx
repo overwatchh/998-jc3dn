@@ -4,9 +4,11 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useGeolocation } from "@/hooks/useGeolocation";
+import { haversineDistance } from "@/lib/utils";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { FirstCheckinScreen } from "./_components/first-checkin-screen";
+import { OnlineCheckinDialog } from "./_components/online-checkin-dialog";
 import { SecondCheckinScreen } from "./_components/second-checkin-screen";
 import { useStudentQRCheckin } from "./mutations";
 import { QRStatusEnum, useGetCheckinStatus } from "./queries";
@@ -16,10 +18,13 @@ enum Screen {
   SECOND_CHECKIN,
 }
 
+type CheckinType = "In-person" | "Online";
+
 const CheckinPage = () => {
   const [screen, setScreen] = useState<Screen>(Screen.FIRST_CHECKIN);
   const [firstCheckedIn, setFirstCheckedIn] = useState(false);
   const [secondCheckedIn, setSecondCheckedIn] = useState(false);
+  const [showOnlineDialog, setShowOnlineDialog] = useState(false);
   const searchParams = useSearchParams();
   const [locationEnabled, setLocationEnabled] = useState(false);
   const qrCodeId = searchParams.get("qr_code_id");
@@ -42,6 +47,10 @@ const CheckinPage = () => {
 
       case QRStatusEnum.SECOND_CHECKIN:
         setScreen(Screen.SECOND_CHECKIN);
+        // Auto-enable location for second check-in (but won't prompt user)
+        if (!locationEnabled) {
+          setLocationEnabled(true);
+        }
         break;
 
       case QRStatusEnum.NOT_GENERATED:
@@ -57,7 +66,7 @@ const CheckinPage = () => {
       default:
         break;
     }
-  }, [checkinStatus]);
+  }, [checkinStatus, locationEnabled]);
 
   if (!qrCodeId) {
     return (
@@ -74,7 +83,11 @@ const CheckinPage = () => {
   }
 
   // Prompt for location permission before requesting it
-  if (!isCheckinStatusPending && !locationEnabled) {
+  // Skip location request for second check-in since geo-validation is simpler
+  const needsLocation =
+    checkinStatus?.validity_count === QRStatusEnum.FIRST_CHECKIN;
+
+  if (!isCheckinStatusPending && !locationEnabled && needsLocation) {
     return (
       <div className="space-y-6">
         <div className="text-center">
@@ -192,16 +205,73 @@ const CheckinPage = () => {
     );
   }
 
-  const handleCheckin = async () => {
-    if (!location.position) {
+  // Calculate if user is nearby the required location
+  const isUserNearby = () => {
+    if (!location.position || !checkinStatus?.location) {
+      return false;
+    }
+
+    const distance = haversineDistance(
+      location.position.latitude,
+      location.position.longitude,
+      checkinStatus.location.latitude,
+      checkinStatus.location.longitude
+    );
+
+    const radius = checkinStatus.location.radius ?? 0;
+    return distance <= radius;
+  };
+
+  // Implement the geo-validation logic from pseudo code
+  const handleCheckin = async (checkinType?: CheckinType) => {
+    // For second check-in, we're more lenient with location requirements
+    if (!location.position && screen === Screen.FIRST_CHECKIN) {
       alert("Location data is not available yet. Please wait.");
       return;
     }
+
+    // Use default coordinates for second check-in if location is not available
+    const lat = location.position?.latitude ?? 0;
+    const long = location.position?.longitude ?? 0;
+
+    const geoValidationEnabled = checkinStatus?.validate_geo ?? false;
+    const nearby = location.position ? isUserNearby() : false;
+
+    // If no specific checkin type is provided, determine it based on geo logic
+    let finalCheckinType: CheckinType = checkinType || "In-person";
+
+    // For second check-in, use simpler logic - just default to In-person unless explicitly specified
+    if (!checkinType && screen === Screen.SECOND_CHECKIN) {
+      finalCheckinType = "In-person";
+    } else if (!checkinType && screen === Screen.FIRST_CHECKIN) {
+      // Only apply geo-validation logic for first check-in
+      if (geoValidationEnabled) {
+        // Geo validation enabled: if not nearby, not allowed to check in
+        if (!nearby) {
+          alert("You must be at the specified location to check in.");
+          return;
+        }
+        finalCheckinType = "In-person";
+      } else {
+        // Geo validation disabled
+        if (nearby) {
+          finalCheckinType = "In-person";
+        } else {
+          // Show confirmation popup for online check-in
+          setShowOnlineDialog(true);
+          return; // Exit here, let the dialog handle the confirmation
+        }
+      }
+    }
+
+    // Perform the actual check-in
     await checkin({
-      lat: location.position.latitude,
-      long: location.position.longitude,
-      qr_code_id: parseInt(qrCodeId, 10),
+      lat: lat,
+      long: long,
+      qr_code_id: parseInt(qrCodeId!, 10),
+      checkin_type: finalCheckinType,
     });
+
     if (screen === Screen.FIRST_CHECKIN) {
       setFirstCheckedIn(true);
     } else if (screen === Screen.SECOND_CHECKIN) {
@@ -209,23 +279,62 @@ const CheckinPage = () => {
     }
   };
 
+  const handleOnlineCheckinConfirm = () => {
+    handleCheckin("Online");
+  };
+
   switch (screen) {
     case Screen.FIRST_CHECKIN:
       return (
-        <FirstCheckinScreen
-          isCheckingIn={isCheckinPending}
-          location={location}
-          handleCheckin={handleCheckin}
-          qrCodeId={qrCodeId}
-          roomLabel={
-            checkinStatus?.location?.building_number &&
-            checkinStatus?.location?.room_number
-              ? `Building ${checkinStatus.location.building_number}, Room ${checkinStatus.location.room_number}`
-              : undefined
-          }
-          radiusMeters={checkinStatus?.location?.radius ?? null}
-          disableAfterSuccess={firstCheckedIn}
-        />
+        <>
+          <FirstCheckinScreen
+            isCheckingIn={isCheckinPending}
+            location={location}
+            handleCheckin={handleCheckin}
+            qrCodeId={qrCodeId}
+            roomLabel={
+              checkinStatus?.location?.building_number &&
+              checkinStatus?.location?.room_number
+                ? `Building ${checkinStatus.location.building_number}, Room ${checkinStatus.location.room_number}`
+                : undefined
+            }
+            radiusMeters={checkinStatus?.location?.radius ?? null}
+            disableAfterSuccess={firstCheckedIn}
+            validateGeo={checkinStatus?.validate_geo ?? false}
+            roomLocation={
+              checkinStatus?.location
+                ? {
+                    latitude: checkinStatus.location.latitude,
+                    longitude: checkinStatus.location.longitude,
+                  }
+                : null
+            }
+          />
+
+          {/* Online Check-in Confirmation Dialog */}
+          <OnlineCheckinDialog
+            open={showOnlineDialog}
+            onOpenChange={setShowOnlineDialog}
+            onConfirm={handleOnlineCheckinConfirm}
+            distanceMeters={
+              location.position && checkinStatus?.location
+                ? haversineDistance(
+                    location.position.latitude,
+                    location.position.longitude,
+                    checkinStatus.location.latitude,
+                    checkinStatus.location.longitude
+                  )
+                : 0
+            }
+            allowedRadiusMeters={checkinStatus?.location?.radius ?? 0}
+            roomLabel={
+              checkinStatus?.location?.building_number &&
+              checkinStatus?.location?.room_number
+                ? `Building ${checkinStatus.location.building_number}, Room ${checkinStatus.location.room_number}`
+                : undefined
+            }
+          />
+        </>
       );
 
     case Screen.SECOND_CHECKIN:

@@ -15,21 +15,21 @@ import apiClient from "@/lib/api/apiClient";
 import { formatHHMM } from "@/lib/utils";
 import { AxiosError } from "axios";
 import {
+  CheckSquare,
+  Clock,
   Download,
   Loader2,
-  QrCode,
-  Share2,
   MapPin,
-  Clock,
-  Shield,
-  CheckSquare,
-  Square,
+  QrCode,
   RadioIcon,
+  Share2,
+  Shield,
+  Square,
 } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
 import type React from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useQrGenContext, Windows } from "../qr-generation/qr-gen-context";
 import {
@@ -259,11 +259,6 @@ export const QRGenerator = () => {
         end_time: formatHHMM(w.exitWindow.end),
       },
     ];
-
-    // Debug logging
-    console.log("Building validities:", validities);
-    console.log("Exit window raw:", w.exitWindow);
-    console.log("Exit valid?", w.exitWindow.end > w.exitWindow.start);
 
     return validities;
   };
