@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/select";
 import type React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Windows } from "../qr-generation/qr-gen-context";
+import { Windows, useQrGenContext } from "../qr-generation/qr-gen-context";
 
 interface TimeWindowSelectorProps {
   classStartTime: Date;
@@ -33,6 +33,7 @@ export function TimeWindowSelector({
   classEndTime,
   onChange,
 }: TimeWindowSelectorProps) {
+  const { windows } = useQrGenContext();
   const timelineStart = useMemo(
     () => new Date(classStartTime.getTime() - 60 * 60 * 1000),
     [classStartTime]
@@ -59,7 +60,7 @@ export function TimeWindowSelector({
   const isUpdatingRef = useRef(false);
   const timelineRef = useRef<HTMLDivElement>(null);
 
-  // Reset to defaults whenever the class times change (e.g., when switching subjects)
+  // Initialize from context windows or reset to defaults when class times change
   useEffect(() => {
     // Use milliseconds to prevent unnecessary resets when the times are effectively unchanged
     const startMs = classStartTime.getTime();
@@ -68,14 +69,30 @@ export function TimeWindowSelector({
     // Reset dragging state to avoid stuck handlers across subject changes
     setIsDragging(null);
 
-    // Initialize to defaults relative to new class times
-    setEntryDuration(30);
-    setExitDuration(30);
-    setEntryStartTime(new Date(startMs - 15 * 60 * 1000));
-    setExitStartTime(new Date(endMs - 15 * 60 * 1000));
+    // If we have existing windows in context, use them
+    if (windows) {
+      const entryStart = windows.entryWindow.start;
+      const entryEnd = windows.entryWindow.end;
+      const exitStart = windows.exitWindow.start;
+      const exitEnd = windows.exitWindow.end;
+      
+      const entryDurationMs = entryEnd.getTime() - entryStart.getTime();
+      const exitDurationMs = exitEnd.getTime() - exitStart.getTime();
+      
+      setEntryStartTime(entryStart);
+      setEntryDuration(Math.round(entryDurationMs / (60 * 1000))); // Convert to minutes
+      setExitStartTime(exitStart);
+      setExitDuration(Math.round(exitDurationMs / (60 * 1000))); // Convert to minutes
+    } else {
+      // Initialize to defaults relative to new class times only if no context windows
+      setEntryDuration(30);
+      setExitDuration(30);
+      setEntryStartTime(new Date(startMs - 15 * 60 * 1000));
+      setExitStartTime(new Date(endMs - 15 * 60 * 1000));
+    }
     // onChange is triggered by the debounced effect below
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [classStartTime.getTime(), classEndTime.getTime()]);
+  }, [classStartTime.getTime(), classEndTime.getTime(), windows]);
 
   // Utility functions
   const timeToPercentage = useCallback(
@@ -465,38 +482,52 @@ export function TimeWindowSelector({
           Configure when students can check in and out of class
         </p>
       </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="flex gap-2">
-          <Button
-            onClick={() => applyPreset("early")}
-            variant="outline"
-            size="sm"
-            className="text-xs"
-          >
-            Early Entry
-          </Button>
-          <Button
-            onClick={() => applyPreset("standard")}
-            variant="outline"
-            size="sm"
-            className="text-xs"
-          >
-            Standard
-          </Button>
-          <Button
-            onClick={() => applyPreset("flexible")}
-            variant="outline"
-            size="sm"
-            className="text-xs"
-          >
-            Flexible
-          </Button>
+      <CardContent className="space-y-4">
+        <div className="space-y-2">
+          <div>
+            <h4 className="text-sm font-medium text-foreground mb-1">Quick Presets</h4>
+            <p className="text-xs text-muted-foreground mb-1">
+              Choose a preset configuration to quickly set up common time window patterns
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+            <div className="border border-border rounded-md p-2 hover:bg-accent/50 transition-colors cursor-pointer" onClick={() => applyPreset("early")}>
+              <div className="flex items-center justify-between mb-1">
+                <h5 className="font-medium text-xs text-foreground">Early Entry</h5>
+                <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded text-[10px]">15 min</span>
+              </div>
+              <p className="text-[10px] text-muted-foreground leading-tight">
+                5 min before class start, 5 min before class end
+              </p>
+            </div>
+            
+            <div className="border border-border rounded-md p-2 hover:bg-accent/50 transition-colors cursor-pointer" onClick={() => applyPreset("standard")}>
+              <div className="flex items-center justify-between mb-1">
+                <h5 className="font-medium text-xs text-foreground">Standard</h5>
+                <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded text-[10px]">15 min</span>
+              </div>
+              <p className="text-[10px] text-muted-foreground leading-tight">
+                At class start, 15 min before class end
+              </p>
+            </div>
+            
+            <div className="border border-border rounded-md p-2 hover:bg-accent/50 transition-colors cursor-pointer" onClick={() => applyPreset("flexible")}>
+              <div className="flex items-center justify-between mb-1">
+                <h5 className="font-medium text-xs text-foreground">Flexible</h5>
+                <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded text-[10px]">30 min</span>
+              </div>
+              <p className="text-[10px] text-muted-foreground leading-tight">
+                10 min before class start, 10 min before class end
+              </p>
+            </div>
+          </div>
         </div>
 
-        <div className="space-y-3">
+        <div className="space-y-2">
           <div className="relative overflow-x-auto">
             <div className="min-w-[600px] flex-row px-5">
-              <div className="relative mb-3 h-12">
+              <div className="relative mb-2 h-12">
                 {/* Entry Handle */}
                 <div
                   className={`absolute top-0 z-30 -translate-x-1/2 transform cursor-move ${
@@ -583,7 +614,7 @@ export function TimeWindowSelector({
               </div>
 
               {/* Time labels */}
-              <div className="relative mt-2 h-4">
+              <div className="relative mt-1 h-4">
                 {generateTimeMarkers().map((markerTime, index) => (
                   <div
                     key={index}
@@ -615,9 +646,9 @@ export function TimeWindowSelector({
           </div>
         </div>
 
-        <div className="bg-muted rounded-lg p-4">
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div className="space-y-2">
+        <div className="bg-muted rounded-lg p-3">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            <div className="space-y-1.5">
               <div className="flex items-center gap-2">
                 <div className="h-3 w-3 rounded-full bg-green-600"></div>
                 <Label className="text-foreground text-sm font-medium">
@@ -648,7 +679,7 @@ export function TimeWindowSelector({
               </div>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <div className="flex items-center gap-2">
                 <div className="h-3 w-3 rounded-full bg-blue-600"></div>
                 <Label className="text-foreground text-sm font-medium">

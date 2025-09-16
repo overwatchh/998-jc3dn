@@ -1,5 +1,15 @@
 "use client";
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import {
@@ -10,8 +20,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { MapPin, Shield } from "lucide-react";
-import { useEffect, useMemo } from "react";
+import { AlertTriangle, MapPin, Shield } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { useQrGenContext } from "../qr-generation/qr-gen-context";
 import {
   useGetLecturerRooms,
@@ -29,45 +39,102 @@ export function RoomSelector() {
     selectedCourse,
   } = useQrGenContext();
 
-  // Prefer rooms for the currently selected study session; fallback to all rooms if needed
+  // State for confirmation dialog
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [pendingRoomId, setPendingRoomId] = useState<string | null>(null);
+
+  // Always show all available rooms for selection
   const sessionId = selectedCourse?.sessionId;
-  const { data: sessionRoomsData, isLoading: isLoadingSessionRooms } =
+  const { data: sessionRoomsData } =
     useGetStudySessionRooms(sessionId, { enabled: Boolean(sessionId) });
   const { data: allRoomsData, isLoading: isLoadingAllRooms } =
     useGetLecturerRooms();
   const rooms = useMemo(() => {
-    const list = sessionRoomsData?.data ?? [];
-    return list.length > 0 ? list : (allRoomsData?.data ?? []);
-  }, [sessionRoomsData, allRoomsData]);
-  const isLoading =
-    isLoadingSessionRooms || (rooms.length === 0 && isLoadingAllRooms);
+    // Always use all rooms, but sort default rooms to the top
+    const allRooms = allRoomsData?.data ?? [];
+    const sessionRooms = sessionRoomsData?.data ?? [];
+    const sessionRoomIds = new Set(sessionRooms.map(room => room.id));
+    
+    // Sort rooms: default rooms first, then others
+    return allRooms.sort((a, b) => {
+      const aIsDefault = sessionRoomIds.has(a.id);
+      const bIsDefault = sessionRoomIds.has(b.id);
+      
+      if (aIsDefault && !bIsDefault) return -1;
+      if (!aIsDefault && bIsDefault) return 1;
+      
+      // If both are default or both are not default, sort by campus, then building, then room
+      const campusCompare = a.campus_name.localeCompare(b.campus_name);
+      if (campusCompare !== 0) return campusCompare;
+      
+      const buildingCompare = a.building_number.localeCompare(b.building_number);
+      if (buildingCompare !== 0) return buildingCompare;
+      
+      return a.room_number.localeCompare(b.room_number);
+    });
+  }, [allRoomsData, sessionRoomsData]);
+  
+  // Get session room IDs for labeling
+  const sessionRoomIds = useMemo(() => {
+    return new Set((sessionRoomsData?.data ?? []).map(room => room.id));
+  }, [sessionRoomsData]);
+  const isLoading = isLoadingAllRooms;
 
   function handleRoomSelect(roomId: string): void {
     if (!roomId) {
       setSelectedRoom(null);
       return;
     }
+    
     const numericId = Number(roomId);
     const room = rooms.find(r => r.id === numericId) || null;
-    setSelectedRoom(room);
+    
+    if (room && !sessionRoomIds.has(room.id)) {
+      // Show confirmation dialog for non-default rooms
+      setPendingRoomId(roomId);
+      setShowConfirmDialog(true);
+    } else {
+      // Directly select default rooms
+      setSelectedRoom(room);
+    }
   }
+
+  function handleConfirmRoomSelection(): void {
+    if (pendingRoomId) {
+      const numericId = Number(pendingRoomId);
+      const room = rooms.find(r => r.id === numericId) || null;
+      setSelectedRoom(room);
+    }
+    setShowConfirmDialog(false);
+    setPendingRoomId(null);
+  }
+
+  function handleCancelRoomSelection(): void {
+    setShowConfirmDialog(false);
+    setPendingRoomId(null);
+  }
+
+  // Get pending room details for dialog
+  const pendingRoom = useMemo(() => {
+    if (!pendingRoomId) return null;
+    return rooms.find(r => r.id === Number(pendingRoomId)) || null;
+  }, [pendingRoomId, rooms]);
 
   function handleValidateGeoChange(checked: boolean): void {
     setValidateGeo(checked);
   }
 
-  // Auto-select the first available room after rooms are fetched or session changes.
+  // Clear selected room if it's no longer in the available rooms list
   useEffect(() => {
-    if (rooms.length === 0) return;
-    // If no selection yet or previous selection not in the filtered list, pick first
-    if (!selectedRoom || !rooms.some(r => r.id === selectedRoom.id)) {
-      setSelectedRoom(rooms[0]);
+    if (rooms.length === 0 || !selectedRoom) return;
+    // Only clear selection if the current selection is not in the list
+    if (!rooms.some(r => r.id === selectedRoom.id)) {
+      setSelectedRoom(null);
     }
-    // We intentionally don't include setSelectedRoom to avoid unnecessary re-runs
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rooms, selectedRoom, sessionId]);
+  }, [rooms, selectedRoom, setSelectedRoom]);
 
   return (
+    <>
     <Card className="border-border bg-card">
       <CardHeader className="py-2">
         <CardTitle className="text-foreground flex items-center gap-2 text-sm font-medium">
@@ -84,11 +151,16 @@ export function RoomSelector() {
           <SelectTrigger className="border-border bg-background text-foreground data-[state=open]:ring-ring h-auto min-h-[64px] w-full min-w-[360px] py-2.5">
             {selectedRoom ? (
               <div className="flex w-full flex-col space-y-1 pr-10 text-left">
-                <div className="w-full">
-                  <span className="text-foreground block truncate text-sm leading-tight font-semibold">
+                <div className="flex w-full items-center gap-2">
+                  <span className="text-foreground truncate text-sm leading-tight font-semibold">
                     Building {selectedRoom.building_number} • Room{" "}
                     {selectedRoom.room_number}
                   </span>
+                  {sessionRoomIds.has(selectedRoom.id) && (
+                    <span className="bg-primary/10 text-primary border-primary/20 flex-shrink-0 rounded px-1.5 py-0.5 text-xs font-medium border">
+                      Default Room
+                    </span>
+                  )}
                 </div>
                 {selectedRoom.description && (
                   <div className="text-muted-foreground truncate text-[11px]">
@@ -108,27 +180,37 @@ export function RoomSelector() {
             )}
           </SelectTrigger>
           <SelectContent className="border-border bg-popover max-w-[380px]">
-            {rooms.map(room => (
-              <SelectItem
-                key={room.id}
-                value={room.id.toString()}
-                className="focus:bg-accent focus:text-accent-foreground"
-              >
-                <div className="flex max-w-[340px] flex-col py-1">
-                  <span className="text-foreground truncate text-sm font-semibold">
-                    Building {room.building_number} • Room {room.room_number}
-                  </span>
-                  {room.description && (
+            {rooms.map(room => {
+              const isSessionRoom = sessionRoomIds.has(room.id);
+              return (
+                <SelectItem
+                  key={room.id}
+                  value={room.id.toString()}
+                  className="focus:bg-accent focus:text-accent-foreground"
+                >
+                  <div className="flex max-w-[340px] flex-col py-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-foreground truncate text-sm font-semibold">
+                        Building {room.building_number} • Room {room.room_number}
+                      </span>
+                      {isSessionRoom && (
+                        <span className="bg-primary/10 text-primary border-primary/20 rounded px-1.5 py-0.5 text-xs font-medium border">
+                          Default Room
+                        </span>
+                      )}
+                    </div>
+                    {room.description && (
+                      <span className="text-muted-foreground truncate text-xs">
+                        {room.description}
+                      </span>
+                    )}
                     <span className="text-muted-foreground truncate text-xs">
-                      {room.description}
+                      {room.campus_name}
                     </span>
-                  )}
-                  <span className="text-muted-foreground truncate text-xs">
-                    {room.campus_name}
-                  </span>
-                </div>
-              </SelectItem>
-            ))}
+                  </div>
+                </SelectItem>
+              );
+            })}
           </SelectContent>
         </Select>
 
@@ -158,22 +240,20 @@ export function RoomSelector() {
                 </span>
               </div>
 
-              <div className="space-y-1.5">
-                <input
-                  type="range"
-                  min="50"
-                  max="500"
-                  step="10"
-                  value={radius}
-                  onChange={e => setRadius(parseInt(e.target.value))}
-                  className="bg-secondary h-2 w-full cursor-pointer appearance-none rounded-lg"
-                  style={{
-                    background: `linear-gradient(to right, hsl(var(--primary)) 0%, hsl(var(--primary)) ${((radius - 50) / (500 - 50)) * 100}%, hsl(var(--muted)) ${((radius - 50) / (500 - 50)) * 100}%, hsl(var(--muted)) 100%)`,
-                  }}
-                />
-                <div className="text-muted-foreground flex justify-between text-xs">
-                  <span>50m</span>
-                  <span>500m</span>
+              <div className="space-y-2">
+                <div className="relative">
+                  <input
+                    type="range"
+                    min="20"
+                    max="500"
+                    step="10"
+                    value={radius}
+                    onChange={e => setRadius(parseInt(e.target.value))}
+                    className="h-2 w-full cursor-pointer appearance-none rounded-full border-2 border-border bg-secondary/50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:ring-offset-2 focus:border-primary/60 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:shadow-lg [&::-webkit-slider-thumb]:transition-all [&::-webkit-slider-thumb]:duration-200 [&::-webkit-slider-thumb]:hover:scale-110 [&::-webkit-slider-thumb]:hover:shadow-xl [&::-webkit-slider-thumb]:active:scale-95 [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:appearance-none [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-white [&::-moz-range-thumb]:bg-primary [&::-moz-range-thumb]:shadow-lg [&::-moz-range-thumb]:transition-all [&::-moz-range-thumb]:duration-200 [&::-moz-range-thumb]:hover:scale-110"
+                    style={{
+                      background: `linear-gradient(to right, hsl(var(--primary)) 0%, hsl(var(--primary)) ${((radius - 20) / (500 - 20)) * 100}%, hsl(var(--secondary)) ${((radius - 20) / (500 - 20)) * 100}%, hsl(var(--secondary)) 100%)`,
+                    }}
+                  />
                 </div>
               </div>
 
@@ -208,5 +288,47 @@ export function RoomSelector() {
         </div>
       </CardContent>
     </Card>
+
+    {/* Confirmation Dialog for Non-Default Room Selection */}
+    <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle className="flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5 text-amber-500" />
+            Confirm Room Selection
+          </AlertDialogTitle>
+          <AlertDialogDescription>
+            You&apos;re selecting a room that is not the default room for this session.
+          </AlertDialogDescription>
+          {pendingRoom && (
+            <div className="mt-3 p-3 bg-muted rounded-lg">
+              <div className="font-medium text-foreground">
+                Building {pendingRoom.building_number} • Room {pendingRoom.room_number}
+              </div>
+              {pendingRoom.description && (
+                <div className="text-sm text-muted-foreground mt-1">
+                  {pendingRoom.description}
+                </div>
+              )}
+              <div className="text-sm text-muted-foreground">
+                {pendingRoom.campus_name}
+              </div>
+            </div>
+          )}
+          <div className="mt-3 text-sm text-muted-foreground">
+            Are you sure you want to use this room for the QR code generation?
+          </div>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel onClick={handleCancelRoomSelection}>
+            Cancel
+          </AlertDialogCancel>
+          <AlertDialogAction onClick={handleConfirmRoomSelection}>
+            Yes, Use This Room
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }

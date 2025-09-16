@@ -37,6 +37,9 @@ export const QRGenerator = () => {
     radius,
     setWindows,
     setQrGenerated,
+    setSelectedRoom,
+    setValidateGeo,
+    setRadius,
   } = useQrGenContext();
   const { mutateAsync: generateQr, isPending: isGenerating } = useGenerateQr(
     selectedCourse?.sessionId || 0
@@ -93,6 +96,49 @@ export const QRGenerator = () => {
   // Helper: format ISO datetime (string) into HH:mm
   const isoToHHMM = (iso?: string | null) =>
     iso ? formatHHMM(new Date(iso)) : "--:--";
+
+  // Check if settings have changed from the existing QR
+  const hasChanges = useMemo(() => {
+    if (!prevInfo || !qrGenerated) return false;
+
+    // Check room changes
+    const currentRoomLabel = selectedRoom
+      ? `${selectedRoom.building_number} ${selectedRoom.room_number}`.trim()
+      : null;
+    if (currentRoomLabel !== prevInfo.roomLabel) return true;
+
+    // Check geo validation changes
+    if (validateGeo !== prevInfo.validateGeo) return true;
+
+    // Check radius changes
+    if (radius !== prevInfo.radius) return true;
+
+    // Check time window changes
+    if (windows) {
+      const currentEntryStart = formatHHMM(windows.entryWindow.start);
+      const currentEntryEnd = formatHHMM(windows.entryWindow.end);
+      const currentExitStart = formatHHMM(windows.exitWindow.start);
+      const currentExitEnd = formatHHMM(windows.exitWindow.end);
+
+      if (
+        prevInfo.entryWindow &&
+        (currentEntryStart !== prevInfo.entryWindow.start ||
+          currentEntryEnd !== prevInfo.entryWindow.end)
+      ) {
+        return true;
+      }
+
+      if (
+        prevInfo.exitWindow &&
+        (currentExitStart !== prevInfo.exitWindow.start ||
+          currentExitEnd !== prevInfo.exitWindow.end)
+      ) {
+        return true;
+      }
+    }
+
+    return false;
+  }, [prevInfo, selectedRoom, validateGeo, radius, windows, qrGenerated]);
 
   function handleDownload(): void {
     if (!qrUrl) return;
@@ -272,7 +318,7 @@ export const QRGenerator = () => {
     };
   }, [existingQrId, refetchExistingQr, existingQrData?.qr_url, setQrGenerated]);
 
-  // Fetch previous configuration for comparison in update dialog
+  // Fetch previous configuration for comparison in update dialog AND populate context state
   useEffect(() => {
     let cancelled = false;
     const run = async () => {
@@ -304,7 +350,9 @@ export const QRGenerator = () => {
           ? `${data.location.building_number ?? ""} ${data.location.room_number ?? ""}`.trim() ||
             null
           : null;
+        
         if (!cancelled) {
+          // Set previous info for comparison
           setPrevInfo({
             roomLabel,
             validateGeo: data.validate_geo ?? null,
@@ -322,6 +370,68 @@ export const QRGenerator = () => {
                 }
               : null,
           });
+
+          // Populate context state from existing QR data
+          if (data.validate_geo != null) {
+            setValidateGeo(data.validate_geo);
+          }
+          if (data.radius != null) {
+            setRadius(data.radius);
+          }
+          
+          // Set time windows if both entry and exit windows exist
+          if (first && second) {
+            // Parse the times from API and adjust to current date context
+            const entryStartApi = new Date(first.start_time);
+            const entryEndApi = new Date(first.end_time);
+            const exitStartApi = new Date(second.start_time);
+            const exitEndApi = new Date(second.end_time);
+            
+            // Create new Date objects with today's date but the saved times
+            const today = new Date();
+            const entryStart = new Date(today.getFullYear(), today.getMonth(), today.getDate(),
+              entryStartApi.getHours(), entryStartApi.getMinutes(), entryStartApi.getSeconds());
+            const entryEnd = new Date(today.getFullYear(), today.getMonth(), today.getDate(),
+              entryEndApi.getHours(), entryEndApi.getMinutes(), entryEndApi.getSeconds());
+            const exitStart = new Date(today.getFullYear(), today.getMonth(), today.getDate(),
+              exitStartApi.getHours(), exitStartApi.getMinutes(), exitStartApi.getSeconds());
+            const exitEnd = new Date(today.getFullYear(), today.getMonth(), today.getDate(),
+              exitEndApi.getHours(), exitEndApi.getMinutes(), exitEndApi.getSeconds());
+            
+            setWindows({
+              entryWindow: { start: entryStart, end: entryEnd },
+              exitWindow: { start: exitStart, end: exitEnd }
+            });
+          }
+
+          // Set room if location data is available and room_id exists
+          if (data.location?.room_id) {
+            // We need to fetch the complete room data from the rooms endpoint
+            // to get all the required room properties
+            try {
+              const roomsResponse = await apiClient.get<{
+                message: string;
+                count: number;
+                data: {
+                  id: number;
+                  building_number: string;
+                  room_number: string;
+                  description: string | null;
+                  latitude: string | null;
+                  longitude: string | null;
+                  campus_id: number;
+                  campus_name: string;
+                }[];
+              }>(`/lecturer/study-session/${selectedCourse?.sessionId}/rooms`);
+              
+              const roomData = roomsResponse.data.data.find(room => room.id === data.location?.room_id);
+              if (roomData) {
+                setSelectedRoom(roomData);
+              }
+            } catch (roomErr) {
+              console.error("Failed to fetch room data:", roomErr);
+            }
+          }
         }
       } catch (err) {
         console.error(err);
@@ -347,6 +457,39 @@ export const QRGenerator = () => {
                 }
               : null,
           });
+          
+          // Try to populate context state from fallback data
+          if (existingQrList?.data?.[0]) {
+            const qrData = existingQrList.data[0];
+            if (qrData.valid_radius != null) {
+              setRadius(qrData.valid_radius);
+            }
+            
+            // Set time windows from fallback data
+            if (first && second) {
+              // Parse the times from API and adjust to current date context
+              const entryStartApi = new Date(first.start_time);
+              const entryEndApi = new Date(first.end_time);
+              const exitStartApi = new Date(second.start_time);
+              const exitEndApi = new Date(second.end_time);
+              
+              // Create new Date objects with today's date but the saved times
+              const today = new Date();
+              const entryStart = new Date(today.getFullYear(), today.getMonth(), today.getDate(),
+                entryStartApi.getHours(), entryStartApi.getMinutes(), entryStartApi.getSeconds());
+              const entryEnd = new Date(today.getFullYear(), today.getMonth(), today.getDate(),
+                entryEndApi.getHours(), entryEndApi.getMinutes(), entryEndApi.getSeconds());
+              const exitStart = new Date(today.getFullYear(), today.getMonth(), today.getDate(),
+                exitStartApi.getHours(), exitStartApi.getMinutes(), exitStartApi.getSeconds());
+              const exitEnd = new Date(today.getFullYear(), today.getMonth(), today.getDate(),
+                exitEndApi.getHours(), exitEndApi.getMinutes(), exitEndApi.getSeconds());
+              
+              setWindows({
+                entryWindow: { start: entryStart, end: entryEnd },
+                exitWindow: { start: exitStart, end: exitEnd }
+              });
+            }
+          }
         }
       }
     };
@@ -354,15 +497,19 @@ export const QRGenerator = () => {
     return () => {
       cancelled = true;
     };
-  }, [existingQrId, existingQrList?.data]);
+  }, [existingQrId, existingQrList?.data, selectedCourse?.sessionId, setValidateGeo, setRadius, setWindows, setSelectedRoom]);
 
   // When lecturer switches session/week, reset local QR state first;
   // we'll repopulate if an existing QR for that week is fetched above.
   useEffect(() => {
     setQrUrl("");
     setQrGenerated(false);
-    // Clear windows to avoid stale values from previous subject until selector recalculates
+    // Clear windows and other settings to avoid stale values from previous subject
+    // These will be repopulated from existing QR data if available
     setWindows(null);
+    setSelectedRoom(null);
+    setValidateGeo(false);
+    setRadius(100);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCourse?.sessionId, selectedCourse?.weekNumber]);
 
@@ -479,10 +626,15 @@ export const QRGenerator = () => {
                           isUpdating ||
                           !selectedRoomId ||
                           !windows ||
-                          !existingQrId
+                          !existingQrId ||
+                          !hasChanges
                         }
                       >
-                        {isUpdating ? "Updating QR Code..." : "Update QR Code"}
+                        {isUpdating
+                          ? "Updating QR Code..."
+                          : hasChanges
+                          ? "Update QR Code"
+                          : "No Changes to Update"}
                       </Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
