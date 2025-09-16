@@ -25,3 +25,22 @@
 | `POST` | `/api/admin/course/create`              | Create new course                           |
 | `POST` | `/api/admin/course/:id/assign-lecturer` | Assign lecturer to course                   |
 | `GET`  | `/api/admin/attendance/overview`        | Get full attendance stats across the system |
+
+📊 Analytics Endpoints (Statistics)
+
+| Method | Endpoint                                | Description                                 |
+| ------ | --------------------------------------- | ------------------------------------------- |
+| `GET`  | `/api/analytics/weekly-attendance`      | Weekly attendance trends with enrollment data |
+| `GET`  | `/api/analytics/available-courses`      | Course dropdown options for analytics       |
+| `GET`  | `/api/analytics/lecturer-trends`        | Comprehensive lecturer performance analytics |
+| `GET`  | `/api/analytics/student-performance`    | Individual student performance data         |
+| `GET`  | `/api/analytics/attendance-distribution`| Performance category distribution (Excellent/Good/Average/Poor) |
+| `GET`  | `/api/analytics/key-metrics`            | Summary metrics and insights               |
+| `GET`  | `/api/analytics/subject-summary`        | Subject-level attendance summary           |
+
+📧 Email Reminder System
+
+| Method | Endpoint                                | Description                                 |
+| ------ | --------------------------------------- | ------------------------------------------- |
+| `POST` | `/api/lecturer/send-attendance-emails`  | Manual email sending by lecturers          |
+| `POST` | `/api/system/lecture-end-trigger`       | Automatic system-triggered emails when lectures end |
