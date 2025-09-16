@@ -39,6 +39,8 @@ interface QrGenContextType {
   setRadius: Dispatch<SetStateAction<number>>;
   windows: Windows | null;
   setWindows: Dispatch<SetStateAction<Windows | null>>;
+  windowsConfigured: boolean;
+  setWindowsConfigured: Dispatch<SetStateAction<boolean>>;
   qrGenerated: boolean;
   setQrGenerated: Dispatch<SetStateAction<boolean>>;
 }
@@ -60,6 +62,7 @@ export function QrGenProvider({ children }: { children: React.ReactNode }) {
   const [validateGeo, setValidateGeo] = useState<boolean>(false);
   const [radius, setRadius] = useState(100);
   const [windows, setWindows] = useState<Windows | null>(null);
+  const [windowsConfigured, setWindowsConfigured] = useState<boolean>(false);
 
   return (
     <QrGenContext.Provider
@@ -68,6 +71,8 @@ export function QrGenProvider({ children }: { children: React.ReactNode }) {
         setQrGenerated,
         windows,
         setWindows,
+        windowsConfigured,
+        setWindowsConfigured,
         selectedRoom,
         setSelectedRoom,
         validateGeo,

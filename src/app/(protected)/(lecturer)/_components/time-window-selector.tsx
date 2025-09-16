@@ -1,6 +1,5 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import {
@@ -33,7 +32,7 @@ export function TimeWindowSelector({
   classEndTime,
   onChange,
 }: TimeWindowSelectorProps) {
-  const { windows } = useQrGenContext();
+  const { windows, setWindowsConfigured } = useQrGenContext();
   const timelineStart = useMemo(
     () => new Date(classStartTime.getTime() - 60 * 60 * 1000),
     [classStartTime]
@@ -324,12 +323,20 @@ export function TimeWindowSelector({
   );
 
   const handleMouseUp = useCallback(() => {
+    if (isDragging) {
+      // Mark windows as configured when user finishes dragging
+      setWindowsConfigured(true);
+    }
     setIsDragging(null);
-  }, []);
+  }, [isDragging, setWindowsConfigured]);
 
   const handleTouchEnd = useCallback(() => {
+    if (isDragging) {
+      // Mark windows as configured when user finishes touch dragging
+      setWindowsConfigured(true);
+    }
     setIsDragging(null);
-  }, []);
+  }, [isDragging, setWindowsConfigured]);
 
   useEffect(() => {
     if (isDragging) {
@@ -368,9 +375,11 @@ export function TimeWindowSelector({
         duration
       );
       setEntryStartTime(validatedTime);
+      // Mark windows as configured when user manually adjusts duration
+      setWindowsConfigured(true);
       isUpdatingRef.current = false;
     },
-    [entryStartTime, exitStartTime, validateEntryPosition]
+    [entryStartTime, exitStartTime, validateEntryPosition, setWindowsConfigured]
   );
 
   const handleExitDurationChange = useCallback(
@@ -387,9 +396,11 @@ export function TimeWindowSelector({
         duration
       );
       setExitStartTime(validatedTime);
+      // Mark windows as configured when user manually adjusts duration
+      setWindowsConfigured(true);
       isUpdatingRef.current = false;
     },
-    [exitStartTime, entryStartTime, entryDuration, validateExitPosition]
+    [exitStartTime, entryStartTime, entryDuration, validateExitPosition, setWindowsConfigured]
   );
 
   const applyPreset = useCallback(
@@ -421,9 +432,11 @@ export function TimeWindowSelector({
           break;
       }
 
+      // Mark windows as configured when user applies a preset
+      setWindowsConfigured(true);
       isUpdatingRef.current = false;
     },
-    [classStartTime, classEndTime]
+    [classStartTime, classEndTime, setWindowsConfigured]
   );
 
   useEffect(() => {

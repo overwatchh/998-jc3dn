@@ -78,7 +78,7 @@ type RoomRow = {
 
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ): Promise<NextResponse<ApiArrayResponse<RoomRow[]> | { message: string }>> {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session || !session.user) {
@@ -91,7 +91,8 @@ export async function GET(
     );
   }
 
-  const studySessionId = Number(params.id);
+  const { id } = await context.params;
+  const studySessionId = Number(id);
   if (!Number.isInteger(studySessionId) || studySessionId <= 0) {
     return NextResponse.json(
       { message: "Invalid study session id" },
