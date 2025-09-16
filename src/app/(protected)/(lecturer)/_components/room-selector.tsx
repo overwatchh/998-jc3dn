@@ -157,7 +157,7 @@ export function RoomSelector() {
                     {selectedRoom.room_number}
                   </span>
                   {sessionRoomIds.has(selectedRoom.id) && (
-                    <span className="bg-primary/10 text-primary border-primary/20 flex-shrink-0 rounded px-1.5 py-0.5 text-xs font-medium border">
+                    <span className="flex-shrink-0 self-center rounded-full px-1.5 py-0 text-[11px] leading-none font-medium bg-primary/10 text-primary ring-1 ring-primary/20">
                       Default Room
                     </span>
                   )}
@@ -194,7 +194,7 @@ export function RoomSelector() {
                         Building {room.building_number} • Room {room.room_number}
                       </span>
                       {isSessionRoom && (
-                        <span className="bg-primary/10 text-primary border-primary/20 rounded px-1.5 py-0.5 text-xs font-medium border">
+                        <span className="rounded-full px-1.5 py-0 text-[11px] leading-none font-medium bg-primary/10 text-primary ring-1 ring-primary/20">
                           Default Room
                         </span>
                       )}
