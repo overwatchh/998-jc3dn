@@ -160,46 +160,79 @@ import QRCode from "qrcode";
  *         description: Optional week number to filter QR codes
  *     responses:
  *       200:
- *         description: List of QR codes for the study session
+ *         description: QR codes fetched successfully
  *         content:
  *           application/json:
  *             schema:
  *               type: object
  *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: QR codes fetched successfully
  *                 study_session_id:
  *                   type: integer
- *                 qrs:
+ *                   description: The ID of the study session
+ *                   example: 26
+ *                 count:
+ *                   type: integer
+ *                   description: Number of QR codes fetched
+ *                   example: 1
+ *                 data:
  *                   type: array
+ *                   description: List of QR codes belonging to the study session
  *                   items:
  *                     type: object
  *                     properties:
  *                       qr_code_id:
  *                         type: integer
- *                       qr_url:
- *                         type: string
- *                       week_number:
- *                         type: integer
+ *                         description: Unique ID of the QR code
+ *                         example: 1
  *                       valid_radius:
- *                         type: number
+ *                         type: integer
+ *                         description: Allowed radius in meters for geolocation validation
+ *                         example: 150
+ *                       validate_geo:
+ *                         type: boolean
+ *                         description: Indicates whether geolocation validation is required
+ *                         example: true
  *                       createdAt:
  *                         type: string
  *                         format: date-time
+ *                         description: Date and time when the QR code was created
+ *                         example: "2025-09-11T03:05:18.000Z"
+ *                       week_number:
+ *                         type: integer
+ *                         description: Academic week associated with the QR code
+ *                         example: 1
  *                       validities:
  *                         type: array
+ *                         description: Exactly two validity windows for the QR code
+ *                         minItems: 2
+ *                         maxItems: 2
  *                         items:
  *                           type: object
  *                           properties:
  *                             validity_id:
  *                               type: integer
+ *                               description: Unique ID of the validity window
+ *                               example: 1
  *                             count:
  *                               type: integer
- *                               description: 1 = first validity, 2 = second validity
+ *                               description: |
+ *                                 Indicates which validity window:
+ *                                 - 1 → first validity window  
+ *                                 - 2 → second validity window
+ *                               example: 1
  *                             start_time:
  *                               type: string
  *                               format: date-time
+ *                               description: Start time of the validity window
+ *                               example: "2025-09-11T03:01:00.000Z"
  *                             end_time:
  *                               type: string
  *                               format: date-time
+ *                               description: End time of the validity window
+ *                               example: "2025-09-11T04:11:00.000Z"
  *       401:
  *         description: Unauthorized – user not signed in or not a lecturer
  *       403:
