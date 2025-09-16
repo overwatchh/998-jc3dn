@@ -437,7 +437,7 @@ Checkins &gt;</panel_attributes>
 checkin_time
 latitude
 longitude
-join_online
+checkin_type
 bg=#dddddd
 </panel_attributes>
     <additional_attributes/>

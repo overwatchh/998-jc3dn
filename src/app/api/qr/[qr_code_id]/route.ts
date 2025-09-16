@@ -15,7 +15,7 @@
  *           type: integer
  *     responses:
  *       200:
- *         description: Successfully fetched validity window count
+ *         description: QR code information fetched successfully
  *         content:
  *           application/json:
  *             schema:
@@ -24,9 +24,67 @@
  *                 message:
  *                   type: string
  *                   example: Fetched QR info successfully
+ *                 validate_geo:
+ *                   type: boolean
+ *                   description: Indicates whether geolocation validation is required
+ *                   example: true
+ *                 validities:
+ *                   type: array
+ *                   description: List of validity windows for the QR code
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                         example: 1
+ *                       count:
+ *                         type: integer
+ *                         description: |
+ *                           Indicates which validity window:
+ *                           - 1 → first validity window  
+ *                           - 2 → second validity window
+ *                         example: 1
+ *                       start_time:
+ *                         type: string
+ *                         format: date-time
+ *                         example: "2025-09-11T03:01:00.000Z"
+ *                       end_time:
+ *                         type: string
+ *                         format: date-time
+ *                         example: "2025-09-11T04:11:00.000Z"
  *                 validity_count:
  *                   type: integer
- *                   example: 2
+ *                   description: |
+ *                     Current request validity status:  
+ *                     - 1 → within first validity window  
+ *                     - 2 → within second validity window  
+ *                     - 0 → not in any validity window
+ *                   example: 0
+ *                 radius:
+ *                   type: integer
+ *                   description: Allowed radius in meters for geolocation validation
+ *                   example: 150
+ *                 location:
+ *                   type: object
+ *                   description: Room and geolocation details
+ *                   properties:
+ *                     latitude:
+ *                       type: number
+ *                       format: double
+ *                       example: -34.40582005010667
+ *                     longitude:
+ *                       type: number
+ *                       format: double
+ *                       example: 150.88081766767468
+ *                     building_number:
+ *                       type: string
+ *                       example: "35"
+ *                     room_number:
+ *                       type: string
+ *                       example: "103"
+ *                     room_id:
+ *                       type: integer
+ *                       example: 9
  *       500:
  *         description: Internal Server Error
  *         content:
