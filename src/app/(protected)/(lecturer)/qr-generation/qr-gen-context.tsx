@@ -46,13 +46,33 @@ interface QrGenContextType {
 }
 const QrGenContext = createContext<QrGenContextType | undefined>(undefined);
 
-export function QrGenProvider({ children }: { children: React.ReactNode }) {
+interface QrGenProviderProps {
+  children: React.ReactNode;
+  initialContext?: {
+    sessionId: number;
+    weekNumber: number;
+  };
+}
+
+export function QrGenProvider({
+  children,
+  initialContext,
+}: QrGenProviderProps) {
   const [currentScreen, setCurrentScreen] = useState<QRGenScreens>(
-    QRGenScreens.COURSE_SELECTION
+    initialContext
+      ? QRGenScreens.QR_CODE_GENERATION
+      : QRGenScreens.COURSE_SELECTION
   );
   const [selectedCourse, setSelectedCourse] = useState<
     SelectedCourse | undefined
-  >();
+  >(
+    initialContext
+      ? {
+          sessionId: initialContext.sessionId,
+          weekNumber: initialContext.weekNumber,
+        }
+      : undefined
+  );
 
   const [qrGenerated, setQrGenerated] = useState<boolean>(false);
   const { data: courses } = useGetCourses();

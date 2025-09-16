@@ -82,6 +82,7 @@ export type LiveCheckinStudent = {
   student_name: string;
   student_email: string;
   checkin_time: string;
+  checkin_type: "In-person" | "Online" | "Manual";
   validity_count: number; // 1 for first window, 2 for second
 };
 

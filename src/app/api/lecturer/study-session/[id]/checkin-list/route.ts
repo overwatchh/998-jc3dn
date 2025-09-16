@@ -28,6 +28,37 @@ import { NextRequest, NextResponse } from "next/server";
  *     responses:
  *       200:
  *         description: List of students who have checked in
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 validity_count:
+ *                   type: integer
+ *                   nullable: true
+ *                 count:
+ *                   type: integer
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       student_id:
+ *                         type: string
+ *                       student_name:
+ *                         type: string
+ *                       student_email:
+ *                         type: string
+ *                       checkin_time:
+ *                         type: string
+ *                         format: date-time
+ *                       checkin_type:
+ *                         type: string
+ *                         enum: ['In-person', 'Online', 'Manual']
+ *                       validity_count:
+ *                         type: integer
  *       400:
  *         description: Missing required parameters or no QR code session found
  *       401:
@@ -127,6 +158,7 @@ export async function GET(
         u.name AS student_name,
         u.email AS student_email,
         c.checkin_time,
+        c.checkin_type,
         v.count AS validity_count
       FROM checkin c
       JOIN user u 
