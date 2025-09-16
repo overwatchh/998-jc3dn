@@ -34,10 +34,12 @@ import { z } from "zod";
  *               long:
  *                 type: number
  *                 description: Student's longitude when checking in
- *               join_online:
- *                 type: boolean
- *                 description: Whether the student is joining online
- *                 example: false
+ *               checkin_type:
+ *                 type: string
+ *                 description: The type of check-in method used by the student.
+ *                 enum: [In-person, Online, Manual]
+ *                 default: In-person
+ *                 example: In-person
  *
  *     responses:
  *       200:
@@ -86,17 +88,19 @@ export async function POST(req: NextRequest) {
     qr_code_id: z.number(),
     lat: z.number(),
     long: z.number(),
-    join_online: z.boolean().optional(),
+    checkin_type: z
+      .enum(["In-person", "Online", "Manual"])
+      .default("In-person"),
   });
   const parsed = schema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(
-      { message: "Invalid body payload" },
+      { message: "Invalid body payload", error: parsed.error.format() },
       { status: 400 }
     );
   }
 
-  const { qr_code_id, lat, long, join_online } = parsed.data;
+  const { qr_code_id, lat, long, checkin_type } = parsed.data;
 
   // Step 1: From qr_code_id, figure out study session, week, subject, and whether the student is allowed ---
   const [qrRow] = await rawQuery<QrSessionRow>(
@@ -270,7 +274,7 @@ export async function POST(req: NextRequest) {
   await rawQuery(
     `
     INSERT INTO checkin
-      (student_id, qr_code_study_session_id, validity_id, checkin_time, latitude, longitude, join_online)
+      (student_id, qr_code_study_session_id, validity_id, checkin_time, latitude, longitude, checkin_type)
     VALUES (?, ?, ?, ?, ?, ?, ?)
     `,
     [
@@ -280,7 +284,7 @@ export async function POST(req: NextRequest) {
       now,
       lat,
       long,
-      join_online ?? false,
+      checkin_type,
     ]
   );
 

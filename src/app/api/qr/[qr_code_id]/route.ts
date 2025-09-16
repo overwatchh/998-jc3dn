@@ -19,7 +19,7 @@
  *           type: integer
  *     responses:
  *       200:
- *         description: Successfully fetched QR code info
+ *         description: QR code information fetched successfully
  *         content:
  *           application/json:
  *             schema:
@@ -30,65 +30,65 @@
  *                   example: Fetched QR info successfully
  *                 validate_geo:
  *                   type: boolean
- *                   description: Whether geolocation validation is enforced for this QR code.
+ *                   description: Indicates whether geolocation validation is required
  *                   example: true
  *                 validities:
  *                   type: array
- *                   description: Validity windows during which the QR code can be used.
+ *                   description: List of validity windows for the QR code
  *                   items:
  *                     type: object
  *                     properties:
  *                       id:
  *                         type: integer
- *                         description: Validity row ID.
- *                         example: 101
+ *                         example: 1
  *                       count:
  *                         type: integer
- *                         description: Order of the window (1 = first, 2 = second).
+ *                         description: |
+ *                           Indicates which validity window:
+ *                           - 1 → first validity window  
+ *                           - 2 → second validity window
  *                         example: 1
  *                       start_time:
  *                         type: string
  *                         format: date-time
- *                         example: "2025-09-10T09:30:00.000Z"
+ *                         example: "2025-09-11T03:01:00.000Z"
  *                       end_time:
  *                         type: string
  *                         format: date-time
- *                         example: "2025-09-10T10:00:00.000Z"
+ *                         example: "2025-09-11T04:11:00.000Z"
  *                 validity_count:
  *                   type: integer
  *                   description: |
- *                     Indicates which validity window is currently active.
- *                     0 = none active, 1 = first window active, 2 = second window active.
- *                   enum: [0, 1, 2]
- *                   example: 1
+ *                     Current request validity status:  
+ *                     - 1 → within first validity window  
+ *                     - 2 → within second validity window  
+ *                     - 0 → not in any validity window
+ *                   example: 0
  *                 radius:
- *                   type: number
- *                   nullable: true
- *                   description: Geofence radius in meters (null if not set).
- *                   example: 100
+ *                   type: integer
+ *                   description: Allowed radius in meters for geolocation validation
+ *                   example: 150
  *                 location:
  *                   type: object
- *                   nullable: true
- *                   description: Room and geolocation metadata if available.
+ *                   description: Room and geolocation details
  *                   properties:
  *                     latitude:
  *                       type: number
- *                       example: 51.5074
+ *                       format: double
+ *                       example: -34.40582005010667
  *                     longitude:
  *                       type: number
- *                       example: -0.1278
+ *                       format: double
+ *                       example: 150.88081766767468
  *                     building_number:
  *                       type: string
- *                       nullable: true
- *                       example: "12A"
+ *                       example: "35"
  *                     room_number:
  *                       type: string
- *                       nullable: true
- *                       example: "B305"
+ *                       example: "103"
  *                     room_id:
  *                       type: integer
- *                       nullable: true
- *                       example: 45
+ *                       example: 9
  *       500:
  *         description: Internal Server Error
  *         content:
