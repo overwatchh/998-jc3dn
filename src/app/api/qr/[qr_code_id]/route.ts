@@ -45,7 +45,7 @@
  *                         type: integer
  *                         description: |
  *                           Indicates which validity window:
- *                           - 1 → first validity window  
+ *                           - 1 → first validity window
  *                           - 2 → second validity window
  *                         example: 1
  *                       start_time:
@@ -59,9 +59,9 @@
  *                 validity_count:
  *                   type: integer
  *                   description: |
- *                     Current request validity status:  
- *                     - 1 → within first validity window  
- *                     - 2 → within second validity window  
+ *                     Current request validity status:
+ *                     - 1 → within first validity window
+ *                     - 2 → within second validity window
  *                     - 0 → not in any validity window
  *                   example: 0
  *                 radius:
@@ -127,7 +127,7 @@ export async function GET(
       WHERE qc.id = ?
       LIMIT 1
     `;
-    const [result] = await rawQuery<{
+    const results = await rawQuery<{
       validate_geo: boolean;
       latitude: number | null;
       longitude: number | null;
@@ -136,6 +136,20 @@ export async function GET(
       room_number: string | null;
       room_id: number;
     }>(sql, [qrId]);
+
+    // If no QR code found, return NOT_GENERATED status
+    if (results.length === 0) {
+      return NextResponse.json({
+        message: "Fetched QR info successfully",
+        validate_geo: false,
+        validities: [],
+        validity_count: -1, // NOT_GENERATED
+        radius: null,
+        location: null,
+      });
+    }
+
+    const [result] = results;
     // query validites information
     const validitiesSql = `
         SELECT        

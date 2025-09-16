@@ -2,14 +2,21 @@ import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 
 export enum QRStatusEnum {
-  NOT_GENERATED,
-  FIRST_CHECKIN,
-  SECOND_CHECKIN,
+  NO_ACTIVE_WINDOW = 0,
+  FIRST_CHECKIN = 1,
+  SECOND_CHECKIN = 2,
+  NOT_GENERATED = -1,
 }
 
 interface QRStatusResponse {
   message: string;
   validity_count: QRStatusEnum;
+  validities: {
+    id: number;
+    count: number;
+    start_time: string;
+    end_time: string;
+  }[];
   location?: {
     latitude: number;
     longitude: number;

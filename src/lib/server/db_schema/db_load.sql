@@ -150,7 +150,7 @@ INSERT INTO study_session (id, type, day_of_week, start_time, end_time, room_id)
 (8, 'tutorial', 'Thursday', '10:00:00', '12:00:00', 8),
 (9, 'tutorial', 'Friday', '14:00:00', '16:00:00', 9),
 -- MTS9307
-(10, 'lecture', 'Thursday', '12:00:00', '15:00:00', 10), -- create QR code all day
+(10, 'lecture', 'Thursday', '23:40:00', '23:59:59', 10), -- QR code all day
 (11, 'tutorial', 'Friday', '13:00:00', '15:00:00', 1),
 (12, 'tutorial', 'Thursday', '08:00:00', '10:00:00', 2),
 -- CSCI935
@@ -244,4 +244,18 @@ INSERT INTO lecturer_study_session (study_session_id, lecturer_id) VALUES
 (31, 'hrEpeIa27ITirYij0FJRAYgbMledKcuw'), -- tutorial by lec1
 (32, 'Pl3aUloS8SowYGhvBTnUH2nocxPPXE41'); -- tutorial by lec2
 
+-- Always-allowed QR for testing check-in (geo disabled, long validity)
+-- Ties to MTS9307 lecture (study_session_id = 10) where many students are enrolled
+-- Use qr_code_id = 9999 when calling /api/student/attendance/checkin
+INSERT INTO qr_code (id, createdAt, validate_geo, valid_room_id, valid_radius) VALUES
+(9999, NOW(), 0, 10, 1000.00);
+
+-- Two wide validity windows that always include "now" (required by check-in API)
+INSERT INTO validity (qr_code_id, count, start_time, end_time) VALUES
+(9999, 1, '2020-01-01 00:00:00', '2050-01-01 00:00:00'),
+(9999, 2, '2050-01-01 00:00:01', '2099-01-01 00:00:00');
+
+-- Map QR to the lecture session for week 1
+INSERT INTO qr_code_study_session (study_session_id, qr_code_id, week_number) VALUES
+(10, 9999, 1);
 

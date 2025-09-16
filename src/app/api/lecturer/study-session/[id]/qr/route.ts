@@ -220,7 +220,7 @@ import QRCode from "qrcode";
  *                               type: integer
  *                               description: |
  *                                 Indicates which validity window:
- *                                 - 1 → first validity window  
+ *                                 - 1 → first validity window
  *                                 - 2 → second validity window
  *                               example: 1
  *                             start_time:

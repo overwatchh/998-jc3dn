@@ -193,11 +193,26 @@ export async function POST(req: NextRequest) {
       { status: 404 }
     );
   }
-  // set currentWindow to second window if there are two windows
-  // default to first window if only one window
-  const currentWindow: ValidityRow =
-    windows.length === 1 ? windows[0] : windows[1];
+  // Find the currently active validity window
   const now = new Date();
+  let currentWindow: ValidityRow | undefined;
+  
+  // Check which window is currently active
+  for (const window of windows) {
+    const validStart = new Date(window.start_time);
+    const validEnd = new Date(window.end_time);
+    if (now >= validStart && now <= validEnd) {
+      currentWindow = window;
+      break;
+    }
+  }
+  
+  // If no window is currently active, use the logic for error message
+  if (!currentWindow) {
+    // Default to first window for error display if no windows are active
+    currentWindow = windows[0];
+  }
+  
   const validStart = new Date(currentWindow.start_time);
   const validEnd = new Date(currentWindow.end_time);
   const isValidTime = now >= validStart && now <= validEnd;

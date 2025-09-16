@@ -49,6 +49,11 @@ const CheckinPage = () => {
           "Invalid QR code. This QR code has not been generated."
         );
 
+      case QRStatusEnum.NO_ACTIVE_WINDOW:
+        // QR code exists but no validity window is currently active
+        // Show message that check-in window is not open yet
+        break;
+
       default:
         break;
     }
@@ -138,6 +143,53 @@ const CheckinPage = () => {
   if (checkinStatusError) {
     const errorMessage = checkinStatusError?.message;
     throw new Error(errorMessage);
+  }
+
+  // Handle case where check-in window is not currently active
+  if (checkinStatus?.validity_count === QRStatusEnum.NO_ACTIVE_WINDOW) {
+    return (
+      <div className="space-y-6">
+        <div className="text-center">
+          <h1 className="text-foreground text-2xl font-bold">
+            Check-in Window Closed
+          </h1>
+          <p className="text-muted-foreground mt-2">
+            The check-in window for this session is not currently open.
+          </p>
+        </div>
+
+        <Card>
+          <CardContent className="space-y-4 p-6">
+            <div className="space-y-2 text-center">
+              <p className="text-muted-foreground text-sm">
+                Please wait for the lecturer to open the check-in window, or try
+                again later.
+              </p>
+              {checkinStatus.validities &&
+                checkinStatus.validities.length > 0 && (
+                  <div className="text-muted-foreground text-xs">
+                    <p>Available check-in windows:</p>
+                    {checkinStatus.validities.map(validity => (
+                      <p key={validity.id}>
+                        Window {validity.count}:{" "}
+                        {new Date(validity.start_time).toLocaleString()} -{" "}
+                        {new Date(validity.end_time).toLocaleString()}
+                      </p>
+                    ))}
+                  </div>
+                )}
+            </div>
+            <Button
+              className="h-12 w-full text-lg font-semibold"
+              onClick={() => window.location.reload()}
+              variant="outline"
+            >
+              Refresh
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   const handleCheckin = async () => {

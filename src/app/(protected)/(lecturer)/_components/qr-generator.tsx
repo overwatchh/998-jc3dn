@@ -10,7 +10,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import apiClient from "@/lib/api/apiClient";
 import { formatHHMM } from "@/lib/utils";
 import { AxiosError } from "axios";
@@ -24,8 +24,10 @@ import {
   Shield,
   CheckSquare,
   Square,
+  RadioIcon,
 } from "lucide-react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import type React from "react";
 import { toast } from "sonner";
@@ -55,6 +57,8 @@ export const QRGenerator = () => {
     setWindowsConfigured,
     currentCourse,
   } = useQrGenContext();
+
+  const router = useRouter();
   const { mutateAsync: generateQr, isPending: isGenerating } = useGenerateQr(
     selectedCourse?.sessionId || 0
   );
@@ -244,16 +248,25 @@ export const QRGenerator = () => {
     }
   }
 
-  const buildValidities = (w: Windows) => [
-    {
-      start_time: formatHHMM(w.entryWindow.start),
-      end_time: formatHHMM(w.entryWindow.end),
-    },
-    {
-      start_time: formatHHMM(w.exitWindow.start),
-      end_time: formatHHMM(w.exitWindow.end),
-    },
-  ];
+  const buildValidities = (w: Windows) => {
+    const validities = [
+      {
+        start_time: formatHHMM(w.entryWindow.start),
+        end_time: formatHHMM(w.entryWindow.end),
+      },
+      {
+        start_time: formatHHMM(w.exitWindow.start),
+        end_time: formatHHMM(w.exitWindow.end),
+      },
+    ];
+
+    // Debug logging
+    console.log("Building validities:", validities);
+    console.log("Exit window raw:", w.exitWindow);
+    console.log("Exit valid?", w.exitWindow.end > w.exitWindow.start);
+
+    return validities;
+  };
 
   const generateQRCode = async () => {
     if (!selectedCourse || !windows || !selectedRoomId || !windowsConfigured) {
@@ -326,6 +339,18 @@ export const QRGenerator = () => {
       );
     }
   };
+
+  function handleNavigateToTracking(): void {
+    if (!selectedCourse?.sessionId) {
+      toast.error("No session selected");
+      return;
+    }
+
+    // Navigate to the real-time attendance tracking page with week_number
+    const url = `/real-time-tracking/${selectedCourse.sessionId}?week_number=${selectedCourse.weekNumber}`;
+    router.push(url);
+  }
+
   // If an existing QR is present for the selected week, show it by default.
   // Use the refetch result directly to avoid reading stale data from closures.
   useEffect(() => {
@@ -621,16 +646,6 @@ export const QRGenerator = () => {
           </span>
         </div>
         <Card className="border-border bg-card">
-          <CardHeader className="py-1.5 text-center">
-            <CardTitle className="text-foreground text-base font-semibold">
-              {qrGenerated ? "QR Code" : "QR Code Generation"}
-            </CardTitle>
-            <p className="text-muted-foreground mt-0.5 text-xs">
-              {qrGenerated
-                ? "Show or update the attendance QR code"
-                : "Generate attendance QR code for your session"}
-            </p>
-          </CardHeader>
           <CardContent className="space-y-3">
             <div className="text-center">
               {selectedCourse && (
@@ -1052,6 +1067,17 @@ export const QRGenerator = () => {
                       Share
                     </Button>
                   </div>
+
+                  {/* Real-time Attendance Tracking Button */}
+                  <Button
+                    variant="default"
+                    className="bg-primary text-primary-foreground hover:bg-primary/90 mt-2 h-9 w-full"
+                    onClick={handleNavigateToTracking}
+                    disabled={!qrGenerated || !selectedCourse?.sessionId}
+                  >
+                    <RadioIcon className="mr-2 h-4 w-4" />
+                    Real-time Attendance Tracking
+                  </Button>
                 </>
               ) : (
                 <>
