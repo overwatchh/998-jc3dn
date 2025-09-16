@@ -160,51 +160,8 @@ export function RoomSelector() {
                       {selectedRoom.room_number}
                     </span>
                     {sessionRoomIds.has(selectedRoom.id) && (
-                      <span className="flex-shrink-0 self-center rounded-full px-1.5 py-0 text-[11px] leading-none font-medium bg-primary/10 text-primary ring-1 ring-primary/20">
+                      <span className="bg-primary/10 text-primary ring-primary/20 flex-shrink-0 self-center rounded-full px-1.5 py-0 text-[11px] leading-none font-medium ring-1">
                         Default Room
-                      </span>
-                    )}
-                  </div>
-                  {selectedRoom.description && (
-                    <div className="text-muted-foreground truncate text-[11px]">
-                      {selectedRoom.description}
-                    </div>
-                  )}
-                  <div className="text-muted-foreground w-full truncate text-[11px]">
-                    {selectedRoom.campus_name}
-                  </div>
-                </div>
-              ) : (
-                <SelectValue
-                  placeholder={
-                    isLoading ? "Loading rooms..." : "Select a room..."
-                  }
-                />
-              )}
-            </SelectTrigger>
-            <SelectContent className="border-border bg-popover max-w-[380px]">
-              {rooms.map(room => {
-                const isSessionRoom = sessionRoomIds.has(room.id);
-                return (
-                  <SelectItem
-                    key={room.id}
-                    value={room.id.toString()}
-                    className="focus:bg-accent focus:text-accent-foreground"
-                  >
-                    <div className="flex max-w-[340px] flex-col py-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-foreground truncate text-sm font-semibold">
-                          Building {room.building_number} • Room {room.room_number}
-                        </span>
-                        {isSessionRoom && (
-                          <span className="rounded-full px-1.5 py-0 text-[11px] leading-none font-medium bg-primary/10 text-primary ring-1 ring-primary/20">
-                            Default Room
-                          </span>
-                        )}
-                      </div>
-                      {room.description && (
-                        <span className="text-muted-foreground truncate text-xs">
-                          {room.description}
                       </span>
                     )}
                   </div>
@@ -241,7 +198,7 @@ export function RoomSelector() {
                           {room.room_number}
                         </span>
                         {isSessionRoom && (
-                          <span className="bg-primary/10 text-primary border-primary/20 rounded border px-1.5 py-0.5 text-xs font-medium">
+                          <span className="bg-primary/10 text-primary ring-primary/20 rounded-full px-1.5 py-0 text-[11px] leading-none font-medium ring-1">
                             Default Room
                           </span>
                         )}
@@ -251,9 +208,6 @@ export function RoomSelector() {
                           {room.description}
                         </span>
                       )}
-                      <span className="text-muted-foreground truncate text-xs">
-                        {room.campus_name}
-                      </span>
                     </div>
                   </SelectItem>
                 );

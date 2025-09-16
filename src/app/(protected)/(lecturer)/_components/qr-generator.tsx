@@ -14,7 +14,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import apiClient from "@/lib/api/apiClient";
 import { formatHHMM } from "@/lib/utils";
 import { AxiosError } from "axios";
-import { Download, Loader2, QrCode, Share2, MapPin, Clock, Shield } from "lucide-react";
+import {
+  Download,
+  Loader2,
+  QrCode,
+  Share2,
+  MapPin,
+  Clock,
+  Shield,
+  CheckSquare,
+  Square,
+} from "lucide-react";
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import type React from "react";
@@ -152,7 +162,10 @@ export const QRGenerator = () => {
       // Build filename: subjectCode-week[number].png
       const subject = (currentCourse?.code || "attendance").trim();
       const safeSubject = subject.replace(/[^a-zA-Z0-9_-]+/g, "-");
-      const weekSuffix = selectedCourse?.weekNumber != null ? `-week${selectedCourse.weekNumber}` : "";
+      const weekSuffix =
+        selectedCourse?.weekNumber != null
+          ? `-week${selectedCourse.weekNumber}`
+          : "";
       link.download = `${safeSubject}${weekSuffix}.png`;
       document.body.appendChild(link);
       link.click();
@@ -621,8 +634,8 @@ export const QRGenerator = () => {
           <CardContent className="space-y-3">
             <div className="text-center">
               {selectedCourse && (
-                <div className="mb-2 flex items-center justify-center gap-2">
-                  <span className="inline-flex items-center rounded-full bg-accent px-2.5 py-0.5 text-xs font-semibold text-accent-foreground">
+                <div className="mb-1 flex items-center justify-center gap-2">
+                  <span className="bg-accent text-accent-foreground inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold">
                     {currentCourse?.code}
                   </span>
                   <span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
@@ -632,11 +645,17 @@ export const QRGenerator = () => {
               )}
               <div className="relative mx-auto w-[clamp(250px,40vh,400px)]">
                 {isChecking ? (
-                  <div className="bg-card flex w-full items-center justify-center rounded-lg border shadow" style={{ aspectRatio: '1.15/1' }}>
+                  <div
+                    className="bg-card flex w-full items-center justify-center rounded-lg border shadow"
+                    style={{ aspectRatio: "1.15/1" }}
+                  >
                     <Loader2 className="text-muted-foreground h-8 w-8 animate-spin" />
                   </div>
                 ) : qrGenerated && qrUrl ? (
-                  <div className="bg-card flex w-full items-center justify-center rounded-lg border p-3 shadow" style={{ aspectRatio: '1.15/1' }}>
+                  <div
+                    className="bg-card flex w-full items-center justify-center rounded-lg border p-3 shadow"
+                    style={{ aspectRatio: "1.15/1" }}
+                  >
                     <Image
                       src={qrUrl}
                       alt="QR Code"
@@ -646,64 +665,67 @@ export const QRGenerator = () => {
                     />
                   </div>
                 ) : (
-                  <div className="bg-muted flex w-full items-center justify-center rounded-lg border border-dashed" style={{ aspectRatio: '1.15/1' }}>
+                  <div
+                    className="bg-muted flex w-full items-center justify-center rounded-lg border border-dashed"
+                    style={{ aspectRatio: "1.15/1" }}
+                  >
                     <div className="text-muted-foreground text-center">
                       <QrCode className="mx-auto mb-3 h-12 w-12" />
-                      <p className="text-xs font-medium">QR code has not been generated</p>
-                      <p className="text-[11px]">Complete configuration above and click Generate</p>
+                      <p className="text-xs font-medium">
+                        QR code has not been generated
+                      </p>
+                      <p className="text-[11px]">
+                        Complete configuration above and click Generate
+                      </p>
                     </div>
                   </div>
                 )}
 
-            {/* Configuration Overview */}
-            <div className="space-y-3">
-              {/* Quick Status when QR not generated */}
-              {!qrGenerated && (
-                <div className="bg-muted rounded-lg p-3">
-                  <h4 className="text-foreground mb-2 text-xs font-medium">
-                    Configuration Status
-                  </h4>
-                  <div className="space-y-1.5">
-                    <div className="flex items-center gap-2">
-                      {selectedRoomId ? (
-                        <div className="flex h-5 w-5 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/20">
-                          <span className="text-xs text-green-600 dark:text-green-400">✓</span>
-                        </div>
-                      ) : (
-                        <div className="bg-secondary flex h-5 w-5 items-center justify-center rounded-full">
-                          <span className="text-muted-foreground text-xs">○</span>
-                        </div>
-                      )}
-                      <span
-                        className={`text-xs ${selectedRoomId ? "text-green-600 dark:text-green-400" : "text-muted-foreground"}`}
-                      >
-                        Room selected
+                {/* Inline configuration mini-status (only when not fully ready) */}
+                {!qrGenerated && (
+                  <div className="absolute inset-x-2 bottom-2">
+                    <div className="bg-card/85 border-border flex items-center justify-between gap-2 rounded-md border px-2 py-1 text-[11px] backdrop-blur-sm">
+                      <span className="text-muted-foreground font-medium">
+                        Configuration Status
                       </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {windowsConfigured ? (
-                        <div className="flex h-5 w-5 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/20">
-                          <span className="text-xs text-green-600 dark:text-green-400">✓</span>
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-1.5">
+                          {selectedRoomId ? (
+                            <CheckSquare className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />
+                          ) : (
+                            <Square className="text-muted-foreground h-3.5 w-3.5" />
+                          )}
+                          <span
+                            className={`${selectedRoomId ? "text-green-600 dark:text-green-400" : "text-muted-foreground"}`}
+                          >
+                            Room
+                          </span>
                         </div>
-                      ) : (
-                        <div className="bg-secondary flex h-5 w-5 items-center justify-center rounded-full">
-                          <span className="text-muted-foreground text-xs">○</span>
+                        <div className="flex items-center gap-1.5">
+                          {windowsConfigured ? (
+                            <CheckSquare className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />
+                          ) : (
+                            <Square className="text-muted-foreground h-3.5 w-3.5" />
+                          )}
+                          <span
+                            className={`${windowsConfigured ? "text-green-600 dark:text-green-400" : "text-muted-foreground"}`}
+                          >
+                            Time Windows
+                          </span>
                         </div>
-                      )}
-                      <span
-                        className={`text-xs ${windowsConfigured ? "text-green-600 dark:text-green-400" : "text-muted-foreground"}`}
-                      >
-                        Time windows configured
-                      </span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
+            </div>
 
+            {/* Configuration Overview */}
+            <div className="space-y-3">
               {/* Detailed Configuration Overview (compact) */}
               {(selectedRoomId || windowsConfigured || qrGenerated) && (
-                <div className="bg-muted/50 border border-border rounded-lg p-2.5">
-                  <h4 className="text-foreground mb-2 text-xs font-medium flex items-center gap-2">
+                <div className="bg-muted/50 border-border rounded-lg border p-2">
+                  <h4 className="text-foreground mb-2 flex items-center gap-2 text-xs font-medium">
                     <div className="h-1.5 w-1.5 rounded-full bg-blue-500"></div>
                     Current Configuration
                   </h4>
