@@ -74,10 +74,10 @@ export function TimeWindowSelector({
       const entryEnd = windows.entryWindow.end;
       const exitStart = windows.exitWindow.start;
       const exitEnd = windows.exitWindow.end;
-      
+
       const entryDurationMs = entryEnd.getTime() - entryStart.getTime();
       const exitDurationMs = exitEnd.getTime() - exitStart.getTime();
-      
+
       setEntryStartTime(entryStart);
       setEntryDuration(Math.round(entryDurationMs / (60 * 1000))); // Convert to minutes
       setExitStartTime(exitStart);
@@ -400,7 +400,13 @@ export function TimeWindowSelector({
       setWindowsConfigured(true);
       isUpdatingRef.current = false;
     },
-    [exitStartTime, entryStartTime, entryDuration, validateExitPosition, setWindowsConfigured]
+    [
+      exitStartTime,
+      entryStartTime,
+      entryDuration,
+      validateExitPosition,
+      setWindowsConfigured,
+    ]
   );
 
   const applyPreset = useCallback(
@@ -498,39 +504,63 @@ export function TimeWindowSelector({
       <CardContent className="space-y-4">
         <div className="space-y-2">
           <div>
-            <h4 className="text-sm font-medium text-foreground mb-1">Quick Presets</h4>
-            <p className="text-xs text-muted-foreground mb-1">
-              Choose a preset configuration to quickly set up common time window patterns
+            <h4 className="text-foreground mb-1 text-sm font-medium">
+              Quick Presets
+            </h4>
+            <p className="text-muted-foreground mb-1 text-xs">
+              Choose a preset configuration to quickly set up common time window
+              patterns
             </p>
           </div>
-          
+
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-            <div className="border border-border rounded-md p-2 hover:bg-accent/50 transition-colors cursor-pointer" onClick={() => applyPreset("early")}>
-              <div className="flex items-center justify-between mb-1">
-                <h5 className="font-medium text-xs text-foreground">Early Entry</h5>
-                <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded text-[10px]">15 min</span>
+            <div
+              className="border-border hover:bg-accent/50 cursor-pointer rounded-md border p-2 transition-colors"
+              onClick={() => applyPreset("early")}
+            >
+              <div className="mb-1 flex items-center justify-between">
+                <h5 className="text-foreground text-xs font-medium">
+                  Early Entry
+                </h5>
+                <span className="text-muted-foreground bg-muted rounded px-1.5 py-0.5 text-xs text-[10px]">
+                  15 min
+                </span>
               </div>
-              <p className="text-[10px] text-muted-foreground leading-tight">
+              <p className="text-muted-foreground text-[10px] leading-tight">
                 5 min before class start, 5 min before class end
               </p>
             </div>
-            
-            <div className="border border-border rounded-md p-2 hover:bg-accent/50 transition-colors cursor-pointer" onClick={() => applyPreset("standard")}>
-              <div className="flex items-center justify-between mb-1">
-                <h5 className="font-medium text-xs text-foreground">Standard</h5>
-                <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded text-[10px]">15 min</span>
+
+            <div
+              className="border-border hover:bg-accent/50 cursor-pointer rounded-md border p-2 transition-colors"
+              onClick={() => applyPreset("standard")}
+            >
+              <div className="mb-1 flex items-center justify-between">
+                <h5 className="text-foreground text-xs font-medium">
+                  Standard
+                </h5>
+                <span className="text-muted-foreground bg-muted rounded px-1.5 py-0.5 text-xs text-[10px]">
+                  15 min
+                </span>
               </div>
-              <p className="text-[10px] text-muted-foreground leading-tight">
+              <p className="text-muted-foreground text-[10px] leading-tight">
                 At class start, 15 min before class end
               </p>
             </div>
-            
-            <div className="border border-border rounded-md p-2 hover:bg-accent/50 transition-colors cursor-pointer" onClick={() => applyPreset("flexible")}>
-              <div className="flex items-center justify-between mb-1">
-                <h5 className="font-medium text-xs text-foreground">Flexible</h5>
-                <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded text-[10px]">30 min</span>
+
+            <div
+              className="border-border hover:bg-accent/50 cursor-pointer rounded-md border p-2 transition-colors"
+              onClick={() => applyPreset("flexible")}
+            >
+              <div className="mb-1 flex items-center justify-between">
+                <h5 className="text-foreground text-xs font-medium">
+                  Flexible
+                </h5>
+                <span className="text-muted-foreground bg-muted rounded px-1.5 py-0.5 text-xs text-[10px]">
+                  30 min
+                </span>
               </div>
-              <p className="text-[10px] text-muted-foreground leading-tight">
+              <p className="text-muted-foreground text-[10px] leading-tight">
                 10 min before class start, 10 min before class end
               </p>
             </div>
