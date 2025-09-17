@@ -78,6 +78,11 @@ export const getApiDocs = async () => {
           description:
             "Endpoints that provide analytical data and attendance statistics for both lecturers and admins.",
         },
+        {
+          name: "System",
+          description:
+            "System administration endpoints including email reminders, automatic triggers, and system monitoring. These endpoints require system-level authentication.",
+        }
       ],
     },
   });
