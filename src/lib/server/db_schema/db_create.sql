@@ -141,9 +141,11 @@ CREATE TABLE lecturer_study_session (
 
 -- QR Code table
 CREATE TABLE qr_code (
-    id INT AUTO_INCREMENT PRIMARY KEY,    
+    id INT AUTO_INCREMENT PRIMARY KEY,
     createdAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    valid_radius DECIMAL(10,2) DEFAULT 100.00
+    valid_radius DECIMAL(10,2) DEFAULT 100.00,
+    validate_geo TINYINT(1) DEFAULT 1,
+    valid_room_id INT
 );
 
 -- Validity table
@@ -197,7 +199,8 @@ CREATE TABLE checkin (
     checkin_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     validity_id INT NOT NULL,
     latitude DECIMAL(18,14),
-    longitude DECIMAL(18,14),    
+    longitude DECIMAL(18,14),
+    checkin_type ENUM('lecture', 'tutorial') DEFAULT 'lecture',
     PRIMARY KEY (student_id, qr_code_study_session_id, validity_id),
     CONSTRAINT fk_check_validity FOREIGN KEY (validity_id) REFERENCES validity(id),
     CONSTRAINT fk_check_student FOREIGN KEY (student_id) REFERENCES user(id),
