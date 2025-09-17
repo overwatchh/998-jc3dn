@@ -95,14 +95,14 @@ export async function POST(req: NextRequest) {
     }
 
     const { email } = parsed.data;
-    // Get SMTP configuration from environment
+    // Get SMTP configuration
     const emailConfig: EmailConfig = {
-      smtpHost: process.env.SMTP_HOST || "smtp.gmail.com",
+      smtpHost: "smtp.gmail.com",
       smtpPort: parseInt(process.env.SMTP_PORT || "587"),
       smtpUser: process.env.SMTP_USER || "",
       smtpPass: process.env.SMTP_PASS || "",
-      fromEmail: process.env.FROM_EMAIL || "",
-      fromName: process.env.FROM_NAME || "QR Attendance System",
+      fromEmail: process.env.SMTP_USER || "",
+      fromName: "QR Attendance System",
     };
 
     // Initialize email service
