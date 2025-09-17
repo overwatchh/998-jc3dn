@@ -165,19 +165,19 @@ export async function GET(request: NextRequest) {
     const [worstSession] = await rawQuery(worstQuery, queryParams);
 
     return NextResponse.json({
-      averageAttendance: metricsData?.average_attendance || 0,
-      atRiskStudents: metricsData?.at_risk_students || 0,
-      totalStudents: metricsData?.total_students || 0,
-      totalWeeks: metricsData?.total_weeks || 0,
+      averageAttendance: (metricsData as any)?.average_attendance || 0,
+      atRiskStudents: (metricsData as any)?.at_risk_students || 0,
+      totalStudents: (metricsData as any)?.total_students || 0,
+      totalWeeks: (metricsData as any)?.total_weeks || 0,
       mostAttended: {
-        week: bestSession?.week_label || 'N/A',
-        subject: bestSession?.subject_code || '',
-        attendance: bestSession?.attendance_rate || 0
+        week: (bestSession as any)?.week_label || 'N/A',
+        subject: (bestSession as any)?.subject_code || '',
+        attendance: (bestSession as any)?.attendance_rate || 0
       },
       leastAttended: {
-        week: worstSession?.week_label || 'N/A',
-        subject: worstSession?.subject_code || '',
-        attendance: worstSession?.attendance_rate || 0
+        week: (worstSession as any)?.week_label || 'N/A',
+        subject: (worstSession as any)?.subject_code || '',
+        attendance: (worstSession as any)?.attendance_rate || 0
       }
     });
   } catch (error) {

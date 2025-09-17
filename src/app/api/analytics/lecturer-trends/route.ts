@@ -179,11 +179,11 @@ export async function GET(request: NextRequest) {
 
     // Calculate summary statistics
     const totalSubjects = subjectPerformance.length;
-    const totalStudents = subjectPerformance.reduce((sum, subject) => sum + (subject.total_students || 0), 0);
+    const totalStudents = subjectPerformance.reduce((sum, subject) => sum + ((subject as any).total_students || 0), 0);
 
     // Convert string values to numbers and filter valid attendance values
     const validAttendanceValues = subjectPerformance
-      .map(subject => ({
+      .map((subject: any) => ({
         ...subject,
         average_attendance: parseFloat(subject.average_attendance) || 0
       }))
@@ -194,7 +194,7 @@ export async function GET(request: NextRequest) {
       : 0;
 
     // Add performance levels to subjects
-    const subjectsWithPerformance = subjectPerformance.map(subject => {
+    const subjectsWithPerformance = subjectPerformance.map((subject: any) => {
       const attendance = parseFloat(subject.average_attendance) || 0;
       return {
         ...subject,
@@ -214,7 +214,7 @@ export async function GET(request: NextRequest) {
     };
 
     // Convert weekly trends to numbers and calculate trend direction
-    const weeklyTrendsWithNumbers = weeklyTrends.map(week => ({
+    const weeklyTrendsWithNumbers = weeklyTrends.map((week: any) => ({
       ...week,
       attendance_rate: parseFloat(week.attendance_rate) || 0
     }));

@@ -1,6 +1,6 @@
-import cron from 'node-cron';
+import cron, { ScheduledTask } from 'node-cron';
 
-let scheduledJobs = new Map<number, cron.ScheduledTask>();
+let scheduledJobs = new Map<number, ScheduledTask>();
 
 async function triggerLectureEndEmail(sessionId: number, weekNumber: number = 1) {
   console.log(`🎯 Automatic lecture end trigger for session ${sessionId}, week ${weekNumber}`);
@@ -50,9 +50,8 @@ export function scheduleSessionEnd(sessionId: number, endTime: string, dayOfWeek
   const task = cron.schedule(cronPattern, () => {
     triggerLectureEndEmail(sessionId, weekNumber);
   }, {
-    scheduled: true,
     timezone: "America/New_York" // Adjust to your timezone
-  });
+  } as any);
 
   scheduledJobs.set(sessionId, task);
   return task;

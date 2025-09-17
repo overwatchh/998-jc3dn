@@ -237,8 +237,8 @@ export default function ReportsAnalytics() {
                   <SelectValue placeholder="Select course" />
                 </SelectTrigger>
                 <SelectContent>
-                  {(courses ?? []).map(c => (
-                    <SelectItem key={c.id + c.code} value={String(c.id)}>
+                  {(courses ?? []).map((c, index) => (
+                    <SelectItem key={`course-${c.id}-${index}`} value={String(c.id)}>
                       {c.code} - {c.name}
                     </SelectItem>
                   ))}
@@ -365,7 +365,7 @@ export default function ReportsAnalytics() {
               className="h-[280px] w-full sm:h-[350px]"
             >
               <AreaChart
-                data={weeklyAttendanceData}
+                data={Array.isArray(weeklyAttendanceData) ? weeklyAttendanceData : []}
                 margin={{ top: 20, right: 20, left: 10, bottom: 20 }}
               >
                 <defs>
@@ -411,7 +411,7 @@ export default function ReportsAnalytics() {
                   stroke="#ef4444"
                   strokeDasharray="4 4"
                   opacity={0.7}
-                  label={{ value: "Target 80%", position: "topRight", fontSize: 10 }}
+                  label={{ value: "Target 80%", position: "insideTopRight", fontSize: 10 }}
                 />
                 <Area
                   type="monotone"
@@ -558,7 +558,7 @@ export default function ReportsAnalytics() {
                 >
                   <PieChart>
                     <Pie
-                      data={distributionData}
+                      data={Array.isArray(distributionData) ? distributionData : []}
                       cx="50%"
                       cy="50%"
                       innerRadius={60}
@@ -567,7 +567,7 @@ export default function ReportsAnalytics() {
                       dataKey="value"
                       nameKey="name"
                     >
-                      {distributionData.map((entry, index) => (
+                      {(Array.isArray(distributionData) ? distributionData : []).map((entry, index) => (
                         <Cell
                           key={`cell-${index}`}
                           className={`${
@@ -585,7 +585,7 @@ export default function ReportsAnalytics() {
                             <div className="bg-popover p-3 border border-border rounded-lg shadow-lg">
                               <p className="font-medium text-popover-foreground">{payload[0]?.name}</p>
                               <p className="text-primary">
-                                {payload[0]?.value} students ({((payload[0]?.value / distributionData.reduce((sum, item) => sum + item.value, 0)) * 100).toFixed(1)}%)
+                                {payload[0]?.value} students ({(((Number(payload[0]?.value) || 0) / (Array.isArray(distributionData) ? distributionData : []).reduce((sum, item) => sum + item.value, 0)) * 100).toFixed(1)}%)
                               </p>
                             </div>
                           );
@@ -597,14 +597,14 @@ export default function ReportsAnalytics() {
                 </ChartContainer>
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
                   <div className="text-lg font-bold text-foreground">
-                    {distributionData.reduce((sum, item) => sum + item.value, 0)}
+                    {(Array.isArray(distributionData) ? distributionData : []).reduce((sum, item) => sum + item.value, 0)}
                   </div>
                   <div className="text-xs text-muted-foreground">Total Students</div>
                 </div>
               </div>
               <div className="ml-6 space-y-3">
-                {distributionData.map((item, index) => (
-                  <div key={index} className="flex items-center justify-between min-w-[120px]">
+                {(Array.isArray(distributionData) ? distributionData : []).map((item, index) => (
+                  <div key={`distribution-${item.name}-${index}`} className="flex items-center justify-between min-w-[120px]">
                     <div className="flex items-center space-x-2">
                       <div
                         className="w-3 h-3 rounded-full"
@@ -618,7 +618,7 @@ export default function ReportsAnalytics() {
                       <span className="text-sm font-medium">{item.name}</span>
                     </div>
                     <div className="text-sm text-gray-600">
-                      {item.value} ({((item.value / distributionData.reduce((sum, i) => sum + i.value, 0)) * 100).toFixed(0)}%)
+                      {item.value} ({((item.value / (Array.isArray(distributionData) ? distributionData : []).reduce((sum, i) => sum + i.value, 0)) * 100).toFixed(0)}%)
                     </div>
                   </div>
                 ))}
@@ -765,9 +765,9 @@ export default function ReportsAnalytics() {
 
               {/* Heatmap Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-2">
-                {weeklyAttendanceData.map((week, index) => (
+                {(Array.isArray(weeklyAttendanceData) ? weeklyAttendanceData : []).map((week, index) => (
                   <div
-                    key={index}
+                    key={`week-${week.week_label || week.date || index}`}
                     className={`relative p-3 rounded-lg border transition-all duration-200 hover:scale-105 cursor-pointer ${
                       week.attendance >= 90 ? 'bg-green-500 border-green-600 text-white' :
                       week.attendance >= 80 ? 'bg-green-400 border-green-500 text-white' :
@@ -795,25 +795,25 @@ export default function ReportsAnalytics() {
                   <div>
                     <div className="text-sm text-muted-foreground">Excellent (90%+)</div>
                     <div className="text-lg font-bold text-emerald-600 dark:text-emerald-400">
-                      {weeklyAttendanceData.filter(w => w.attendance >= 90).length}
+                      {(Array.isArray(weeklyAttendanceData) ? weeklyAttendanceData : []).filter(w => w.attendance >= 90).length}
                     </div>
                   </div>
                   <div>
                     <div className="text-sm text-muted-foreground">Good (80-89%)</div>
                     <div className="text-lg font-bold text-blue-600 dark:text-blue-400">
-                      {weeklyAttendanceData.filter(w => w.attendance >= 80 && w.attendance < 90).length}
+                      {(Array.isArray(weeklyAttendanceData) ? weeklyAttendanceData : []).filter(w => w.attendance >= 80 && w.attendance < 90).length}
                     </div>
                   </div>
                   <div>
                     <div className="text-sm text-muted-foreground">Average (70-79%)</div>
                     <div className="text-lg font-bold text-amber-600 dark:text-amber-400">
-                      {weeklyAttendanceData.filter(w => w.attendance >= 70 && w.attendance < 80).length}
+                      {(Array.isArray(weeklyAttendanceData) ? weeklyAttendanceData : []).filter(w => w.attendance >= 70 && w.attendance < 80).length}
                     </div>
                   </div>
                   <div>
                     <div className="text-sm text-muted-foreground">Below Target</div>
                     <div className="text-lg font-bold text-rose-600 dark:text-rose-400">
-                      {weeklyAttendanceData.filter(w => w.attendance < 70).length}
+                      {(Array.isArray(weeklyAttendanceData) ? weeklyAttendanceData : []).filter(w => w.attendance < 70).length}
                     </div>
                   </div>
                 </div>
@@ -908,8 +908,8 @@ export default function ReportsAnalytics() {
               </div>
               {lecturerTrends.subjectPerformance.length > 0 ? (
                 <div className="space-y-3 max-h-[300px] overflow-y-auto">
-                  {lecturerTrends.subjectPerformance.map((subject, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border border-border hover:bg-muted/50 transition-colors">
+                  {(Array.isArray(lecturerTrends.subjectPerformance) ? lecturerTrends.subjectPerformance : []).map((subject, index) => (
+                    <div key={`subject-${subject.subject_code || subject.subject_id || index}`} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border border-border hover:bg-muted/50 transition-colors">
                       <div className="flex items-center space-x-3">
                         <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
                           subject.performance_level === 'excellent' ? 'bg-emerald-500 text-white' :
@@ -970,7 +970,7 @@ export default function ReportsAnalytics() {
                   className="h-[200px] w-full"
                 >
                   <LineChart
-                    data={lecturerTrends.weeklyProgression}
+                    data={Array.isArray(lecturerTrends.weeklyProgression) ? lecturerTrends.weeklyProgression : []}
                     margin={{ top: 20, right: 20, left: 10, bottom: 20 }}
                   >
                     <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
@@ -1016,7 +1016,7 @@ export default function ReportsAnalytics() {
                       stroke="hsl(var(--destructive))"
                       strokeDasharray="4 4"
                       opacity={0.7}
-                      label={{ value: "Target 80%", position: "topRight", fontSize: 10 }}
+                      label={{ value: "Target 80%", position: "insideTopRight", fontSize: 10 }}
                     />
                     <Line
                       type="monotone"
@@ -1113,8 +1113,8 @@ export default function ReportsAnalytics() {
 
           {/* Mobile Card View */}
           <div className="block space-y-4 sm:hidden">
-            {studentPerformanceData.map(student => (
-              <Card key={student.id}>
+            {(Array.isArray(studentPerformanceData) ? studentPerformanceData : []).map((student, index) => (
+              <Card key={`mobile-student-${student.id || index}`}>
                 <CardContent className="p-4">
                   <div className="mb-3 flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -1196,8 +1196,8 @@ export default function ReportsAnalytics() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {studentPerformanceData.map(student => (
-                  <TableRow key={student.id}>
+                {(Array.isArray(studentPerformanceData) ? studentPerformanceData : []).map((student, index) => (
+                  <TableRow key={`table-student-${student.id || index}`}>
                     <TableCell className="hidden font-medium lg:table-cell">
                       {student.id}
                     </TableCell>
