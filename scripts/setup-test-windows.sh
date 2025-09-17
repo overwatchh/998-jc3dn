@@ -43,10 +43,3 @@ FROM validity
 WHERE qr_code_id = 9999 
 ORDER BY count;
 EOF
-
-echo ""
-echo "✅ Test windows created!"
-echo "⏰ You have 3 minutes for first check-in, then 1 minute gap, then 6 minutes for second check-in"
-echo ""
-echo "To monitor window status, run:"
-echo "mariadb -h localhost -u root -p qr_attendance_app -e \"SELECT count, start_time, end_time, CASE WHEN NOW() BETWEEN start_time AND end_time THEN 'ACTIVE' WHEN NOW() < start_time THEN 'FUTURE' ELSE 'EXPIRED' END as status FROM validity WHERE qr_code_id = 9999 ORDER BY count;\""

@@ -8,6 +8,7 @@ import { haversineDistance } from "@/lib/utils";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { FirstCheckinScreen } from "./_components/first-checkin-screen";
+import { GeoValidationErrorDialog } from "./_components/geo-validation-error-dialog";
 import { OnlineCheckinDialog } from "./_components/online-checkin-dialog";
 import { SecondCheckinScreen } from "./_components/second-checkin-screen";
 import { useStudentQRCheckin } from "./mutations";
@@ -25,6 +26,8 @@ const CheckinPage = () => {
   const [firstCheckedIn, setFirstCheckedIn] = useState(false);
   const [secondCheckedIn, setSecondCheckedIn] = useState(false);
   const [showOnlineDialog, setShowOnlineDialog] = useState(false);
+  const [showGeoValidationError, setShowGeoValidationError] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const searchParams = useSearchParams();
   const [locationEnabled, setLocationEnabled] = useState(false);
   const qrCodeId = searchParams.get("qr_code_id");
@@ -33,10 +36,45 @@ const CheckinPage = () => {
     data: checkinStatus,
     isPending: isCheckinStatusPending,
     error: checkinStatusError,
+    refetch: refetchCheckinStatus,
   } = useGetCheckinStatus(qrCodeId);
   const location = useGeolocation(locationEnabled);
   const { mutateAsync: checkin, isPending: isCheckinPending } =
     useStudentQRCheckin();
+
+  // Helper function to check if student has already checked in for current validity window
+  const isCurrentWindowCheckedIn = () => {
+    if (!checkinStatus?.validities) return false;
+
+    const currentWindow = checkinStatus.validities.find(
+      v => v.count === checkinStatus.validity_count
+    );
+
+    return currentWindow?.is_checked_in ?? false;
+  };
+
+  // Get current window check-in time for display
+  const getCurrentWindowCheckinTime = () => {
+    if (!checkinStatus?.validities) return null;
+
+    const currentWindow = checkinStatus.validities.find(
+      v => v.count === checkinStatus.validity_count
+    );
+
+    return currentWindow?.checkin_time ?? null;
+  };
+
+  // Handle refresh to check for second check-in availability
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await refetchCheckinStatus();
+    } catch (error) {
+      console.error("Failed to refresh check-in status:", error);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   // Start QR scanning when camera is ready and in scanning state
   useEffect(() => {
@@ -68,6 +106,33 @@ const CheckinPage = () => {
     }
   }, [checkinStatus, locationEnabled]);
 
+  // Auto-enable location for second check-in if geo validation is enabled
+  useEffect(() => {
+    if (
+      checkinStatus?.validity_count === QRStatusEnum.SECOND_CHECKIN &&
+      checkinStatus?.validate_geo &&
+      !locationEnabled
+    ) {
+      setLocationEnabled(true);
+    }
+  }, [
+    checkinStatus?.validity_count,
+    checkinStatus?.validate_geo,
+    locationEnabled,
+  ]);
+
+  // Always enable location for better UX (show proximity visualization even when optional)
+  useEffect(() => {
+    if (
+      (checkinStatus?.validity_count === QRStatusEnum.FIRST_CHECKIN ||
+        checkinStatus?.validity_count === QRStatusEnum.SECOND_CHECKIN) &&
+      !locationEnabled
+    ) {
+      // Auto-enable location silently to show proximity visualization
+      setLocationEnabled(true);
+    }
+  }, [checkinStatus?.validity_count, locationEnabled]);
+
   if (!qrCodeId) {
     return (
       <div className="flex min-h-[400px] flex-col items-center justify-center space-y-4">
@@ -83,11 +148,12 @@ const CheckinPage = () => {
   }
 
   // Prompt for location permission before requesting it
-  // Skip location request for second check-in since geo-validation is simpler
-  const needsLocation =
-    checkinStatus?.validity_count === QRStatusEnum.FIRST_CHECKIN;
+  // Show location prompt for first check-in (required or optional)
+  const needsLocationPrompt =
+    checkinStatus?.validity_count === QRStatusEnum.FIRST_CHECKIN &&
+    checkinStatus?.validate_geo === true; // Only show prompt when validation is required
 
-  if (!isCheckinStatusPending && !locationEnabled && needsLocation) {
+  if (!isCheckinStatusPending && !locationEnabled && needsLocationPrompt) {
     return (
       <div className="space-y-6">
         <div className="text-center">
@@ -182,13 +248,15 @@ const CheckinPage = () => {
                 checkinStatus.validities.length > 0 && (
                   <div className="text-muted-foreground text-xs">
                     <p>Available check-in windows:</p>
-                    {checkinStatus.validities.map(validity => (
-                      <p key={validity.id}>
-                        Window {validity.count}:{" "}
-                        {new Date(validity.start_time).toLocaleString()} -{" "}
-                        {new Date(validity.end_time).toLocaleString()}
-                      </p>
-                    ))}
+                    {checkinStatus.validities
+                      .filter(validity => validity.count === 1) // Only show first window
+                      .map(validity => (
+                        <p key={validity.id}>
+                          Window {validity.count}:{" "}
+                          {new Date(validity.start_time).toLocaleString()} -{" "}
+                          {new Date(validity.end_time).toLocaleString()}
+                        </p>
+                      ))}
                   </div>
                 )}
             </div>
@@ -218,8 +286,13 @@ const CheckinPage = () => {
       checkinStatus.location.longitude
     );
 
-    const radius = checkinStatus.location.radius ?? 0;
-    return distance <= radius;
+    // Use the actual radius if set, otherwise use default 1m when geo validation is optional
+    const effectiveRadius =
+      checkinStatus.radius ?? (checkinStatus.validate_geo ? 0 : 50);
+    
+    const isNearby = distance <= effectiveRadius;
+    
+    return isNearby;
   };
 
   // Implement the geo-validation logic from pseudo code
@@ -248,7 +321,7 @@ const CheckinPage = () => {
       if (geoValidationEnabled) {
         // Geo validation enabled: if not nearby, not allowed to check in
         if (!nearby) {
-          alert("You must be at the specified location to check in.");
+          setShowGeoValidationError(true);
           return;
         }
         finalCheckinType = "In-person";
@@ -272,10 +345,21 @@ const CheckinPage = () => {
       checkin_type: finalCheckinType,
     });
 
+    // Update local state
     if (screen === Screen.FIRST_CHECKIN) {
       setFirstCheckedIn(true);
     } else if (screen === Screen.SECOND_CHECKIN) {
       setSecondCheckedIn(true);
+    }
+
+    // Refresh check-in status from server to get latest data
+    setIsRefreshing(true);
+    try {
+      await refetchCheckinStatus();
+    } catch (error) {
+      console.error("Failed to refresh check-in status:", error);
+    } finally {
+      setIsRefreshing(false);
     }
   };
 
@@ -298,8 +382,8 @@ const CheckinPage = () => {
                 ? `Building ${checkinStatus.location.building_number}, Room ${checkinStatus.location.room_number}`
                 : undefined
             }
-            radiusMeters={checkinStatus?.location?.radius ?? null}
-            disableAfterSuccess={firstCheckedIn}
+            radiusMeters={checkinStatus?.radius ?? null}
+            disableAfterSuccess={firstCheckedIn || isCurrentWindowCheckedIn()}
             validateGeo={checkinStatus?.validate_geo ?? false}
             roomLocation={
               checkinStatus?.location
@@ -309,6 +393,10 @@ const CheckinPage = () => {
                   }
                 : null
             }
+            alreadyCheckedIn={isCurrentWindowCheckedIn()}
+            checkinTime={getCurrentWindowCheckinTime()}
+            onRefresh={handleRefresh}
+            isRefreshing={isRefreshing}
           />
 
           {/* Online Check-in Confirmation Dialog */}
@@ -326,11 +414,47 @@ const CheckinPage = () => {
                   )
                 : 0
             }
-            allowedRadiusMeters={checkinStatus?.location?.radius ?? 0}
+            allowedRadiusMeters={checkinStatus?.radius ?? 0}
             roomLabel={
               checkinStatus?.location?.building_number &&
               checkinStatus?.location?.room_number
                 ? `Building ${checkinStatus.location.building_number}, Room ${checkinStatus.location.room_number}`
+                : undefined
+            }
+          />
+
+          {/* Geo Validation Error Dialog */}
+          <GeoValidationErrorDialog
+            open={showGeoValidationError}
+            onOpenChange={setShowGeoValidationError}
+            onRetry={() => {
+              // Refresh location and try again
+              setLocationEnabled(false);
+              setTimeout(() => setLocationEnabled(true), 100);
+            }}
+            distanceMeters={
+              location.position && checkinStatus?.location
+                ? haversineDistance(
+                    location.position.latitude,
+                    location.position.longitude,
+                    checkinStatus.location.latitude,
+                    checkinStatus.location.longitude
+                  )
+                : 0
+            }
+            allowedRadiusMeters={checkinStatus?.radius ?? 0}
+            roomLabel={
+              checkinStatus?.location?.building_number &&
+              checkinStatus?.location?.room_number
+                ? `Building ${checkinStatus.location.building_number}, Room ${checkinStatus.location.room_number}`
+                : undefined
+            }
+            roomCoordinates={
+              checkinStatus?.location
+                ? {
+                    latitude: checkinStatus.location.latitude,
+                    longitude: checkinStatus.location.longitude,
+                  }
                 : undefined
             }
           />
@@ -342,7 +466,10 @@ const CheckinPage = () => {
         <SecondCheckinScreen
           handleCheckin={handleCheckin}
           isCheckingIn={isCheckinPending}
-          disabled={secondCheckedIn}
+          disabled={secondCheckedIn || isCurrentWindowCheckedIn()}
+          alreadyCheckedIn={isCurrentWindowCheckedIn()}
+          checkinTime={getCurrentWindowCheckinTime()}
+          isRefreshing={isRefreshing}
         />
       );
 

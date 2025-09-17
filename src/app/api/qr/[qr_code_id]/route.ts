@@ -100,7 +100,9 @@
  *                   type: string
  *                   example: Internal Server Error
  */
+import { auth } from "@/lib/server/auth";
 import { rawQuery } from "@/lib/server/query";
+import { headers } from "next/headers";
 import { NextResponse, NextRequest } from "next/server";
 
 export async function GET(
@@ -110,6 +112,18 @@ export async function GET(
   try {
     const { qr_code_id } = await context.params;
     const qrId = parseInt(qr_code_id, 10);
+
+    // Get student session for check-in status (optional - could be unauthenticated access)
+    let studentId: string | null = null;
+    try {
+      const session = await auth.api.getSession({ headers: await headers() });
+      if (session?.user?.role === "student") {
+        studentId = session.user.id;
+      }
+    } catch {
+      // Allow unauthenticated access for basic QR info
+    }
+
     // Fetch validity count and optionally room location + radius
     const sql = `
       SELECT         
@@ -184,6 +198,43 @@ export async function GET(
       end_time: string;
       validity_count: number;
     }>(validitiesSql, [qrId]);
+
+    // Fetch student check-in status if authenticated
+    let studentCheckins: { validity_id: number; checkin_time: string }[] = [];
+    if (studentId && validities.length > 0) {
+      // Get qr_code_study_session_id first
+      const qrSessionSql = `
+        SELECT id FROM qr_code_study_session 
+        WHERE qr_code_id = ?
+        LIMIT 1
+      `;
+      const qrSessionResult = await rawQuery<{ id: number }>(qrSessionSql, [
+        qrId,
+      ]);
+
+      if (qrSessionResult.length > 0) {
+        const qrSessionId = qrSessionResult[0].id;
+        const validityIds = validities.map(v => v.validity_id);
+        const placeholders = validityIds.map(() => "?").join(", ");
+
+        const checkinSql = `
+          SELECT validity_id, checkin_time
+          FROM checkin
+          WHERE student_id = ?
+            AND qr_code_study_session_id = ?
+            AND validity_id IN (${placeholders})
+        `;
+        studentCheckins = await rawQuery<{
+          validity_id: number;
+          checkin_time: string;
+        }>(checkinSql, [studentId, qrSessionId, ...validityIds]);
+      }
+    }
+    // Create a map of validity_id to check-in status
+    const checkinMap = new Map(
+      studentCheckins.map(c => [c.validity_id, c.checkin_time])
+    );
+
     return NextResponse.json({
       message: "Fetched QR info successfully",
       validate_geo: result.validate_geo ? true : false,
@@ -192,6 +243,8 @@ export async function GET(
         count: v.count,
         start_time: v.start_time,
         end_time: v.end_time,
+        is_checked_in: checkinMap.has(v.validity_id),
+        checkin_time: checkinMap.get(v.validity_id) || null,
       })),
       validity_count: validities.length > 0 ? validities[0].validity_count : 0,
       radius: result.radius !== null ? Number(result.radius) : null,

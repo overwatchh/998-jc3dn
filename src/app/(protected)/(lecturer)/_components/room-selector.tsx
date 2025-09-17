@@ -12,13 +12,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Combobox, ComboboxOption } from "@/components/ui/combobox";
 import { Switch } from "@/components/ui/switch";
 import { AlertTriangle, MapPin, Shield } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -83,6 +77,19 @@ export function RoomSelector() {
   }, [sessionRoomsData]);
   const isLoading = isLoadingAllRooms;
 
+  // Convert rooms to ComboboxOption format
+  const roomOptions: ComboboxOption[] = useMemo(() => {
+    return rooms.map(room => {
+      const isSessionRoom = sessionRoomIds.has(room.id);
+      return {
+        value: room.id.toString(),
+        label: `Building ${room.building_number} • Room ${room.room_number}`,
+        description: room.description || room.campus_name,
+        badge: isSessionRoom ? "Default Room" : undefined,
+      };
+    });
+  }, [rooms, sessionRoomIds]);
+
   function handleRoomSelect(roomId: string): void {
     if (!roomId) {
       setSelectedRoom(null);
@@ -146,74 +153,17 @@ export function RoomSelector() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          <Select
+          <Combobox
+            options={roomOptions}
             value={selectedRoom ? String(selectedRoom.id) : ""}
             onValueChange={handleRoomSelect}
+            placeholder={isLoading ? "Loading rooms..." : "Select a room..."}
+            searchPlaceholder="Search rooms..."
+            emptyText="No rooms found."
             disabled={isLoading}
-          >
-            <SelectTrigger className="border-border bg-background text-foreground data-[state=open]:ring-ring h-auto min-h-[64px] w-full min-w-[360px] py-2.5">
-              {selectedRoom ? (
-                <div className="flex w-full flex-col space-y-1 pr-10 text-left">
-                  <div className="flex w-full items-center gap-2">
-                    <span className="text-foreground truncate text-sm leading-tight font-semibold">
-                      Building {selectedRoom.building_number} • Room{" "}
-                      {selectedRoom.room_number}
-                    </span>
-                    {sessionRoomIds.has(selectedRoom.id) && (
-                      <span className="bg-primary/10 text-primary ring-primary/20 flex-shrink-0 self-center rounded-full px-1.5 py-0 text-[11px] leading-none font-medium ring-1">
-                        Default Room
-                      </span>
-                    )}
-                  </div>
-                  {selectedRoom.description && (
-                    <div className="text-muted-foreground truncate text-[11px]">
-                      {selectedRoom.description}
-                    </div>
-                  )}
-                  <div className="text-muted-foreground w-full truncate text-[11px]">
-                    {selectedRoom.campus_name}
-                  </div>
-                </div>
-              ) : (
-                <SelectValue
-                  placeholder={
-                    isLoading ? "Loading rooms..." : "Select a room..."
-                  }
-                />
-              )}
-            </SelectTrigger>
-            <SelectContent className="border-border bg-popover max-w-[380px]">
-              {rooms.map(room => {
-                const isSessionRoom = sessionRoomIds.has(room.id);
-                return (
-                  <SelectItem
-                    key={room.id}
-                    value={room.id.toString()}
-                    className="focus:bg-accent focus:text-accent-foreground"
-                  >
-                    <div className="flex max-w-[340px] flex-col py-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-foreground truncate text-sm font-semibold">
-                          Building {room.building_number} • Room{" "}
-                          {room.room_number}
-                        </span>
-                        {isSessionRoom && (
-                          <span className="bg-primary/10 text-primary ring-primary/20 rounded-full px-1.5 py-0 text-[11px] leading-none font-medium ring-1">
-                            Default Room
-                          </span>
-                        )}
-                      </div>
-                      {room.description && (
-                        <span className="text-muted-foreground truncate text-xs">
-                          {room.description}
-                        </span>
-                      )}
-                    </div>
-                  </SelectItem>
-                );
-              })}
-            </SelectContent>
-          </Select>
+            triggerClassName="border-border bg-background text-foreground data-[state=open]:ring-ring h-auto min-h-[64px] w-full min-w-[360px] py-2.5"
+            contentClassName="border-border bg-popover"
+          />
 
           {/* Location Validation Settings */}
           <div className="border-t pt-3">

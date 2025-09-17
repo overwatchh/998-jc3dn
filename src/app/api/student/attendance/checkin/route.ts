@@ -124,7 +124,7 @@ export async function POST(req: NextRequest) {
     JOIN subject_study_session sss  ON sss.study_session_id = ss.id
     JOIN subject subj               ON subj.id = sss.subject_id
     JOIN qr_code qc                 ON qc.id = qrss.qr_code_id
-    LEFT JOIN room r                ON r.id = ss.room_id
+    LEFT JOIN room r                ON r.id = qc.valid_room_id
     WHERE qc.id = ?
     `,
       [qr_code_id]

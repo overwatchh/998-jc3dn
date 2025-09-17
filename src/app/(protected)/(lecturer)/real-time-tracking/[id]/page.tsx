@@ -42,7 +42,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Users, RefreshCw, UserPlus, UserCheck, ChevronDown } from "lucide-react";
+import {
+  Users,
+  RefreshCw,
+  UserPlus,
+  UserCheck,
+  ChevronDown,
+} from "lucide-react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -79,22 +85,25 @@ export default function Page() {
   });
 
   const checkedInData = useMemo(() => checkedIn?.data ?? [], [checkedIn]);
-  
+
   // Group check-ins by student for the live check-ins table
   const groupedCheckins = useMemo(() => {
-    const grouped = new Map<string, {
-      student_id: string;
-      student_name: string;
-      student_email: string;
-      checkin: {
-        time: string;
-        type: string;
-      } | null;
-      checkout: {
-        time: string;
-        type: string;
-      } | null;
-    }>();
+    const grouped = new Map<
+      string,
+      {
+        student_id: string;
+        student_name: string;
+        student_email: string;
+        checkin: {
+          time: string;
+          type: string;
+        } | null;
+        checkout: {
+          time: string;
+          type: string;
+        } | null;
+      }
+    >();
 
     for (const c of checkedInData) {
       const key = c.student_id;
@@ -107,7 +116,7 @@ export default function Page() {
           checkout: null,
         });
       }
-      
+
       const entry = grouped.get(key)!;
       if (c.validity_count === 1) {
         entry.checkin = {
@@ -168,27 +177,27 @@ export default function Page() {
   // Determine current session status based on QR validity windows
   const sessionStatus = useMemo(() => {
     if (!qrCodes?.data?.length) return null;
-    
+
     const currentQr = qrCodes.data[0]; // Current week's QR code
     if (!currentQr?.validities?.length) return null;
-    
+
     const now = new Date();
-    
+
     // Check which validity window we're currently in
     for (const validity of currentQr.validities) {
       const startTime = new Date(validity.start_time);
       const endTime = new Date(validity.end_time);
-      
+
       if (now >= startTime && now <= endTime) {
         return {
           isActive: true,
-          windowType: validity.count === 1 ? 'check-in' : 'check-out',
+          windowType: validity.count === 1 ? "check-in" : "check-out",
           windowNumber: validity.count,
           endTime: validity.end_time,
         };
       }
     }
-    
+
     return {
       isActive: false,
       windowType: null,
@@ -478,24 +487,36 @@ export default function Page() {
       )}
 
       {course && (
-        <Collapsible open={isCourseInfoOpen} onOpenChange={setIsCourseInfoOpen} className="mb-4">
+        <Collapsible
+          open={isCourseInfoOpen}
+          onOpenChange={setIsCourseInfoOpen}
+          className="mb-4"
+        >
           <Card>
             <CollapsibleTrigger asChild>
-              <CardContent className="p-4 cursor-pointer hover:bg-muted/50 transition-colors">
+              <CardContent className="hover:bg-muted/50 cursor-pointer p-4 transition-colors">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <div>
                       <h3 className="text-lg font-semibold">{course.code}</h3>
-                      <p className="text-sm text-muted-foreground">{course.name}</p>
+                      <p className="text-muted-foreground text-sm">
+                        {course.name}
+                      </p>
                     </div>
                     <div>
                       {sessionStatus ? (
                         sessionStatus.isActive ? (
-                          <Badge 
-                            variant="default" 
-                            className={sessionStatus.windowType === 'check-in' ? 'bg-green-500' : 'bg-blue-500'}
+                          <Badge
+                            variant="default"
+                            className={
+                              sessionStatus.windowType === "check-in"
+                                ? "bg-green-500"
+                                : "bg-blue-500"
+                            }
                           >
-                            {sessionStatus.windowType === 'check-in' ? 'Check-in Active' : 'Check-out Active'}
+                            {sessionStatus.windowType === "check-in"
+                              ? "Check-in Active"
+                              : "Check-out Active"}
                           </Badge>
                         ) : (
                           <Badge variant="secondary">Session Inactive</Badge>
@@ -505,39 +526,59 @@ export default function Page() {
                       )}
                     </div>
                   </div>
-                  <ChevronDown className={`h-4 w-4 transition-transform ${isCourseInfoOpen ? 'rotate-180' : ''}`} />
+                  <ChevronDown
+                    className={`h-4 w-4 transition-transform ${isCourseInfoOpen ? "rotate-180" : ""}`}
+                  />
                 </div>
               </CardContent>
             </CollapsibleTrigger>
-            
+
             <CollapsibleContent>
-              <CardContent className="pt-0 pb-4 px-4">
+              <CardContent className="px-4 pt-0 pb-4">
                 <div className="space-y-4">
                   <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground">Session Type</p>
+                      <p className="text-muted-foreground text-sm font-medium">
+                        Session Type
+                      </p>
                       <Badge variant="outline" className="capitalize">
                         {course.sessionType}
                       </Badge>
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground">Schedule</p>
-                      <p className="text-sm font-semibold">{course.dayOfWeek}</p>
+                      <p className="text-muted-foreground text-sm font-medium">
+                        Schedule
+                      </p>
+                      <p className="text-sm font-semibold">
+                        {course.dayOfWeek}
+                      </p>
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground">Time</p>
-                      <p className="text-sm font-semibold">{course.startTime} - {course.endTime}</p>
+                      <p className="text-muted-foreground text-sm font-medium">
+                        Time
+                      </p>
+                      <p className="text-sm font-semibold">
+                        {course.startTime} - {course.endTime}
+                      </p>
                     </div>
                   </div>
-                  
+
                   {typeof weekNumber === "number" && (
                     <div className="border-t pt-3">
-                      <p className="text-sm font-medium text-muted-foreground mb-1">Current Session</p>
-                      <p className="text-sm">Week {weekNumber} Attendance Tracking</p>
+                      <p className="text-muted-foreground mb-1 text-sm font-medium">
+                        Current Session
+                      </p>
+                      <p className="text-sm">
+                        Week {weekNumber} Attendance Tracking
+                      </p>
                       {sessionStatus?.isActive && (
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {sessionStatus.windowType === 'check-in' ? 'First' : 'Second'} validity window active
-                          {sessionStatus.endTime && ` until ${new Date(sessionStatus.endTime).toLocaleTimeString()}`}
+                        <p className="text-muted-foreground mt-1 text-xs">
+                          {sessionStatus.windowType === "check-in"
+                            ? "First"
+                            : "Second"}{" "}
+                          validity window active
+                          {sessionStatus.endTime &&
+                            ` until ${new Date(sessionStatus.endTime).toLocaleTimeString()}`}
                         </p>
                       )}
                     </div>
@@ -597,9 +638,13 @@ export default function Page() {
               </TableHeader>
               <TableBody>
                 {groupedCheckins.map(student => {
-                  const getCheckinDisplay = (checkinData: { time: string; type: string } | null) => {
+                  const getCheckinDisplay = (
+                    checkinData: { time: string; type: string } | null
+                  ) => {
                     if (!checkinData) {
-                      return <span className="text-muted-foreground text-sm">—</span>;
+                      return (
+                        <span className="text-muted-foreground text-sm">—</span>
+                      );
                     }
 
                     const getTypeBadge = (type: string) => {
@@ -647,10 +692,16 @@ export default function Page() {
 
                   return (
                     <TableRow key={student.student_id}>
-                      <TableCell className="font-medium">{student.student_name}</TableCell>
+                      <TableCell className="font-medium">
+                        {student.student_name}
+                      </TableCell>
                       <TableCell>{student.student_email}</TableCell>
-                      <TableCell>{getCheckinDisplay(student.checkin)}</TableCell>
-                      <TableCell>{getCheckinDisplay(student.checkout)}</TableCell>
+                      <TableCell>
+                        {getCheckinDisplay(student.checkin)}
+                      </TableCell>
+                      <TableCell>
+                        {getCheckinDisplay(student.checkout)}
+                      </TableCell>
                     </TableRow>
                   );
                 })}

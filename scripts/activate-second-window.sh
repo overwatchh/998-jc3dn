@@ -33,8 +33,3 @@ FROM validity
 WHERE qr_code_id = 9999 
 ORDER BY count;
 EOF
-
-echo ""
-echo "✅ Second window is now active!"
-echo "📱 Go to: http://localhost:3000/scan?qr_code_id=9999"
-echo "🔄 You should see the 'Second Check-in' screen"

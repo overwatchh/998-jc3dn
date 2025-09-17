@@ -7,12 +7,18 @@ interface Props {
   handleCheckin: (checkinType?: "In-person" | "Online") => void;
   isCheckingIn?: boolean;
   disabled?: boolean;
+  alreadyCheckedIn?: boolean;
+  checkinTime?: string | null;
+  isRefreshing?: boolean;
 }
 
 export const SecondCheckinScreen = ({
   handleCheckin,
   isCheckingIn,
   disabled,
+  alreadyCheckedIn,
+  checkinTime,
+  isRefreshing: _isRefreshing,
 }: Props) => {
   return (
     <div className="space-y-6">
@@ -63,6 +69,21 @@ export const SecondCheckinScreen = ({
         </CardContent>
       </Card>
 
+      {/* Already Checked In Alert */}
+      {alreadyCheckedIn && (
+        <Alert className="border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950">
+          <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+          <AlertDescription className="text-green-800 dark:text-green-200">
+            <strong>You are already checked in for the second window!</strong>
+            {checkinTime && (
+              <div className="mt-1 text-sm">
+                Check-in time: {new Date(checkinTime).toLocaleString()}
+              </div>
+            )}
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Check-in Button */}
       <Button
         onClick={() => {
@@ -70,10 +91,14 @@ export const SecondCheckinScreen = ({
         }}
         className="h-12 w-full text-lg font-semibold"
         size="lg"
-        disabled={!!disabled || !!isCheckingIn}
+        disabled={!!disabled || !!isCheckingIn || alreadyCheckedIn}
       >
         <CheckCircle className="mr-2 h-5 w-5" />
-        {isCheckingIn ? "Checking in..." : "Confirm Second Check-in"}
+        {alreadyCheckedIn
+          ? "Already Checked In"
+          : isCheckingIn
+            ? "Checking in..."
+            : "Confirm Second Check-in"}
       </Button>
 
       {/* Info Alert */}

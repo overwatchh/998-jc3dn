@@ -12,18 +12,21 @@ interface QRStatusResponse {
   message: string;
   validity_count: QRStatusEnum;
   validate_geo: boolean;
+  radius: number | null;
   validities: {
     id: number;
     count: number;
     start_time: string;
     end_time: string;
+    is_checked_in: boolean;
+    checkin_time: string | null;
   }[];
   location?: {
     latitude: number;
     longitude: number;
-    radius: number | null;
     building_number: string | null;
     room_number: string | null;
+    room_id: number | null;
   } | null;
 }
 

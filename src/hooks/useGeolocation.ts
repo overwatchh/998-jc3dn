@@ -27,11 +27,14 @@ export const useGeolocation = (
     }
 
     const successHandler = (pos: GeolocationPosition) => {
-      setPosition({
+      const newPosition = {
         latitude: pos.coords.latitude,
         longitude: pos.coords.longitude,
         accuracy: pos.coords.accuracy,
-      });
+      };
+      
+      
+      setPosition(newPosition);
       setLoading(false);
       setError(null);
     };
@@ -42,6 +45,7 @@ export const useGeolocation = (
       setPosition(null);
     };
 
+    
     const watchId = navigator.geolocation.watchPosition(
       successHandler as PositionCallback,
       errorHandler,

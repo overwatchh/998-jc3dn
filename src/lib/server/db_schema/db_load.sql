@@ -77,7 +77,7 @@ INSERT INTO room (building_number, room_number, description, latitude, longitude
 ('22', '103', 'Building 22', -34.404630436746494, 150.87661222539015, 1),
 ('40', '103', 'Building 40', -34.4062537916668, 150.87683726956962, 1),
 ('35', '103', 'Building 35', -34.40582005010667, 150.88081766767468, 1),
-('12', '2', 'Nha cua Duong', -34.406946, 150.878454, 1);
+('12', '2', 'Nha cua Duong', -34.427031, 150.885741, 1);
 
 
 -- Semesters
