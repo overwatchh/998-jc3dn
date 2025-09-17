@@ -77,7 +77,7 @@ export const getApiDocs = async () => {
           name: "Statistics",
           description:
             "Endpoints that provide analytical data and attendance statistics for both lecturers and admins.",
-        }        
+        },
       ],
     },
   });

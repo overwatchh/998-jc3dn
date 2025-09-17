@@ -1,7 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/server/auth";
-import { rawQuery } from "@/lib/server/query"; // Replace with your DB access method (e.g., mysql2)
+import { rawQuery } from "@/lib/server/query";
+// Replace with your DB access method (e.g., mysql2)
 import { headers } from "next/headers";
+import { NextRequest, NextResponse } from "next/server";
+
 /**
  * @openapi
  * /api/lecturer/study-session/{id}/checkin-list:
@@ -26,6 +28,37 @@ import { headers } from "next/headers";
  *     responses:
  *       200:
  *         description: List of students who have checked in
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 validity_count:
+ *                   type: integer
+ *                   nullable: true
+ *                 count:
+ *                   type: integer
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       student_id:
+ *                         type: string
+ *                       student_name:
+ *                         type: string
+ *                       student_email:
+ *                         type: string
+ *                       checkin_time:
+ *                         type: string
+ *                         format: date-time
+ *                       checkin_type:
+ *                         type: string
+ *                         enum: ['In-person', 'Online', 'Manual']
+ *                       validity_count:
+ *                         type: integer
  *       400:
  *         description: Missing required parameters or no QR code session found
  *       401:
@@ -114,7 +147,9 @@ export async function GET(
     }>(currentValiditySql, [studySessionId, week_number]);
 
     const currentValidityCount =
-      currentValidityRows.length > 0 ? currentValidityRows[0].validity_count : null;
+      currentValidityRows.length > 0
+        ? currentValidityRows[0].validity_count
+        : null;
 
     // Step 3: Fetch students checked in for this QR (all validities), include validity_count
     const studentsSql = `
@@ -123,6 +158,7 @@ export async function GET(
         u.name AS student_name,
         u.email AS student_email,
         c.checkin_time,
+        c.checkin_type,
         v.count AS validity_count
       FROM checkin c
       JOIN user u 
