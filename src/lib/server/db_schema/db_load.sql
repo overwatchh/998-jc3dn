@@ -248,7 +248,7 @@ INSERT INTO lecturer_study_session (study_session_id, lecturer_id) VALUES
 -- Ties to MTS9307 lecture (study_session_id = 10) where many students are enrolled
 -- Use qr_code_id = 9999 when calling /api/student/attendance/checkin
 INSERT INTO qr_code (id, createdAt, validate_geo, valid_room_id, valid_radius) VALUES
-(9999, NOW(), 0, 10, 1000.00);
+(9999, NOW(), 0, 10, 5000.00);
 
 -- Two wide validity windows that always include "now" (required by check-in API)
 INSERT INTO validity (qr_code_id, count, start_time, end_time) VALUES

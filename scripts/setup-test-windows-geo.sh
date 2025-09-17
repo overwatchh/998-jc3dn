@@ -28,7 +28,7 @@ SET @sydney_room_id = (SELECT id FROM room WHERE campus_id = 2 AND building_numb
 
 -- Enable geo validation for QR code 9999 with Sydney location
 UPDATE qr_code 
-SET validate_geo = 1, valid_radius = 50.00, valid_room_id = @sydney_room_id
+SET validate_geo = 1, valid_radius = 5000.00, valid_room_id = @sydney_room_id
 WHERE id = 9999;
 
 UPDATE room

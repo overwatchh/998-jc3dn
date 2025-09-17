@@ -64,7 +64,7 @@ export const FirstCheckinScreen = ({
       : null;
 
   // Use default 50m radius when geo validation is optional and no radius is set
-  const effectiveRadius = radiusMeters ?? (validateGeo ? null : 1);
+  const effectiveRadius = radiusMeters ?? (validateGeo ? null : 50);
 
   const isWithinRadius =
     userDistance !== null && effectiveRadius !== null
@@ -424,7 +424,7 @@ export const FirstCheckinScreen = ({
                               }`}
                             >
                               {isWithinRadius
-                                ? "✓ You&apos;re in the allowed area"
+                                ? "✓ You are in the allowed area"
                                 : `Move ${Math.round(userDistance - (radiusMeters ?? 0))}m closer to check in`}
                             </p>
                           </div>

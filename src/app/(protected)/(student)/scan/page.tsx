@@ -470,6 +470,17 @@ const CheckinPage = () => {
           alreadyCheckedIn={isCurrentWindowCheckedIn()}
           checkinTime={getCurrentWindowCheckinTime()}
           isRefreshing={isRefreshing}
+          location={location}
+          validateGeo={checkinStatus?.validate_geo ?? false}
+          radiusMeters={checkinStatus?.radius ?? null}
+          roomLocation={
+            checkinStatus?.location
+              ? {
+                  latitude: checkinStatus.location.latitude,
+                  longitude: checkinStatus.location.longitude,
+                }
+              : null
+          }
         />
       );
 

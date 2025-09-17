@@ -1,7 +1,10 @@
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CheckCircle, Clock, Info } from "lucide-react";
+import { UseGeolocationReturn } from "@/hooks/useGeolocation";
+import { haversineDistance } from "@/lib/utils";
+import { CheckCircle, Clock, Info, MapPin } from "lucide-react";
 
 interface Props {
   handleCheckin: (checkinType?: "In-person" | "Online") => void;
@@ -10,6 +13,13 @@ interface Props {
   alreadyCheckedIn?: boolean;
   checkinTime?: string | null;
   isRefreshing?: boolean;
+  location?: UseGeolocationReturn;
+  validateGeo?: boolean;
+  radiusMeters?: number | null;
+  roomLocation?: {
+    latitude: number;
+    longitude: number;
+  } | null;
 }
 
 export const SecondCheckinScreen = ({
@@ -19,7 +29,30 @@ export const SecondCheckinScreen = ({
   alreadyCheckedIn,
   checkinTime,
   isRefreshing: _isRefreshing,
+  location,
+  validateGeo = false,
+  radiusMeters,
+  roomLocation,
 }: Props) => {
+  const isLocationReady = location?.position && !location.loading;
+  const isLocationError = !!location?.error;
+
+  const userDistance =
+    isLocationReady && roomLocation
+      ? haversineDistance(
+          location!.position!.latitude,
+          location!.position!.longitude,
+          roomLocation.latitude,
+          roomLocation.longitude
+        )
+      : null;
+
+  // Match first-screen logic: when optional and no radius → show a tiny default visual window
+  const effectiveRadius = radiusMeters ?? (validateGeo ? null : 1);
+  const isWithinRadius =
+    userDistance !== null && effectiveRadius !== null
+      ? userDistance <= effectiveRadius
+      : false;
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -55,17 +88,96 @@ export const SecondCheckinScreen = ({
 
           <div className="flex items-start gap-3">
             <div className="flex-shrink-0">
-              <Clock className="mt-0.5 h-5 w-5 text-blue-600" />
+              {alreadyCheckedIn ? (
+                <CheckCircle className="mt-0.5 h-5 w-5 text-green-600" />
+              ) : (
+                <Clock className="mt-0.5 h-5 w-5 text-blue-600" />
+              )}
             </div>
             <div>
               <p className="text-foreground font-medium">
-                Ready for second check-in
+                {alreadyCheckedIn
+                  ? "Already checked in"
+                  : "Ready for second check-in"}
               </p>
               <p className="text-muted-foreground text-sm">
-                You can now complete your attendance verification.
+                {alreadyCheckedIn
+                  ? "Your attendance for this window has been recorded."
+                  : "You can now complete your attendance verification."}
               </p>
             </div>
           </div>
+          {/* Proximity (optional/required) */}
+          {roomLocation && (
+            <div className="space-y-3 rounded-md border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800/30">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">
+                  Proximity to Room
+                </span>
+                <Badge
+                  variant={isWithinRadius ? "secondary" : "destructive"}
+                  className={
+                    isWithinRadius
+                      ? "bg-green-100 font-medium text-green-800 dark:bg-green-900 dark:text-green-200"
+                      : "font-medium"
+                  }
+                >
+                  {isWithinRadius ? "Within range" : "Too far"}
+                </Badge>
+              </div>
+
+              {/* Distance / Allowed */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+                  <span>
+                    Distance: {userDistance !== null ? Math.round(userDistance) : "-"}m
+                  </span>
+                  <span>
+                    Allowed: {effectiveRadius !== null ? Math.round(effectiveRadius) : "-"}m
+                  </span>
+                </div>
+
+                {/* Proximity Bar */}
+                {userDistance !== null && effectiveRadius !== null && (
+                  <div className="relative h-2 rounded-full bg-gray-200 dark:bg-gray-600">
+                    <div
+                      className={`h-full rounded-full transition-all duration-300 ${
+                        isWithinRadius
+                          ? "bg-green-500 dark:bg-green-400"
+                          : "bg-red-500 dark:bg-red-400"
+                      }`}
+                      style={{
+                        width: `${Math.min(100, ((effectiveRadius ?? 0) / (userDistance || 1)) * 100)}%`,
+                      }}
+                    />
+                  </div>
+                )}
+
+                {/* Status text */}
+                {userDistance !== null && (
+                  <p
+                    className={`text-xs ${
+                      isWithinRadius
+                        ? "text-green-700 dark:text-green-300"
+                        : "text-red-700 dark:text-red-300"
+                    }`}
+                  >
+                    {isWithinRadius ? (
+                      <>
+                        <CheckCircle className="mr-1 inline h-3 w-3" />
+                        You&apos;re in the allowed area
+                      </>
+                    ) : (
+                      <>
+                        <MapPin className="mr-1 inline h-3 w-3" />
+                        Move {Math.max(0, Math.round((userDistance || 0) - (effectiveRadius || 0)))}m closer to check in
+                      </>
+                    )}
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
