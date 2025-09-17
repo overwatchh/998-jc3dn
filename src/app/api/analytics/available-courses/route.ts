@@ -77,7 +77,7 @@ export async function GET(request: NextRequest) {
     const courses = await rawQuery(query, []);
 
     // Transform to match the expected format
-    const transformedCourses = courses.map(course => ({
+    const transformedCourses = courses.map((course: any) => ({
       id: course.study_session_id,
       name: course.name,
       code: course.code,
