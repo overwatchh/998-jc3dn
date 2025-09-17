@@ -48,6 +48,25 @@ export function NewQrGeneration() {
   // Design toggle: show either tabbed layout or collapsible sections
   const [designMode, setDesignMode] = useState<"tabs" | "sections">("tabs");
 
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("qrGenDesignMode");
+      if (saved === "tabs" || saved === "sections") {
+        setDesignMode(saved);
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("qrGenDesignMode", designMode);
+    } catch {
+      // ignore
+    }
+  }, [designMode]);
+
   function backToCourseSelection(): void {
     setCurrentScreen(QRGenScreens.COURSE_SELECTION);
   }
