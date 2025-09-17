@@ -11,10 +11,11 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Combobox, ComboboxOption } from "@/components/ui/combobox";
 import { Switch } from "@/components/ui/switch";
-import { AlertTriangle, MapPin, Shield } from "lucide-react";
+import { AlertTriangle, MapPin, Shield, ChevronRight } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useQrGenContext } from "../qr-generation/qr-gen-context";
 import {
@@ -22,7 +23,11 @@ import {
   useGetStudySessionRooms,
 } from "../qr-generation/queries";
 
-export function RoomSelector() {
+interface RoomSelectorProps {
+  onNext?: () => void;
+}
+
+export function RoomSelector({ onNext }: RoomSelectorProps) {
   const {
     setSelectedRoom,
     selectedRoom,
@@ -147,10 +152,23 @@ export function RoomSelector() {
     <>
       <Card className="border-border bg-card">
         <CardHeader className="py-2">
-          <CardTitle className="text-foreground flex items-center gap-2 text-sm font-medium">
-            <MapPin className="h-4 w-4" />
-            Room & Location Settings
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-foreground flex items-center gap-2 text-sm font-medium">
+              <MapPin className="h-4 w-4" />
+              Room & Location Settings
+            </CardTitle>
+            {onNext && (
+              <Button
+                size="sm"
+                variant="secondary"
+                className="gap-1"
+                onClick={onNext}
+              >
+                Next
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
         </CardHeader>
         <CardContent className="space-y-3">
           <Combobox

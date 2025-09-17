@@ -1,6 +1,7 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -10,6 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type React from "react";
+import { ChevronLeft } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Windows, useQrGenContext } from "../qr-generation/qr-gen-context";
 
@@ -17,6 +19,7 @@ interface TimeWindowSelectorProps {
   classStartTime: Date;
   classEndTime: Date;
   onChange: (windows: Windows) => void;
+  onBack?: () => void;
 }
 
 const DURATION_OPTIONS = [
@@ -31,6 +34,7 @@ export function TimeWindowSelector({
   classStartTime,
   classEndTime,
   onChange,
+  onBack,
 }: TimeWindowSelectorProps) {
   const { windows, setWindowsConfigured } = useQrGenContext();
   const timelineStart = useMemo(
@@ -494,9 +498,22 @@ export function TimeWindowSelector({
   return (
     <Card className="border-border bg-card">
       <CardHeader className="pb-4">
-        <CardTitle className="text-foreground text-lg font-semibold">
-          Check-in Time Windows
-        </CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-foreground text-lg font-semibold">
+            Check-in Time Windows
+          </CardTitle>
+          {onBack && (
+            <Button
+              size="sm"
+              variant="secondary"
+              className="gap-1"
+              onClick={onBack}
+            >
+              <ChevronLeft className="h-4 w-4" />
+              Back
+            </Button>
+          )}
+        </div>
         <p className="text-muted-foreground text-sm">
           Configure when students can check in and out of class
         </p>
