@@ -1,6 +1,6 @@
 import cron, { ScheduledTask } from 'node-cron';
 
-const scheduledJobs = new Map<number, ScheduledTask>();
+let scheduledJobs = new Map<number, ScheduledTask>();
 
 async function triggerLectureEndEmail(sessionId: number, weekNumber: number = 1) {
   console.log(`🎯 Automatic lecture end trigger for session ${sessionId}, week ${weekNumber}`);
@@ -51,7 +51,7 @@ export function scheduleSessionEnd(sessionId: number, endTime: string, dayOfWeek
     triggerLectureEndEmail(sessionId, weekNumber);
   }, {
     timezone: "America/New_York" // Adjust to your timezone
-  } as { timezone: string });
+  } as any);
 
   scheduledJobs.set(sessionId, task);
   return task;
@@ -78,13 +78,13 @@ export async function initializeLectureEndScheduler() {
     const today = new Date().toLocaleDateString('en-US', { weekday: 'long' });
     console.log(`📅 Looking for sessions on ${today}...`);
     
-    const _response = await fetch(`http://localhost:3000/api/system/init`);
+    const response = await fetch(`http://localhost:3000/api/system/init`);
     // For now, we'll use a simple approach - schedule all sessions at their end times
     // This will be improved to query the database properly
     
     // Schedule a catch-all job that runs every minute and checks for ended sessions
-    const { schedule } = await import('node-cron');
-    schedule('* * * * *', async () => {
+    const cron = require('node-cron');
+    cron.schedule('* * * * *', async () => {
       // This runs every minute and checks if any sessions just ended
       await checkForEndedSessions();
     });
@@ -111,7 +111,7 @@ async function checkForEndedSessions() {
     for (const sessionId of [101, 102, 103]) { // Common session IDs
       try {
         await triggerLectureEndEmail(sessionId, 1);
-      } catch (_error) {
+      } catch (error) {
         // Ignore errors for non-existent sessions
       }
     }

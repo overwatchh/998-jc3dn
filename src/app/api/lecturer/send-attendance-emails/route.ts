@@ -3,9 +3,10 @@ import { auth } from "@/lib/server/auth";
 import { headers } from "next/headers";
 import { z } from "zod";
 import { emailService, EmailConfig, AttendanceEmailData } from "@/lib/server/email";
-import {
-  getLectureAttendanceData,
-  calculateStudentOverallAttendance
+import { 
+  getLectureAttendanceData, 
+  calculateStudentOverallAttendance,
+  calculateLectureAttendance 
 } from "@/lib/server/attendance-calculator";
 
 /**

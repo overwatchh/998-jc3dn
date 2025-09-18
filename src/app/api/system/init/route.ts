@@ -66,7 +66,7 @@ import { initializeServer } from "@/lib/server/init";
  *                   example: "Failed to start email scheduler: SMTP configuration missing"
  */
 
-export async function GET(_req: NextRequest) {
+export async function GET(req: NextRequest) {
   try {
     initializeServer();
     

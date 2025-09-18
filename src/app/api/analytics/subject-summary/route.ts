@@ -53,7 +53,7 @@ import { NextRequest, NextResponse } from "next/server";
  *                   type: string
  *                   example: "Failed to fetch subject summary data"
  */
-export async function GET(_request: NextRequest) {
+export async function GET(request: NextRequest) {
   try {
     const query = `
       SELECT

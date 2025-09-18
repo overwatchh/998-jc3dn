@@ -1,5 +1,6 @@
 "use client";
 
+import { useGetCourses } from "@/app/(protected)/(lecturer)/qr-generation/queries";
 import { useQuery } from "@tanstack/react-query";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -16,6 +17,7 @@ import {
 import {
   ChartContainer,
   ChartTooltip,
+  ChartTooltipContent,
 } from "@/components/ui/chart";
 import {
   DropdownMenu,
@@ -65,6 +67,8 @@ import {
 import { useEffect, useState } from "react";
 import type { DateRange } from "react-day-picker";
 import {
+  Bar,
+  BarChart,
   CartesianGrid,
   Line,
   LineChart,
@@ -78,6 +82,7 @@ import {
   RadialBar,
   RadialBarChart,
   Cell,
+  ResponsiveContainer,
 } from "recharts";
 
 export default function ReportsAnalytics() {
