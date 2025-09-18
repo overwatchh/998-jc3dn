@@ -52,7 +52,7 @@ import { NextRequest, NextResponse } from "next/server";
  *                   type: string
  *                   example: "Failed to fetch available courses"
  */
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     // Get all subjects that have study sessions with attendance data
     const query = `
@@ -77,7 +77,15 @@ export async function GET(request: NextRequest) {
     const courses = await rawQuery(query, []);
 
     // Transform to match the expected format
-    const transformedCourses = courses.map((course: any) => ({
+    const transformedCourses = courses.map((course: {
+      study_session_id: number;
+      name: string;
+      code: string;
+      session_type: string;
+      start_time?: string;
+      end_time?: string;
+      day_of_week: string;
+    }) => ({
       id: course.study_session_id,
       name: course.name,
       code: course.code,

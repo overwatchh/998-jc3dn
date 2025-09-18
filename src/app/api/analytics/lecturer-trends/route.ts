@@ -179,13 +179,21 @@ export async function GET(request: NextRequest) {
 
     // Calculate summary statistics
     const totalSubjects = subjectPerformance.length;
-    const totalStudents = subjectPerformance.reduce((sum, subject) => sum + ((subject as any).total_students || 0), 0);
+    const totalStudents = (subjectPerformance as {
+      total_students: number;
+    }[]).reduce((sum, subject) => sum + (subject.total_students || 0), 0);
 
     // Convert string values to numbers and filter valid attendance values
-    const validAttendanceValues = subjectPerformance
-      .map((subject: any) => ({
+    const validAttendanceValues = (subjectPerformance as {
+      subject_code: string;
+      subject_name: string;
+      total_students: number;
+      total_weeks: number;
+      average_attendance: string | number;
+    }[])
+      .map(subject => ({
         ...subject,
-        average_attendance: parseFloat(subject.average_attendance) || 0
+        average_attendance: parseFloat(String(subject.average_attendance)) || 0
       }))
       .filter(subject => !isNaN(subject.average_attendance) && subject.average_attendance > 0);
 
@@ -194,8 +202,14 @@ export async function GET(request: NextRequest) {
       : 0;
 
     // Add performance levels to subjects
-    const subjectsWithPerformance = subjectPerformance.map((subject: any) => {
-      const attendance = parseFloat(subject.average_attendance) || 0;
+    const subjectsWithPerformance = (subjectPerformance as {
+      subject_code: string;
+      subject_name: string;
+      total_students: number;
+      total_weeks: number;
+      average_attendance: string | number;
+    }[]).map(subject => {
+      const attendance = parseFloat(String(subject.average_attendance)) || 0;
       return {
         ...subject,
         average_attendance: attendance, // Convert to number
@@ -214,9 +228,13 @@ export async function GET(request: NextRequest) {
     };
 
     // Convert weekly trends to numbers and calculate trend direction
-    const weeklyTrendsWithNumbers = weeklyTrends.map((week: any) => ({
+    const weeklyTrendsWithNumbers = (weeklyTrends as {
+      week_number: number;
+      week_label: string;
+      attendance_rate: string | number;
+    }[]).map(week => ({
       ...week,
-      attendance_rate: parseFloat(week.attendance_rate) || 0
+      attendance_rate: parseFloat(String(week.attendance_rate)) || 0
     }));
 
     const recentWeeks = weeklyTrendsWithNumbers.slice(-4);
