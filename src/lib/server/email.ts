@@ -32,6 +32,10 @@ class EmailService {
       host: config.smtpHost,
       port: config.smtpPort,
       secure: config.smtpPort === 465,
+      tls: {
+        minVersion: "TLSv1.2",
+      },
+      requireTLS: true,
       auth: {
         user: config.smtpUser,
         pass: config.smtpPass,
