@@ -28,7 +28,7 @@ export default function ProtectedLayout({
   return (
     <div className="flex grow flex-col pb-20">
       {children}
-      {role && <BottomNavigation role={role} />}
+      <BottomNavigation role={role} />
     </div>
   );
 }

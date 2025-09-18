@@ -4,7 +4,10 @@ USE qr_attendance_app;
 -- Disable foreign key checks to avoid dependency issues
 SET FOREIGN_KEY_CHECKS = 0;
 
--- Drop tables 
+-- Drop tables (including email system tables)
+DROP TABLE IF EXISTS email_reminder_settings;
+DROP TABLE IF EXISTS email_reminder_logs;
+DROP TABLE IF EXISTS email_log;
 DROP TABLE IF EXISTS checkin;
 DROP TABLE IF EXISTS qr_code_study_session;
 DROP TABLE IF EXISTS validity;

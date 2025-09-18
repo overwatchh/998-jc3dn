@@ -1,4 +1,5 @@
 import { RowDataPacket } from "mysql2";
+
 export interface RawSubjectRow extends RowDataPacket {
   subject_id: number;
   subject_name: string;

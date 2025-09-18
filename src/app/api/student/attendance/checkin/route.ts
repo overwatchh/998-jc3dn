@@ -76,14 +76,16 @@ type ValidityRow = {
 };
 
 export async function POST(req: NextRequest) {
-  const session = await auth.api.getSession({ headers: await headers() });
-  if (!session || !session.user || session.user.role !== "student") {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-  }
+  try {
+    const session = await auth.api.getSession({ headers: await headers() });
+    if (!session || !session.user || session.user.role !== "student") {
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    }
 
-  const studentId = session.user.id;
-  const body = await req.json();
+    const studentId = session.user.id;
+    const body = await req.json();
 
+<<<<<<< HEAD
   const schema = z.object({
     qr_code_id: z.number(),
     lat: z.number(),
@@ -101,10 +103,29 @@ export async function POST(req: NextRequest) {
   }
 
   const { qr_code_id, lat, long, checkin_type } = parsed.data;
+=======
+    const schema = z.object({
+      qr_code_id: z.number(),
+      lat: z.number(),
+      long: z.number(),
+      checkin_type: z
+        .enum(["In-person", "Online", "Manual"])
+        .default("In-person"),
+    });
+    const parsed = schema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { message: "Invalid body payload", error: parsed.error.format() },
+        { status: 400 }
+      );
+    }
 
-  // Step 1: From qr_code_id, figure out study session, week, subject, and whether the student is allowed ---
-  const [qrRow] = await rawQuery<QrSessionRow>(
-    `
+    const { qr_code_id, lat, long, checkin_type } = parsed.data;
+>>>>>>> fe753857bf3e7e0318ae98f2034bca5ab1cc6fb8
+
+    // Step 1: From qr_code_id, figure out study session, week, subject, and whether the student is allowed ---
+    const [qrRow] = await rawQuery<QrSessionRow>(
+      `
     SELECT
       qrss.id AS qr_code_study_session_id,
       qrss.study_session_id,
@@ -123,104 +144,91 @@ export async function POST(req: NextRequest) {
     JOIN subject_study_session sss  ON sss.study_session_id = ss.id
     JOIN subject subj               ON subj.id = sss.subject_id
     JOIN qr_code qc                 ON qc.id = qrss.qr_code_id
-    LEFT JOIN room r                ON r.id = ss.room_id
+    LEFT JOIN room r                ON r.id = qc.valid_room_id
     WHERE qc.id = ?
     `,
-    [qr_code_id]
-  );
+      [qr_code_id]
+    );
 
-  const studySessionDetails = {
-    subject_code: qrRow.subject_code,
-    subject_name: qrRow.subject_name,
-    study_session_type: qrRow.type,
-    week_number: qrRow.week_number,
-    study_session_id: qrRow.study_session_id,
-  };
+    const studySessionDetails = {
+      subject_code: qrRow.subject_code,
+      subject_name: qrRow.subject_name,
+      study_session_type: qrRow.type,
+      week_number: qrRow.week_number,
+      study_session_id: qrRow.study_session_id,
+    };
 
-  if (!qrRow) {
-    return NextResponse.json({ message: "Invalid QR code" }, { status: 404 });
-  }
+    if (!qrRow) {
+      return NextResponse.json({ message: "Invalid QR code" }, { status: 404 });
+    }
 
-  // Determine allowance based on session type
-  let allowed = false;
-  if (qrRow.type === "lecture") {
-    const [enrol] = await rawQuery<{ one: 1 }>(
-      `
+    // Determine allowance based on session type
+    let allowed = false;
+    if (qrRow.type === "lecture") {
+      const [enrol] = await rawQuery<{ one: 1 }>(
+        `
       SELECT 1 AS one
       FROM enrolment
       WHERE student_id = ? AND subject_id = ?
       `,
-      [studentId, qrRow.subject_id]
-    );
-    allowed = !!enrol;
-  } else {
-    const [inSession] = await rawQuery<{ one: 1 }>(
-      `
+        [studentId, qrRow.subject_id]
+      );
+      allowed = !!enrol;
+    } else {
+      const [inSession] = await rawQuery<{ one: 1 }>(
+        `
       SELECT 1 AS one
       FROM student_study_session
       WHERE student_id = ? AND study_session_id = ?
       `,
-      [studentId, qrRow.study_session_id]
-    );
-    allowed = !!inSession;
-  }
+        [studentId, qrRow.study_session_id]
+      );
+      allowed = !!inSession;
+    }
 
-  if (!allowed) {
-    return NextResponse.json(
-      {
-        message: `You are not allowed to check (not enrolled for this session).`,
-        ...studySessionDetails,
-      },
-      { status: 403 }
-    );
-  }
+    if (!allowed) {
+      return NextResponse.json(
+        {
+          message: `You are not allowed to check (not enrolled for this session).`,
+          ...studySessionDetails,
+        },
+        { status: 403 }
+      );
+    }
 
-  // Step 2: Verify the QR code is valid right now using its validity windows ---
-  const windows = await rawQuery<ValidityRow>(
-    `
+    // Step 2: Verify the QR code is valid right now using its validity windows ---
+    const windows = await rawQuery<ValidityRow>(
+      `
     SELECT v.start_time, v.end_time, v.id, v.count
     FROM validity v
     JOIN qr_code qc ON qc.id = v.qr_code_id
     WHERE qc.id = ?
     ORDER BY v.start_time ASC
     `,
-    [qr_code_id]
-  );
-
-  if (!windows || windows.length === 0) {
-    return NextResponse.json(
-      { message: "No validity window configured for this QR code." },
-      { status: 404 }
+      [qr_code_id]
     );
-  }
-  // set currentWindow to second window if there are two windows
-  // default to first window if only one window
-  const currentWindow: ValidityRow =
-    windows.length === 1 ? windows[0] : windows[1];
-  const now = new Date();
-  const validStart = new Date(currentWindow.start_time);
-  const validEnd = new Date(currentWindow.end_time);
-  const isValidTime = now >= validStart && now <= validEnd;
 
-  if (!isValidTime) {
-    const startTime = new Date(currentWindow.start_time)
-      .toLocaleString("en-GB", { hour12: false }) // local zone
-      .replace(",", "");
+    if (!windows || windows.length === 0) {
+      return NextResponse.json(
+        { message: "No validity window configured for this QR code." },
+        { status: 404 }
+      );
+    }
+    // Find the currently active validity window
+    const now = new Date();
+    let currentWindow: ValidityRow | undefined;
 
-    const endTime = new Date(currentWindow.end_time)
-      .toLocaleString("en-GB", { hour12: false }) // local zone
-      .replace(",", "");
-    return NextResponse.json(
-      {
-        message: `You are not within the valid check-in time.`,
-        ...studySessionDetails,
-        start_time: startTime,
-        end_time: endTime,
-      },
-      { status: 403 }
-    );
-  }
+    // Check which window is currently active
+    for (const window of windows) {
+      const validStart = new Date(window.start_time);
+      const validEnd = new Date(window.end_time);
+      if (now >= validStart && now <= validEnd) {
+        currentWindow = window;
+        break;
+      }
+    }
 
+<<<<<<< HEAD
   // Step 3: Verify geofence (distance) if validate_geo is set to true for the QR code
   if (qrRow.validate_geo) {
     const distanceMeters = haversineDistance(
@@ -231,44 +239,122 @@ export async function POST(req: NextRequest) {
     );
     const withinRadius = distanceMeters <= Number(qrRow.valid_radius);
     if (!withinRadius) {
+=======
+    // If no window is currently active, use the logic for error message
+    if (!currentWindow) {
+      // Default to first window for error display if no windows are active
+      currentWindow = windows[0];
+    }
+
+    const validStart = new Date(currentWindow.start_time);
+    const validEnd = new Date(currentWindow.end_time);
+    const isValidTime = now >= validStart && now <= validEnd;
+
+    if (!isValidTime) {
+      const startTime = new Date(currentWindow.start_time)
+        .toLocaleString("en-GB", { hour12: false }) // local zone
+        .replace(",", "");
+
+      const endTime = new Date(currentWindow.end_time)
+        .toLocaleString("en-GB", { hour12: false }) // local zone
+        .replace(",", "");
+>>>>>>> fe753857bf3e7e0318ae98f2034bca5ab1cc6fb8
       return NextResponse.json(
         {
-          message: "You are not within the allowed location radius.",
-          allowed_radius_m: Number(qrRow.valid_radius),
-          your_distance_m: Math.round(distanceMeters),
+          message: `You are not within the valid check-in time.`,
           ...studySessionDetails,
+          start_time: startTime,
+          end_time: endTime,
         },
         { status: 403 }
       );
     }
-  }
 
-  // Step 4: Prevent duplicate check-in for this validity window ---
-  // NOTE: The current schema PK (student_id, qr_code_study_session_id) allows only ONE total check-in per QR+session+student.
-  // We still guard "per window" logically here, but a second window check-in will also be blocked by the PK.
-  const [dupInWindow] = await rawQuery<{ checkin_time: number }>(
-    `
+    // Step 3: Verify geofence (distance) if validate_geo is set to true for the QR code
+    if (qrRow.validate_geo) {
+      const distanceMeters = haversineDistance(
+        qrRow.room_latitude,
+        qrRow.room_longitude,
+        lat,
+        long
+      );
+      const withinRadius = distanceMeters <= Number(qrRow.valid_radius);
+      if (!withinRadius) {
+        return NextResponse.json(
+          {
+            message: "You are not within the allowed location radius.",
+            allowed_radius_m: Number(qrRow.valid_radius),
+            your_distance_m: Math.round(distanceMeters),
+            ...studySessionDetails,
+          },
+          { status: 403 }
+        );
+      }
+    }
+
+    // Step 4: Prevent duplicate check-in for this validity window ---
+    // NOTE: The current schema PK (student_id, qr_code_study_session_id) allows only ONE total check-in per QR+session+student.
+    // We still guard "per window" logically here, but a second window check-in will also be blocked by the PK.
+    const [dupInWindow] = await rawQuery<{ checkin_time: number }>(
+      `
     SELECT checkin_time
     FROM checkin
     WHERE student_id = ?
       AND qr_code_study_session_id = ?
       AND validity_id = ?      
     `,
-    [studentId, qrRow.qr_code_study_session_id, currentWindow.id]
-  );
+      [studentId, qrRow.qr_code_study_session_id, currentWindow.id]
+    );
 
-  if (dupInWindow) {
+    if (dupInWindow) {
+      return NextResponse.json(
+        {
+          message: "Already checked in",
+          ...studySessionDetails,
+          checkin_time: new Date(dupInWindow.checkin_time)
+            .toLocaleString("en-GB", { hour12: false }) // local zone
+            .replace(",", ""),
+        },
+        { status: 400 }
+      );
+    }
+
+    // Step 5: Insert check-in
+    await rawQuery(
+      `
+    INSERT INTO checkin
+      (student_id, qr_code_study_session_id, validity_id, checkin_time, latitude, longitude, checkin_type)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+    `,
+      [
+        studentId,
+        qrRow.qr_code_study_session_id,
+        currentWindow.id,
+        now,
+        lat,
+        long,
+        checkin_type,
+      ]
+    );
+
+    return NextResponse.json({
+      message: "Check-in successfully",
+      ...studySessionDetails,
+      checkin_time: now
+        .toLocaleString("en-GB", { hour12: false }) // local zone
+        .replace(",", ""),
+    });
+  } catch (error) {
+    console.error("💥 Check-in error:", error);
+    if ((error as Error).message === "DUPLICATE_ENTRY") {
+      return NextResponse.json({ message: "Conflict" }, { status: 409 });
+    }
     return NextResponse.json(
-      {
-        message: "Already checked in",
-        ...studySessionDetails,
-        checkin_time: new Date(dupInWindow.checkin_time)
-          .toLocaleString("en-GB", { hour12: false }) // local zone
-          .replace(",", ""),
-      },
-      { status: 400 }
+      { message: "Internal Server Error", error: (error as Error).message },
+      { status: 500 }
     );
   }
+<<<<<<< HEAD
 
   // Step 5: Insert check-in
   await rawQuery(
@@ -295,4 +381,6 @@ export async function POST(req: NextRequest) {
       .toLocaleString("en-GB", { hour12: false }) // local zone
       .replace(",", ""),
   });
+=======
+>>>>>>> fe753857bf3e7e0318ae98f2034bca5ab1cc6fb8
 }
