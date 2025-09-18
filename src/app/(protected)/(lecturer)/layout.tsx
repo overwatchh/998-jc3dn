@@ -11,7 +11,7 @@ const Layout = async ({ children }: { children: React.ReactNode }) => {
   if (session && session.user.role !== Roles.LECTURER) {
     redirect("/dashboard");
   }
-  return <div>{children}</div>;
+  return <div className="flex grow flex-col">{children}</div>;
 };
 
 export default Layout;

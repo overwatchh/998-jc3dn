@@ -24,12 +24,18 @@ export function CoursesList({ courses }: Props) {
     setCurrentScreen(QRGenScreens.QR_CODE_GENERATION);
   }
 
-  function getTypeBadgeClass(sessionType: string) {
+  function getTypeBadgeClass(sessionType: string): string {
     const t = sessionType.toLowerCase();
-    if (t === "lecture") return "bg-blue-600 text-white";
-    if (t === "tutorial") return "bg-amber-600 text-white";
-    if (t === "lab") return "bg-emerald-600 text-white";
-    return "bg-muted text-foreground";
+    switch (t) {
+      case "lecture":
+        return "bg-blue-600 text-white";
+      case "tutorial":
+        return "bg-amber-600 text-white";
+      case "lab":
+        return "bg-emerald-600 text-white";
+      default:
+        return "bg-muted text-foreground";
+    }
   }
 
   return (
