@@ -9,11 +9,7 @@
     "lint": "next lint",
     "format": "prettier . --write",
     "clean": "rm -rf node_modules .next package-lock.json",
-    "check": "tsc -p tsconfig.check.json --noEmit && npm run lint",
-    "db:init": "bash scripts/db-init.sh",
-    "db:setup": "bash scripts/setup-test-windows.sh",
-    "db:activate": "bash scripts/activate-second-window.sh",
-    "db:setup-geo": "bash scripts/setup-test-windows-geo.sh"
+    "check": "tsc -p tsconfig.check.json --noEmit && npm run lint"    
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.1",
