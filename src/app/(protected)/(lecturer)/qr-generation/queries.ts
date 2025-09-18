@@ -1,17 +1,31 @@
 import apiClient from "@/lib/api/apiClient";
+import { ApiArrayResponse } from "@/types/api";
 import {
   AbsentListResponse,
-  LiveCheckinResponse,
   CourseSessionResponse,
-  StudentListResponse,
   LecturerSubjectsResponse,
+  LiveCheckinResponse,
+  StudentListResponse,
 } from "@/types/course";
 import {
   GenerateQrRequestBody,
   GenerateQrResponse,
   GetQrCodesResponse,
+  UpdateQrRequestBody,
 } from "@/types/qr-code";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+
+// Room types
+type RoomRow = {
+  id: number;
+  building_number: string;
+  room_number: string;
+  description: string | null;
+  latitude: string | null;
+  longitude: string | null;
+  campus_id: number;
+  campus_name: string;
+};
 
 const QR_CODE_GENERATION_QUERY_KEY = ["qrCodeGeneration"];
 
@@ -64,6 +78,27 @@ export const useAddSecondValidity = (id: number) => {
   };
   return useMutation({
     mutationKey: [QR_CODE_GENERATION_QUERY_KEY, id, "addValidity"],
+    mutationFn,
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: [["qrCodes"], id],
+      });
+    },
+  });
+};
+
+// Update existing QR code (PUT /lecturer/study-session/{id}/qr)
+export const useUpdateQr = (id: number) => {
+  const queryClient = useQueryClient();
+  const mutationFn = async (args: UpdateQrRequestBody) => {
+    const { data } = await apiClient.put<{ message: string }>(
+      `/lecturer/study-session/${id}/qr`,
+      args
+    );
+    return data;
+  };
+  return useMutation({
+    mutationKey: [QR_CODE_GENERATION_QUERY_KEY, id, "update"],
     mutationFn,
     onSuccess: () => {
       queryClient.invalidateQueries({
@@ -208,5 +243,41 @@ export const useGetLecturerSubjects = () => {
   return useQuery({
     queryKey: [LECTURER_SUBJECTS_QUERY_KEY],
     queryFn,
+  });
+};
+
+// Get all rooms for lecturer
+const LECTURER_ROOMS_QUERY_KEY = ["lecturerRooms"];
+export const useGetLecturerRooms = () => {
+  const queryFn = async () => {
+    const { data } =
+      await apiClient.get<ApiArrayResponse<RoomRow[]>>("/lecturer/rooms");
+    return data;
+  };
+  return useQuery({
+    queryKey: [LECTURER_ROOMS_QUERY_KEY],
+    queryFn,
+  });
+};
+
+// Get room(s) for a particular study session (usually 1)
+const STUDY_SESSION_ROOMS_QUERY_KEY = ["studySessionRooms"] as const;
+export const useGetStudySessionRooms = (
+  studySessionId?: number,
+  options?: { enabled?: boolean }
+) => {
+  const queryFn = async () => {
+    if (!studySessionId) {
+      return { message: "No session", count: 0, data: [] as RoomRow[] };
+    }
+    const { data } = await apiClient.get<ApiArrayResponse<RoomRow[]>>(
+      `/lecturer/study-session/${studySessionId}/rooms`
+    );
+    return data;
+  };
+  return useQuery({
+    queryKey: [STUDY_SESSION_ROOMS_QUERY_KEY, studySessionId],
+    queryFn,
+    enabled: options?.enabled ?? Boolean(studySessionId),
   });
 };

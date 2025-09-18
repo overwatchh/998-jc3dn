@@ -3,7 +3,7 @@
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Scanner } from "@yudiel/react-qr-scanner";
-import { Camera, CameraOff, AlertCircle, CheckCircle } from "lucide-react";
+import { AlertCircle, Camera, CameraOff, CheckCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 

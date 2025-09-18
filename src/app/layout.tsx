@@ -18,7 +18,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
         {/* Add necessary head elements here, like meta tags, title, etc. */}
         <title>QR Attendance System</title>
       </head>
-      <body className="flex h-screen flex-col overflow-scroll">
+      <body className="flex h-screen flex-col overflow-y-auto">
         <ReactQueryProvider>
           <ThemeProvider
             attribute="class"
