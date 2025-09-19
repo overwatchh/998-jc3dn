@@ -171,3 +171,13 @@
     scrollbar-gutter: stable both-edges;
   }
 }
+
+
+/*  #heading stylings used for privacy policy */
+h1 {
+  @apply text-4xl font-bold mb-4;
+}
+
+h2 {
+  @apply text-2xl font-semibold mt-6 mb-2;
+}
