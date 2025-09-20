@@ -150,7 +150,7 @@ INSERT INTO study_session (id, type, day_of_week, start_time, end_time, room_id)
 (8, 'tutorial', 'Thursday', '10:00:00', '12:00:00', 8),
 (9, 'tutorial', 'Friday', '14:00:00', '16:00:00', 9),
 -- MTS9307
-(10, 'lecture', 'Thursday', '10:40:00', '12:40:00', 10),
+(10, 'lecture', 'Thursday', '21:30:00', '22:30:00', 10),
 (11, 'tutorial', 'Friday', '13:00:00', '15:00:00', 1),
 (12, 'tutorial', 'Thursday', '08:00:00', '10:00:00', 2),
 -- CSCI935
