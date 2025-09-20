@@ -3,7 +3,8 @@ name: Deploy to Cloud Run
 on:
   push:
     branches:
-      - master      
+      - master    
+      - demo-week10  
     paths-ignore:
       - src/lib/server/db_schema/db_*.sql
 
