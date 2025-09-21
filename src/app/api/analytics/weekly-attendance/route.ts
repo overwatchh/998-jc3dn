@@ -66,7 +66,7 @@ import { NextRequest, NextResponse } from "next/server";
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
-    const courseId = searchParams.get('subjectId'); // This is actually a study_session_id
+    const subjectId = searchParams.get('subjectId'); // Now correctly using subject ID
 
     const query = `
       SELECT
@@ -84,12 +84,12 @@ export async function GET(request: NextRequest) {
       JOIN subject s ON s.id = sss.subject_id
       JOIN enrolment e ON e.subject_id = s.id
       LEFT JOIN checkin c ON c.qr_code_study_session_id = qrss.id AND c.student_id = e.student_id
-      WHERE ss.type = 'lecture' ${courseId ? 'AND ss.id = ?' : ''}
+      WHERE ss.type = 'lecture' ${subjectId ? 'AND s.id = ?' : ''}
       GROUP BY s.code, s.name, qrss.week_number
       ORDER BY s.code, qrss.week_number
     `;
 
-    const params = courseId ? [parseInt(courseId)] : [];
+    const params = subjectId ? [parseInt(subjectId)] : [];
     const data = await rawQuery(query, params);
 
     return NextResponse.json(data);

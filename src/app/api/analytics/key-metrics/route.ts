@@ -79,7 +79,7 @@ import { NextRequest, NextResponse } from "next/server";
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
-    const courseId = searchParams.get('subjectId'); // This is actually a study_session_id
+    const subjectId = searchParams.get('subjectId'); // Now correctly using subject ID
 
     // Get overall metrics
     const metricsQuery = `
@@ -101,9 +101,10 @@ export async function GET(request: NextRequest) {
           FROM qr_code_study_session qrss
           JOIN study_session ss ON ss.id = qrss.study_session_id
           JOIN subject_study_session sss ON sss.study_session_id = ss.id
+          JOIN subject s ON s.id = sss.subject_id
           JOIN enrolment e ON e.subject_id = sss.subject_id
           LEFT JOIN checkin c ON c.qr_code_study_session_id = qrss.id AND c.student_id = e.student_id
-          ${courseId ? 'WHERE ss.id = ?' : ''}
+          ${subjectId ? 'WHERE s.id = ?' : ''}
           GROUP BY sss.subject_id, qrss.week_number
       ) weekly_attendance ON weekly_attendance.subject_id = s.id
       LEFT JOIN (
@@ -118,7 +119,7 @@ export async function GET(request: NextRequest) {
           LEFT JOIN checkin c ON c.qr_code_study_session_id = qrss.id AND c.student_id = e.student_id
           GROUP BY e.student_id, sss.subject_id
       ) student_avg ON student_avg.subject_id = s.id
-      WHERE ss.type = 'lecture' ${courseId ? 'AND ss.id = ?' : ''}
+      WHERE ss.type = 'lecture' ${subjectId ? 'AND s.id = ?' : ''}
     `;
 
     // Get best attended session
@@ -133,7 +134,7 @@ export async function GET(request: NextRequest) {
       JOIN subject s ON s.id = sss.subject_id
       JOIN enrolment e ON e.subject_id = s.id
       LEFT JOIN checkin c ON c.qr_code_study_session_id = qrss.id AND c.student_id = e.student_id
-      WHERE ss.type = 'lecture' ${courseId ? 'AND ss.id = ?' : ''}
+      WHERE ss.type = 'lecture' ${subjectId ? 'AND s.id = ?' : ''}
       GROUP BY s.code, qrss.week_number, qrss.id
       ORDER BY attendance_rate DESC
       LIMIT 1
@@ -151,14 +152,14 @@ export async function GET(request: NextRequest) {
       JOIN subject s ON s.id = sss.subject_id
       JOIN enrolment e ON e.subject_id = s.id
       LEFT JOIN checkin c ON c.qr_code_study_session_id = qrss.id AND c.student_id = e.student_id
-      WHERE ss.type = 'lecture' ${courseId ? 'AND ss.id = ?' : ''}
+      WHERE ss.type = 'lecture' ${subjectId ? 'AND s.id = ?' : ''}
       GROUP BY s.code, qrss.week_number, qrss.id
       ORDER BY attendance_rate ASC
       LIMIT 1
     `;
 
-    const metricsParams = courseId ? [parseInt(courseId), parseInt(courseId)] : [];
-    const queryParams = courseId ? [parseInt(courseId)] : [];
+    const metricsParams = subjectId ? [parseInt(subjectId), parseInt(subjectId)] : [];
+    const queryParams = subjectId ? [parseInt(subjectId)] : [];
 
     const [metricsData] = await rawQuery(metricsQuery, metricsParams) as {
       average_attendance: number;

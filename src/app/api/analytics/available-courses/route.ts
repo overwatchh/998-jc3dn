@@ -60,25 +60,30 @@ export async function GET(_request: NextRequest) {
           s.id,
           s.code,
           s.name,
-          ss.id as study_session_id,
-          ss.type as session_type,
-          ss.start_time,
-          ss.end_time,
-          ss.day_of_week
+          'lecture' as session_type,
+          MIN(ss.start_time) as start_time,
+          MAX(ss.end_time) as end_time,
+          GROUP_CONCAT(DISTINCT ss.day_of_week ORDER BY
+            CASE ss.day_of_week
+              WHEN 'Monday' THEN 1 WHEN 'Tuesday' THEN 2 WHEN 'Wednesday' THEN 3
+              WHEN 'Thursday' THEN 4 WHEN 'Friday' THEN 5 WHEN 'Saturday' THEN 6
+              WHEN 'Sunday' THEN 7 END
+          ) as day_of_week
       FROM subject s
       JOIN subject_study_session sss ON sss.subject_id = s.id
       JOIN study_session ss ON ss.id = sss.study_session_id
       JOIN qr_code_study_session qrss ON qrss.study_session_id = ss.id
-      WHERE ss.type = 'lecture'
-        AND s.status = 'Active'
-      ORDER BY s.code, ss.start_time
+      JOIN checkin c ON qrss.id = c.qr_code_study_session_id
+      WHERE s.status = 'active'
+      GROUP BY s.id, s.code, s.name
+      ORDER BY s.code
     `;
 
     const courses = await rawQuery(query, []);
 
     // Transform to match the expected format
     const transformedCourses = courses.map((course: {
-      study_session_id: number;
+      id: number;
       name: string;
       code: string;
       session_type: string;
@@ -86,7 +91,7 @@ export async function GET(_request: NextRequest) {
       end_time?: string;
       day_of_week: string;
     }) => ({
-      id: course.study_session_id,
+      id: course.id, // Use subject ID for analytics API consistency
       name: course.name,
       code: course.code,
       sessionType: course.session_type,
