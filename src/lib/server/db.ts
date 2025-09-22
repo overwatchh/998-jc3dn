@@ -20,3 +20,7 @@ export const db = mysql.createPool(
         dateStrings: false, // get JS Date objects;
       }
 );
+
+db.on('connection', (conn) => {  
+  conn.query("SET time_zone = '+10:00'");
+});
