@@ -524,10 +524,14 @@ export const QRGenerator = () => {
 
           // Set room if location data is available and room_id exists
           if (data.location?.room_id) {
-            // We need to fetch the complete room data from the rooms endpoint
-            // to get all the required room properties
+            // NOTE (bugfix): Previously we only looked up the room in the *session* rooms endpoint.
+            // If the lecturer updated the QR to use a non-default room (not tied to the study session),
+            // it wouldn't appear there, so the dropdown reset to empty on reload. We now:
+            // 1. Try session rooms (fast, smaller set) for defaults.
+            // 2. Fallback to all lecturer rooms if not found.
             try {
-              const roomsResponse = await apiClient.get<{
+              // First: session rooms
+              const sessionRoomsResp = await apiClient.get<{
                 message: string;
                 count: number;
                 data: {
@@ -542,14 +546,46 @@ export const QRGenerator = () => {
                 }[];
               }>(`/lecturer/study-session/${selectedCourse?.sessionId}/rooms`);
 
-              const roomData = roomsResponse.data.data.find(
+              let roomData = sessionRoomsResp.data.data.find(
                 room => room.id === data.location?.room_id
               );
+
+              // Fallback: all lecturer rooms if not found among session defaults
+              if (!roomData) {
+                try {
+                  const allRoomsResp = await apiClient.get<{
+                    message: string;
+                    count: number;
+                    data: {
+                      id: number;
+                      building_number: string;
+                      room_number: string;
+                      description: string | null;
+                      latitude: string | null;
+                      longitude: string | null;
+                      campus_id: number;
+                      campus_name: string;
+                    }[];
+                  }>(`/lecturer/rooms`);
+                  roomData = allRoomsResp.data.data.find(
+                    room => room.id === data.location?.room_id
+                  );
+                } catch (allRoomsErr) {
+                  console.error(
+                    "Failed to fetch all lecturer rooms for fallback:",
+                    allRoomsErr
+                  );
+                }
+              }
+
               if (roomData) {
                 setSelectedRoom(roomData);
               }
             } catch (roomErr) {
-              console.error("Failed to fetch room data:", roomErr);
+              console.error(
+                "Failed to fetch room data (session rooms):",
+                roomErr
+              );
             }
           }
         }
