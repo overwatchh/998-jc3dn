@@ -42,3 +42,90 @@ export function haversineDistance(
 
   return distance;
 }
+
+export function formatDate(date: Date): string {
+  return date.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "short", // "long" gives full name like "September"
+    day: "numeric",
+  });
+}
+
+const DOW_INDEX: Record<string, number> = {
+  sunday: 0,
+  monday: 1,
+  tuesday: 2,
+  wednesday: 3,
+  thursday: 4,
+  friday: 5,
+  saturday: 6,
+};
+export function parseTimeToDate(baseDate: Date, hhmm: string) {
+  const [hh, mm] = hhmm.split(":").map(Number);
+  const d = new Date(baseDate);
+  d.setHours(hh ?? 0, mm ?? 0, 0, 0);
+  return d;
+}
+
+function addDays(d: Date, days: number) {
+  const r = new Date(d);
+  r.setDate(r.getDate() + days);
+  return r;
+}
+
+export type DayOfWeek =
+  | "Sunday"
+  | "Monday"
+  | "Tuesday"
+  | "Wednesday"
+  | "Thursday"
+  | "Friday"
+  | "Saturday";
+
+export function computeQrDateForWeek(
+  day_of_week: DayOfWeek,
+  week_number: number,
+  anchor_qr: {
+    week_number: number;
+    date: string;
+  } | null
+): Date {
+  const anchor_date = anchor_qr ? new Date(anchor_qr.date) : new Date();
+  const anchor_week_number = anchor_qr ? anchor_qr.week_number : week_number;
+  // 1) Normalise DOW key
+  const key = day_of_week.toLowerCase();
+  if (!(key in DOW_INDEX)) {
+    throw new Error("Invalid day_of_week. Use Monday–Sunday.");
+  }
+  const targetDow = DOW_INDEX[key];
+
+  // 2) How many weeks from the source week to the target week?
+  const weeksDiff = Number(week_number) - Number(anchor_week_number);
+
+  // 3) Move from anchor_date to the SAME weekday inside the target week.
+  //    First, jump whole weeks from the anchor_date…
+  const targetWeekAnyDate = addDays(anchor_date, weeksDiff * 7);
+
+  // 4) Get the start of that week (Sunday-based, matching getDay() and DOW_INDEX)
+  const targetWeekStart = addDays(
+    targetWeekAnyDate,
+    -targetWeekAnyDate.getDay()
+  );
+
+  // 5) Add the target day offset within that week
+  const result = addDays(targetWeekStart, targetDow);
+
+  return result; // Date for (week_number, day_of_week) relative to the source week/date
+}
+
+export function getQrDateForWeek(
+  day_of_week: DayOfWeek,
+  week_number: number,
+  anchor_qr: {
+    week_number: number;
+    date: string;
+  } | null
+): string {
+  const d = computeQrDateForWeek(day_of_week, week_number, anchor_qr);
+  return formatDate(d);
+}
