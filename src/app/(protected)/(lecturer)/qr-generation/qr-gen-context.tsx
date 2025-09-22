@@ -1,11 +1,12 @@
 "use client";
 
 import { Course } from "@/types/course";
-import {
+import React, {
   createContext,
   Dispatch,
   SetStateAction,
   useContext,
+  useEffect,
   useState,
 } from "react";
 import { useGetCourses } from "./queries";
@@ -25,12 +26,23 @@ interface Room {
 export type TimeWindow = { start: Date; end: Date };
 export type Windows = { entryWindow: TimeWindow; exitWindow: TimeWindow };
 
+type DayOfWeek =
+  | "Monday"
+  | "Tuesday"
+  | "Wednesday"
+  | "Thursday"
+  | "Friday"
+  | "Saturday"
+  | "Sunday";
+
 interface QrGenContextType {
   currentScreen: QRGenScreens;
   setCurrentScreen: Dispatch<SetStateAction<QRGenScreens>>;
   selectedCourse: SelectedCourse | undefined;
   setSelectedCourse: Dispatch<SetStateAction<SelectedCourse | undefined>>;
   currentCourse?: Course;
+  selectedDayOfWeek: DayOfWeek; // UI-selected day for QR generation
+  setSelectedDayOfWeek: Dispatch<SetStateAction<DayOfWeek>>;
   selectedRoom: Room | null;
   setSelectedRoom: Dispatch<SetStateAction<Room | null>>;
   validateGeo: boolean;
@@ -83,6 +95,16 @@ export function QrGenProvider({
   const [radius, setRadius] = useState(100);
   const [windows, setWindows] = useState<Windows | null>(null);
   const [windowsConfigured, setWindowsConfigured] = useState<boolean>(false);
+  const [selectedDayOfWeek, setSelectedDayOfWeek] =
+    useState<DayOfWeek>("Monday");
+  // Sync selectedDayOfWeek with the currentCourse's scheduled day when course changes.
+  // Only override if prior selection is default (Monday) to allow manual override persistence.
+  useEffect(() => {
+    if (currentCourse?.dayOfWeek) {
+      const day = currentCourse.dayOfWeek as DayOfWeek;
+      setSelectedDayOfWeek(prev => (prev === "Monday" ? day : prev));
+    }
+  }, [currentCourse?.id, currentCourse?.dayOfWeek]);
 
   return (
     <QrGenContext.Provider
@@ -104,6 +126,8 @@ export function QrGenProvider({
         setCurrentScreen,
         selectedCourse,
         setSelectedCourse,
+        selectedDayOfWeek,
+        setSelectedDayOfWeek,
       }}
     >
       {children}

@@ -52,7 +52,7 @@ import { NextRequest, NextResponse } from "next/server";
  *                   type: string
  *                   example: "Failed to fetch available courses"
  */
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     // Get all subjects that have study sessions with attendance data
     const query = `
@@ -74,16 +74,26 @@ export async function GET(request: NextRequest) {
       ORDER BY s.code, ss.start_time
     `;
 
-    const courses = await rawQuery(query, []);
+    interface RawCourseRow {
+      id: number;
+      code: string;
+      name: string;
+      study_session_id: number;
+      session_type: string;
+      start_time: string;
+      end_time: string;
+      day_of_week: string;
+    }
+    const courses = await rawQuery<RawCourseRow>(query, []);
 
     // Transform to match the expected format
-    const transformedCourses = courses.map((course: any) => ({
+    const transformedCourses = courses.map(course => ({
       id: course.study_session_id,
       name: course.name,
       code: course.code,
       sessionType: course.session_type,
-      startTime: course.start_time?.slice(0, 5) || '',
-      endTime: course.end_time?.slice(0, 5) || '',
+      startTime: course.start_time?.slice(0, 5) || "",
+      endTime: course.end_time?.slice(0, 5) || "",
       dayOfWeek: course.day_of_week,
     }));
 
@@ -91,7 +101,10 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(transformedCourses);
   } catch (error) {
-    console.error('Available courses API error:', error);
-    return NextResponse.json({ error: 'Failed to fetch available courses' }, { status: 500 });
+    console.error("Available courses API error:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch available courses" },
+      { status: 500 }
+    );
   }
 }

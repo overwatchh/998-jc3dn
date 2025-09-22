@@ -1,7 +1,7 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -10,8 +10,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type React from "react";
 import { ChevronLeft } from "lucide-react";
+import type React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Windows, useQrGenContext } from "../qr-generation/qr-gen-context";
 
@@ -36,7 +36,12 @@ export function TimeWindowSelector({
   onChange,
   onBack,
 }: TimeWindowSelectorProps) {
-  const { windows, setWindowsConfigured } = useQrGenContext();
+  const {
+    windows,
+    setWindowsConfigured,
+    selectedDayOfWeek,
+    setSelectedDayOfWeek,
+  } = useQrGenContext();
   const timelineStart = useMemo(
     () => new Date(classStartTime.getTime() - 60 * 60 * 1000),
     [classStartTime]
@@ -519,6 +524,38 @@ export function TimeWindowSelector({
         </p>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Day of Week Selection */}
+        <div className="space-y-1">
+          <h4 className="text-foreground text-sm font-medium">Day of Week</h4>
+          <p className="text-muted-foreground text-xs">
+            Choose the calendar day this QR code will apply to.
+          </p>
+          <Select
+            value={selectedDayOfWeek}
+            onValueChange={val =>
+              setSelectedDayOfWeek(val as typeof selectedDayOfWeek)
+            }
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select day" />
+            </SelectTrigger>
+            <SelectContent>
+              {[
+                "Monday",
+                "Tuesday",
+                "Wednesday",
+                "Thursday",
+                "Friday",
+                "Saturday",
+                "Sunday",
+              ].map(d => (
+                <SelectItem key={d} value={d}>
+                  {d}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
         <div className="space-y-2">
           <div>
             <h4 className="text-foreground mb-1 text-sm font-medium">

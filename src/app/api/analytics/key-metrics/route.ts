@@ -79,7 +79,7 @@ import { NextRequest, NextResponse } from "next/server";
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
-    const courseId = searchParams.get('subjectId'); // This is actually a study_session_id
+    const courseId = searchParams.get("subjectId"); // This is actually a study_session_id
 
     // Get overall metrics
     const metricsQuery = `
@@ -103,7 +103,7 @@ export async function GET(request: NextRequest) {
           JOIN subject_study_session sss ON sss.study_session_id = ss.id
           JOIN enrolment e ON e.subject_id = sss.subject_id
           LEFT JOIN checkin c ON c.qr_code_study_session_id = qrss.id AND c.student_id = e.student_id
-          ${courseId ? 'WHERE ss.id = ?' : ''}
+          ${courseId ? "WHERE ss.id = ?" : ""}
           GROUP BY sss.subject_id, qrss.week_number
       ) weekly_attendance ON weekly_attendance.subject_id = s.id
       LEFT JOIN (
@@ -118,7 +118,7 @@ export async function GET(request: NextRequest) {
           LEFT JOIN checkin c ON c.qr_code_study_session_id = qrss.id AND c.student_id = e.student_id
           GROUP BY e.student_id, sss.subject_id
       ) student_avg ON student_avg.subject_id = s.id
-      WHERE ss.type = 'lecture' ${courseId ? 'AND ss.id = ?' : ''}
+      WHERE ss.type = 'lecture' ${courseId ? "AND ss.id = ?" : ""}
     `;
 
     // Get best attended session
@@ -133,7 +133,7 @@ export async function GET(request: NextRequest) {
       JOIN subject s ON s.id = sss.subject_id
       JOIN enrolment e ON e.subject_id = s.id
       LEFT JOIN checkin c ON c.qr_code_study_session_id = qrss.id AND c.student_id = e.student_id
-      WHERE ss.type = 'lecture' ${courseId ? 'AND ss.id = ?' : ''}
+      WHERE ss.type = 'lecture' ${courseId ? "AND ss.id = ?" : ""}
       GROUP BY s.code, qrss.week_number, qrss.id
       ORDER BY attendance_rate DESC
       LIMIT 1
@@ -151,37 +151,57 @@ export async function GET(request: NextRequest) {
       JOIN subject s ON s.id = sss.subject_id
       JOIN enrolment e ON e.subject_id = s.id
       LEFT JOIN checkin c ON c.qr_code_study_session_id = qrss.id AND c.student_id = e.student_id
-      WHERE ss.type = 'lecture' ${courseId ? 'AND ss.id = ?' : ''}
+      WHERE ss.type = 'lecture' ${courseId ? "AND ss.id = ?" : ""}
       GROUP BY s.code, qrss.week_number, qrss.id
       ORDER BY attendance_rate ASC
       LIMIT 1
     `;
 
-    const metricsParams = courseId ? [parseInt(courseId), parseInt(courseId)] : [];
+    const metricsParams = courseId
+      ? [parseInt(courseId), parseInt(courseId)]
+      : [];
     const queryParams = courseId ? [parseInt(courseId)] : [];
 
-    const [metricsData] = await rawQuery(metricsQuery, metricsParams);
-    const [bestSession] = await rawQuery(bestQuery, queryParams);
-    const [worstSession] = await rawQuery(worstQuery, queryParams);
+    interface MetricsRow {
+      average_attendance: number | null;
+      at_risk_students: number | null;
+      total_students: number | null;
+      total_weeks: number | null;
+    }
+    interface SessionRow {
+      week_label: string;
+      subject_code: string;
+      attendance_rate: number;
+    }
+
+    const [metricsData] = await rawQuery<MetricsRow>(
+      metricsQuery,
+      metricsParams
+    );
+    const [bestSession] = await rawQuery<SessionRow>(bestQuery, queryParams);
+    const [worstSession] = await rawQuery<SessionRow>(worstQuery, queryParams);
 
     return NextResponse.json({
-      averageAttendance: (metricsData as any)?.average_attendance || 0,
-      atRiskStudents: (metricsData as any)?.at_risk_students || 0,
-      totalStudents: (metricsData as any)?.total_students || 0,
-      totalWeeks: (metricsData as any)?.total_weeks || 0,
+      averageAttendance: metricsData?.average_attendance ?? 0,
+      atRiskStudents: metricsData?.at_risk_students ?? 0,
+      totalStudents: metricsData?.total_students ?? 0,
+      totalWeeks: metricsData?.total_weeks ?? 0,
       mostAttended: {
-        week: (bestSession as any)?.week_label || 'N/A',
-        subject: (bestSession as any)?.subject_code || '',
-        attendance: (bestSession as any)?.attendance_rate || 0
+        week: bestSession?.week_label ?? "N/A",
+        subject: bestSession?.subject_code ?? "",
+        attendance: bestSession?.attendance_rate ?? 0,
       },
       leastAttended: {
-        week: (worstSession as any)?.week_label || 'N/A',
-        subject: (worstSession as any)?.subject_code || '',
-        attendance: (worstSession as any)?.attendance_rate || 0
-      }
+        week: worstSession?.week_label ?? "N/A",
+        subject: worstSession?.subject_code ?? "",
+        attendance: worstSession?.attendance_rate ?? 0,
+      },
     });
   } catch (error) {
-    console.error('Key metrics API error:', error);
-    return NextResponse.json({ error: 'Failed to fetch key metrics data' }, { status: 500 });
+    console.error("Key metrics API error:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch key metrics data" },
+      { status: 500 }
+    );
   }
 }

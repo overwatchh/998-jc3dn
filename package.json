@@ -9,7 +9,8 @@
     "lint": "next lint",
     "format": "prettier . --write",
     "clean": "rm -rf node_modules .next package-lock.json",
-    "check": "tsc -p tsconfig.check.json --noEmit && npm run lint"    
+    "check": "tsc -p tsconfig.check.json --noEmit && npm run lint",
+    "db:init": "./scripts/db-init.sh"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.1",

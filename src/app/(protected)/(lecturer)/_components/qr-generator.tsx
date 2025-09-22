@@ -56,6 +56,7 @@ export const QRGenerator = () => {
     setRadius,
     setWindowsConfigured,
     currentCourse,
+    selectedDayOfWeek,
   } = useQrGenContext();
 
   const router = useRouter();
@@ -96,6 +97,7 @@ export const QRGenerator = () => {
     radius: number | null;
     entryWindow: { start: string; end: string } | null;
     exitWindow: { start: string; end: string } | null;
+    dayOfWeek?: string | null;
   } | null>(null);
   // QR is considered generated for the CURRENTLY selected week only if we have a URL
   const qrGenerated = useMemo(() => Boolean(qrUrl), [qrUrl]);
@@ -155,8 +157,21 @@ export const QRGenerator = () => {
       }
     }
 
+    // Check day-of-week change
+    if (prevInfo?.dayOfWeek && selectedDayOfWeek !== prevInfo.dayOfWeek) {
+      return true;
+    }
+
     return false;
-  }, [prevInfo, selectedRoom, validateGeo, radius, windows, qrGenerated]);
+  }, [
+    prevInfo,
+    selectedRoom,
+    validateGeo,
+    radius,
+    windows,
+    qrGenerated,
+    selectedDayOfWeek,
+  ]);
 
   function handleDownload(): void {
     if (!qrUrl) return;
@@ -277,6 +292,7 @@ export const QRGenerator = () => {
         radius,
         valid_room_id: selectedRoomId,
         validate_geo: validateGeo,
+        day_of_week: selectedDayOfWeek,
         validities,
       });
 
@@ -315,6 +331,7 @@ export const QRGenerator = () => {
         radius,
         valid_room_id: selectedRoomId,
         validate_geo: validateGeo,
+        day_of_week: selectedDayOfWeek,
         validities,
       });
 
@@ -322,6 +339,32 @@ export const QRGenerator = () => {
       if (refreshed.data?.qr_url) {
         setQrUrl(refreshed.data.qr_url);
       }
+      // Update prevInfo snapshot so further updates require actual new changes
+      setPrevInfo(info => {
+        if (!info) return info;
+        return {
+          ...info,
+          roomLabel: selectedRoom
+            ? `Building ${selectedRoom.building_number}, Room ${selectedRoom.room_number}`
+            : null,
+          validateGeo,
+          // radius and windows reflect current state
+          radius,
+          entryWindow: windows
+            ? {
+                start: formatHHMM(windows.entryWindow.start),
+                end: formatHHMM(windows.entryWindow.end),
+              }
+            : info.entryWindow,
+          exitWindow: windows
+            ? {
+                start: formatHHMM(windows.exitWindow.start),
+                end: formatHHMM(windows.exitWindow.end),
+              }
+            : info.exitWindow,
+          dayOfWeek: selectedDayOfWeek,
+        };
+      });
       setQrGenerated(true);
       setSuccessType("update");
       toast.success("QR code updated successfully!");
@@ -389,6 +432,7 @@ export const QRGenerator = () => {
             room_number: string | null;
             room_id: number | null;
           } | null;
+          day_of_week?: string;
         }>(`/qr/${existingQrId}`);
 
         const first = data.validities.find(v => v.count === 1);
@@ -416,6 +460,7 @@ export const QRGenerator = () => {
                   end: isoToHHMM(second.end_time),
                 }
               : null,
+            dayOfWeek: data.day_of_week || currentCourse?.dayOfWeek || null,
           });
 
           // Populate context state from existing QR data
@@ -531,6 +576,7 @@ export const QRGenerator = () => {
                   end: isoToHHMM(second.end_time),
                 }
               : null,
+            dayOfWeek: currentCourse?.dayOfWeek || null,
           });
 
           // Try to populate context state from fallback data
@@ -602,6 +648,7 @@ export const QRGenerator = () => {
     existingQrId,
     existingQrList?.data,
     selectedCourse?.sessionId,
+    currentCourse?.dayOfWeek,
     setValidateGeo,
     setRadius,
     setWindows,
@@ -903,6 +950,29 @@ export const QRGenerator = () => {
                           );
 
                           const rows: React.ReactNode[] = [];
+                          const hasDayChange = Boolean(
+                            prevInfo?.dayOfWeek &&
+                              selectedDayOfWeek !== prevInfo.dayOfWeek
+                          );
+                          if (hasDayChange) {
+                            rows.push(
+                              <div
+                                key="day"
+                                className="grid grid-cols-[160px_1fr_1fr] items-center gap-3 px-3 py-2"
+                              >
+                                <div className="text-foreground flex items-center gap-2 text-sm font-medium">
+                                  <Clock className="text-primary h-4 w-4" />
+                                  <span>Day of Week</span>
+                                </div>
+                                <div className="text-muted-foreground text-xs">
+                                  {prevInfo?.dayOfWeek}
+                                </div>
+                                <div className="text-primary text-xs font-medium">
+                                  {selectedDayOfWeek}
+                                </div>
+                              </div>
+                            );
+                          }
                           if (hasRoomChange) {
                             rows.push(
                               <div

@@ -129,7 +129,7 @@ import { NextRequest, NextResponse } from "next/server";
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
-    const courseId = searchParams.get('subjectId'); // This is actually a study_session_id
+    const courseId = searchParams.get("subjectId"); // This is actually a study_session_id
 
     // Get simple subject performance
     const subjectPerformanceQuery = `
@@ -146,7 +146,7 @@ export async function GET(request: NextRequest) {
       JOIN study_session ss ON ss.id = sss.study_session_id
       JOIN qr_code_study_session qrss ON qrss.study_session_id = ss.id
       LEFT JOIN checkin c ON c.qr_code_study_session_id = qrss.id AND c.student_id = e.student_id
-      WHERE ss.type = 'lecture' ${courseId ? 'AND ss.id = ?' : ''}
+      WHERE ss.type = 'lecture' ${courseId ? "AND ss.id = ?" : ""}
       GROUP BY s.id, s.code, s.name
       ORDER BY average_attendance DESC
     `;
@@ -163,7 +163,7 @@ export async function GET(request: NextRequest) {
       JOIN subject s ON s.id = sss.subject_id
       JOIN enrolment e ON e.subject_id = s.id
       LEFT JOIN checkin c ON c.qr_code_study_session_id = qrss.id AND c.student_id = e.student_id
-      WHERE ss.type = 'lecture' ${courseId ? 'AND ss.id = ?' : ''}
+      WHERE ss.type = 'lecture' ${courseId ? "AND ss.id = ?" : ""}
       GROUP BY qrss.week_number
       ORDER BY qrss.week_number
     `;
@@ -172,57 +172,97 @@ export async function GET(request: NextRequest) {
 
     const [subjectPerformance, weeklyTrends] = await Promise.all([
       rawQuery(subjectPerformanceQuery, params),
-      rawQuery(weeklyTrendsQuery, params)
+      rawQuery(weeklyTrendsQuery, params),
     ]);
 
     // Debug the raw data (removed for production)
 
     // Calculate summary statistics
     const totalSubjects = subjectPerformance.length;
-    const totalStudents = subjectPerformance.reduce((sum, subject) => sum + ((subject as any).total_students || 0), 0);
+    interface SubjectPerfRow {
+      subject_code: string;
+      subject_name: string;
+      average_attendance: string | number; // raw string from SQL, will convert
+      total_students: number;
+    }
+    const typedSubjectPerf = subjectPerformance as SubjectPerfRow[];
+    const totalStudents = typedSubjectPerf.reduce(
+      (sum, subject) => sum + (subject.total_students || 0),
+      0
+    );
 
     // Convert string values to numbers and filter valid attendance values
-    const validAttendanceValues = subjectPerformance
-      .map((subject: any) => ({
+    const validAttendanceValues = typedSubjectPerf
+      .map(subject => ({
         ...subject,
-        average_attendance: parseFloat(subject.average_attendance) || 0
+        average_attendance: parseFloat(String(subject.average_attendance)) || 0,
       }))
-      .filter(subject => !isNaN(subject.average_attendance) && subject.average_attendance > 0);
+      .filter(
+        subject =>
+          !isNaN(subject.average_attendance) && subject.average_attendance > 0
+      );
 
-    const overallAverage = validAttendanceValues.length > 0
-      ? Math.round(validAttendanceValues.reduce((sum, subject) => sum + subject.average_attendance, 0) / validAttendanceValues.length * 10) / 10
-      : 0;
+    const overallAverage =
+      validAttendanceValues.length > 0
+        ? Math.round(
+            (validAttendanceValues.reduce(
+              (sum, subject) => sum + subject.average_attendance,
+              0
+            ) /
+              validAttendanceValues.length) *
+              10
+          ) / 10
+        : 0;
 
     // Add performance levels to subjects
-    const subjectsWithPerformance = subjectPerformance.map((subject: any) => {
-      const attendance = parseFloat(subject.average_attendance) || 0;
+    const subjectsWithPerformance = typedSubjectPerf.map(subject => {
+      const attendance = parseFloat(String(subject.average_attendance)) || 0;
       return {
         ...subject,
         average_attendance: attendance, // Convert to number
-        at_risk_count: Math.floor(subject.total_students * 0.2), // Estimate 20% might be at risk
-        performance_level: attendance >= 85 ? 'excellent' :
-                          attendance >= 75 ? 'good' :
-                          attendance >= 65 ? 'average' : 'needs_improvement'
+        at_risk_count: Math.floor((subject.total_students || 0) * 0.2), // Estimate 20% might be at risk
+        performance_level:
+          attendance >= 85
+            ? "excellent"
+            : attendance >= 75
+              ? "good"
+              : attendance >= 65
+                ? "average"
+                : "needs_improvement",
       };
     });
 
     const performanceLevels = {
-      excellent: subjectsWithPerformance.filter(s => s.performance_level === 'excellent').length,
-      good: subjectsWithPerformance.filter(s => s.performance_level === 'good').length,
-      average: subjectsWithPerformance.filter(s => s.performance_level === 'average').length,
-      needs_improvement: subjectsWithPerformance.filter(s => s.performance_level === 'needs_improvement').length
+      excellent: subjectsWithPerformance.filter(
+        s => s.performance_level === "excellent"
+      ).length,
+      good: subjectsWithPerformance.filter(s => s.performance_level === "good")
+        .length,
+      average: subjectsWithPerformance.filter(
+        s => s.performance_level === "average"
+      ).length,
+      needs_improvement: subjectsWithPerformance.filter(
+        s => s.performance_level === "needs_improvement"
+      ).length,
     };
 
     // Convert weekly trends to numbers and calculate trend direction
-    const weeklyTrendsWithNumbers = weeklyTrends.map((week: any) => ({
+    interface WeeklyTrendRow {
+      week_number: number;
+      attendance_rate: string | number;
+    }
+    const typedWeekly = weeklyTrends as WeeklyTrendRow[];
+    const weeklyTrendsWithNumbers = typedWeekly.map(week => ({
       ...week,
-      attendance_rate: parseFloat(week.attendance_rate) || 0
+      attendance_rate: parseFloat(String(week.attendance_rate)) || 0,
     }));
 
     const recentWeeks = weeklyTrendsWithNumbers.slice(-4);
-    const trendDirection = recentWeeks.length >= 2
-      ? recentWeeks[recentWeeks.length - 1].attendance_rate - recentWeeks[0].attendance_rate
-      : 0;
+    const trendDirection =
+      recentWeeks.length >= 2
+        ? recentWeeks[recentWeeks.length - 1].attendance_rate -
+          recentWeeks[0].attendance_rate
+        : 0;
 
     const responseData = {
       summary: {
@@ -230,22 +270,36 @@ export async function GET(request: NextRequest) {
         totalStudents,
         overallAverage,
         performanceLevels,
-        trendDirection: trendDirection > 0 ? 'improving' : trendDirection < 0 ? 'declining' : 'stable'
+        trendDirection:
+          trendDirection > 0
+            ? "improving"
+            : trendDirection < 0
+              ? "declining"
+              : "stable",
       },
       subjectPerformance: subjectsWithPerformance,
       weeklyProgression: weeklyTrendsWithNumbers,
       engagementPatterns: [], // Simplified for now
       insights: {
-        bestPerformingSubject: subjectsWithPerformance.length > 0 ? subjectsWithPerformance[0] : null,
-        worstPerformingSubject: subjectsWithPerformance.length > 0 ? subjectsWithPerformance[subjectsWithPerformance.length - 1] : null,
-        peakEngagementDay: null
-      }
+        bestPerformingSubject:
+          subjectsWithPerformance.length > 0
+            ? subjectsWithPerformance[0]
+            : null,
+        worstPerformingSubject:
+          subjectsWithPerformance.length > 0
+            ? subjectsWithPerformance[subjectsWithPerformance.length - 1]
+            : null,
+        peakEngagementDay: null,
+      },
     };
 
     // console.log('Final API response:', responseData); // Removed for production
     return NextResponse.json(responseData);
   } catch (error) {
-    console.error('Lecturer trends API error:', error);
-    return NextResponse.json({ error: 'Failed to fetch lecturer trends data' }, { status: 500 });
+    console.error("Lecturer trends API error:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch lecturer trends data" },
+      { status: 500 }
+    );
   }
 }

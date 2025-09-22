@@ -1,4 +1,4 @@
-import nodemailer from 'nodemailer';
+import nodemailer from "nodemailer";
 
 export interface EmailConfig {
   smtpHost: string;
@@ -40,10 +40,12 @@ class EmailService {
   }
 
   private generateAttendanceEmailHtml(data: AttendanceEmailData): string {
-    const attendanceColor = data.totalAttendancePercentage >= 80 ? '#22c55e' : '#ef4444';
-    const statusMessage = data.totalAttendancePercentage >= 80 
-      ? 'Your attendance is satisfactory' 
-      : 'Your attendance is below the required threshold';
+    const attendanceColor =
+      data.totalAttendancePercentage >= 80 ? "#22c55e" : "#ef4444";
+    const statusMessage =
+      data.totalAttendancePercentage >= 80
+        ? "Your attendance is satisfactory"
+        : "Your attendance is below the required threshold";
 
     return `
 <!DOCTYPE html>
@@ -96,13 +98,19 @@ class EmailService {
         <p><strong>Subject:</strong> ${data.subjectName} (${data.subjectCode})</p>
         <p><strong>Your attendance for this lecture:</strong> 
           <span class="checkin-status ${
-            data.checkinCount === 2 ? 'checkin-full' : 
-            data.checkinCount === 1 ? 'checkin-partial' : 
-            'checkin-absent'
+            data.checkinCount === 2
+              ? "checkin-full"
+              : data.checkinCount === 1
+                ? "checkin-partial"
+                : "checkin-absent"
           }">
-            ${data.checkinCount === 2 ? 'Full Attendance (100%)' : 
-              data.checkinCount === 1 ? 'Partial Attendance (50%)' : 
-              'Absent (0%)'}
+            ${
+              data.checkinCount === 2
+                ? "Full Attendance (100%)"
+                : data.checkinCount === 1
+                  ? "Partial Attendance (50%)"
+                  : "Absent (0%)"
+            }
           </span>
         </p>
         <p><strong>Check-ins:</strong> ${data.checkinCount} out of 2 required</p>
@@ -124,18 +132,22 @@ class EmailService {
         </div>
       </div>
 
-      ${data.isLowAttendance ? `
+      ${
+        data.isLowAttendance
+          ? `
       <div class="warning">
         <h3>⚠️ Attendance Warning</h3>
         <p>Your attendance is below the required 80% threshold. Please ensure you attend the remaining classes to maintain the minimum attendance requirement.</p>
-        <p><strong>Action needed:</strong> You can miss at most ${data.classesCanMiss} more class${data.classesCanMiss === 1 ? '' : 'es'} this semester.</p>
+        <p><strong>Action needed:</strong> You can miss at most ${data.classesCanMiss} more class${data.classesCanMiss === 1 ? "" : "es"} this semester.</p>
       </div>
-      ` : `
+      `
+          : `
       <div style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 15px; border-radius: 6px; margin: 20px 0;">
         <h3 style="color: #166534; margin-top: 0;">✅ Good Attendance!</h3>
-        <p>Keep up the good work! You can still miss ${data.classesCanMiss} more class${data.classesCanMiss === 1 ? '' : 'es'} and maintain the 80% requirement.</p>
+        <p>Keep up the good work! You can still miss ${data.classesCanMiss} more class${data.classesCanMiss === 1 ? "" : "es"} and maintain the 80% requirement.</p>
       </div>
-      `}
+      `
+      }
 
       <div style="text-align: center; margin: 30px 0;">
         <a href="${process.env.BASE_URL}/dashboard" class="button">View Full Attendance Record</a>
@@ -155,7 +167,7 @@ class EmailService {
     
     <div class="footer">
       <p>This is an automated message from the QR Attendance System.</p>
-      <p>Generated on ${new Date().toLocaleDateString('en-GB')} at ${new Date().toLocaleTimeString('en-GB')}</p>
+      <p>Generated on ${new Date().toLocaleDateString("en-GB")} at ${new Date().toLocaleTimeString("en-GB")}</p>
     </div>
   </div>
 </body>
@@ -180,9 +192,10 @@ OVERALL ATTENDANCE:
 - Required minimum: 80%
 - Classes you can still miss: ${data.classesCanMiss}
 
-${data.isLowAttendance ? 
-  'WARNING: Your attendance is below the required 80% threshold. Please attend remaining classes to meet the minimum requirement.' :
-  'Good work! Your attendance is satisfactory.'
+${
+  data.isLowAttendance
+    ? "WARNING: Your attendance is below the required 80% threshold. Please attend remaining classes to meet the minimum requirement."
+    : "Good work! Your attendance is satisfactory."
 }
 
 ATTENDANCE SYSTEM REMINDER:
@@ -198,11 +211,11 @@ QR Attendance System
 
   async sendAttendanceReminder(data: AttendanceEmailData): Promise<void> {
     if (!this.transporter || !this.config) {
-      throw new Error('Email service not initialized');
+      throw new Error("Email service not initialized");
     }
 
     const subject = `📊 Attendance Update: ${data.subjectCode} - Week ${data.weekNumber} ${
-      data.isLowAttendance ? '⚠️ Action Required' : ''
+      data.isLowAttendance ? "⚠️ Action Required" : ""
     }`;
 
     const htmlContent = this.generateAttendanceEmailHtml(data);
@@ -218,24 +231,29 @@ QR Attendance System
 
     try {
       await this.transporter.sendMail(mailOptions);
-      console.log(`Attendance reminder sent to ${data.studentEmail} for ${data.subjectCode} Week ${data.weekNumber}`);
+      console.log(
+        `Attendance reminder sent to ${data.studentEmail} for ${data.subjectCode} Week ${data.weekNumber}`
+      );
     } catch (error) {
-      console.error(`Failed to send attendance reminder to ${data.studentEmail}:`, error);
+      console.error(
+        `Failed to send attendance reminder to ${data.studentEmail}:`,
+        error
+      );
       throw error;
     }
   }
 
   async testConnection(): Promise<boolean> {
     if (!this.transporter) {
-      throw new Error('Email service not initialized');
+      throw new Error("Email service not initialized");
     }
 
     try {
       await this.transporter.verify();
-      console.log('SMTP connection verified successfully');
+      console.log("SMTP connection verified successfully");
       return true;
     } catch (error) {
-      console.error('SMTP connection failed:', error);
+      console.error("SMTP connection failed:", error);
       return false;
     }
   }

@@ -64,6 +64,10 @@
  *                     - 2 → within second validity window
  *                     - 0 → not in any validity window
  *                   example: 0
+ *                 day_of_week:
+ *                   type: string
+ *                   description: Day of week associated with the QR's study session (e.g., Monday)
+ *                   example: Wednesday
  *                 radius:
  *                   type: integer
  *                   description: Allowed radius in meters for geolocation validation
@@ -103,7 +107,7 @@
 import { auth } from "@/lib/server/auth";
 import { rawQuery } from "@/lib/server/query";
 import { headers } from "next/headers";
-import { NextResponse, NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
   req: NextRequest,
@@ -130,7 +134,8 @@ export async function GET(
         r.latitude AS latitude,
         r.longitude AS longitude,
         qc.valid_radius AS radius,
-        qc.validate_geo,        
+        qc.validate_geo,
+        ss.day_of_week AS day_of_week,
         r.building_number AS building_number,
         r.room_number AS room_number,
         r.id AS room_id
@@ -146,6 +151,7 @@ export async function GET(
       latitude: number | null;
       longitude: number | null;
       radius: number | null;
+      day_of_week: string | null;
       building_number: string | null;
       room_number: string | null;
       room_id: number;
@@ -159,6 +165,7 @@ export async function GET(
         validities: [],
         validity_count: -1, // NOT_GENERATED
         radius: null,
+        day_of_week: null,
         location: null,
       });
     }
@@ -248,6 +255,7 @@ export async function GET(
       })),
       validity_count: validities.length > 0 ? validities[0].validity_count : 0,
       radius: result.radius !== null ? Number(result.radius) : null,
+      day_of_week: result.day_of_week || null,
       location:
         result && result.latitude !== null && result.longitude !== null
           ? {

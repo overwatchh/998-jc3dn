@@ -5,8 +5,8 @@ import { rawQuery } from "@/lib/server/query";
 import { computeQrDateForWeek, parseTimeToDate } from "@/lib/utils";
 import {
   GenerateQrRequestSchema,
-  UpdateQrRequestSchema,
   GenerateQrResponse,
+  UpdateQrRequestSchema,
 } from "@/types/qr-code";
 import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
@@ -41,7 +41,7 @@ import QRCode from "qrcode";
  *               - valid_room_id
  *               - radius
  *               - validities
- *               - day_of_week  
+ *               - day_of_week
  *             properties:
  *               week_number:
  *                 type: integer
@@ -598,12 +598,14 @@ export async function GET(
       qc.validate_geo,
       qc.createdAt,
       qrs.week_number,
+      ss.day_of_week,
       v.id AS validity_id,
       v.count,
       v.start_time,
       v.end_time
     FROM qr_code_study_session qrs
     JOIN qr_code qc ON qc.id = qrs.qr_code_id
+    JOIN study_session ss ON ss.id = qrs.study_session_id
     LEFT JOIN validity v ON v.qr_code_id = qc.id
     WHERE qrs.study_session_id = ?
   `;
@@ -624,6 +626,7 @@ export async function GET(
       validate_geo: boolean;
       createdAt: string;
       week_number: number;
+      day_of_week: string;
       validity_id: number;
       count: number;
       start_time: string;
@@ -640,6 +643,7 @@ export async function GET(
         validate_geo: boolean;
         createdAt: string;
         week_number: number;
+        day_of_week: string;
         validities: {
           validity_id: number;
           count: number;
@@ -657,6 +661,7 @@ export async function GET(
           validate_geo: row.validate_geo ? true : false,
           createdAt: row.createdAt,
           week_number: row.week_number,
+          day_of_week: row.day_of_week,
           validities: [],
         };
       }
@@ -758,6 +763,29 @@ export async function PUT(
       );
     }
 
+    // Optional day_of_week update: Persist new day on the study_session itself if it changed.
+    // NOTE: day_of_week lives on study_session (not on qr_code). Previously the PUT endpoint
+    // only used the provided day_of_week to recompute validity window datetimes without
+    // persisting the change, so subsequent GETs still showed the old day. This block fixes that.
+    const currentDayRows = await rawQuery<{ day_of_week: string }>(
+      `SELECT day_of_week FROM study_session WHERE id = ? LIMIT 1`,
+      [studySessionId]
+    );
+    if (
+      currentDayRows.length === 1 &&
+      currentDayRows[0].day_of_week !== day_of_week
+    ) {
+      await rawQuery(
+        `UPDATE study_session SET day_of_week = ? WHERE id = ? LIMIT 1`,
+        [day_of_week, studySessionId]
+      );
+      // After changing the canonical day_of_week, subsequent anchor computations (earliest
+      // validity for week 1) may shift if this session's first-week QR windows moved.
+      // We recompute validity window datetimes below using the new day_of_week; if multiple
+      // week 1 QR codes exist, the earliest one (possibly old date) will still anchor future
+      // computations. Additional logic could normalize that, but we keep scope minimal here.
+    }
+
     // Step 4: Validate room
     const roomCheckSql = `SELECT id FROM room WHERE id = ? LIMIT 1`;
     const [roomRow] = await rawQuery<{ id: number }>(roomCheckSql, [
@@ -808,7 +836,7 @@ export async function PUT(
         { status: 409 }
       );
     }
-    // compute sessionDate from existing rows (in case day_of_week changed)
+    // compute sessionDate from existing rows (in case day_of_week changed above)
     const anchor = await getAnchorForStudySession(studySessionId);
     const sessionDate = computeQrDateForWeek(
       day_of_week,
@@ -819,7 +847,7 @@ export async function PUT(
       const win = validities[i];
       const row = existing[i];
       // Derive the base date from the existing row (prefer start_time; fallback to end_time)
-      const baseDateString = row.start_time ?? row.end_time;
+      const _baseDateString = row.start_time ?? row.end_time; // retained for potential debugging/reference
       const start = parseTimeToDate(sessionDate, win.start_time);
       const end = parseTimeToDate(sessionDate, win.end_time);
 
