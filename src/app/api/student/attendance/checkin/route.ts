@@ -232,6 +232,11 @@ export async function POST(req: NextRequest) {
           ...studySessionDetails,
           start_time: startTime,
           end_time: endTime,
+          currentStart:currentWindow.start_time,
+          currentEnd:currentWindow.end_time,
+          now,
+          validStart,
+          validEnd,
         },
         { status: 403 }
       );
