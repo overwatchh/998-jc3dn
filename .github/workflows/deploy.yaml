@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master      
+      - apis-tony
     paths-ignore:
       - src/lib/server/db_schema/db_*.sql
 
