@@ -85,25 +85,6 @@ export async function POST(req: NextRequest) {
     const studentId = session.user.id;
     const body = await req.json();
 
-<<<<<<< HEAD
-  const schema = z.object({
-    qr_code_id: z.number(),
-    lat: z.number(),
-    long: z.number(),
-    checkin_type: z
-      .enum(["In-person", "Online", "Manual"])
-      .default("In-person"),
-  });
-  const parsed = schema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json(
-      { message: "Invalid body payload", error: parsed.error.format() },
-      { status: 400 }
-    );
-  }
-
-  const { qr_code_id, lat, long, checkin_type } = parsed.data;
-=======
     const schema = z.object({
       qr_code_id: z.number(),
       lat: z.number(),
@@ -121,7 +102,6 @@ export async function POST(req: NextRequest) {
     }
 
     const { qr_code_id, lat, long, checkin_type } = parsed.data;
->>>>>>> fe753857bf3e7e0318ae98f2034bca5ab1cc6fb8
 
     // Step 1: From qr_code_id, figure out study session, week, subject, and whether the student is allowed ---
     const [qrRow] = await rawQuery<QrSessionRow>(
@@ -228,18 +208,6 @@ export async function POST(req: NextRequest) {
       }
     }
 
-<<<<<<< HEAD
-  // Step 3: Verify geofence (distance) if validate_geo is set to true for the QR code
-  if (qrRow.validate_geo) {
-    const distanceMeters = haversineDistance(
-      qrRow.room_latitude,
-      qrRow.room_longitude,
-      lat,
-      long
-    );
-    const withinRadius = distanceMeters <= Number(qrRow.valid_radius);
-    if (!withinRadius) {
-=======
     // If no window is currently active, use the logic for error message
     if (!currentWindow) {
       // Default to first window for error display if no windows are active
@@ -258,7 +226,6 @@ export async function POST(req: NextRequest) {
       const endTime = new Date(currentWindow.end_time)
         .toLocaleString("en-GB", { hour12: false }) // local zone
         .replace(",", "");
->>>>>>> fe753857bf3e7e0318ae98f2034bca5ab1cc6fb8
       return NextResponse.json(
         {
           message: `You are not within the valid check-in time.`,
@@ -354,33 +321,4 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     );
   }
-<<<<<<< HEAD
-
-  // Step 5: Insert check-in
-  await rawQuery(
-    `
-    INSERT INTO checkin
-      (student_id, qr_code_study_session_id, validity_id, checkin_time, latitude, longitude, checkin_type)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
-    `,
-    [
-      studentId,
-      qrRow.qr_code_study_session_id,
-      currentWindow.id,
-      now,
-      lat,
-      long,
-      checkin_type,
-    ]
-  );
-
-  return NextResponse.json({
-    message: "Check-in successfully",
-    ...studySessionDetails,
-    checkin_time: now
-      .toLocaleString("en-GB", { hour12: false }) // local zone
-      .replace(",", ""),
-  });
-=======
->>>>>>> fe753857bf3e7e0318ae98f2034bca5ab1cc6fb8
 }

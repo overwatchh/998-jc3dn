@@ -29,6 +29,10 @@ export interface GroupedSubject extends RowDataPacket {
     day_of_week: string;
     start_time: string;
     end_time: string;
+    anchor_qr: {
+      week_number: number;
+      date: string;
+    } | null;
     session_type: "lecture" | "tutorial";
     location: {
       building_number: string;
