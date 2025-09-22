@@ -104,6 +104,12 @@ export const useUpdateQr = (id: number) => {
       queryClient.invalidateQueries({
         queryKey: [["qrCodes"], id],
       });
+      // Also invalidate broader study session / course level data so updated day_of_week propagates.
+      queryClient.invalidateQueries({ queryKey: [["courses"]] });
+      queryClient.invalidateQueries({ queryKey: [["lecturerSubjects"]] });
+      queryClient.invalidateQueries({ queryKey: [["qrCodeInfo"], id] });
+      // If there are room queries tied to this session re-fetch them too
+      queryClient.invalidateQueries({ queryKey: [["studySessionRooms"], id] });
     },
   });
 };
