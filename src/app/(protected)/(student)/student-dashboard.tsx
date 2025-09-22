@@ -11,6 +11,7 @@ import {
   Clock,
   MapPin,
   QrCode,
+  BarChart3,
 } from "lucide-react";
 import { redirect } from "next/navigation";
 
@@ -94,14 +95,25 @@ export function StudentDashboard() {
         </AlertDescription>
       </Alert>
 
-      {/* Scan QR Code Button */}
-      <Button
-        onClick={() => redirect("/scan-qr")}
-        className="bg-primary hover:bg-primary/90 text-primary-foreground h-14 w-full text-lg font-semibold"
-      >
-        <QrCode className="mr-3 h-6 w-6" />
-        Scan QR Code
-      </Button>
+      {/* Action Buttons */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Button
+          onClick={() => redirect("/scan-qr")}
+          className="bg-primary hover:bg-primary/90 text-primary-foreground h-14 text-lg font-semibold"
+        >
+          <QrCode className="mr-3 h-6 w-6" />
+          Scan QR Code
+        </Button>
+
+        <Button
+          onClick={() => redirect("/analytics")}
+          variant="outline"
+          className="h-14 text-lg font-semibold border-2"
+        >
+          <BarChart3 className="mr-3 h-6 w-6" />
+          View Analytics
+        </Button>
+      </div>
 
       {/* Today's Classes */}
       <div>

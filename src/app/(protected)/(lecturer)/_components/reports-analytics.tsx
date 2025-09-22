@@ -24,6 +24,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Popover,
   PopoverContent,
@@ -52,15 +53,11 @@ import {
   ArrowDown,
   ArrowUp,
   Calendar,
-  Download,
-  FileText,
   Filter,
-  Info,
+  Loader2,
   Mail,
   MoreHorizontal,
-  Printer,
   Search,
-  Share2,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { DateRange } from "react-day-picker";
@@ -68,25 +65,73 @@ import {
   CartesianGrid,
   Line,
   LineChart,
-  Pie,
-  PieChart,
   ReferenceLine,
   XAxis,
   YAxis,
-  Area,
-  AreaChart,
   RadialBar,
   RadialBarChart,
-  Cell,
   Bar,
   BarChart,
 } from "recharts";
 
 export default function ReportsAnalytics() {
-  const [date, setDate] = useState<DateRange>({
-    from: new Date(2025, 2, 1), // Mar 1, 2025
-    to: new Date(2025, 3, 24), // Apr 24, 2025
-  });
+  // Report generation states
+  const [selectedDateRange, setSelectedDateRange] = useState<string>("this_month");
+  const [selectedReportType, setSelectedReportType] = useState<string>("overview");
+  const [customEmail, setCustomEmail] = useState<string>("");
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+
+  // Report generation handler
+  const handleGenerateReport = async () => {
+    // For non-overview reports, a subject selection is recommended but not required
+    // The user can leave it empty to get reports for all subjects
+
+    if (!customEmail.trim()) {
+      alert('Please enter an email address to send the report to');
+      return;
+    }
+
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(customEmail.trim())) {
+      alert('Please enter a valid email address');
+      return;
+    }
+
+    setIsGeneratingReport(true);
+
+    try {
+      const requestBody = {
+        reportType: selectedReportType,
+        dateRange: selectedDateRange,
+        subjectIds: selectedCourseId ? [parseInt(selectedCourseId)] : [],
+        email: customEmail.trim()
+      };
+
+      const response = await fetch('/api/lecturer/reports/email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        alert(`Report has been sent to ${customEmail}!`);
+      } else {
+        alert(`Error generating report: ${result.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Report generation error:', error);
+      alert('Failed to generate report. Please try again.');
+    } finally {
+      setIsGeneratingReport(false);
+    }
+  };
+
+
   // Use analytics-specific courses endpoint that shows all courses with attendance data
   const { data: courses, isLoading: isCoursesLoading } = useQuery({
     queryKey: ['analytics-courses'],
@@ -113,14 +158,16 @@ export default function ReportsAnalytics() {
 
   // Advanced Analytics States
   const [selectedAnalyticType, setSelectedAnalyticType] = useState<string>("");
-  const [dayOfWeekData, setDayOfWeekData] = useState({});
-  const [timeBasedData, setTimeBasedData] = useState([]);
-  const [riskPredictionData, setRiskPredictionData] = useState([]);
+  // Future analytics features
+  // const [dayOfWeekData, setDayOfWeekData] = useState({});
+  // const [timeBasedData, setTimeBasedData] = useState([]);
+  // const [riskPredictionData, setRiskPredictionData] = useState([]);
 
   // Calculate real-time advanced analytics data
   const calculateDayOfWeekData = () => {
     // Aggregate data from all courses to show day patterns
-    const dayMapping = { 'Sunday': 0, 'Monday': 1, 'Tuesday': 2, 'Wednesday': 3, 'Thursday': 4, 'Friday': 5, 'Saturday': 6 };
+    // Day mapping for calculations
+    // const dayMapping = { 'Sunday': 0, 'Monday': 1, 'Tuesday': 2, 'Wednesday': 3, 'Thursday': 4, 'Friday': 5, 'Saturday': 6 };
     const dayAttendance = [0, 0, 0, 0, 0, 0, 0]; // Default to 0 for all days
 
     // Sample realistic data based on actual database structure
@@ -157,7 +204,18 @@ export default function ReportsAnalytics() {
   };
 
   const calculateRiskData = () => {
-    if (!studentPerformanceData || studentPerformanceData.length === 0) return [];
+    if (!studentPerformanceData || studentPerformanceData.length === 0) {
+      return {
+        critical: [],
+        moderate: [],
+        watchList: [],
+        counts: {
+          critical: 0,
+          moderate: 0,
+          watchList: 0
+        }
+      };
+    }
 
     const criticalRisk = studentPerformanceData.filter(s => s.attendance < 60);
     const moderateRisk = studentPerformanceData.filter(s => s.attendance >= 60 && s.attendance < 75);
@@ -287,148 +345,46 @@ export default function ReportsAnalytics() {
           Analytics Dashboard
         </h1>
         <p className="mt-2 text-lg text-muted-foreground">
-          Welcome back, {data?.user?.name}! Here's your comprehensive attendance analytics overview.
+          Welcome back, {data?.user?.name}! Here&apos;s your comprehensive attendance analytics overview.
         </p>
       </div>
 
-      {/* Report Configuration Panel */}
-      <section className="space-y-6">
-        <div>
-          <h2 className="text-2xl font-semibold tracking-tight text-foreground">
-            Course Selection & Filters
-          </h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Configure your analytics view by selecting course and date parameters
-          </p>
-        </div>
 
-        <Card className="shadow-sm">
-          <CardContent className="p-6">
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
-            <div className="space-y-3">
-              <label className="text-sm font-semibold text-foreground">
-                Select Course
-              </label>
+      {/* Main Analytics Dashboard */}
+      <section className="space-y-8">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h2 className="text-2xl font-semibold tracking-tight text-foreground">
+              Performance Analytics Overview
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Real-time insights into attendance patterns and student engagement
+            </p>
+          </div>
+
+          {/* Subject Selection */}
+          <div className="flex items-center gap-4">
+            <div className="min-w-[200px]">
+              <Label htmlFor="courseSelect" className="text-sm font-medium">
+                Select Subject
+              </Label>
               <Select
-                disabled={isCoursesLoading}
                 value={selectedCourseId}
                 onValueChange={setSelectedCourseId}
               >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select course" />
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="Choose a subject" />
                 </SelectTrigger>
                 <SelectContent>
-                  {(courses ?? []).map((c, index) => (
-                    <SelectItem key={`course-${c.id}-${index}`} value={String(c.id)}>
-                      {c.code} - {c.name}
+                  {courses?.map((course: any) => (
+                    <SelectItem key={course.id} value={String(course.id)}>
+                      {course.code} - {course.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-
-            <div className="space-y-3">
-              <label className="text-sm font-semibold text-foreground">
-                Date Range
-              </label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start bg-transparent text-left font-normal"
-                  >
-                    <Calendar className="mr-2 h-4 w-4 flex-shrink-0" />
-                    <span className="truncate">
-                      {date.from ? (
-                        date.to ? (
-                          <>
-                            <span className="hidden sm:inline">
-                              {format(date.from, "MMM d, yyyy")} -{" "}
-                              {format(date.to, "MMM d, yyyy")}
-                            </span>
-                            <span className="sm:hidden">
-                              {format(date.from, "MMM d")} -{" "}
-                              {format(date.to, "MMM d")}
-                            </span>
-                          </>
-                        ) : (
-                          format(date.from, "MMM d, yyyy")
-                        )
-                      ) : (
-                        <span>Select date range</span>
-                      )}
-                    </span>
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <CalendarComponent
-                    initialFocus
-                    mode="range"
-                    defaultMonth={date.from}
-                    selected={date}
-                    onSelect={selectedDate =>
-                      selectedDate && setDate(selectedDate)
-                    }
-                    numberOfMonths={1}
-                    className="sm:block"
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-
-            <div className="space-y-2 md:col-span-2 xl:col-span-2">
-              <label className="text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                Report Type
-              </label>
-              <Tabs defaultValue="overview" className="w-full">
-                <TabsList className="grid w-full grid-cols-2 gap-1 sm:gap-2 lg:grid-cols-4">
-                  <TabsTrigger value="overview" className="text-xs sm:text-sm">
-                    Overview
-                  </TabsTrigger>
-                  <TabsTrigger value="student" className="text-xs sm:text-sm">
-                    Student
-                  </TabsTrigger>
-                  <TabsTrigger value="session" className="text-xs sm:text-sm">
-                    Session
-                  </TabsTrigger>
-                  <TabsTrigger value="trends" className="text-xs sm:text-sm">
-                    Trends
-                  </TabsTrigger>
-                </TabsList>
-              </Tabs>
-            </div>
           </div>
-
-          <div className="mt-4 flex flex-col gap-4 sm:mt-6 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center space-x-2">
-              <Switch id="compare" />
-              <label
-                htmlFor="compare"
-                className="text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-              >
-                Compare to previous period
-              </label>
-            </div>
-            <Button
-              className="w-full sm:w-auto"
-              disabled={isLoadingData}
-            >
-              {isLoadingData ? "Loading..." : "Generate Report"}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-      </section>
-
-      {/* Main Analytics Dashboard */}
-      <section className="space-y-8">
-        <div>
-          <h2 className="text-2xl font-semibold tracking-tight text-foreground">
-            Performance Analytics Overview
-          </h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Real-time insights into attendance patterns and student engagement
-          </p>
         </div>
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 xl:grid-cols-3">
@@ -1163,17 +1119,17 @@ export default function ReportsAnalytics() {
                     <>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                         <div className="text-center p-4 bg-red-50 dark:bg-red-950/20 rounded-lg border border-red-200 dark:border-red-800">
-                          <div className="text-2xl font-bold text-red-600 dark:text-red-400">{(riskData as any).counts?.critical || 0}</div>
+                          <div className="text-2xl font-bold text-red-600 dark:text-red-400">{riskData.critical?.length || 0}</div>
                           <div className="text-sm text-muted-foreground">Critical Risk</div>
                           <div className="text-xs text-red-600 dark:text-red-400 mt-1">&lt; 60% current</div>
                         </div>
                         <div className="text-center p-4 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-800">
-                          <div className="text-2xl font-bold text-amber-600 dark:text-amber-400">{(riskData as any).counts?.moderate || 0}</div>
+                          <div className="text-2xl font-bold text-amber-600 dark:text-amber-400">{riskData.moderate?.length || 0}</div>
                           <div className="text-sm text-muted-foreground">Moderate Risk</div>
                           <div className="text-xs text-amber-600 dark:text-amber-400 mt-1">60-75% current</div>
                         </div>
                         <div className="text-center p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                          <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{(riskData as any).counts?.watchList || 0}</div>
+                          <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{riskData.watchList?.length || 0}</div>
                           <div className="text-sm text-muted-foreground">Watch List</div>
                           <div className="text-xs text-blue-600 dark:text-blue-400 mt-1">Declining trend</div>
                         </div>
@@ -1182,8 +1138,8 @@ export default function ReportsAnalytics() {
                       {/* Critical Risk Students */}
                       <div className="space-y-2">
                         <h5 className="text-sm font-medium text-red-600 dark:text-red-400">🚨 Critical Risk Students</h5>
-                        {(riskData as any).critical?.length > 0 ? (
-                          (riskData as any).critical.slice(0, 5).map((student, index) => {
+                        {riskData.critical?.length > 0 ? (
+                          riskData.critical.slice(0, 5).map((student, index) => {
                             const trendIcon = student.trend === 'down' ? '↓' : student.trend === 'up' ? '↑' : '→';
                             return (
                               <div key={index} className="flex items-center justify-between p-3 bg-red-50 dark:bg-red-950/20 rounded-lg border border-red-200 dark:border-red-800">
@@ -1214,8 +1170,8 @@ export default function ReportsAnalytics() {
                       <div className="mt-4 p-3 bg-muted/30 rounded-lg border border-border">
                         <p className="text-sm text-muted-foreground">
                           <span className="font-medium text-foreground">Status:</span> {
-                            (riskData as any).counts?.critical > 0 ?
-                              `${(riskData as any).counts.critical} student${(riskData as any).counts.critical !== 1 ? 's' : ''} need immediate intervention. Consider personal meetings or alternative attendance options.` :
+                            riskData.critical?.length > 0 ?
+                              `${riskData.critical.length} student${riskData.critical.length !== 1 ? 's' : ''} need immediate intervention. Consider personal meetings or alternative attendance options.` :
                               'All students are performing adequately. Continue monitoring for early warning signs.'
                           }
                         </p>
@@ -1622,7 +1578,7 @@ export default function ReportsAnalytics() {
                   const exceedsExpectations = currentAverage >= excellenceTarget;
                   const meetsStandards = currentAverage >= institutionalBenchmark;
                   const needsImprovement = currentAverage >= minimumStandard;
-                  const criticalLevel = currentAverage < minimumStandard;
+                  // const criticalLevel = currentAverage < minimumStandard;
 
                   // Consistency metrics
                   const weeklyVariance = weeklyAttendanceData.length > 1 ?
@@ -1636,7 +1592,7 @@ export default function ReportsAnalytics() {
                                           weeklyVariance < 15 ? 'moderate' : 'poor';
 
                   // Improvement potential
-                  const highPerformers = studentPerformanceData.filter(s => s.attendance >= 90).length;
+                  // const highPerformers = studentPerformanceData.filter(s => s.attendance >= 90).length;
                   const lowPerformers = studentPerformanceData.filter(s => s.attendance < 70).length;
                   const improvementPotential = (lowPerformers / studentPerformanceData.length) * 100;
 
@@ -1815,7 +1771,7 @@ export default function ReportsAnalytics() {
               <div className="bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-950/20 dark:to-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
                 <div className="flex items-center space-x-3">
                   <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
-                    <FileText className="w-5 h-5 text-white" />
+                    <Calendar className="w-5 h-5 text-white" />
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Total Courses</p>
@@ -2260,65 +2216,109 @@ export default function ReportsAnalytics() {
         </CardContent>
       </Card>
 
-      {/* Export Options Panel */}
+      {/* Email Report Panel */}
       <Card className="shadow-sm border-border/50">
         <CardHeader className="pb-6">
           <CardTitle className="text-xl font-semibold text-foreground">
-            📥 Export Options
+            📧 Email Report
           </CardTitle>
           <CardDescription className="text-base text-muted-foreground">
-            Download and share your analytics reports in multiple formats
+            Send attendance reports directly to your email
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
-            <Button
-              variant="outline"
-              className="flex h-20 flex-col items-center justify-center gap-2 bg-transparent sm:h-24"
-            >
-              <FileText className="h-6 w-6 sm:h-8 sm:w-8" />
-              <span className="text-xs sm:text-sm">PDF Report</span>
-            </Button>
-            <Button
-              variant="outline"
-              className="flex h-20 flex-col items-center justify-center gap-2 bg-transparent sm:h-24"
-            >
-              <Download className="h-6 w-6 sm:h-8 sm:w-8" />
-              <span className="text-xs sm:text-sm">Excel/CSV</span>
-            </Button>
-            <Button
-              variant="outline"
-              className="flex h-20 flex-col items-center justify-center gap-2 bg-transparent sm:h-24"
-            >
-              <Printer className="h-6 w-6 sm:h-8 sm:w-8" />
-              <span className="text-xs sm:text-sm">Print View</span>
-            </Button>
-            <Button
-              variant="outline"
-              className="flex h-20 flex-col items-center justify-center gap-2 bg-transparent sm:h-24"
-            >
-              <Mail className="h-6 w-6 sm:h-8 sm:w-8" />
-              <span className="text-xs sm:text-sm">Email Report</span>
-            </Button>
-            <Button
-              variant="outline"
-              className="flex h-20 flex-col items-center justify-center gap-2 bg-transparent sm:h-24"
-            >
-              <Share2 className="h-6 w-6 sm:h-8 sm:w-8" />
-              <span className="text-xs sm:text-sm">Share Link</span>
-            </Button>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            <div>
+              <Label htmlFor="reportType" className="text-sm font-medium">
+                Report Type
+              </Label>
+              <Select
+                value={selectedReportType}
+                onValueChange={setSelectedReportType}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select report type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="overview">Overview Report</SelectItem>
+                  <SelectItem value="student">Student Performance</SelectItem>
+                  <SelectItem value="session">Session Analysis</SelectItem>
+                  <SelectItem value="detailed">Detailed Report</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="dateRange" className="text-sm font-medium">
+                Date Range
+              </Label>
+              <Select
+                value={selectedDateRange}
+                onValueChange={setSelectedDateRange}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select date range" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="this_week">This Week</SelectItem>
+                  <SelectItem value="last_week">Last Week</SelectItem>
+                  <SelectItem value="this_month">This Month</SelectItem>
+                  <SelectItem value="last_month">Last Month</SelectItem>
+                  <SelectItem value="this_semester">This Semester</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="reportSubject" className="text-sm font-medium">
+                Subject (Optional)
+              </Label>
+              <Select
+                value={selectedCourseId}
+                onValueChange={setSelectedCourseId}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select subject (optional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  {courses?.map((course: any) => (
+                    <SelectItem key={course.id} value={String(course.id)}>
+                      {course.code} - {course.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-        </CardContent>
-        <CardFooter className="flex flex-col gap-2 sm:flex-row">
+          <div>
+            <Label htmlFor="customEmail" className="text-sm font-medium">
+              Email Address
+            </Label>
+            <Input
+              id="customEmail"
+              type="email"
+              placeholder="Enter email address to send report to"
+              value={customEmail}
+              onChange={(e) => setCustomEmail(e.target.value)}
+              className="mt-1"
+            />
+          </div>
           <Button
-            variant="outline"
-            size="sm"
-            className="w-full bg-transparent sm:w-auto"
+            onClick={handleGenerateReport}
+            disabled={isGeneratingReport || !customEmail.trim()}
+            className="w-full"
           >
-            <Share2 className="mr-2 h-4 w-4" />
-            Share Report
+            {isGeneratingReport ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Sending Report...
+              </>
+            ) : (
+              <>
+                <Mail className="mr-2 h-4 w-4" />
+                Send Email Report
+              </>
+            )}
           </Button>
-        </CardFooter>
+        </CardContent>
       </Card>
       </div>
       </section>

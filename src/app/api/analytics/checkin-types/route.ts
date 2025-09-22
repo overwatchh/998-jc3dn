@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
 
     // Build WHERE conditions
     const conditions = [];
-    const params: any[] = [];
+    const params: (string | number)[] = [];
 
     if (subjectId) {
       conditions.push('sss.subject_id = ?');
@@ -67,24 +67,26 @@ export async function GET(request: NextRequest) {
 
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
-    // Get weekly breakdown of In-person vs Online vs Manual checkins
+    // Get weekly breakdown of checkins using actual method from database
     const weeklyQuery = `
       SELECT
         qrss.week_number,
         c.checkin_type,
+        c.checkin_method,
         COUNT(*) as count
       FROM checkin c
       JOIN qr_code_study_session qrss ON qrss.id = c.qr_code_study_session_id
       JOIN study_session ss ON ss.id = qrss.study_session_id
       ${subjectId ? 'JOIN subject_study_session sss ON sss.study_session_id = ss.id' : ''}
       ${whereClause}
-      GROUP BY qrss.week_number, c.checkin_type
-      ORDER BY qrss.week_number, c.checkin_type
+      GROUP BY qrss.week_number, c.checkin_type, c.checkin_method
+      ORDER BY qrss.week_number, c.checkin_method
     `;
 
     const weeklyResults = await rawQuery(weeklyQuery, params) as {
       week_number: number;
       checkin_type: string;
+      checkin_method: string;
       count: number;
     }[];
 
@@ -106,14 +108,15 @@ export async function GET(request: NextRequest) {
       const weekData = weeklyMap.get(row.week_number);
 
       // Map database enum values to frontend property names
-      if (row.checkin_type === 'In-person') {
-        weekData.inPerson = row.count;
+      // Group by checkin method for the chart
+      if (row.checkin_method === 'qr_scan') {
+        weekData.inPerson += row.count;
         weekData.total += row.count;
-      } else if (row.checkin_type === 'Online') {
-        weekData.online = row.count;
+      } else if (row.checkin_method === 'geofence' || row.checkin_method === 'facial_recognition') {
+        weekData.online += row.count;
         weekData.total += row.count;
-      } else if (row.checkin_type === 'Manual') {
-        weekData.manual = row.count;
+      } else if (row.checkin_method === 'manual_entry') {
+        weekData.manual += row.count;
         weekData.total += row.count;
       }
     });

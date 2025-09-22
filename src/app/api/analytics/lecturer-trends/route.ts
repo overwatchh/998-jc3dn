@@ -1,4 +1,6 @@
+import { auth } from "@/lib/server/auth";
 import { rawQuery } from "@/lib/server/query";
+import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
 /**
@@ -128,10 +130,29 @@ import { NextRequest, NextResponse } from "next/server";
  */
 export async function GET(request: NextRequest) {
   try {
-    const searchParams = request.nextUrl.searchParams;
-    const courseId = searchParams.get('subjectId'); // This is actually a study_session_id
+    const session = await auth.api.getSession({ headers: await headers() });
 
-    // Get simple subject performance
+    if (!session || !session.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const searchParams = request.nextUrl.searchParams;
+    const courseId = searchParams.get('subjectId'); // This is actually a subject_id now
+
+    // Build lecturer filter based on user role
+    let lecturerFilter = '';
+    let params: any[] = [];
+
+    if (session.user.role === "lecturer") {
+      lecturerFilter = 'AND lss.lecturer_id = ?';
+      params.push(session.user.id);
+    }
+
+    if (courseId) {
+      params.push(courseId);
+    }
+
+    // Get simple subject performance - only for subjects taught by this lecturer
     const subjectPerformanceQuery = `
       SELECT
           s.code as subject_code,
@@ -144,14 +165,15 @@ export async function GET(request: NextRequest) {
       JOIN enrolment e ON e.subject_id = s.id
       JOIN subject_study_session sss ON sss.subject_id = s.id
       JOIN study_session ss ON ss.id = sss.study_session_id
+      JOIN lecturer_study_session lss ON lss.study_session_id = ss.id
       JOIN qr_code_study_session qrss ON qrss.study_session_id = ss.id
       LEFT JOIN checkin c ON c.qr_code_study_session_id = qrss.id AND c.student_id = e.student_id
-      WHERE ss.type = 'lecture' ${courseId ? 'AND ss.id = ?' : ''}
+      WHERE ss.type = 'lecture' ${lecturerFilter} ${courseId ? 'AND s.id = ?' : ''}
       GROUP BY s.id, s.code, s.name
       ORDER BY average_attendance DESC
     `;
 
-    // Get weekly trends
+    // Get weekly trends - only for subjects taught by this lecturer
     const weeklyTrendsQuery = `
       SELECT
           qrss.week_number,
@@ -159,16 +181,15 @@ export async function GET(request: NextRequest) {
           ROUND((COUNT(DISTINCT c.student_id) / COUNT(DISTINCT e.student_id)) * 100, 1) as attendance_rate
       FROM qr_code_study_session qrss
       JOIN study_session ss ON ss.id = qrss.study_session_id
+      JOIN lecturer_study_session lss ON lss.study_session_id = ss.id
       JOIN subject_study_session sss ON sss.study_session_id = ss.id
       JOIN subject s ON s.id = sss.subject_id
       JOIN enrolment e ON e.subject_id = s.id
       LEFT JOIN checkin c ON c.qr_code_study_session_id = qrss.id AND c.student_id = e.student_id
-      WHERE ss.type = 'lecture' ${courseId ? 'AND ss.id = ?' : ''}
+      WHERE ss.type = 'lecture' ${lecturerFilter} ${courseId ? 'AND s.id = ?' : ''}
       GROUP BY qrss.week_number
       ORDER BY qrss.week_number
     `;
-
-    const params = courseId ? [parseInt(courseId)] : [];
 
     const [subjectPerformance, weeklyTrends] = await Promise.all([
       rawQuery(subjectPerformanceQuery, params),
