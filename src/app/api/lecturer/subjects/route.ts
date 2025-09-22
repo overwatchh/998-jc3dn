@@ -62,6 +62,15 @@
  *                               type: string
  *                               enum: [lecture, tutorial]
  *                               example: lecture
+ *                             anchor_qr:
+ *                               type: object
+ *                               properties:
+ *                                 week_number:
+ *                                   type: number
+ *                                   example: 1
+ *                                 date:
+ *                                   type: string
+ *                                   example: "2025-09-25T03:45:00.000Z"
  *                             location:
  *                               type: object
  *                               properties:
@@ -89,6 +98,7 @@
  *                   example: Unauthorised access. Student role required.
  */
 import { auth } from "@/lib/server/auth";
+import { getAnchorForStudySession } from "@/lib/server/db_service/validity_window";
 import { rawQuery } from "@/lib/server/query";
 import { ApiArrayResponse } from "@/types/api";
 import { headers } from "next/headers";
@@ -150,7 +160,7 @@ ORDER BY sub.id,
     const subjects = await rawQuery<RawSubjectRow>(sql, [lecturer_id]);
     const grouped: GroupedSubject[] = [];
 
-    subjects.forEach(row => {
+    for (const row of subjects) {
       // Check if the subject already exists in the grouped array
       let subject = grouped.find(s => s.subject_id === row.subject_id);
 
@@ -166,6 +176,9 @@ ORDER BY sub.id,
         grouped.push(subject);
       }
 
+      // query anchor QR code for this study session
+      const anchrQR = await getAnchorForStudySession(row.study_session_id);
+
       // Add the study session
       subject.study_sessions.push({
         study_session_id: row.study_session_id,
@@ -173,6 +186,7 @@ ORDER BY sub.id,
         start_time: row.start_time,
         end_time: row.end_time,
         session_type: row.session_type,
+        anchor_qr: anchrQR, // to be populated later
         location: {
           building_number: row.building_number,
           room_number: row.room_number,
@@ -181,7 +195,7 @@ ORDER BY sub.id,
           campus_name: row.campus_name,
         },
       });
-    });
+    }
 
     const response: ApiArrayResponse<GroupedSubject[]> = {
       message: "Fetched taught subjects successfully",

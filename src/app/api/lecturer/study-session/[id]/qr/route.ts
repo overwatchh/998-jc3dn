@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { auth } from "@/lib/server/auth";
+import { getAnchorForStudySession } from "@/lib/server/db_service/validity_window";
 import { rawQuery } from "@/lib/server/query";
+import { computeQrDateForWeek, parseTimeToDate } from "@/lib/utils";
 import {
   GenerateQrRequestSchema,
   UpdateQrRequestSchema,
@@ -39,6 +41,7 @@ import QRCode from "qrcode";
  *               - valid_room_id
  *               - radius
  *               - validities
+ *               - day_of_week  
  *             properties:
  *               week_number:
  *                 type: integer
@@ -56,6 +59,18 @@ import QRCode from "qrcode";
  *                 type: boolean
  *                 description: Whether to validate geolocation when scanning QR. Defaults to true.
  *                 example: true
+ *               day_of_week:
+ *                 type: string
+ *                 description: The day of the week the QR code applies to. First letter capitalized.
+ *                 enum:
+ *                   - Monday
+ *                   - Tuesday
+ *                   - Wednesday
+ *                   - Thursday
+ *                   - Friday
+ *                   - Saturday
+ *                   - Sunday
+ *                 example: Wednesday
  *               validities:
  *                 type: array
  *                 minItems: 2
@@ -265,6 +280,7 @@ import QRCode from "qrcode";
  *               - qr_code_id
  *               - valid_room_id
  *               - validities
+ *               - day_of_week
  *             properties:
  *               qr_code_id:
  *                 type: integer
@@ -282,6 +298,18 @@ import QRCode from "qrcode";
  *                 type: boolean
  *                 description: Whether to validate geolocation when scanning QR. Defaults to true.
  *                 example: true
+ *               day_of_week:
+ *                 type: string
+ *                 description: The day of the week the QR code applies to. First letter capitalized.
+ *                 enum:
+ *                   - Monday
+ *                   - Tuesday
+ *                   - Wednesday
+ *                   - Thursday
+ *                   - Friday
+ *                   - Saturday
+ *                   - Sunday
+ *                 example: Wednesday
  *               validities:
  *                 type: array
  *                 minItems: 2
@@ -311,6 +339,7 @@ import QRCode from "qrcode";
  *             radius: 150
  *             valid_room_id: 10
  *             validate_geo: true
+ *             day_of_week: Wednesday
  *             validities:
  *               - start_time: "13:50"
  *                 end_time: "14:10"
@@ -340,32 +369,6 @@ import QRCode from "qrcode";
  */
 
 const APP_URL = process.env.BASE_URL!;
-const DOW_INDEX: Record<string, number> = {
-  sunday: 0,
-  monday: 1,
-  tuesday: 2,
-  wednesday: 3,
-  thursday: 4,
-  friday: 5,
-  saturday: 6,
-};
-function parseTimeToDate(baseDate: Date, hhmm: string) {
-  const [hh, mm] = hhmm.split(":").map(Number);
-  const d = new Date(baseDate);
-  d.setHours(hh ?? 0, mm ?? 0, 0, 0);
-  return d;
-}
-
-function addDays(d: Date, days: number) {
-  const r = new Date(d);
-  r.setDate(r.getDate() + days);
-  return r;
-}
-
-function nextOccurrenceOfWeekday(from: Date, weekdayIdx: number) {
-  const diff = (weekdayIdx - from.getDay() + 7) % 7;
-  return addDays(from, diff); // 0 means today, >0 means future day
-}
 
 export async function POST(
   req: NextRequest,
@@ -385,8 +388,14 @@ export async function POST(
     }
     const body = parseResult.data; // fully typed and validated
 
-    const { week_number, radius, validities, validate_geo, valid_room_id } =
-      body;
+    const {
+      week_number,
+      day_of_week,
+      radius,
+      validities,
+      validate_geo,
+      valid_room_id,
+    } = body;
 
     // Step 1: Authenticate
     const session = await auth.api.getSession({ headers: await headers() });
@@ -433,49 +442,15 @@ export async function POST(
       );
     }
 
-    const weekdayIdx =
-      DOW_INDEX[String(sessionInfo.day_of_week || "").toLowerCase()];
-    if (weekdayIdx == null) {
-      return NextResponse.json(
-        { message: `Invalid day_of_week: ${sessionInfo.day_of_week}` },
-        { status: 500 }
-      );
-    }
     // Determine the calendar DATE for the requested week_number.
     // Strategy:
     //  - If there is an existing QR for this session with any week_number,
     //    use the earliest known week as a baseline, then offset by weeks.
     //  - Else, anchor on the next occurrence of the session's weekday from "now",
     //    and treat that as the requested week_number's date (so future weeks are consistent).
-    const existingAnchorSql = `
-      SELECT qcss.week_number, MIN(v.start_time) AS anchor_start
-      FROM qr_code_study_session qcss
-      JOIN validity v ON v.qr_code_id = qcss.qr_code_id
-      WHERE qcss.study_session_id = ?
-      GROUP BY qcss.week_number
-      ORDER BY qcss.week_number ASC
-      LIMIT 1
-    `;
-    const [anchor] = await rawQuery<{
-      week_number: number;
-      anchor_start: string; // DATETIME in DB
-    }>(existingAnchorSql, [studySessionId]);
+    const anchor = await getAnchorForStudySession(studySessionId);
+    const sessionDate = computeQrDateForWeek(day_of_week, week_number, anchor);
 
-    let sessionDate: Date;
-    if (anchor && anchor.anchor_start) {
-      // Baseline from earliest existing week
-      const baselineWeek = Number(anchor.week_number);
-      const baselineDate = new Date(anchor.anchor_start); // includes date of that session's start_time
-      const deltaWeeks = week_number - baselineWeek;
-      sessionDate = addDays(baselineDate, deltaWeeks * 7);
-      // Ensure weekday aligns (should already, but in case data was inconsistent)
-      const adjust = (weekdayIdx - sessionDate.getDay() + 7) % 7;
-      sessionDate = addDays(sessionDate, adjust);
-    } else {
-      // No prior QR exists: anchor on next occurrence of weekday from now
-      const now = new Date();
-      sessionDate = nextOccurrenceOfWeekday(now, weekdayIdx);
-    }
     // Step 3: Create qr in DB
     // Query to check room existence
     const roomCheckSql = `SELECT id FROM room WHERE id = ? LIMIT 1`;
@@ -730,8 +705,14 @@ export async function PUT(
       );
     }
 
-    const { qr_code_id, radius, validities, validate_geo, valid_room_id } =
-      parseResult.data;
+    const {
+      qr_code_id,
+      radius,
+      validities,
+      validate_geo,
+      day_of_week,
+      valid_room_id,
+    } = parseResult.data;
 
     // Step 1: Authenticate
     const session = await auth.api.getSession({ headers: await headers() });
@@ -761,14 +742,14 @@ export async function PUT(
 
     // Step 3: Validate QR belongs to this session
     const qrCheckSql = `
-      SELECT qcss.qr_code_id
+      SELECT qcss.qr_code_id, qcss.week_number
       FROM qr_code_study_session qcss
       WHERE qcss.study_session_id = ? AND qcss.qr_code_id = ?
     `;
-    const [qrRow] = await rawQuery<{ qr_code_id: number }>(qrCheckSql, [
-      studySessionId,
-      qr_code_id,
-    ]);
+    const [qrRow] = await rawQuery<{ qr_code_id: number; week_number: number }>(
+      qrCheckSql,
+      [studySessionId, qr_code_id]
+    );
 
     if (!qrRow) {
       return NextResponse.json(
@@ -827,13 +808,18 @@ export async function PUT(
         { status: 409 }
       );
     }
-
+    // compute sessionDate from existing rows (in case day_of_week changed)
+    const anchor = await getAnchorForStudySession(studySessionId);
+    const sessionDate = computeQrDateForWeek(
+      day_of_week,
+      qrRow.week_number,
+      anchor
+    );
     for (let i = 0; i < validities.length; i++) {
       const win = validities[i];
       const row = existing[i];
       // Derive the base date from the existing row (prefer start_time; fallback to end_time)
       const baseDateString = row.start_time ?? row.end_time;
-      const sessionDate = new Date(baseDateString);
       const start = parseTimeToDate(sessionDate, win.start_time);
       const end = parseTimeToDate(sessionDate, win.end_time);
 
