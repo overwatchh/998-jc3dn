@@ -2074,7 +2074,7 @@ export default function ReportsAnalytics() {
           {/* Mobile Card View */}
           <div className="block space-y-4 sm:hidden">
             {(Array.isArray(studentPerformanceData) ? studentPerformanceData : []).map((student, index) => (
-              <Card key={`mobile-student-${String(student.id || index)}`}>
+              <Card key={`mobile-student-${index}`}>
                 <CardContent className="p-4">
                   <div className="mb-3 flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -2157,9 +2157,9 @@ export default function ReportsAnalytics() {
               </TableHeader>
               <TableBody>
                 {(Array.isArray(studentPerformanceData) ? studentPerformanceData : []).map((student, index) => (
-                  <TableRow key={`table-student-${String(student.id || index)}`}>
+                  <TableRow key={`table-student-${typeof student.id === 'object' ? index : (student.id || index)}`}>
                     <TableCell className="hidden font-medium lg:table-cell">
-                      {student.id}
+                      {typeof student.id === 'object' ? JSON.stringify(student.id) : student.id}
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
