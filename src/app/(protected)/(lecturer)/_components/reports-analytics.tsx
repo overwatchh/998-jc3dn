@@ -288,16 +288,45 @@ export default function ReportsAnalytics() {
           color: parseFloat(item.attendance_rate) >= 80 ? '#22c55e' : parseFloat(item.attendance_rate) >= 70 ? '#f59e0b' : '#ef4444'
         })));
 
-        setStudentPerformanceData(studentPerformanceData.map((item, index) => ({
-          id: String(item.student_id_anon || index),
-          name: typeof item.student_name === 'object' ? String(item.student_name?.data || item.student_name?.type || 'Unknown') : String(item.student_name || 'Unknown'),
-          email: typeof item.student_email === 'object' ? String(item.student_email?.data || item.student_email?.type || '') : String(item.student_email || ''),
-          initials: typeof item.initials === 'object' ? String(item.initials?.data || item.initials?.type || 'XX') : String(item.initials || 'XX'),
-          attendance: parseFloat(item.attendance_percentage) || 0,
-          attended: parseInt(item.weeks_attended) || 0,
-          total: parseInt(item.total_weeks) || 0,
-          trend: item.trend
-        })));
+        setStudentPerformanceData(studentPerformanceData.map((item, index) => {
+          // Helper function to safely extract string from potential object
+          const extractString = (value, fallback = '') => {
+            if (!value) return fallback;
+            if (typeof value === 'object') {
+              // Log the problematic data structure for debugging
+              console.warn('Object detected in student data:', { value, type: typeof value });
+
+              // Handle Buffer or object with data property
+              if (value.data) return String(value.data);
+              if (value.type === 'Buffer' && Array.isArray(value.data)) {
+                return String.fromCharCode(...value.data);
+              }
+              // Try to get any string representation
+              try {
+                const stringified = JSON.stringify(value);
+                // If it's a simple object, try to extract a meaningful value
+                if (stringified !== '{}' && stringified !== '[]') {
+                  return stringified;
+                }
+              } catch (e) {
+                console.error('Failed to stringify object:', e);
+              }
+              return fallback;
+            }
+            return String(value);
+          };
+
+          return {
+            id: extractString(item.student_id_anon, `student-${index}`),
+            name: extractString(item.student_name, 'Unknown'),
+            email: extractString(item.student_email, ''),
+            initials: extractString(item.initials, 'XX'),
+            attendance: parseFloat(item.attendance_percentage) || 0,
+            attended: parseInt(item.weeks_attended) || 0,
+            total: parseInt(item.total_weeks) || 0,
+            trend: item.trend
+          };
+        }));
 
         setDistributionData(distributionData);
         setCheckinTypesData(checkinTypesData?.weeklyData || []);
