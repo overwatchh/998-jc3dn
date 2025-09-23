@@ -288,11 +288,11 @@ export default function ReportsAnalytics() {
           color: parseFloat(item.attendance_rate) >= 80 ? '#22c55e' : parseFloat(item.attendance_rate) >= 70 ? '#f59e0b' : '#ef4444'
         })));
 
-        setStudentPerformanceData(studentPerformanceData.map(item => ({
-          id: item.student_id_anon,
-          name: item.student_name,
-          email: item.student_email,
-          initials: item.initials,
+        setStudentPerformanceData(studentPerformanceData.map((item, index) => ({
+          id: String(item.student_id_anon || index),
+          name: typeof item.student_name === 'object' ? String(item.student_name?.data || item.student_name?.type || 'Unknown') : String(item.student_name || 'Unknown'),
+          email: typeof item.student_email === 'object' ? String(item.student_email?.data || item.student_email?.type || '') : String(item.student_email || ''),
+          initials: typeof item.initials === 'object' ? String(item.initials?.data || item.initials?.type || 'XX') : String(item.initials || 'XX'),
           attendance: parseFloat(item.attendance_percentage) || 0,
           attended: parseInt(item.weeks_attended) || 0,
           total: parseInt(item.total_weeks) || 0,
@@ -2045,7 +2045,7 @@ export default function ReportsAnalytics() {
           {/* Mobile Card View */}
           <div className="block space-y-4 sm:hidden">
             {(Array.isArray(studentPerformanceData) ? studentPerformanceData : []).map((student, index) => (
-              <Card key={`mobile-student-${student.id || index}`}>
+              <Card key={`mobile-student-${String(student.id || index)}`}>
                 <CardContent className="p-4">
                   <div className="mb-3 flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -2128,7 +2128,7 @@ export default function ReportsAnalytics() {
               </TableHeader>
               <TableBody>
                 {(Array.isArray(studentPerformanceData) ? studentPerformanceData : []).map((student, index) => (
-                  <TableRow key={`table-student-${student.id || index}`}>
+                  <TableRow key={`table-student-${String(student.id || index)}`}>
                     <TableCell className="hidden font-medium lg:table-cell">
                       {student.id}
                     </TableCell>
