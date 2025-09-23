@@ -71,6 +71,11 @@ export default function Page() {
       content:
         "Step 2: This panel lets you adjust the course, week and day. You can generate one QR for each week!",
     },
+    {
+      selector: ".location-panel-step",
+      content:
+        "Step 3: Configure the Room & Validation settings. Choose a room to set the physical location.",
+    },
   ];
 
   const TourPopover = (props: PopoverContentProps) => {
@@ -89,8 +94,20 @@ export default function Page() {
       if (currentStep > 0) setCurrentStep(currentStep - 1);
     }
     function handleNext() {
-      if (currentStep < total - 1) setCurrentStep(currentStep + 1);
-      else setIsOpen(false); // Finish tour
+      // Block manual next on first step; user must click highlighted course
+      if (currentStep === 0) return;
+      if (currentStep < total - 1) {
+        setCurrentStep(currentStep + 1);
+      } else {
+        // Finish tour then reset to first step for next time
+        setIsOpen(false);
+        setCurrentStep(0);
+      }
+    }
+
+    function closeAndReset() {
+      setIsOpen(false);
+      setCurrentStep(0);
     }
 
     return (
@@ -108,7 +125,7 @@ export default function Page() {
               variant="ghost"
               aria-label="Close tour"
               className="h-6 w-6"
-              onClick={() => setIsOpen(false)}
+              onClick={closeAndReset}
             >
               <X className="h-4 w-4" />
             </Button>
@@ -121,7 +138,7 @@ export default function Page() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setIsOpen(false)}
+            onClick={closeAndReset}
             className="text-muted-foreground"
           >
             Skip
@@ -135,7 +152,16 @@ export default function Page() {
             >
               Previous
             </Button>
-            <Button size="sm" onClick={handleNext}>
+            <Button
+              size="sm"
+              onClick={handleNext}
+              disabled={currentStep === 0}
+              title={
+                currentStep === 0
+                  ? "Select the highlighted course to continue"
+                  : undefined
+              }
+            >
               {currentStep === total - 1 ? "Finish" : "Next"}
             </Button>
           </div>
@@ -155,6 +181,30 @@ export default function Page() {
             background: "transparent", // Let Card supply surface
             boxShadow: "none",
           }),
+        }}
+        showPrevNextButtons={false}
+        showNavigation={false}
+        showDots={false}
+        showCloseButton={false}
+        onClickMask={clickProps => {
+          // Close and reset to first step when user clicks outside
+          clickProps.setIsOpen(false);
+          clickProps.setCurrentStep(0);
+        }}
+        keyboardHandler={(e, clickProps) => {
+          if (e.key === "ArrowRight" && clickProps.currentStep === 0) {
+            // Block advancing via keyboard on first step
+            e.preventDefault();
+            return;
+          }
+          if (e.key === "ArrowRight") {
+            clickProps.setCurrentStep(s =>
+              Math.min(s + 1, clickProps.steps.length - 1)
+            );
+          }
+          if (e.key === "ArrowLeft") {
+            clickProps.setCurrentStep(s => Math.max(s - 1, 0));
+          }
         }}
         ContentComponent={TourPopover}
         steps={tourSteps}
