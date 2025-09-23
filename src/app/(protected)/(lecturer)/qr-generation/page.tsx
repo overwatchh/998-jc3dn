@@ -89,7 +89,12 @@ export default function Page() {
     {
       selector: ".time-window-panel-step",
       content:
-        "Step 6: Time Windows control when students can check in (entry) and check out (exit). Set these to align with your class schedule and define time windows for students checking in.",
+        "Step 6: Time Windows control when students can check in (entry) and check out (exit). Set these to align with your class schedule and prevent early or late scans.",
+    },
+    {
+      selector: ".qr-generator-panel-step",
+      content:
+        "Step 7: Generate QR & Share. This panel shows the live QR code, lets you copy and share links, email it to students, and monitor scan status. Students can only scan successfully inside the configured time & location rules.",
     },
   ];
 

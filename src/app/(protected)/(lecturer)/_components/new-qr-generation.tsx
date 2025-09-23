@@ -192,7 +192,7 @@ export function NewQrGeneration() {
             </div>
 
             {/* Right: Sticky QR panel */}
-            <div className="order-1 lg:order-2 lg:col-span-5 xl:col-span-4">
+            <div className="qr-generator-panel-step order-1 lg:order-2 lg:col-span-5 xl:col-span-4">
               <div className="lg:sticky lg:top-16">
                 <QRGenerator />
               </div>
@@ -332,7 +332,7 @@ export function NewQrGeneration() {
               </div>
 
               {/* Right: QR panel (duplicate for comparison) */}
-              <div className="lg:col-span-5 xl:col-span-4">
+              <div className="qr-generator-panel-step lg:col-span-5 xl:col-span-4">
                 <div className="lg:sticky lg:top-16">
                   <QRGenerator />
                 </div>
