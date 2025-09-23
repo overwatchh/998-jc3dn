@@ -41,7 +41,7 @@ jobs:
             --platform managed \
             --region ${{ secrets.GCP_REGION }} \
             --allow-unauthenticated \
-            --set-env-vars DB_USER=${{ secrets.DB_USER}},DB_PASS=${{ secrets.DB_PASS}},DB_NAME=${{ secrets.DB_NAME}},BETTER_AUTH_SECRET=${{ secrets.BETTER_AUTH_SECRET}},GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID}},GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET}},MICROSOFT_CLIENT_ID=${{ secrets.MICROSOFT_CLIENT_ID}},MICROSOFT_CLIENT_SECRET=${{ secrets.MICROSOFT_CLIENT_SECRET}},SMTP_PORT=${{secrets.SMTP_PORT}},SMTP_PASS=${{secrets.SMTP_PASS}},SMTP_USER=${{secrets.SMTP_USER}},BASE_URL=${{secrets.BASE_URL}},GCP_PROJECT_ID=${{ secrets.GCP_PROJECT_ID }},GCP_REGION=${{secrets.GCP_REGION}},DB_INSTANCE=${{secrets.DB_INSTANCE}}
+            --set-env-vars TZ=Australia/Sydney,DB_USER=${{ secrets.DB_USER}},DB_PASS=${{ secrets.DB_PASS}},DB_NAME=${{ secrets.DB_NAME}},BETTER_AUTH_SECRET=${{ secrets.BETTER_AUTH_SECRET}},GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID}},GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET}},MICROSOFT_CLIENT_ID=${{ secrets.MICROSOFT_CLIENT_ID}},MICROSOFT_CLIENT_SECRET=${{ secrets.MICROSOFT_CLIENT_SECRET}},SMTP_PORT=${{secrets.SMTP_PORT}},SMTP_PASS=${{secrets.SMTP_PASS}},SMTP_USER=${{secrets.SMTP_USER}},BASE_URL=${{secrets.BASE_URL}},GCP_PROJECT_ID=${{ secrets.GCP_PROJECT_ID }},GCP_REGION=${{secrets.GCP_REGION}},DB_INSTANCE=${{secrets.DB_INSTANCE}}
 
       # Step 3: Get deployed app info
       - name: Get Deployed Service URL
