@@ -76,6 +76,21 @@ export default function Page() {
       content:
         "Step 3: Configure the Room & Validation settings. Choose a room to set the physical location.",
     },
+    {
+      selector: ".geo-validation-toggle-step",
+      content:
+        "Step 4: Location Validation. When enabled, students must be within the selected radius (in meters) of the room's coordinates to successfully check in. Disable it if physical proximity isn't required for this session.",
+    },
+    {
+      selector: ".time-tab-step",
+      content:
+        "Step 5: Click the Time Windows tab to continue. You'll configure entry and exit scan windows next.",
+    },
+    {
+      selector: ".time-window-panel-step",
+      content:
+        "Step 6: Time Windows control when students can check in (entry) and check out (exit). Set these to align with your class schedule and define time windows for students checking in.",
+    },
   ];
 
   const TourPopover = (props: PopoverContentProps) => {
@@ -94,8 +109,8 @@ export default function Page() {
       if (currentStep > 0) setCurrentStep(currentStep - 1);
     }
     function handleNext() {
-      // Block manual next on first step; user must click highlighted course
-      if (currentStep === 0) return;
+      // Block manual next on first step and on step 5 (index 4) until user clicks the tab
+      if (currentStep === 0 || currentStep === 4) return;
       if (currentStep < total - 1) {
         setCurrentStep(currentStep + 1);
       } else {
@@ -155,11 +170,13 @@ export default function Page() {
             <Button
               size="sm"
               onClick={handleNext}
-              disabled={currentStep === 0}
+              disabled={currentStep === 0 || currentStep === 4}
               title={
                 currentStep === 0
                   ? "Select the highlighted course to continue"
-                  : undefined
+                  : currentStep === 4
+                    ? "Click the Time Windows tab to continue"
+                    : undefined
               }
             >
               {currentStep === total - 1 ? "Finish" : "Next"}
@@ -192,8 +209,11 @@ export default function Page() {
           clickProps.setCurrentStep(0);
         }}
         keyboardHandler={(e, clickProps) => {
-          if (e.key === "ArrowRight" && clickProps.currentStep === 0) {
-            // Block advancing via keyboard on first step
+          if (
+            e.key === "ArrowRight" &&
+            (clickProps.currentStep === 0 || clickProps.currentStep === 4)
+          ) {
+            // Block advancing via keyboard on first and gated steps (course + time tab)
             e.preventDefault();
             return;
           }

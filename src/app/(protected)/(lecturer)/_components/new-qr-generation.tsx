@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/collapsible";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatHHMM } from "@/lib/utils";
+import { useTour } from "@reactour/tour";
 import {
   ArrowLeft,
   ChevronDown,
@@ -38,6 +39,7 @@ export function NewQrGeneration() {
     validateGeo,
     radius,
   } = useQrGenContext();
+  const { isOpen: tourOpen, currentStep, setCurrentStep } = useTour();
 
   // Track active tab and reset to location when week changes
   const [activeTab, setActiveTab] = useState("location");
@@ -153,7 +155,16 @@ export function NewQrGeneration() {
                     <MapPin className="h-4 w-4" />
                     Location
                   </TabsTrigger>
-                  <TabsTrigger value="time" className="flex items-center gap-2">
+                  <TabsTrigger
+                    value="time"
+                    className="time-tab-step flex items-center gap-2"
+                    onClick={() => {
+                      if (tourOpen && currentStep === 4) {
+                        // allow tab switch then move to next step (panel highlight) after slight delay
+                        setTimeout(() => setCurrentStep(5), 250);
+                      }
+                    }}
+                  >
                     <Clock className="h-4 w-4" />
                     Time Windows
                   </TabsTrigger>
@@ -166,7 +177,10 @@ export function NewQrGeneration() {
                   <RoomSelector onNext={() => setActiveTab("time")} />
                 </TabsContent>
 
-                <TabsContent value="time" className="mt-0">
+                <TabsContent
+                  value="time"
+                  className="time-window-panel-step mt-0"
+                >
                   <TimeWindowSelector
                     classStartTime={classStartTime}
                     classEndTime={classEndTime}
