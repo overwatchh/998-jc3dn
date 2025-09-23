@@ -1,15 +1,5 @@
 "use client";
 
-import { Card } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Calendar } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,7 +10,17 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Card } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { DayOfWeek, getQrDateForWeek } from "@/lib/utils";
+import { Calendar } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { useQrGenContext } from "../qr-generation/qr-gen-context";
 import { useGetCourses, useGetQrCodes } from "../qr-generation/queries";
 
@@ -59,10 +59,10 @@ export function SessionSelector() {
   const anchorQr = useMemo(() => {
     const list = allQrCodesData?.data;
     if (!list || list.length === 0) return null;
-    const earliest = [...list].sort(
-      (a, b) => a.week_number - b.week_number
-    )[0];
-    const date = (earliest.validities?.[0]?.start_time as string | undefined) || earliest.createdAt;
+    const earliest = [...list].sort((a, b) => a.week_number - b.week_number)[0];
+    const date =
+      (earliest.validities?.[0]?.start_time as string | undefined) ||
+      earliest.createdAt;
     return { week_number: earliest.week_number, date } as {
       week_number: number;
       date: string;
@@ -97,7 +97,7 @@ export function SessionSelector() {
   }
 
   return (
-    <Card className="border-border bg-card mx-0 py-0">
+    <Card className="border-border bg-card session-selector-step mx-0 py-0">
       <div className="divide-border grid grid-cols-1 divide-y lg:grid-cols-3 lg:divide-x lg:divide-y-0">
         {/* Subject Section */}
         <div className="space-y-2 p-4 px-4 py-4">
@@ -231,12 +231,16 @@ export function SessionSelector() {
           </div>
 
           {/* Confirm non-default day selection */}
-          <AlertDialog open={showConfirmDayDialog} onOpenChange={setShowConfirmDayDialog}>
+          <AlertDialog
+            open={showConfirmDayDialog}
+            onOpenChange={setShowConfirmDayDialog}
+          >
             <AlertDialogContent>
               <AlertDialogHeader>
                 <AlertDialogTitle>Use a non-default day?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  The default day for this session is {defaultDay || "unknown"}. Using a different day will affect the QR date.
+                  The default day for this session is {defaultDay || "unknown"}.
+                  Using a different day will affect the QR date.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>

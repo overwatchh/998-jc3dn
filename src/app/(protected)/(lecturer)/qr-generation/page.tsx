@@ -63,9 +63,16 @@ export default function Page() {
   const tourSteps: StepType[] = [
     {
       selector: ".first-step",
-      content: "This is the first step of the tour.",
+      content:
+        "Step 1: This is one of your courses. Click it to continue the tour and configure QR generation.",
+    },
+    {
+      selector: ".session-selector-step",
+      content:
+        "Step 2: This panel lets you adjust the course, week and day. You can generate one QR for each week!",
     },
   ];
+
   const TourPopover = (props: PopoverContentProps) => {
     const { steps, currentStep, setCurrentStep, setIsOpen } = props;
     const total = steps.length;
