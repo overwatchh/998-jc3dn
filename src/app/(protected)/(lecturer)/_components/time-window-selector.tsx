@@ -36,12 +36,7 @@ export function TimeWindowSelector({
   onChange,
   onBack,
 }: TimeWindowSelectorProps) {
-  const {
-    windows,
-    setWindowsConfigured,
-    selectedDayOfWeek,
-    setSelectedDayOfWeek,
-  } = useQrGenContext();
+  const { windows, setWindowsConfigured } = useQrGenContext();
   const timelineStart = useMemo(
     () => new Date(classStartTime.getTime() - 60 * 60 * 1000),
     [classStartTime]
@@ -524,38 +519,7 @@ export function TimeWindowSelector({
         </p>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Day of Week Selection */}
-        <div className="space-y-1">
-          <h4 className="text-foreground text-sm font-medium">Day of Week</h4>
-          <p className="text-muted-foreground text-xs">
-            Choose the calendar day this QR code will apply to.
-          </p>
-          <Select
-            value={selectedDayOfWeek}
-            onValueChange={val =>
-              setSelectedDayOfWeek(val as typeof selectedDayOfWeek)
-            }
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Select day" />
-            </SelectTrigger>
-            <SelectContent>
-              {[
-                "Monday",
-                "Tuesday",
-                "Wednesday",
-                "Thursday",
-                "Friday",
-                "Saturday",
-                "Sunday",
-              ].map(d => (
-                <SelectItem key={d} value={d}>
-                  {d}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        {/* Removed Day of Week selection (now controlled in Schedule header) */}
         <div className="space-y-2">
           <div>
             <h4 className="text-foreground mb-1 text-sm font-medium">

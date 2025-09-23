@@ -12,10 +12,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import apiClient from "@/lib/api/apiClient";
-import { formatHHMM } from "@/lib/utils";
+import { DayOfWeek, formatHHMM, getQrDateForWeek } from "@/lib/utils";
 import { AxiosError } from "axios";
 import {
   CheckSquare,
+  Calendar,
   Clock,
   Download,
   Loader2,
@@ -78,6 +79,28 @@ export const QRGenerator = () => {
     { enabled: !!selectedCourse }
   );
   const existingQrId = existingQrList?.data?.[0]?.qr_code_id;
+  // Anchor for computing calendar date for selected week/day
+  const anchorQr = useMemo(() => {
+    const list = existingQrList?.data;
+    if (!list || list.length === 0) return null;
+    const earliest = [...list].sort((a, b) => a.week_number - b.week_number)[0];
+    const date = (earliest.validities?.[0]?.start_time as string | undefined) || (earliest.createdAt as string);
+    return { week_number: earliest.week_number, date } as { week_number: number; date: string };
+  }, [existingQrList?.data]);
+
+  const dateLabel = useMemo(() => {
+    if (!selectedCourse) return null;
+    try {
+      const date = getQrDateForWeek(
+        selectedDayOfWeek as DayOfWeek,
+        selectedCourse.weekNumber,
+        anchorQr
+      );
+      return `${selectedDayOfWeek}, ${date}`;
+    } catch {
+      return null;
+    }
+  }, [selectedCourse, selectedDayOfWeek, anchorQr]);
   const {
     data: existingQrData,
     refetch: refetchExistingQr,
@@ -945,6 +968,12 @@ export const QRGenerator = () => {
                             <span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
                               Week {selectedCourse?.weekNumber}
                             </span>
+                          {dateLabel && (
+                            <span className="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
+                              <Calendar className="mr-1 h-3.5 w-3.5" />
+                              {dateLabel}
+                            </span>
+                          )}
                           </span>
                         </AlertDialogDescription>
                       </AlertDialogHeader>
@@ -1224,6 +1253,12 @@ export const QRGenerator = () => {
                             <span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
                               Week {selectedCourse?.weekNumber}
                             </span>
+                          {dateLabel && (
+                            <span className="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
+                              <Calendar className="mr-1 h-3.5 w-3.5" />
+                              {dateLabel}
+                            </span>
+                          )}
                           </span>
                           <span className="text-muted-foreground mt-1 block">
                             Review configuration before generating
