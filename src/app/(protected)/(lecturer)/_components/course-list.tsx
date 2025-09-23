@@ -1,7 +1,9 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 import { CourseSessionResponse } from "@/types/course";
+import { useTour } from "@reactour/tour";
 import { ArrowLeft, Clock } from "lucide-react";
 import { useQrGenContext } from "../qr-generation/qr-gen-context";
 import { QRGenScreens } from "../qr-generation/types";
@@ -38,6 +40,8 @@ export function CoursesList({ courses }: Props) {
     }
   }
 
+  const { setIsOpen } = useTour();
+
   return (
     <div className="bg-background min-h-screen p-4 md:p-6 lg:p-8">
       <div className="mx-auto max-w-4xl">
@@ -55,13 +59,19 @@ export function CoursesList({ courses }: Props) {
           Manage and view your assigned courses
         </p>
 
+        <p>First tiem? Try the tour</p>
+        <Button onClick={() => setIsOpen(true)}>Start Tour</Button>
+
         {/* Course Grid */}
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6 lg:grid-cols-3">
-          {courses.map(course => (
+          {courses.map((course, index) => (
             <Card
               key={course.code + course.id}
               onClick={() => handleCourseSelection(course)}
-              className="flex cursor-pointer flex-col transition-shadow duration-200 hover:brightness-90 dark:hover:brightness-125"
+              className={cn(
+                "flex cursor-pointer flex-col transition-shadow duration-200 hover:brightness-90 dark:hover:brightness-125",
+                index === 0 ? "first-step" : ""
+              )}
             >
               <CardHeader className="flex-grow pb-3">
                 <CardTitle className="mb-2 text-lg leading-tight">
