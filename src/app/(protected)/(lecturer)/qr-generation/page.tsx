@@ -195,14 +195,22 @@ export default function Page() {
   return (
     <QrGenProvider initialContext={initialContext}>
       <TourProvider
+        padding={{ mask: [9, 0, 9, 22] }}
         styles={{
           popover: base => ({
             ...base,
-            padding: 0, // Card handles its own padding
+            padding: 0,
             borderRadius: "16px",
-            background: "transparent", // Let Card supply surface
+            background: "transparent",
             boxShadow: "none",
           }),
+          maskArea: base => {
+            return {
+              ...base,
+              rx: 16,
+              ry: 16,
+            };
+          },
         }}
         showPrevNextButtons={false}
         showNavigation={false}
