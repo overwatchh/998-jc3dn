@@ -15,8 +15,8 @@ import apiClient from "@/lib/api/apiClient";
 import { DayOfWeek, formatHHMM, getQrDateForWeek } from "@/lib/utils";
 import { AxiosError } from "axios";
 import {
-  CheckSquare,
   Calendar,
+  CheckSquare,
   Clock,
   Download,
   Loader2,
@@ -84,8 +84,13 @@ export const QRGenerator = () => {
     const list = existingQrList?.data;
     if (!list || list.length === 0) return null;
     const earliest = [...list].sort((a, b) => a.week_number - b.week_number)[0];
-    const date = (earliest.validities?.[0]?.start_time as string | undefined) || (earliest.createdAt as string);
-    return { week_number: earliest.week_number, date } as { week_number: number; date: string };
+    const date =
+      (earliest.validities?.[0]?.start_time as string | undefined) ||
+      (earliest.createdAt as string);
+    return { week_number: earliest.week_number, date } as {
+      week_number: number;
+      date: string;
+    };
   }, [existingQrList?.data]);
 
   const dateLabel = useMemo(() => {
@@ -968,12 +973,12 @@ export const QRGenerator = () => {
                             <span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
                               Week {selectedCourse?.weekNumber}
                             </span>
-                          {dateLabel && (
-                            <span className="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
-                              <Calendar className="mr-1 h-3.5 w-3.5" />
-                              {dateLabel}
-                            </span>
-                          )}
+                            {dateLabel && (
+                              <span className="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
+                                <Calendar className="mr-1 h-3.5 w-3.5" />
+                                {dateLabel}
+                              </span>
+                            )}
                           </span>
                         </AlertDialogDescription>
                       </AlertDialogHeader>
@@ -1201,7 +1206,7 @@ export const QRGenerator = () => {
                   {/* Real-time Attendance Tracking Button */}
                   <Button
                     variant="default"
-                    className="bg-primary text-primary-foreground hover:bg-primary/90 mt-2 h-9 w-full"
+                    className="real-time-tracking-button-step bg-primary text-primary-foreground hover:bg-primary/90 mt-2 h-9 w-full"
                     onClick={handleNavigateToTracking}
                     disabled={!qrGenerated || !selectedCourse?.sessionId}
                   >
@@ -1253,12 +1258,12 @@ export const QRGenerator = () => {
                             <span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
                               Week {selectedCourse?.weekNumber}
                             </span>
-                          {dateLabel && (
-                            <span className="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
-                              <Calendar className="mr-1 h-3.5 w-3.5" />
-                              {dateLabel}
-                            </span>
-                          )}
+                            {dateLabel && (
+                              <span className="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
+                                <Calendar className="mr-1 h-3.5 w-3.5" />
+                                {dateLabel}
+                              </span>
+                            )}
                           </span>
                           <span className="text-muted-foreground mt-1 block">
                             Review configuration before generating
