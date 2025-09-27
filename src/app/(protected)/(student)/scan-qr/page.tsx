@@ -1,8 +1,6 @@
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { HelpCircle, Info, QrCode } from "lucide-react";
-import Link from "next/link";
+import { Info, QrCode } from "lucide-react";
 import { QRScanner } from "./_components/qr-scanner";
 
 const Page = () => {
@@ -17,12 +15,6 @@ const Page = () => {
         <p className="text-muted-foreground">
           Point your camera at a QR code to check in to your class
         </p>
-        <Button asChild>
-          <Link href="/tutorial">
-            <HelpCircle className="h-4 w-4" />
-            First time here? Go to tutorial
-          </Link>
-        </Button>
       </div>
 
       {/* QR Scanner Card */}

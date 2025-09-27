@@ -9,9 +9,11 @@ import {
   AlertTriangle,
   ChevronRight,
   Clock,
+  HelpCircle,
   MapPin,
   QrCode,
 } from "lucide-react";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 
 const mockData = {
@@ -103,8 +105,15 @@ export function StudentDashboard() {
         Scan QR Code
       </Button>
 
+      <Link href="/tutorial" passHref className="w-full">
+        <Button variant="outline" className="w-full">
+          <HelpCircle className="mr-2 h-4 w-4" />
+          How it works? View Tutorial
+        </Button>
+      </Link>
+
       {/* Today's Classes */}
-      <div>
+      <div className="mt-3">
         <h2 className="mb-3 text-lg font-semibold">{"Today's Classes"}</h2>
         <div className="space-y-3">
           {todaysClasses.map(course => (
