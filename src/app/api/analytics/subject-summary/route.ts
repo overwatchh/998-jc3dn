@@ -101,7 +101,10 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(data);
   } catch (error) {
-    console.error('Subject summary API error:', error);
-    return NextResponse.json({ error: 'Failed to fetch subject summary data' }, { status: 500 });
+    console.error("Subject summary API error:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch subject summary data" },
+      { status: 500 }
+    );
   }
 }

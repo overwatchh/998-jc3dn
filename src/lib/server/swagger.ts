@@ -82,7 +82,7 @@ export const getApiDocs = async () => {
           name: "System",
           description:
             "System administration endpoints including email reminders, automatic triggers, and system monitoring. These endpoints require system-level authentication.",
-        }
+        },
       ],
     },
   });

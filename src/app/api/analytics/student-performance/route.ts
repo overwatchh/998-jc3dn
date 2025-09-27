@@ -87,8 +87,8 @@ import { NextRequest, NextResponse } from "next/server";
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
-    const courseId = searchParams.get('subjectId'); // This is actually a study_session_id
-    const limit = searchParams.get('limit') || '50';
+    const courseId = searchParams.get("subjectId"); // This is actually a study_session_id
+    const limit = searchParams.get("limit") || "50";
 
     const query = `
       SELECT
@@ -119,18 +119,23 @@ export async function GET(request: NextRequest) {
       JOIN study_session ss ON ss.id = sss.study_session_id
       JOIN qr_code_study_session qrss ON qrss.study_session_id = ss.id
       LEFT JOIN checkin c ON c.qr_code_study_session_id = qrss.id AND c.student_id = u.id
-      WHERE u.role = 'student' AND ss.type = 'lecture' ${courseId ? 'AND ss.id = ?' : ''}
+      WHERE u.role = 'student' AND ss.type = 'lecture' ${courseId ? "AND ss.id = ?" : ""}
       GROUP BY u.id, u.name, u.email, s.code, s.name
-      ORDER BY ${courseId ? 'attendance_percentage DESC' : 's.code, attendance_percentage DESC'}
+      ORDER BY ${courseId ? "attendance_percentage DESC" : "s.code, attendance_percentage DESC"}
       LIMIT ?
     `;
 
-    const params = courseId ? [parseInt(courseId), parseInt(limit)] : [parseInt(limit)];
+    const params = courseId
+      ? [parseInt(courseId), parseInt(limit)]
+      : [parseInt(limit)];
     const data = await rawQuery(query, params);
 
     return NextResponse.json(data);
   } catch (error) {
-    console.error('Student performance API error:', error);
-    return NextResponse.json({ error: 'Failed to fetch student performance data' }, { status: 500 });
+    console.error("Student performance API error:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch student performance data" },
+      { status: 500 }
+    );
   }
 }

@@ -20,7 +20,6 @@ export function haversineDistance(
   latitudeB: number,
   longitudeB: number
 ): number {
-
   const toRadians = (degrees: number) => (degrees * Math.PI) / 180;
   const earthRadius = 6371e3; // Radius of the Earth in meters
 
@@ -38,7 +37,6 @@ export function haversineDistance(
 
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   const distance = earthRadius * c;
-
 
   return distance;
 }

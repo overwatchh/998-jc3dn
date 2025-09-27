@@ -289,9 +289,9 @@ const CheckinPage = () => {
     // Use the actual radius if set, otherwise use default 1m when geo validation is optional
     const effectiveRadius =
       checkinStatus.radius ?? (checkinStatus.validate_geo ? 0 : 50);
-    
+
     const isNearby = distance <= effectiveRadius;
-    
+
     return isNearby;
   };
 

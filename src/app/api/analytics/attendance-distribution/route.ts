@@ -53,7 +53,7 @@ import { NextRequest, NextResponse } from "next/server";
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
-    const courseId = searchParams.get('subjectId'); // This is actually a study_session_id
+    const courseId = searchParams.get("subjectId"); // This is actually a study_session_id
 
     const query = `
       SELECT
@@ -80,7 +80,7 @@ export async function GET(request: NextRequest) {
           JOIN study_session ss ON ss.id = sss.study_session_id
           JOIN qr_code_study_session qrss ON qrss.study_session_id = ss.id
           LEFT JOIN checkin c ON c.qr_code_study_session_id = qrss.id AND c.student_id = u.id
-          WHERE u.role = 'student' AND ss.type = 'lecture' ${courseId ? 'AND ss.id = ?' : ''}
+          WHERE u.role = 'student' AND ss.type = 'lecture' ${courseId ? "AND ss.id = ?" : ""}
           GROUP BY u.id, s.id
       ) student_performance
       GROUP BY performance_category
@@ -98,7 +98,10 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(data);
   } catch (error) {
-    console.error('Attendance distribution API error:', error);
-    return NextResponse.json({ error: 'Failed to fetch attendance distribution data' }, { status: 500 });
+    console.error("Attendance distribution API error:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch attendance distribution data" },
+      { status: 500 }
+    );
   }
 }
