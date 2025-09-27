@@ -64,10 +64,10 @@ const TourPopover = (props: PopoverContentProps) => {
   const isRenderableFn = typeof possibleContent === "function";
   const rawContent = isRenderableFn ? null : (possibleContent as ReactNode);
 
-  function handlePrev() {
+  function handlePrev(): void {
     if (currentStep > 0) setCurrentStep(currentStep - 1);
   }
-  function handleNext() {
+  function handleNext(): void {
     // Block manual next on some steps that require user action
     if (currentStep === 0 || currentStep === 4) return;
     if (currentStep < total - 1) {
@@ -77,7 +77,7 @@ const TourPopover = (props: PopoverContentProps) => {
     }
   }
 
-  function finishTour() {
+  function finishTour(): void {
     setIsOpen(false);
     setCurrentStep(0);
   }
