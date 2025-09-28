@@ -116,33 +116,37 @@ export default function TutorialPage() {
                   </div>
                 </CardHeader>
                 <CardContent className="flex flex-col gap-8 pt-6">
-                  <div className="bg-muted/30 ring-border/40 relative flex justify-center rounded-xl border p-2 shadow-inner ring-1 ring-inset">
-                    {(() => {
-                      // Dimension map to derive aspect ratio for wrapper (needed when using fill)
-                      const dim: Record<string, { w: number; h: number }> = {
-                        "/camera-permission.jpg": { w: 1079, h: 1965 },
-                        "/qr-first-checkin.png": { w: 485, h: 796 },
-                        "/attend-lecture.png": { w: 1024, h: 1024 },
-                        "/qr-second-checkin.png": { w: 487, h: 788 },
-                      };
-                      const { w, h } = dim[step.imgSrc] ?? { w: 800, h: 800 };
-                      return (
-                        <div
-                          className="relative mx-auto max-h-[520px] w-full max-w-md overflow-hidden rounded-xl"
-                          style={{ aspectRatio: `${w} / ${h}` }}
-                        >
-                          <Image
-                            src={step.imgSrc}
-                            alt={step.imgAlt}
-                            fill
-                            priority={idx === 0}
-                            sizes="(max-width: 768px) 100vw, 640px"
-                            className="border-border/40 rounded-xl border object-contain shadow-sm select-none"
-                          />
-                        </div>
-                      );
-                    })()}
-                  </div>
+                  {(() => {
+                    // Image intrinsic dimensions so we can keep correct aspect ratio without extra wrapper.
+                    const dim: Record<string, { w: number; h: number }> = {
+                      "/camera-permission.jpg": { w: 1079, h: 1965 }, // portrait
+                      "/qr-first-checkin.png": { w: 485, h: 796 },
+                      "/attend-lecture.png": { w: 1024, h: 1024 },
+                      "/qr-second-checkin.png": { w: 487, h: 788 },
+                    };
+                    const { w, h } = dim[step.imgSrc] ?? { w: 800, h: 800 };
+                    const portrait = h > w;
+                    // Width handling: keep narrower width for portrait images, full width (capped) for landscape/square.
+                    const sizeClasses = portrait
+                      ? "w-[240px] md:w-[300px]"
+                      : "w-full max-w-md";
+                    return (
+                      <div
+                        className={`bg-muted/30 ring-border/40 relative mx-auto overflow-hidden rounded-xl border shadow-inner ring-1 ring-inset ${sizeClasses}`}
+                        style={{ aspectRatio: `${w} / ${h}` }}
+                      >
+                        <Image
+                          src={step.imgSrc}
+                          alt={step.imgAlt}
+                          fill
+                          priority={idx === 0}
+                          sizes="(max-width: 768px) 100vw, 640px"
+                          // Fill container entirely while preserving aspect ratio.
+                          className="object-cover select-none"
+                        />
+                      </div>
+                    );
+                  })()}
                   <ul className="flex flex-col gap-3 text-sm md:gap-4 md:text-base">
                     {step.details.map((d, i) => (
                       <li
