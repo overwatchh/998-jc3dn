@@ -5,7 +5,7 @@ export default function Page() {
       <p className="italic mb-6"><em>Effective 17th September 2025</em></p>
 
       <p>
-        AttendEase ("we") remains committed to protecting user privacy.
+        AttendEase (&quot;we&quot;) remains committed to protecting user privacy.
         This document explains how information is collected, stored, and transmitted,
         and how it is safeguarded.
       </p>
@@ -55,7 +55,7 @@ export default function Page() {
         to deliver the relevant service.
       </p>
 
-      <h2 className="text-2xl font-semibold mt-8 mb-3">Children's Privacy</h2>
+      <h2 className="text-2xl font-semibold mt-8 mb-3">Children&apos;s Privacy</h2>
       <p>
         Children under the age of 13 are prohibited from using this platform.
         Any accounts or information found to belong to a child under the age of 13
