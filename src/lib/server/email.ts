@@ -1,4 +1,4 @@
-import nodemailer from 'nodemailer';
+// nodemailer will be imported dynamically to avoid webpack bundling issues
 
 export interface EmailConfig {
   smtpHost: string;
@@ -23,12 +23,13 @@ export interface AttendanceEmailData {
 }
 
 class EmailService {
-  private transporter: nodemailer.Transporter | null = null;
+  private transporter: any | null = null; // Using any to avoid nodemailer import
   private config: EmailConfig | null = null;
 
-  initialize(config: EmailConfig) {
+  async initialize(config: EmailConfig) {
     this.config = config;
-    this.transporter = nodemailer.createTransport({
+    const nodemailer = await import('nodemailer');
+    this.transporter = nodemailer.default.createTransport({
       host: config.smtpHost,
       port: config.smtpPort,
       secure: config.smtpPort === 465,

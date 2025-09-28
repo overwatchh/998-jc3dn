@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
     const conditions = [];
     const params: (string | number)[] = [];
 
-    if (subjectId) {
+    if (subjectId && subjectId !== 'all') {
       conditions.push('sss.subject_id = ?');
       params.push(parseInt(subjectId));
     }

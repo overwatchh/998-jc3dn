@@ -81,6 +81,7 @@ interface AttendanceRow {
   required_attendance_thresh: number;
   total_sessions: number;
   attended_sessions: number;
+  attendance_percentage: number;
 }
 
 export async function GET() {
@@ -100,6 +101,7 @@ export async function GET() {
   try {
     const studentId = session.user.id;
 
+    // Using EMAIL CALCULATOR METHOD: 2+ checkins = 100 points, 1 checkin = 50 points, 0 checkins = 0 points
     const sql = `
       SELECT
         s.id as subject_id,
@@ -107,12 +109,30 @@ export async function GET() {
         s.code as subject_code,
         s.required_attendance_thresh,
         COUNT(DISTINCT qcss.id) as total_sessions,
-        COUNT(DISTINCT c.qr_code_study_session_id) as attended_sessions
+        ROUND(
+          (SUM(
+            CASE
+              WHEN checkin_counts.checkin_count >= 2 THEN 100
+              WHEN checkin_counts.checkin_count = 1 THEN 50
+              ELSE 0
+            END
+          ) / (COUNT(DISTINCT qcss.id) * 100)) * 100,
+          1
+        ) as attendance_percentage,
+        COUNT(DISTINCT CASE WHEN checkin_counts.checkin_count > 0 THEN qcss.id END) as attended_sessions
       FROM enrolment e
       JOIN subject s ON e.subject_id = s.id
       JOIN subject_study_session sss ON sss.subject_id = s.id
       JOIN qr_code_study_session qcss ON qcss.study_session_id = sss.study_session_id
-      LEFT JOIN checkin c ON c.qr_code_study_session_id = qcss.id AND c.student_id = e.student_id
+      LEFT JOIN (
+        SELECT
+          qr_code_study_session_id,
+          student_id,
+          COUNT(*) as checkin_count
+        FROM checkin
+        GROUP BY qr_code_study_session_id, student_id
+      ) checkin_counts ON checkin_counts.qr_code_study_session_id = qcss.id
+                       AND checkin_counts.student_id = e.student_id
       WHERE e.student_id = ?
         AND s.status = 'active'
       GROUP BY s.id, s.name, s.code, s.required_attendance_thresh
@@ -121,16 +141,16 @@ export async function GET() {
 
     const attendanceData = await rawQuery<AttendanceRow>(sql, [studentId]);
 
-    // Calculate overall statistics
+    // Calculate overall statistics using the email calculator percentages
     const totalSessions = attendanceData.reduce((sum, row) => sum + row.total_sessions, 0);
     const totalAttended = attendanceData.reduce((sum, row) => sum + row.attended_sessions, 0);
-    const overallPercentage = totalSessions > 0 ? (totalAttended / totalSessions) * 100 : 0;
+    const overallPercentage = attendanceData.length > 0
+      ? attendanceData.reduce((sum, row) => sum + parseFloat(String(row.attendance_percentage)), 0) / attendanceData.length
+      : 0;
 
     // Process subject breakdown
     const subjectBreakdown = attendanceData.map(row => {
-      const attendancePercentage = row.total_sessions > 0
-        ? (row.attended_sessions / row.total_sessions) * 100
-        : 0;
+      const attendancePercentage = parseFloat(String(row.attendance_percentage)) || 0;
 
       let status = 'good';
       if (attendancePercentage < row.required_attendance_thresh) {

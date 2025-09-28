@@ -80,93 +80,155 @@ export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const subjectId = searchParams.get('subjectId'); // Now correctly using subject ID
+    const subjectIdNum = subjectId ? parseInt(subjectId) : null;
 
-    // Get overall metrics
-    const metricsQuery = `
+    // Use single query approach to avoid connection issues
+    let averageAttendance = 0;
+    let atRiskStudents = 0;
+
+    // Single optimized query for both specific subject and all subjects
+    const [metricsData] = await rawQuery<{
+      average_attendance: number;
+      at_risk_count: number;
+    }>(
+      `
       SELECT
-          ROUND(AVG(weekly_attendance.attendance_rate), 1) as average_attendance,
-          COUNT(DISTINCT CASE WHEN student_avg.avg_attendance < 80 THEN student_avg.student_id END) as at_risk_students,
+        AVG(session_stats.attendance_rate) as average_attendance,
+        SUM(session_stats.at_risk_count) as at_risk_count
+      FROM (
+        SELECT
+          qrss.id as qr_session_id,
+          ROUND(
+            (SUM(
+              CASE
+                WHEN checkin_counts.checkin_count >= 2 THEN 100
+                WHEN checkin_counts.checkin_count = 1 THEN 50
+                ELSE 0
+              END
+            ) / (COUNT(e.student_id) * 100)) * 100,
+            1
+          ) as attendance_rate,
+          SUM(
+            CASE WHEN (
+              CASE
+                WHEN checkin_counts.checkin_count >= 2 THEN 100
+                WHEN checkin_counts.checkin_count = 1 THEN 50
+                ELSE 0
+              END
+            ) < 80 THEN 1 ELSE 0 END
+          ) as at_risk_count
+        FROM qr_code_study_session qrss
+        JOIN study_session ss ON ss.id = qrss.study_session_id
+        JOIN subject_study_session sss ON sss.study_session_id = ss.id
+        JOIN enrolment e ON e.subject_id = sss.subject_id
+        LEFT JOIN (
+          SELECT
+            qr_code_study_session_id,
+            student_id,
+            COUNT(*) as checkin_count
+          FROM checkin
+          GROUP BY qr_code_study_session_id, student_id
+        ) checkin_counts ON checkin_counts.qr_code_study_session_id = qrss.id
+                         AND checkin_counts.student_id = e.student_id
+        WHERE ss.type = 'lecture' ${subjectIdNum ? 'AND sss.subject_id = ?' : ''}
+        GROUP BY qrss.id
+      ) session_stats
+      `,
+      subjectIdNum ? [subjectIdNum] : []
+    );
+
+    averageAttendance = metricsData?.average_attendance || 0;
+    atRiskStudents = metricsData?.at_risk_count || 0;
+
+    // Get basic counts
+    const countsQuery = `
+      SELECT
           COUNT(DISTINCT e.student_id) as total_students,
-          COUNT(DISTINCT qrss.week_number) as total_weeks
+          COUNT(DISTINCT qrss.id) as total_sessions
       FROM subject s
       JOIN enrolment e ON e.subject_id = s.id
       JOIN subject_study_session sss ON sss.subject_id = s.id
       JOIN study_session ss ON ss.id = sss.study_session_id
       JOIN qr_code_study_session qrss ON qrss.study_session_id = ss.id
-      LEFT JOIN (
-          SELECT
-              sss.subject_id,
-              qrss.week_number,
-              (COUNT(DISTINCT c.student_id) / COUNT(DISTINCT e.student_id)) * 100 as attendance_rate
-          FROM qr_code_study_session qrss
-          JOIN study_session ss ON ss.id = qrss.study_session_id
-          JOIN subject_study_session sss ON sss.study_session_id = ss.id
-          JOIN subject s ON s.id = sss.subject_id
-          JOIN enrolment e ON e.subject_id = sss.subject_id
-          LEFT JOIN checkin c ON c.qr_code_study_session_id = qrss.id AND c.student_id = e.student_id
-          ${subjectId ? 'WHERE s.id = ?' : ''}
-          GROUP BY sss.subject_id, qrss.week_number
-      ) weekly_attendance ON weekly_attendance.subject_id = s.id
-      LEFT JOIN (
-          SELECT
-              e.student_id,
-              sss.subject_id,
-              (COUNT(DISTINCT CASE WHEN c.student_id IS NOT NULL THEN qrss.week_number END) / COUNT(DISTINCT qrss.week_number)) * 100 as avg_attendance
-          FROM enrolment e
-          JOIN subject_study_session sss ON sss.subject_id = e.subject_id
-          JOIN study_session ss ON ss.id = sss.study_session_id
-          JOIN qr_code_study_session qrss ON qrss.study_session_id = ss.id
-          LEFT JOIN checkin c ON c.qr_code_study_session_id = qrss.id AND c.student_id = e.student_id
-          GROUP BY e.student_id, sss.subject_id
-      ) student_avg ON student_avg.subject_id = s.id
-      WHERE ss.type = 'lecture' ${subjectId ? 'AND s.id = ?' : ''}
+      WHERE ss.type = 'lecture' ${subjectIdNum ? 'AND s.id = ?' : ''}
     `;
 
-    // Get best attended session
+    const queryParams = subjectIdNum ? [subjectIdNum] : [];
+
+    const [countsData] = await rawQuery(countsQuery, queryParams) as {
+      total_students: number;
+      total_sessions: number;
+    }[];
+
+    // Best/worst sessions using EMAIL CALCULATOR METHOD
     const bestQuery = `
       SELECT
           CONCAT('Week ', qrss.week_number) as week_label,
           s.code as subject_code,
-          ROUND((COUNT(DISTINCT c.student_id) / COUNT(DISTINCT e.student_id)) * 100, 1) as attendance_rate
+          ROUND(
+            (SUM(
+              CASE
+                WHEN checkin_counts.checkin_count >= 2 THEN 100
+                WHEN checkin_counts.checkin_count = 1 THEN 50
+                ELSE 0
+              END
+            ) / (COUNT(e.student_id) * 100)) * 100,
+            1
+          ) as attendance_rate
       FROM qr_code_study_session qrss
       JOIN study_session ss ON ss.id = qrss.study_session_id
       JOIN subject_study_session sss ON sss.study_session_id = ss.id
       JOIN subject s ON s.id = sss.subject_id
       JOIN enrolment e ON e.subject_id = s.id
-      LEFT JOIN checkin c ON c.qr_code_study_session_id = qrss.id AND c.student_id = e.student_id
-      WHERE ss.type = 'lecture' ${subjectId ? 'AND s.id = ?' : ''}
+      LEFT JOIN (
+        SELECT
+          qr_code_study_session_id,
+          student_id,
+          COUNT(*) as checkin_count
+        FROM checkin
+        GROUP BY qr_code_study_session_id, student_id
+      ) checkin_counts ON checkin_counts.qr_code_study_session_id = qrss.id
+                       AND checkin_counts.student_id = e.student_id
+      WHERE ss.type = 'lecture' ${subjectIdNum ? 'AND s.id = ?' : ''}
       GROUP BY s.code, qrss.week_number, qrss.id
       ORDER BY attendance_rate DESC
       LIMIT 1
     `;
 
-    // Get worst attended session
     const worstQuery = `
       SELECT
           CONCAT('Week ', qrss.week_number) as week_label,
           s.code as subject_code,
-          ROUND((COUNT(DISTINCT c.student_id) / COUNT(DISTINCT e.student_id)) * 100, 1) as attendance_rate
+          ROUND(
+            (SUM(
+              CASE
+                WHEN checkin_counts.checkin_count >= 2 THEN 100
+                WHEN checkin_counts.checkin_count = 1 THEN 50
+                ELSE 0
+              END
+            ) / (COUNT(e.student_id) * 100)) * 100,
+            1
+          ) as attendance_rate
       FROM qr_code_study_session qrss
       JOIN study_session ss ON ss.id = qrss.study_session_id
       JOIN subject_study_session sss ON sss.study_session_id = ss.id
       JOIN subject s ON s.id = sss.subject_id
       JOIN enrolment e ON e.subject_id = s.id
-      LEFT JOIN checkin c ON c.qr_code_study_session_id = qrss.id AND c.student_id = e.student_id
-      WHERE ss.type = 'lecture' ${subjectId ? 'AND s.id = ?' : ''}
+      LEFT JOIN (
+        SELECT
+          qr_code_study_session_id,
+          student_id,
+          COUNT(*) as checkin_count
+        FROM checkin
+        GROUP BY qr_code_study_session_id, student_id
+      ) checkin_counts ON checkin_counts.qr_code_study_session_id = qrss.id
+                       AND checkin_counts.student_id = e.student_id
+      WHERE ss.type = 'lecture' ${subjectIdNum ? 'AND s.id = ?' : ''}
       GROUP BY s.code, qrss.week_number, qrss.id
       ORDER BY attendance_rate ASC
       LIMIT 1
     `;
 
-    const metricsParams = subjectId ? [parseInt(subjectId), parseInt(subjectId)] : [];
-    const queryParams = subjectId ? [parseInt(subjectId)] : [];
-
-    const [metricsData] = await rawQuery(metricsQuery, metricsParams) as {
-      average_attendance: number;
-      at_risk_students: number;
-      total_students: number;
-      total_weeks: number;
-    }[];
     const [bestSession] = await rawQuery(bestQuery, queryParams) as {
       week_label: string;
       subject_code: string;
@@ -179,10 +241,10 @@ export async function GET(request: NextRequest) {
     }[];
 
     return NextResponse.json({
-      averageAttendance: metricsData?.average_attendance || 0,
-      atRiskStudents: metricsData?.at_risk_students || 0,
-      totalStudents: metricsData?.total_students || 0,
-      totalWeeks: metricsData?.total_weeks || 0,
+      averageAttendance: Math.round(averageAttendance * 10) / 10,
+      atRiskStudents: atRiskStudents,
+      totalStudents: countsData?.total_students || 0,
+      totalWeeks: countsData?.total_sessions || 0,
       mostAttended: {
         week: bestSession?.week_label || 'N/A',
         subject: bestSession?.subject_code || '',

@@ -1,6 +1,5 @@
 import { auth } from "@/lib/server/auth";
 import { rawQuery } from "@/lib/server/query";
-import { emailService } from "@/lib/server/email";
 import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -150,7 +149,7 @@ export async function POST(request: NextRequest) {
       subjectIds
     });
 
-    // Send email with report data
+    // Send email with report data using nodemailer
     await sendReportEmail({
       recipientEmail: email,
       lecturerName: session.user.name!,
@@ -192,9 +191,9 @@ async function generateReportData({
     : '';
 
   const params = [
-    lecturerId,
     startDate.toISOString().split('T')[0],
     endDate.toISOString().split('T')[0],
+    lecturerId,
     ...subjectIds
   ];
 
@@ -213,16 +212,26 @@ async function generateReportData({
 }
 
 async function generateOverviewReport(params: any[], subjectFilter: string) {
-  const [summaryData] = await rawQuery(`
+  console.log('📊 DEBUG: generateOverviewReport params:', params);
+  console.log('📊 DEBUG: subjectFilter:', subjectFilter);
+  // Using EMAIL CALCULATOR METHOD: 2+ checkins = 100 points, 1 checkin = 50 points, 0 checkins = 0 points
+  const summaryData = await rawQuery(`
     SELECT
       s.name as subject_name,
       s.code as subject_code,
       COUNT(DISTINCT e.student_id) as total_students,
-      COUNT(DISTINCT qrss.week_number) as total_weeks,
-      COUNT(DISTINCT c.student_id) as total_checkins,
+      COUNT(DISTINCT qrss.id) as total_weeks,
       ROUND(
-        (COUNT(DISTINCT c.student_id) /
-         (COUNT(DISTINCT e.student_id) * COUNT(DISTINCT qrss.week_number))) * 100,
+        COALESCE(
+          (SUM(
+            CASE
+              WHEN checkin_counts.checkin_count >= 2 THEN 100
+              WHEN checkin_counts.checkin_count = 1 THEN 50
+              ELSE 0
+            END
+          ) / (COUNT(DISTINCT qrss.id) * COUNT(DISTINCT e.student_id) * 100)) * 100,
+          0
+        ),
         1
       ) as average_attendance
     FROM subject s
@@ -232,33 +241,63 @@ async function generateOverviewReport(params: any[], subjectFilter: string) {
     JOIN qr_code_study_session qrss ON ss.id = qrss.study_session_id
     JOIN qr_code qr ON qrss.qr_code_id = qr.id
     JOIN enrolment e ON s.id = e.subject_id
-    LEFT JOIN checkin c ON qrss.id = c.qr_code_study_session_id
-                       AND c.student_id = e.student_id
-                       AND DATE(c.checkin_time) BETWEEN ? AND ?
+    LEFT JOIN (
+      SELECT
+        qr_code_study_session_id,
+        student_id,
+        COUNT(*) as checkin_count
+      FROM checkin
+      WHERE DATE(checkin_time) BETWEEN ? AND ?
+      GROUP BY qr_code_study_session_id, student_id
+    ) checkin_counts ON checkin_counts.qr_code_study_session_id = qrss.id
+                     AND checkin_counts.student_id = e.student_id
     WHERE lss.lecturer_id = ? ${subjectFilter}
     GROUP BY s.id, s.name, s.code
+    HAVING COUNT(DISTINCT qrss.id) > 0
     ORDER BY average_attendance DESC
   `, params);
 
+  console.log('📊 DEBUG: summaryData result:', summaryData);
+  console.log('📊 DEBUG: summaryData length:', Array.isArray(summaryData) ? summaryData.length : 'not array');
+
+  // Ensure summaryData is always an array
+  let summaryArray = [];
+  if (Array.isArray(summaryData)) {
+    summaryArray = summaryData;
+  } else if (summaryData && typeof summaryData === 'object') {
+    // Single result, wrap in array
+    summaryArray = [summaryData];
+  }
+
   return {
     type: 'overview',
-    summary: Array.isArray(summaryData) ? summaryData : [],
+    summary: summaryArray,
     generatedAt: new Date().toISOString(),
-    dateRange: `${params[1]} to ${params[2]}`
+    dateRange: `${params[0]} to ${params[1]}`
   };
 }
 
 async function generateStudentReport(params: any[], subjectFilter: string) {
-  const [studentData] = await rawQuery(`
+  // Using EMAIL CALCULATOR METHOD: 2+ checkins = 100 points, 1 checkin = 50 points, 0 checkins = 0 points
+  const studentData = await rawQuery(`
     SELECT
       u.name as student_name,
       u.email as student_email,
       s.name as subject_name,
       s.code as subject_code,
-      COUNT(DISTINCT qrss.week_number) as total_weeks,
-      COUNT(DISTINCT c.student_id) as attended_weeks,
+      COUNT(DISTINCT qrss.id) as total_weeks,
+      COUNT(DISTINCT CASE WHEN checkin_counts.checkin_count > 0 THEN qrss.id END) as attended_weeks,
       ROUND(
-        (COUNT(DISTINCT c.student_id) / COUNT(DISTINCT qrss.week_number)) * 100,
+        COALESCE(
+          (SUM(
+            CASE
+              WHEN checkin_counts.checkin_count >= 2 THEN 100
+              WHEN checkin_counts.checkin_count = 1 THEN 50
+              ELSE 0
+            END
+          ) / (COUNT(DISTINCT qrss.id) * 100)) * 100,
+          0
+        ),
         1
       ) as attendance_percentage
     FROM user u
@@ -268,26 +307,43 @@ async function generateStudentReport(params: any[], subjectFilter: string) {
     JOIN study_session ss ON sss.study_session_id = ss.id
     JOIN lecturer_study_session lss ON ss.id = lss.study_session_id
     JOIN qr_code_study_session qrss ON ss.id = qrss.study_session_id
-    LEFT JOIN checkin c ON qrss.id = c.qr_code_study_session_id
-                       AND c.student_id = u.id
-                       AND DATE(c.checkin_time) BETWEEN ? AND ?
+    LEFT JOIN (
+      SELECT
+        qr_code_study_session_id,
+        student_id,
+        COUNT(*) as checkin_count
+      FROM checkin
+      WHERE DATE(checkin_time) BETWEEN ? AND ?
+      GROUP BY qr_code_study_session_id, student_id
+    ) checkin_counts ON checkin_counts.qr_code_study_session_id = qrss.id
+                     AND checkin_counts.student_id = u.id
     WHERE lss.lecturer_id = ?
       AND u.role = 'student'
       ${subjectFilter}
     GROUP BY u.id, u.name, u.email, s.id, s.name, s.code
+    HAVING COUNT(DISTINCT qrss.id) > 0
     ORDER BY s.name, attendance_percentage DESC
   `, params);
 
+  // Ensure studentData is always an array
+  let studentsArray = [];
+  if (Array.isArray(studentData)) {
+    studentsArray = studentData;
+  } else if (studentData && typeof studentData === 'object') {
+    studentsArray = [studentData];
+  }
+
   return {
     type: 'student',
-    students: Array.isArray(studentData) ? studentData : [],
+    students: studentsArray,
     generatedAt: new Date().toISOString(),
-    dateRange: `${params[1]} to ${params[2]}`
+    dateRange: `${params[0]} to ${params[1]}`
   };
 }
 
 async function generateSessionReport(params: any[], subjectFilter: string) {
-  const [sessionData] = await rawQuery(`
+  // Using EMAIL CALCULATOR METHOD: 2+ checkins = 100 points, 1 checkin = 50 points, 0 checkins = 0 points
+  const sessionData = await rawQuery(`
     SELECT
       s.name as subject_name,
       s.code as subject_code,
@@ -297,9 +353,18 @@ async function generateSessionReport(params: any[], subjectFilter: string) {
       ss.type as session_type,
       qrss.week_number,
       COUNT(DISTINCT e.student_id) as enrolled_students,
-      COUNT(DISTINCT c.student_id) as present_students,
+      COUNT(DISTINCT CASE WHEN checkin_counts.checkin_count > 0 THEN e.student_id END) as present_students,
       ROUND(
-        (COUNT(DISTINCT c.student_id) / COUNT(DISTINCT e.student_id)) * 100,
+        COALESCE(
+          (SUM(
+            CASE
+              WHEN checkin_counts.checkin_count >= 2 THEN 100
+              WHEN checkin_counts.checkin_count = 1 THEN 50
+              ELSE 0
+            END
+          ) / (COUNT(DISTINCT e.student_id) * 100)) * 100,
+          0
+        ),
         1
       ) as attendance_rate
     FROM subject s
@@ -308,19 +373,35 @@ async function generateSessionReport(params: any[], subjectFilter: string) {
     JOIN lecturer_study_session lss ON ss.id = lss.study_session_id
     JOIN qr_code_study_session qrss ON ss.id = qrss.study_session_id
     JOIN enrolment e ON s.id = e.subject_id
-    LEFT JOIN checkin c ON qrss.id = c.qr_code_study_session_id
-                       AND c.student_id = e.student_id
-                       AND DATE(c.checkin_time) BETWEEN ? AND ?
+    LEFT JOIN (
+      SELECT
+        qr_code_study_session_id,
+        student_id,
+        COUNT(*) as checkin_count
+      FROM checkin
+      WHERE DATE(checkin_time) BETWEEN ? AND ?
+      GROUP BY qr_code_study_session_id, student_id
+    ) checkin_counts ON checkin_counts.qr_code_study_session_id = qrss.id
+                     AND checkin_counts.student_id = e.student_id
     WHERE lss.lecturer_id = ? ${subjectFilter}
-    GROUP BY s.id, ss.id, qrss.week_number
+    GROUP BY s.id, s.name, s.code, ss.id, ss.day_of_week, ss.start_time, ss.end_time, ss.type, qrss.week_number, qrss.id
+    HAVING COUNT(DISTINCT e.student_id) > 0
     ORDER BY s.name, qrss.week_number, ss.day_of_week
   `, params);
 
+  // Ensure sessionData is always an array
+  let sessionsArray = [];
+  if (Array.isArray(sessionData)) {
+    sessionsArray = sessionData;
+  } else if (sessionData && typeof sessionData === 'object') {
+    sessionsArray = [sessionData];
+  }
+
   return {
     type: 'session',
-    sessions: Array.isArray(sessionData) ? sessionData : [],
+    sessions: sessionsArray,
     generatedAt: new Date().toISOString(),
-    dateRange: `${params[1]} to ${params[2]}`
+    dateRange: `${params[0]} to ${params[1]}`
   };
 }
 
@@ -335,7 +416,7 @@ async function generateDetailedReport(params: any[], subjectFilter: string) {
     students: students.students,
     sessions: sessions.sessions,
     generatedAt: new Date().toISOString(),
-    dateRange: `${params[1]} to ${params[2]}`
+    dateRange: `${params[0]} to ${params[1]}`
   };
 }
 
@@ -356,16 +437,6 @@ async function sendReportEmail({
   dateRange,
   reportData
 }: ReportEmailData) {
-  // Initialize email service with environment variables
-  emailService.initialize({
-    smtpHost: process.env.SMTP_HOST || 'smtp.gmail.com',
-    smtpPort: parseInt(process.env.SMTP_PORT || '587'),
-    smtpUser: process.env.SMTP_USER || '',
-    smtpPass: process.env.SMTP_PASS || '',
-    fromEmail: process.env.FROM_EMAIL || process.env.SMTP_USER || '',
-    fromName: process.env.FROM_NAME || 'QR Attendance System'
-  });
-
   const reportTypeNames = {
     overview: 'Overview Report',
     student: 'Student Performance Report',
@@ -389,25 +460,48 @@ async function sendReportEmail({
     reportData
   });
 
-  // Use the existing email service's transporter directly
-  if (!emailService['transporter']) {
-    throw new Error('Email service not properly initialized');
-  }
-
-  const mailOptions = {
-    from: `"${process.env.FROM_NAME || 'QR Attendance System'}" <${process.env.FROM_EMAIL || process.env.SMTP_USER}>`,
-    to: recipientEmail,
-    subject: subject,
-    text: textContent,
-    html: htmlContent,
-  };
-
+  // Use nodemailer for sending emails
   try {
-    await emailService['transporter'].sendMail(mailOptions);
-    console.log(`Report email sent to ${recipientEmail} - ${reportTypeName}`);
+    // Import nodemailer dynamically to avoid potential client-side issues
+    const nodemailer = await import('nodemailer');
+
+    // Configure email transporter
+    const transporter = nodemailer.default.createTransport({
+      host: process.env.SMTP_HOST || 'smtp.gmail.com',
+      port: parseInt(process.env.SMTP_PORT || '587'),
+      secure: process.env.SMTP_PORT === '465',
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+      },
+    });
+
+    // Verify the connection
+    await transporter.verify();
+
+    const mailOptions = {
+      from: `"${process.env.FROM_NAME || 'QR Attendance System'}" <${process.env.FROM_EMAIL || process.env.SMTP_USER}>`,
+      to: recipientEmail,
+      subject: subject,
+      text: textContent,
+      html: htmlContent,
+    };
+
+    console.log('📧 Sending email report to:', recipientEmail);
+    console.log('📊 Subject:', subject);
+    console.log('📈 Data included:', {
+      summaryCount: reportData.summary?.length || 0,
+      studentsCount: reportData.students?.length || 0,
+      sessionsCount: reportData.sessions?.length || 0
+    });
+
+    const result = await transporter.sendMail(mailOptions);
+    console.log('✅ Email sent successfully:', result.messageId);
+
+    return result;
   } catch (error) {
-    console.error(`Failed to send report email to ${recipientEmail}:`, error);
-    throw error;
+    console.error('❌ Error sending email:', error);
+    throw new Error(`Failed to send email: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
 
@@ -491,7 +585,15 @@ function generateCompleteReportHtml(reportData: any, {
 
 function generateOverviewHtml(summary: any[]): string {
   if (!summary || summary.length === 0) {
-    return '<p>No data available for the selected period.</p>';
+    return `
+      <div style="padding: 20px; background: #f8fafc; border-radius: 8px; margin: 20px 0; text-align: center;">
+        <h3 style="color: #374151; margin: 0 0 10px 0;">📊 No Analytics Data</h3>
+        <p style="color: #6b7280; margin: 0;">
+          No attendance records found for the selected period. This could mean:<br>
+          • No sessions scheduled • Students haven't checked in • Different date range needed
+        </p>
+      </div>
+    `;
   }
 
   // Calculate overall statistics
@@ -502,87 +604,78 @@ function generateOverviewHtml(summary: any[]): string {
   const subjectsAbove80 = summary.filter(s => (parseFloat(s.average_attendance) || 0) >= 80).length;
   const subjectsBelow70 = summary.filter(s => (parseFloat(s.average_attendance) || 0) < 70).length;
 
-  const statsCards = `
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin: 20px 0;">
-      <div style="background: #f0f9ff; border: 1px solid #0ea5e9; border-radius: 8px; padding: 15px; text-align: center;">
-        <div style="font-size: 24px; font-weight: bold; color: #0369a1;">${summary.length}</div>
-        <div style="font-size: 12px; color: #0369a1; text-transform: uppercase;">Total Subjects</div>
-      </div>
-      <div style="background: #f0fdf4; border: 1px solid #22c55e; border-radius: 8px; padding: 15px; text-align: center;">
-        <div style="font-size: 24px; font-weight: bold; color: #16a34a;">${totalStudents}</div>
-        <div style="font-size: 12px; color: #16a34a; text-transform: uppercase;">Total Students</div>
-      </div>
-      <div style="background: ${avgAttendanceOverall >= 80 ? '#f0fdf4' : avgAttendanceOverall >= 70 ? '#fffbeb' : '#fef2f2'}; border: 1px solid ${avgAttendanceOverall >= 80 ? '#22c55e' : avgAttendanceOverall >= 70 ? '#f59e0b' : '#ef4444'}; border-radius: 8px; padding: 15px; text-align: center;">
-        <div style="font-size: 24px; font-weight: bold; color: ${avgAttendanceOverall >= 80 ? '#16a34a' : avgAttendanceOverall >= 70 ? '#d97706' : '#dc2626'};">${avgAttendanceOverall.toFixed(1)}%</div>
-        <div style="font-size: 12px; color: ${avgAttendanceOverall >= 80 ? '#16a34a' : avgAttendanceOverall >= 70 ? '#d97706' : '#dc2626'}; text-transform: uppercase;">Overall Average</div>
-      </div>
-      <div style="background: #f0f9ff; border: 1px solid #0ea5e9; border-radius: 8px; padding: 15px; text-align: center;">
-        <div style="font-size: 24px; font-weight: bold; color: #0369a1;">${subjectsAbove80}/${summary.length}</div>
-        <div style="font-size: 12px; color: #0369a1; text-transform: uppercase;">Above 80%</div>
+  // Brief Analytics Summary - More concise format
+  const briefSummary = `
+    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 12px; margin: 20px 0;">
+      <h3 style="margin: 0 0 15px 0; color: white;">📈 Quick Analytics Overview</h3>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 15px;">
+        <div style="text-align: center;">
+          <div style="font-size: 28px; font-weight: bold;">${summary.length}</div>
+          <div style="font-size: 13px; opacity: 0.9;">Subjects</div>
+        </div>
+        <div style="text-align: center;">
+          <div style="font-size: 28px; font-weight: bold;">${totalStudents}</div>
+          <div style="font-size: 13px; opacity: 0.9;">Students</div>
+        </div>
+        <div style="text-align: center;">
+          <div style="font-size: 28px; font-weight: bold;">${avgAttendanceOverall.toFixed(1)}%</div>
+          <div style="font-size: 13px; opacity: 0.9;">Avg Attendance</div>
+        </div>
+        <div style="text-align: center;">
+          <div style="font-size: 28px; font-weight: bold;">${subjectsAbove80}</div>
+          <div style="font-size: 13px; opacity: 0.9;">Above 80%</div>
+        </div>
       </div>
     </div>
   `;
 
-  const tableRows = summary.map(subject => {
+  // Compact subject performance list
+  const subjectsList = summary.map(subject => {
     const attendance = parseFloat(subject.average_attendance || '0');
-    const attendanceClass = attendance >= 80 ? 'attendance-good' :
-                           attendance >= 70 ? 'attendance-warning' :
-                           'attendance-danger';
     const attendanceColor = attendance >= 80 ? '#22c55e' : attendance >= 70 ? '#f59e0b' : '#ef4444';
+    const status = attendance >= 80 ? '✅' : attendance >= 70 ? '⚠️' : '❌';
 
     return `
-      <tr>
-        <td><strong>${subject.subject_code}</strong></td>
-        <td>${subject.subject_name}</td>
-        <td style="text-align: center;">${subject.total_students}</td>
-        <td style="text-align: center;">${subject.total_weeks}</td>
-        <td style="text-align: center; color: ${attendanceColor}; font-weight: bold;">${attendance.toFixed(1)}%</td>
-        <td style="text-align: center;">
-          <div style="width: 100%; background: #e5e7eb; border-radius: 4px; height: 8px;">
-            <div style="width: ${Math.min(attendance, 100)}%; background: ${attendanceColor}; border-radius: 4px; height: 8px;"></div>
-          </div>
-        </td>
-      </tr>
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; margin: 8px 0; background: #f8fafc; border-radius: 8px; border-left: 4px solid ${attendanceColor};">
+        <div>
+          <strong style="color: #374151;">${subject.subject_code}</strong>
+          <div style="font-size: 13px; color: #6b7280;">${subject.total_students} students • ${subject.total_weeks} weeks</div>
+        </div>
+        <div style="text-align: right;">
+          <div style="font-size: 18px; font-weight: bold; color: ${attendanceColor};">${attendance.toFixed(1)}% ${status}</div>
+        </div>
+      </div>
     `;
   }).join('');
 
   return `
-    <div class="section-title">📊 Key Performance Metrics</div>
-    ${statsCards}
+    ${briefSummary}
 
     ${subjectsBelow70 > 0 ? `
-    <div style="background: #fef2f2; border: 1px solid #ef4444; border-radius: 8px; padding: 15px; margin: 20px 0;">
-      <h4 style="color: #dc2626; margin: 0 0 10px 0;">⚠️ Attention Required</h4>
-      <p style="margin: 0; color: #dc2626;">${subjectsBelow70} subject(s) have attendance below 70%. Consider implementing attendance improvement strategies.</p>
+    <div style="background: #fef2f2; border: 1px solid #ef4444; border-radius: 8px; padding: 15px; margin: 20px 0; text-align: center;">
+      <h4 style="color: #dc2626; margin: 0 0 8px 0;">⚠️ ${subjectsBelow70} Subject${subjectsBelow70 > 1 ? 's' : ''} Need Attention</h4>
+      <p style="margin: 0; color: #dc2626; font-size: 14px;">Attendance below 70% - consider improvement strategies</p>
     </div>
     ` : ''}
 
-    <div class="section-title">📋 Subject Performance Details</div>
-    <table class="table">
-      <thead>
-        <tr>
-          <th>Subject Code</th>
-          <th>Subject Name</th>
-          <th style="text-align: center;">Students</th>
-          <th style="text-align: center;">Weeks</th>
-          <th style="text-align: center;">Attendance</th>
-          <th style="text-align: center;">Progress</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${tableRows}
-      </tbody>
-    </table>
-
-    <div style="margin: 20px 0; padding: 15px; background: #f8fafc; border-radius: 8px; border-left: 4px solid #667eea;">
-      <h4 style="margin: 0 0 10px 0; color: #374151;">📈 Performance Insights</h4>
-      <ul style="margin: 0; padding-left: 20px; color: #6b7280;">
-        <li><strong>${subjectsAbove80}</strong> out of <strong>${summary.length}</strong> subjects maintain excellent attendance (≥80%)</li>
-        <li>Total student enrollment across all subjects: <strong>${totalStudents}</strong></li>
-        <li>Overall attendance average: <strong>${avgAttendanceOverall.toFixed(1)}%</strong></li>
-        ${avgAttendanceOverall < 75 ? '<li style="color: #dc2626;"><strong>Recommendation:</strong> Consider implementing attendance improvement initiatives</li>' : ''}
-      </ul>
+    <div style="margin: 20px 0;">
+      <h3 style="color: #374151; margin: 0 0 15px 0; font-size: 18px;">📋 Subject Performance</h3>
+      ${subjectsList}
     </div>
+
+    ${avgAttendanceOverall >= 80 ? `
+    <div style="background: #f0fdf4; border: 1px solid #22c55e; border-radius: 8px; padding: 15px; margin: 20px 0; text-align: center;">
+      <p style="margin: 0; color: #16a34a; font-weight: 500;">🎉 Excellent overall performance! Keep up the great work.</p>
+    </div>
+    ` : avgAttendanceOverall < 70 ? `
+    <div style="background: #fef2f2; border: 1px solid #ef4444; border-radius: 8px; padding: 15px; margin: 20px 0; text-align: center;">
+      <p style="margin: 0; color: #dc2626; font-weight: 500;">📈 Focus on boosting attendance with engagement strategies.</p>
+    </div>
+    ` : `
+    <div style="background: #fffbeb; border: 1px solid #f59e0b; border-radius: 8px; padding: 15px; margin: 20px 0; text-align: center;">
+      <p style="margin: 0; color: #d97706; font-weight: 500;">👍 Good progress! A few improvements could reach excellence.</p>
+    </div>
+    `}
   `;
 }
 
@@ -707,25 +800,21 @@ function generateReportEmailText({
     const subjectsBelow70 = reportData.summary.filter((s: any) => (parseFloat(s.average_attendance) || 0) < 70).length;
 
     detailedContent = `
-KEY METRICS:
-- Total Subjects: ${totalSubjects}
-- Total Students: ${totalStudents}
-- Overall Average Attendance: ${avgAttendance.toFixed(1)}%
-- Subjects with ≥80% attendance: ${subjectsAbove80}/${totalSubjects}
-- Subjects needing attention (<70%): ${subjectsBelow70}
+📊 ANALYTICS SUMMARY:
+• ${totalSubjects} Subjects | ${totalStudents} Students | ${avgAttendance.toFixed(1)}% Overall
+• ${subjectsAbove80}/${totalSubjects} subjects performing excellently (≥80%)
+${subjectsBelow70 > 0 ? `• ⚠️  ${subjectsBelow70} subjects need attention (<70%)` : ''}
 
-SUBJECT BREAKDOWN:
+📋 SUBJECT PERFORMANCE:
 ${reportData.summary.map((subject: any) => {
   const attendance = parseFloat(subject.average_attendance || '0');
-  const status = attendance >= 80 ? '✅ Excellent' : attendance >= 70 ? '⚠️  Moderate' : '❌ Needs Attention';
-  return `- ${subject.subject_code}: ${subject.subject_name}
-  Students: ${subject.total_students} | Attendance: ${attendance.toFixed(1)}% ${status}`;
+  const status = attendance >= 80 ? '✅' : attendance >= 70 ? '⚠️' : '❌';
+  return `${status} ${subject.subject_code}: ${attendance.toFixed(1)}% (${subject.total_students} students)`;
 }).join('\n')}
 
-${subjectsBelow70 > 0 ? `
-⚠️  ATTENTION REQUIRED:
-${subjectsBelow70} subject(s) have attendance below 70%. Consider implementing attendance improvement strategies.
-` : ''}`;
+${avgAttendance >= 80 ? '🎉 EXCELLENT performance across all subjects!' :
+  avgAttendance < 70 ? '📈 FOCUS needed on attendance improvement strategies.' :
+  '👍 GOOD progress - a few improvements could reach excellence.'}`;
 
   } else if (reportData.type === 'student' && reportData.students) {
     const totalStudents = reportData.students.length;

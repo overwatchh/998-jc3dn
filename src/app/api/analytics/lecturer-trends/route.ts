@@ -152,40 +152,73 @@ export async function GET(request: NextRequest) {
       params.push(courseId);
     }
 
-    // Get simple subject performance - only for subjects taught by this lecturer
+    // Get subject performance using EMAIL CALCULATOR METHOD - only for subjects taught by this lecturer
     const subjectPerformanceQuery = `
       SELECT
           s.code as subject_code,
           s.name as subject_name,
           COUNT(DISTINCT e.student_id) as total_students,
-          COUNT(DISTINCT qrss.week_number) as total_weeks,
-          ROUND((COUNT(DISTINCT CASE WHEN c.student_id IS NOT NULL THEN CONCAT(qrss.week_number, '-', e.student_id) END) /
-               (COUNT(DISTINCT qrss.week_number) * COUNT(DISTINCT e.student_id))) * 100, 1) as average_attendance
+          COUNT(DISTINCT qrss.id) as total_weeks,
+          ROUND(
+            (SUM(
+              CASE
+                WHEN checkin_counts.checkin_count >= 2 THEN 100
+                WHEN checkin_counts.checkin_count = 1 THEN 50
+                ELSE 0
+              END
+            ) / (COUNT(DISTINCT qrss.id) * COUNT(DISTINCT e.student_id) * 100)) * 100,
+            1
+          ) as average_attendance
       FROM subject s
       JOIN enrolment e ON e.subject_id = s.id
       JOIN subject_study_session sss ON sss.subject_id = s.id
       JOIN study_session ss ON ss.id = sss.study_session_id
       JOIN lecturer_study_session lss ON lss.study_session_id = ss.id
       JOIN qr_code_study_session qrss ON qrss.study_session_id = ss.id
-      LEFT JOIN checkin c ON c.qr_code_study_session_id = qrss.id AND c.student_id = e.student_id
+      LEFT JOIN (
+        SELECT
+          qr_code_study_session_id,
+          student_id,
+          COUNT(*) as checkin_count
+        FROM checkin
+        GROUP BY qr_code_study_session_id, student_id
+      ) checkin_counts ON checkin_counts.qr_code_study_session_id = qrss.id
+                       AND checkin_counts.student_id = e.student_id
       WHERE ss.type = 'lecture' ${lecturerFilter} ${courseId ? 'AND s.id = ?' : ''}
       GROUP BY s.id, s.code, s.name
       ORDER BY average_attendance DESC
     `;
 
-    // Get weekly trends - only for subjects taught by this lecturer
+    // Get weekly trends using EMAIL CALCULATOR METHOD - only for subjects taught by this lecturer
     const weeklyTrendsQuery = `
       SELECT
           qrss.week_number,
           CONCAT('Week ', qrss.week_number) as week_label,
-          ROUND((COUNT(DISTINCT c.student_id) / COUNT(DISTINCT e.student_id)) * 100, 1) as attendance_rate
+          ROUND(
+            (SUM(
+              CASE
+                WHEN checkin_counts.checkin_count >= 2 THEN 100
+                WHEN checkin_counts.checkin_count = 1 THEN 50
+                ELSE 0
+              END
+            ) / (COUNT(e.student_id) * 100)) * 100,
+            1
+          ) as attendance_rate
       FROM qr_code_study_session qrss
       JOIN study_session ss ON ss.id = qrss.study_session_id
       JOIN lecturer_study_session lss ON lss.study_session_id = ss.id
       JOIN subject_study_session sss ON sss.study_session_id = ss.id
       JOIN subject s ON s.id = sss.subject_id
       JOIN enrolment e ON e.subject_id = s.id
-      LEFT JOIN checkin c ON c.qr_code_study_session_id = qrss.id AND c.student_id = e.student_id
+      LEFT JOIN (
+        SELECT
+          qr_code_study_session_id,
+          student_id,
+          COUNT(*) as checkin_count
+        FROM checkin
+        GROUP BY qr_code_study_session_id, student_id
+      ) checkin_counts ON checkin_counts.qr_code_study_session_id = qrss.id
+                       AND checkin_counts.student_id = e.student_id
       WHERE ss.type = 'lecture' ${lecturerFilter} ${courseId ? 'AND s.id = ?' : ''}
       GROUP BY qrss.week_number
       ORDER BY qrss.week_number
