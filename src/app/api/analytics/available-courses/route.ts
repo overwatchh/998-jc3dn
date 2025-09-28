@@ -65,7 +65,7 @@ export async function GET(_request: NextRequest) {
     // For lecturers, only show subjects they teach
     // For admin/other roles, show all subjects (fallback)
     let query: string;
-    let params: any[] = [];
+    let params: (string | number)[] = [];
 
     if (session.user.role === "lecturer") {
       query = `
@@ -145,7 +145,7 @@ export async function GET(_request: NextRequest) {
 
     return NextResponse.json(transformedCourses);
   } catch (error) {
-    console.error('Available courses API error:', error);
-    return NextResponse.json({ error: 'Failed to fetch available courses' }, { status: 500 });
+    console.error("Available courses API error:", error);
+    return NextResponse.json({ error: "Failed to fetch available courses" }, { status: 500 });
   }
 }

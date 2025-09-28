@@ -128,7 +128,7 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Check-in types analytics API error:', error);
-    return NextResponse.json({ error: 'Failed to fetch check-in type analytics' }, { status: 500 });
+    console.error("Check-in types analytics API error:", error);
+    return NextResponse.json({ error: "Failed to fetch check-in type analytics" }, { status: 500 });
   }
 }

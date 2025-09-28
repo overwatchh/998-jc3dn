@@ -122,7 +122,7 @@ interface RecentSessionRow {
   attended: number;
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   const session = await auth.api.getSession({ headers: await headers() });
 
   if (!session || !session.user) {
@@ -138,6 +138,8 @@ export async function GET() {
 
   try {
     const studentId = session.user.id;
+    const url = new URL(request.url);
+    const sessionType = url.searchParams.get("sessionType") || "lecture";
 
     // Get subject performance breakdown by session type
     const subjectDetailSql = `
@@ -157,11 +159,12 @@ export async function GET() {
       LEFT JOIN checkin c ON c.qr_code_study_session_id = qcss.id AND c.student_id = e.student_id
       WHERE e.student_id = ?
         AND s.status = 'active'
+        AND ss.type = ?
       GROUP BY s.id, s.name, s.code, s.required_attendance_thresh, ss.type
       ORDER BY s.name, ss.type;
     `;
 
-    const subjectDetails = await rawQuery<SubjectDetailRow>(subjectDetailSql, [studentId]);
+    const subjectDetails = await rawQuery<SubjectDetailRow>(subjectDetailSql, [studentId, sessionType]);
 
     // Get recent session trends (last 5 sessions per subject)
     const recentTrendSql = `
@@ -178,11 +181,12 @@ export async function GET() {
       LEFT JOIN checkin c ON c.qr_code_study_session_id = qcss.id AND c.student_id = e.student_id
       WHERE e.student_id = ?
         AND s.status = 'active'
+        AND ss.type = ?
         AND qcss.week_number >= WEEK(CURDATE()) - 5
       ORDER BY s.id, qcss.week_number DESC;
     `;
 
-    const recentTrends = await rawQuery<RecentSessionRow & { subject_id: number }>(recentTrendSql, [studentId]);
+    const recentTrends = await rawQuery<RecentSessionRow & { subject_id: number }>(recentTrendSql, [studentId, sessionType]);
 
     // Group data by subject
     const subjectMap = new Map();

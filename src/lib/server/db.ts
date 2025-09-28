@@ -10,19 +10,23 @@ export const db = mysql.createPool(
         user: process.env.DB_USER!,
         password: process.env.DB_PASS!,
         database: process.env.DB_NAME!,
-        connectionLimit: 5,
-        maxIdle: 5,
+        connectionLimit: 20,
+        maxIdle: 10,
         idleTimeout: 60000,
         queueLimit: 0,
+        enableKeepAlive: true,
+        keepAliveInitialDelay: 0,
       }
     : {
         socketPath: `/cloudsql/${process.env.GCP_PROJECT_ID}:${process.env.GCP_REGION}:${process.env.DB_INSTANCE}`,
         user: process.env.DB_USER!,
         password: process.env.DB_PASS!,
         database: process.env.DB_NAME!,
-        connectionLimit: 5,
-        maxIdle: 5,
+        connectionLimit: 20,
+        maxIdle: 10,
         idleTimeout: 60000,
         queueLimit: 0,
+        enableKeepAlive: true,
+        keepAliveInitialDelay: 0,
       }
 );

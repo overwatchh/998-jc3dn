@@ -23,7 +23,7 @@ export interface AttendanceEmailData {
 }
 
 class EmailService {
-  private transporter: any | null = null; // Using any to avoid nodemailer import
+  private transporter: unknown | null = null; // Transporter instance from nodemailer
   private config: EmailConfig | null = null;
 
   async initialize(config: EmailConfig) {
@@ -218,7 +218,7 @@ QR Attendance System
     };
 
     try {
-      await this.transporter.sendMail(mailOptions);
+      await (this.transporter as any).sendMail(mailOptions);
       console.log(`Attendance reminder sent to ${data.studentEmail} for ${data.subjectCode} Week ${data.weekNumber}`);
     } catch (error) {
       console.error(`Failed to send attendance reminder to ${data.studentEmail}:`, error);
@@ -232,7 +232,7 @@ QR Attendance System
     }
 
     try {
-      await this.transporter.verify();
+      await (this.transporter as any).verify();
       console.log('SMTP connection verified successfully');
       return true;
     } catch (error) {

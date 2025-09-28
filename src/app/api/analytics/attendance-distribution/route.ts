@@ -54,6 +54,10 @@ export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const subjectId = searchParams.get('subjectId'); // Now correctly using subject ID
+    const sessionType = searchParams.get('sessionType') || 'lecture';
+
+    // Build session type filter
+    const sessionFilter = `AND ss.type = '${sessionType}'`;
 
     const query = `
       SELECT
@@ -80,7 +84,7 @@ export async function GET(request: NextRequest) {
           JOIN study_session ss ON ss.id = sss.study_session_id
           JOIN qr_code_study_session qrss ON qrss.study_session_id = ss.id
           LEFT JOIN checkin c ON c.qr_code_study_session_id = qrss.id AND c.student_id = u.id
-          WHERE u.role = 'student' AND ss.type = 'lecture' ${subjectId ? 'AND s.id = ?' : ''}
+          WHERE u.role = 'student' ${sessionFilter} ${subjectId ? 'AND s.id = ?' : ''}
           GROUP BY u.id, s.id
       ) student_performance
       GROUP BY performance_category
@@ -99,7 +103,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(data);
   } catch (error) {
-    console.error('Attendance distribution API error:', error);
-    return NextResponse.json({ error: 'Failed to fetch attendance distribution data' }, { status: 500 });
+    console.error("Attendance distribution API error:", error);
+    return NextResponse.json({ error: "Failed to fetch attendance distribution data" }, { status: 500 });
   }
 }

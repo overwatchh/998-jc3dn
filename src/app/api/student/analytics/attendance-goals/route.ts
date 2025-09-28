@@ -113,7 +113,7 @@ interface GoalRow {
   total_planned_sessions: number;
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   const session = await auth.api.getSession({ headers: await headers() });
 
   if (!session || !session.user) {
@@ -129,6 +129,8 @@ export async function GET() {
 
   try {
     const studentId = session.user.id;
+    const url = new URL(request.url);
+    const sessionType = url.searchParams.get("sessionType") || "lecture";
 
     // Using EMAIL CALCULATOR METHOD: 2+ checkins = 100 points, 1 checkin = 50 points, 0 checkins = 0 points
     const sql = `
@@ -153,7 +155,8 @@ export async function GET() {
       FROM enrolment e
       JOIN subject s ON e.subject_id = s.id
       JOIN subject_study_session sss ON sss.subject_id = s.id
-      JOIN qr_code_study_session qcss ON qcss.study_session_id = sss.study_session_id
+      JOIN study_session ss ON ss.id = sss.study_session_id
+      JOIN qr_code_study_session qcss ON qcss.study_session_id = ss.id
       LEFT JOIN (
         SELECT
           qr_code_study_session_id,
@@ -165,10 +168,11 @@ export async function GET() {
                        AND checkin_counts.student_id = e.student_id
       WHERE e.student_id = ?
         AND s.status = 'active'
+        AND ss.type = ?
       GROUP BY s.id, s.name, s.code, s.required_attendance_thresh;
     `;
 
-    const goalsData = await rawQuery<GoalRow>(sql, [studentId]);
+    const goalsData = await rawQuery<GoalRow>(sql, [studentId, sessionType]);
 
     // Calculate subject goals using email calculator percentages
     const subjectGoals = goalsData.map(row => {

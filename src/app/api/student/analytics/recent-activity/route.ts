@@ -225,7 +225,8 @@ export async function GET(request: Request) {
   try {
     const studentId = session.user.id;
     const url = new URL(request.url);
-    const limit = parseInt(url.searchParams.get('limit') || '10');
+    const limit = parseInt(url.searchParams.get("limit") || "10");
+    const sessionType = url.searchParams.get("sessionType") || "lecture";
 
     // Recent check-ins
     const recentCheckinsSql = `
@@ -247,6 +248,7 @@ export async function GET(request: Request) {
       JOIN campus cam ON r.campus_id = cam.id
       WHERE c.student_id = ?
         AND s.status = 'active'
+        AND ss.type = ?
       ORDER BY c.checkin_time DESC
       LIMIT ?;
     `;
@@ -274,6 +276,7 @@ export async function GET(request: Request) {
       LEFT JOIN checkin c ON c.qr_code_study_session_id = qcss.id AND c.student_id = e.student_id
       WHERE e.student_id = ?
         AND s.status = 'active'
+        AND ss.type = ?
         AND qcss.week_number <= WEEK(CURDATE())
         AND qcss.week_number >= WEEK(CURDATE()) - 4
         AND c.student_id IS NULL
@@ -317,6 +320,7 @@ export async function GET(request: Request) {
       JOIN campus cam ON r.campus_id = cam.id
       WHERE e.student_id = ?
         AND s.status = 'active'
+        AND ss.type = ?
         AND qcss.week_number > WEEK(CURDATE())
         AND qcss.week_number <= WEEK(CURDATE()) + 2
       ORDER BY qcss.week_number, ss.start_time
@@ -324,9 +328,9 @@ export async function GET(request: Request) {
     `;
 
     const [recentCheckins, missedSessions, upcomingSessions] = await Promise.all([
-      rawQuery<RecentCheckinRow>(recentCheckinsSql, [studentId, limit]),
-      rawQuery<MissedSessionRow>(missedSessionsSql, [studentId, limit]),
-      rawQuery<UpcomingSessionRow>(upcomingSessionsSql, [studentId, limit])
+      rawQuery<RecentCheckinRow>(recentCheckinsSql, [studentId, sessionType, limit]),
+      rawQuery<MissedSessionRow>(missedSessionsSql, [studentId, sessionType, limit]),
+      rawQuery<UpcomingSessionRow>(upcomingSessionsSql, [studentId, sessionType, limit])
     ]);
 
     // Calculate activity summary
@@ -334,7 +338,8 @@ export async function GET(request: Request) {
       SELECT COUNT(*) as count
       FROM checkin c
       JOIN qr_code_study_session qcss ON c.qr_code_study_session_id = qcss.id
-      WHERE c.student_id = ? AND qcss.week_number = WEEK(CURDATE());
+      JOIN study_session ss ON qcss.study_session_id = ss.id
+      WHERE c.student_id = ? AND qcss.week_number = WEEK(CURDATE()) AND ss.type = ?;
     `;
 
     const thisWeekMissedSql = `
@@ -342,17 +347,19 @@ export async function GET(request: Request) {
       FROM enrolment e
       JOIN subject s ON e.subject_id = s.id
       JOIN subject_study_session sss ON sss.subject_id = s.id
-      JOIN qr_code_study_session qcss ON qcss.study_session_id = sss.study_session_id
+      JOIN study_session ss ON ss.id = sss.study_session_id
+      JOIN qr_code_study_session qcss ON qcss.study_session_id = ss.id
       LEFT JOIN checkin c ON c.qr_code_study_session_id = qcss.id AND c.student_id = e.student_id
       WHERE e.student_id = ?
         AND s.status = 'active'
+        AND ss.type = ?
         AND qcss.week_number = WEEK(CURDATE())
         AND c.student_id IS NULL;
     `;
 
     const [thisWeekCheckins, thisWeekMissed] = await Promise.all([
-      rawQuery<{ count: number }>(thisWeekCheckinsSql, [studentId]),
-      rawQuery<{ count: number }>(thisWeekMissedSql, [studentId])
+      rawQuery<{ count: number }>(thisWeekCheckinsSql, [studentId, sessionType]),
+      rawQuery<{ count: number }>(thisWeekMissedSql, [studentId, sessionType])
     ]);
 
     // Calculate attendance streaks (simplified)

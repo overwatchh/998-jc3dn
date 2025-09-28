@@ -17,6 +17,14 @@ import { NextRequest, NextResponse } from "next/server";
  *           type: integer
  *           example: 101
  *         description: Study session ID to filter results (optional)
+ *       - in: query
+ *         name: sessionType
+ *         required: false
+ *         schema:
+ *           type: string
+ *           enum: [lecture, tutorial, both]
+ *           default: lecture
+ *         description: Type of sessions to include in analysis
  *     responses:
  *       200:
  *         description: Key metrics retrieved successfully
@@ -81,6 +89,10 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const subjectId = searchParams.get('subjectId'); // Now correctly using subject ID
     const subjectIdNum = subjectId ? parseInt(subjectId) : null;
+    const sessionType = searchParams.get('sessionType') || 'lecture';
+
+    // Build session type filter
+    const sessionFilter = `AND ss.type = '${sessionType}'`;
 
     // Use single query approach to avoid connection issues
     let averageAttendance = 0;
@@ -130,7 +142,7 @@ export async function GET(request: NextRequest) {
           GROUP BY qr_code_study_session_id, student_id
         ) checkin_counts ON checkin_counts.qr_code_study_session_id = qrss.id
                          AND checkin_counts.student_id = e.student_id
-        WHERE ss.type = 'lecture' ${subjectIdNum ? 'AND sss.subject_id = ?' : ''}
+        WHERE 1=1 ${sessionFilter} ${subjectIdNum ? 'AND sss.subject_id = ?' : ''}
         GROUP BY qrss.id
       ) session_stats
       `,
@@ -150,7 +162,7 @@ export async function GET(request: NextRequest) {
       JOIN subject_study_session sss ON sss.subject_id = s.id
       JOIN study_session ss ON ss.id = sss.study_session_id
       JOIN qr_code_study_session qrss ON qrss.study_session_id = ss.id
-      WHERE ss.type = 'lecture' ${subjectIdNum ? 'AND s.id = ?' : ''}
+      WHERE 1=1 ${sessionFilter} ${subjectIdNum ? 'AND s.id = ?' : ''}
     `;
 
     const queryParams = subjectIdNum ? [subjectIdNum] : [];
@@ -189,7 +201,7 @@ export async function GET(request: NextRequest) {
         GROUP BY qr_code_study_session_id, student_id
       ) checkin_counts ON checkin_counts.qr_code_study_session_id = qrss.id
                        AND checkin_counts.student_id = e.student_id
-      WHERE ss.type = 'lecture' ${subjectIdNum ? 'AND s.id = ?' : ''}
+      WHERE 1=1 ${sessionFilter} ${subjectIdNum ? 'AND s.id = ?' : ''}
       GROUP BY s.code, qrss.week_number, qrss.id
       ORDER BY attendance_rate DESC
       LIMIT 1
@@ -223,7 +235,7 @@ export async function GET(request: NextRequest) {
         GROUP BY qr_code_study_session_id, student_id
       ) checkin_counts ON checkin_counts.qr_code_study_session_id = qrss.id
                        AND checkin_counts.student_id = e.student_id
-      WHERE ss.type = 'lecture' ${subjectIdNum ? 'AND s.id = ?' : ''}
+      WHERE 1=1 ${sessionFilter} ${subjectIdNum ? 'AND s.id = ?' : ''}
       GROUP BY s.code, qrss.week_number, qrss.id
       ORDER BY attendance_rate ASC
       LIMIT 1
@@ -257,7 +269,7 @@ export async function GET(request: NextRequest) {
       }
     });
   } catch (error) {
-    console.error('Key metrics API error:', error);
-    return NextResponse.json({ error: 'Failed to fetch key metrics data' }, { status: 500 });
+    console.error("Key metrics API error:", error);
+    return NextResponse.json({ error: "Failed to fetch key metrics data" }, { status: 500 });
   }
 }
