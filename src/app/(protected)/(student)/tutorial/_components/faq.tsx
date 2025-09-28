@@ -68,10 +68,6 @@ const faqItems: FaqItemProps[] = [
     q: "Manual check‑in button is disabled or missing.",
     a: "You might be outside the allowed second window or the lecturer disabled manual mode. Refresh the page after the announced start time, and if still missing, contact the lecturer.",
   },
-  {
-    q: "I performed both scans but attendance doesn’t show 90%.",
-    a: "There can be a short processing delay. If after a few minutes it still shows partial credit, re-open the session page or log out/in. Persistent issues should be reported to support.",
-  },
 ];
 
 export { FaqItem, faqItems };

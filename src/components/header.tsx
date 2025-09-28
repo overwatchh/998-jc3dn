@@ -1,11 +1,17 @@
 "use client";
 
 import { useCurrentUser } from "@/hooks/useAuth";
-import { Loader2 } from "lucide-react";
+import { Info, Loader2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { ThemeToggler } from "./theme-toggler";
 import { Button } from "./ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "./ui/tooltip";
 
 export const Header = () => {
   const { data: session, isPending } = useCurrentUser();
@@ -44,15 +50,29 @@ export const Header = () => {
   }
 
   return (
-    <div className="border-primary/10 flex w-full justify-between border-b px-3 py-2">
-      <Link href={"/"} className="text-2xl font-bold">
-        Attendease
-      </Link>
+    <TooltipProvider>
+      <div className="border-primary/10 flex w-full justify-between border-b px-3 py-2">
+        <Link href={"/"} className="text-2xl font-bold">
+          Attendease
+        </Link>
 
-      <div className="flex items-center justify-end gap-3">
-        <ThemeToggler />
-        <LoginButton />
+        <div className="flex items-center justify-end gap-3">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="outline" size="icon" asChild>
+                <Link href="/tutorial" aria-label="View FAQ and tutorial">
+                  <Info className="h-[1.2rem] w-[1.2rem]" />
+                </Link>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>View FAQ and Tutorial</p>
+            </TooltipContent>
+          </Tooltip>
+          <ThemeToggler />
+          <LoginButton />
+        </div>
       </div>
-    </div>
+    </TooltipProvider>
   );
 };

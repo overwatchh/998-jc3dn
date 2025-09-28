@@ -9,7 +9,7 @@ import {
   AlertTriangle,
   ChevronRight,
   Clock,
-  HelpCircle,
+  Info,
   MapPin,
   QrCode,
 } from "lucide-react";
@@ -107,7 +107,7 @@ export function StudentDashboard() {
 
       <Link href="/tutorial" passHref className="w-full">
         <Button variant="outline" className="w-full">
-          <HelpCircle className="mr-2 h-4 w-4" />
+          <Info className="mr-2 h-4 w-4" />
           How it works? View Tutorial
         </Button>
       </Link>
