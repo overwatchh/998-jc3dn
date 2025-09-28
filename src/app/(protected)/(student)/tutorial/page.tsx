@@ -7,6 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import Image from "next/image";
 import { FaqItem, faqItems } from "./_components/faq";
 
 interface StepDef {
@@ -15,6 +16,7 @@ interface StepDef {
   subtitle: string;
   details: string[];
   imgAlt: string;
+  imgSrc: string;
 }
 
 const steps: StepDef[] = [
@@ -24,9 +26,10 @@ const steps: StepDef[] = [
     subtitle: "Grant permission so the scanner can read the class QR codes.",
     details: [
       "When prompted by the browser, click Allow to enable the camera.",
-      "If you blocked it accidentally, use the site info (🔒) icon in the address bar to re‑enable.",
+      "If you accidentally clicked Block, use the Try Again button to re-request access.",
     ],
-    imgAlt: "Browser camera permission prompt screenshot placeholder",
+    imgAlt: "Browser camera permission prompt screenshot",
+    imgSrc: "/camera-permission.jpg",
   },
   {
     id: 2,
@@ -37,7 +40,8 @@ const steps: StepDef[] = [
       "Point your camera steadily at the projected / shared QR code.",
       "You will see a success message once the first check‑in is recorded (counts for 45%).",
     ],
-    imgAlt: "Scanning first QR code placeholder",
+    imgAlt: "Scanning first QR code screenshot",
+    imgSrc: "/qr-first-checkin.png",
   },
   {
     id: 3,
@@ -48,7 +52,8 @@ const steps: StepDef[] = [
       "You can monitor any countdown on the session page (if provided).",
       "No action is needed until the second window opens.",
     ],
-    imgAlt: "Waiting period / timer placeholder",
+    imgAlt: "Second validity window indicator illustration",
+    imgSrc: "/attend-lecture.png",
   },
   {
     id: 4,
@@ -60,7 +65,8 @@ const steps: StepDef[] = [
       "Tap the Manual Check‑In button (or scan the refreshed QR if instructed).",
       "You'll see a confirmation that your second check‑in succeeded.",
     ],
-    imgAlt: "Manual second check‑in action placeholder",
+    imgAlt: "Manual second check‑in confirmation screenshot",
+    imgSrc: "/qr-second-checkin.png",
   },
 ];
 
@@ -110,19 +116,32 @@ export default function TutorialPage() {
                   </div>
                 </CardHeader>
                 <CardContent className="flex flex-col gap-8 pt-6">
-                  <div className="bg-muted/30 ring-border/40 relative overflow-hidden rounded-xl border shadow-inner ring-1 ring-inset">
-                    <div className="mx-auto flex aspect-[9/18] w-full max-w-[380px] items-center justify-center md:aspect-[16/9] md:w-full md:max-w-none">
-                      <div className="text-muted-foreground flex flex-col items-center gap-3 p-6 text-center">
-                        <div className="bg-background/40 flex size-20 items-center justify-center rounded-lg border border-dashed">
-                          <span className="font-mono text-[10px] tracking-wide uppercase opacity-70 md:text-xs">
-                            Image
-                          </span>
+                  <div className="bg-muted/30 ring-border/40 relative flex justify-center rounded-xl border p-2 shadow-inner ring-1 ring-inset">
+                    {(() => {
+                      // Dimension map to derive aspect ratio for wrapper (needed when using fill)
+                      const dim: Record<string, { w: number; h: number }> = {
+                        "/camera-permission.jpg": { w: 1079, h: 1965 },
+                        "/qr-first-checkin.png": { w: 485, h: 796 },
+                        "/attend-lecture.png": { w: 1024, h: 1024 },
+                        "/qr-second-checkin.png": { w: 487, h: 788 },
+                      };
+                      const { w, h } = dim[step.imgSrc] ?? { w: 800, h: 800 };
+                      return (
+                        <div
+                          className="relative mx-auto max-h-[520px] w-full max-w-md overflow-hidden rounded-xl"
+                          style={{ aspectRatio: `${w} / ${h}` }}
+                        >
+                          <Image
+                            src={step.imgSrc}
+                            alt={step.imgAlt}
+                            fill
+                            priority={idx === 0}
+                            sizes="(max-width: 768px) 100vw, 640px"
+                            className="border-border/40 rounded-xl border object-contain shadow-sm select-none"
+                          />
                         </div>
-                        <p className="text-xs leading-relaxed md:text-sm">
-                          {step.imgAlt} (placeholder)
-                        </p>
-                      </div>
-                    </div>
+                      );
+                    })()}
                   </div>
                   <ul className="flex flex-col gap-3 text-sm md:gap-4 md:text-base">
                     {step.details.map((d, i) => (
