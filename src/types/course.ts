@@ -58,7 +58,7 @@ export interface RawCourseSessionRow extends RowDataPacket {
   course_id: number;
 }
 
-export type CourseSessionResponse = Array<{
+export interface Course {
   id: number;
   name: string;
   code: string;
@@ -66,7 +66,9 @@ export type CourseSessionResponse = Array<{
   startTime: string; // HH:mm
   endTime: string; // HH:mm
   dayOfWeek: string; // e.g., Monday
-}>;
+}
+
+export type CourseSessionResponse = Array<Course>;
 
 export type AbsentListResponse = Array<{
   student_id: string;
@@ -80,6 +82,7 @@ export type LiveCheckinStudent = {
   student_name: string;
   student_email: string;
   checkin_time: string;
+  checkin_type: "In-person" | "Online" | "Manual";
   validity_count: number; // 1 for first window, 2 for second
 };
 

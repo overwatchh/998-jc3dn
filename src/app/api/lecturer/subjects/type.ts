@@ -1,4 +1,5 @@
 import { RowDataPacket } from "mysql2";
+
 export interface RawSubjectRow extends RowDataPacket {
   subject_id: number;
   subject_name: string;
@@ -11,6 +12,7 @@ export interface RawSubjectRow extends RowDataPacket {
   end_time: string;
   session_type: "lecture" | "tutorial";
   building_number: string;
+  room_id: number;
   room_number: string;
   room_description: string;
   campus_name: string;
@@ -27,10 +29,15 @@ export interface GroupedSubject extends RowDataPacket {
     day_of_week: string;
     start_time: string;
     end_time: string;
+    anchor_qr: {
+      week_number: number;
+      date: string;
+    } | null;
     session_type: "lecture" | "tutorial";
     location: {
       building_number: string;
       room_number: string;
+      room_id: number;
       room_description: string;
       campus_name: string;
     };

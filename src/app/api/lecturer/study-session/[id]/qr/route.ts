@@ -1,7 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { auth } from "@/lib/server/auth";
+import { getAnchorForStudySession } from "@/lib/server/db_service/validity_window";
 import { rawQuery } from "@/lib/server/query";
-import { GenerateQrRequestBody, GenerateQrResponse } from "@/types/qr-code";
+import { computeQrDateForWeek, parseTimeToDate } from "@/lib/utils";
+import {
+  GenerateQrRequestSchema,
+  GenerateQrResponse,
+  UpdateQrRequestSchema,
+} from "@/types/qr-code";
 import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 // Replace with your DB access method (e.g., mysql2)
@@ -14,14 +20,16 @@ import QRCode from "qrcode";
  *     tags:
  *       - Lecturer
  *     summary: Generate a QR code for a study session
- *     description: Generates a QR code for a lecturer's study session, tied to a specific week number.
+ *     description: |
+ *       Allows a lecturer assigned to a study session to generate a QR code for student check-in.
+ *       The QR code will be linked to the study session, valid for the specified week, and bound to one or two validity time windows.
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
  *         schema:
  *           type: integer
- *         description: The ID of the study session
+ *         description: The ID of the study session.
  *     requestBody:
  *       required: true
  *       content:
@@ -30,22 +38,68 @@ import QRCode from "qrcode";
  *             type: object
  *             required:
  *               - week_number
+ *               - valid_room_id
+ *               - radius
+ *               - validities
+ *               - day_of_week
  *             properties:
  *               week_number:
  *                 type: integer
- *                 example: 4
- *               duration:
- *                 type: integer
- *                 example: 15
- *                 description: The duration in minutes for which the QR code is valid (default 15)
- *                 default: 15
+ *                 description: The academic week number for the QR code.
+ *                 example: 1
  *               radius:
  *                 type: number
+ *                 description: Optional radius (in meters) for geolocation validation.
  *                 example: 100
- *                 description: Optional. If provided, enforces maximum distance (in meters) from the classroom. If omitted, location validation is disabled.
+ *               valid_room_id:
+ *                 type: integer
+ *                 description: ID of the room where the study session is held. Must exist in the `room` table.
+ *                 example: 10
+ *               validate_geo:
+ *                 type: boolean
+ *                 description: Whether to validate geolocation when scanning QR. Defaults to true.
+ *                 example: true
+ *               day_of_week:
+ *                 type: string
+ *                 description: The day of the week the QR code applies to. First letter capitalized.
+ *                 enum:
+ *                   - Monday
+ *                   - Tuesday
+ *                   - Wednesday
+ *                   - Thursday
+ *                   - Friday
+ *                   - Saturday
+ *                   - Sunday
+ *                 example: Wednesday
+ *               validities:
+ *                 type: array
+ *                 minItems: 2
+ *                 maxItems: 2
+ *                 description: One or two validity windows (time ranges) for which the QR code is active.
+ *                 items:
+ *                   type: object
+ *                   required:
+ *                     - start_time
+ *                     - end_time
+ *                   properties:
+ *                     start_time:
+ *                       type: string
+ *                       pattern: "^([01]\\d|2[0-3]):[0-5]\\d$"
+ *                       description: Start time of the validity window in HH:MM 24-hour format.
+ *                       example: "13:45"
+ *                     end_time:
+ *                       type: string
+ *                       pattern: "^([01]\\d|2[0-3]):[0-5]\\d$"
+ *                       description: End time of the validity window in HH:MM 24-hour format.
+ *                       example: "15:45"
+ *                 example:
+ *                   - start_time: "13:45"
+ *                     end_time: "14:15"
+ *                   - start_time: "14:50"
+ *                     end_time: "15:15"
  *     responses:
  *       200:
- *         description: QR code successfully generated
+ *         description: QR code successfully generated.
  *         content:
  *           application/json:
  *             schema:
@@ -56,26 +110,50 @@ import QRCode from "qrcode";
  *                   example: Generate QR successfully
  *                 qr_url:
  *                   type: string
- *                   description: Base64-encoded QR image URL
+ *                   format: uri
+ *                   description: Data URL of the generated QR code image.
  *                 study_session_id:
  *                   type: integer
- *                   example: 1
+ *                   example: 42
  *                 week_number:
  *                   type: integer
- *                   example: 1
- *                 valid_until:
- *                   type: string
- *                   format: date-time
+ *                   example: 6
+ *                 validities:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       start_time:
+ *                         type: string
+ *                         format: date-time
+ *                         example: "2025-09-10T09:30:00.000Z"
+ *                       end_time:
+ *                         type: string
+ *                         format: date-time
+ *                         example: "2025-09-10T11:30:00.000Z"
  *       400:
- *         description: Missing or invalid `week_number`
+ *         description: Invalid request (schema validation failed or invalid room).
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Invalid request
+ *                 errors:
+ *                   type: object
+ *                   description: Detailed validation errors (if schema parsing failed).
  *       401:
- *         description: Unauthorized – user not signed in or not a lecturer
+ *         description: Unauthorized. User is not authenticated or not a lecturer.
  *       403:
- *         description: Lecturer is not assigned to the session
+ *         description: Lecturer is not assigned to the study session.
+ *       404:
+ *         description: Study session not found.
  *       409:
- *         description: QR code already exists for this session and week
+ *         description: QR code already exists for this study session and week.
  *       500:
- *         description: Internal server error
+ *         description: Internal server error.
  *
  *   get:
  *     tags:
@@ -97,46 +175,79 @@ import QRCode from "qrcode";
  *         description: Optional week number to filter QR codes
  *     responses:
  *       200:
- *         description: List of QR codes for the study session
+ *         description: QR codes fetched successfully
  *         content:
  *           application/json:
  *             schema:
  *               type: object
  *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: QR codes fetched successfully
  *                 study_session_id:
  *                   type: integer
- *                 qrs:
+ *                   description: The ID of the study session
+ *                   example: 26
+ *                 count:
+ *                   type: integer
+ *                   description: Number of QR codes fetched
+ *                   example: 1
+ *                 data:
  *                   type: array
+ *                   description: List of QR codes belonging to the study session
  *                   items:
  *                     type: object
  *                     properties:
  *                       qr_code_id:
  *                         type: integer
- *                       qr_url:
- *                         type: string
- *                       week_number:
- *                         type: integer
+ *                         description: Unique ID of the QR code
+ *                         example: 1
  *                       valid_radius:
- *                         type: number
+ *                         type: integer
+ *                         description: Allowed radius in meters for geolocation validation
+ *                         example: 150
+ *                       validate_geo:
+ *                         type: boolean
+ *                         description: Indicates whether geolocation validation is required
+ *                         example: true
  *                       createdAt:
  *                         type: string
  *                         format: date-time
+ *                         description: Date and time when the QR code was created
+ *                         example: "2025-09-11T03:05:18.000Z"
+ *                       week_number:
+ *                         type: integer
+ *                         description: Academic week associated with the QR code
+ *                         example: 1
  *                       validities:
  *                         type: array
+ *                         description: Exactly two validity windows for the QR code
+ *                         minItems: 2
+ *                         maxItems: 2
  *                         items:
  *                           type: object
  *                           properties:
  *                             validity_id:
  *                               type: integer
+ *                               description: Unique ID of the validity window
+ *                               example: 1
  *                             count:
  *                               type: integer
- *                               description: 1 = first validity, 2 = second validity
+ *                               description: |
+ *                                 Indicates which validity window:
+ *                                 - 1 → first validity window
+ *                                 - 2 → second validity window
+ *                               example: 1
  *                             start_time:
  *                               type: string
  *                               format: date-time
+ *                               description: Start time of the validity window
+ *                               example: "2025-09-11T03:01:00.000Z"
  *                             end_time:
  *                               type: string
  *                               format: date-time
+ *                               description: End time of the validity window
+ *                               example: "2025-09-11T04:11:00.000Z"
  *       401:
  *         description: Unauthorized – user not signed in or not a lecturer
  *       403:
@@ -147,15 +258,18 @@ import QRCode from "qrcode";
  *   put:
  *     tags:
  *       - Lecturer
- *     summary: Add second validity window to existing QR code
- *     description: Adds a second validity window to an existing QR code for the study session. The second validity starts when the first one ends and lasts until the end of the study session.
+ *     summary: Update an existing QR code for a study session
+ *     description: |
+ *       Allows a lecturer assigned to a study session to update an existing QR code.
+ *       The QR code must belong to the study session. The lecturer can modify the
+ *       validity windows, room, geolocation validation, and radius.
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
  *         schema:
  *           type: integer
- *           description: The ID of the study session
+ *         description: The ID of the study session.
  *     requestBody:
  *       required: true
  *       content:
@@ -164,14 +278,76 @@ import QRCode from "qrcode";
  *             type: object
  *             required:
  *               - qr_code_id
+ *               - valid_room_id
+ *               - validities
+ *               - day_of_week
  *             properties:
  *               qr_code_id:
  *                 type: integer
- *                 example: 1
- *                 description: the id of the QR code to add validity to
+ *                 description: The ID of the QR code to update (must belong to this study session).
+ *                 example: 2
+ *               radius:
+ *                 type: number
+ *                 description: Optional radius (in meters) for geolocation validation.
+ *                 example: 150
+ *               valid_room_id:
+ *                 type: integer
+ *                 description: ID of the room where the study session is held. Must exist in the `room` table.
+ *                 example: 10
+ *               validate_geo:
+ *                 type: boolean
+ *                 description: Whether to validate geolocation when scanning QR. Defaults to true.
+ *                 example: true
+ *               day_of_week:
+ *                 type: string
+ *                 description: The day of the week the QR code applies to. First letter capitalized.
+ *                 enum:
+ *                   - Monday
+ *                   - Tuesday
+ *                   - Wednesday
+ *                   - Thursday
+ *                   - Friday
+ *                   - Saturday
+ *                   - Sunday
+ *                 example: Wednesday
+ *               validities:
+ *                 type: array
+ *                 minItems: 2
+ *                 maxItems: 2
+ *                 description: Exactly two validity windows (time ranges) for which the QR code is active.
+ *                 items:
+ *                   type: object
+ *                   required:
+ *                     - start_time
+ *                     - end_time
+ *                   properties:
+ *                     start_time:
+ *                       type: string
+ *                       pattern: "^([01]\\d|2[0-3]):[0-5]\\d$"
+ *                       description: Start time of the validity window in HH:MM 24-hour format.
+ *                     end_time:
+ *                       type: string
+ *                       pattern: "^([01]\\d|2[0-3]):[0-5]\\d$"
+ *                       description: End time of the validity window in HH:MM 24-hour format.
+ *                 example:
+ *                   - start_time: "09:30"
+ *                     end_time: "09:45"
+ *                   - start_time: "11:15"
+ *                     end_time: "11:30"
+ *           example:
+ *             qr_code_id: 2
+ *             radius: 150
+ *             valid_room_id: 10
+ *             validate_geo: true
+ *             day_of_week: Wednesday
+ *             validities:
+ *               - start_time: "13:50"
+ *                 end_time: "14:10"
+ *               - start_time: "14:55"
+ *                 end_time: "15:05"
  *     responses:
  *       200:
- *         description: New validity added successfully
+ *         description: QR code successfully updated.
  *         content:
  *           application/json:
  *             schema:
@@ -179,34 +355,17 @@ import QRCode from "qrcode";
  *               properties:
  *                 message:
  *                   type: string
- *                   example: Validity added successfully
- *                 qr_code_id:
- *                   type: integer
- *                 week_number:
- *                   type: integer
- *                 validity:
- *                   type: object
- *                   properties:
- *                     validity_id:
- *                       type: integer
- *                     count:
- *                       type: integer
- *                     start_time:
- *                       type: string
- *                       format: date-time
- *                     end_time:
- *                       type: string
- *                       format: date-time
+ *                   example: QR code updated successfully
  *       400:
- *         description: Missing or invalid fields
+ *         description: Invalid request (schema validation failed or invalid room).
  *       401:
- *         description: Unauthorized – user not signed in or not a lecturer
+ *         description: Unauthorized. User is not authenticated or not a lecturer.
  *       403:
- *         description: Lecturer is not assigned to the session or QR not found for the given week
- *       409:
- *         description: Maximum validities reached for this QR code
+ *         description: Lecturer is not assigned to the study session.
+ *       404:
+ *         description: QR code not found for this study session, or study session not found.
  *       500:
- *         description: Internal server error
+ *         description: Internal server error.
  */
 
 const APP_URL = process.env.BASE_URL!;
@@ -218,14 +377,25 @@ export async function POST(
   try {
     const { id } = await context.params;
     const studySessionId = parseInt(id); // study session id
-    const body = (await req.json()) as GenerateQrRequestBody;
-    const { week_number, duration, radius } = body;
-    if (!week_number || typeof week_number !== "number") {
+    const json = await req.json();
+    const parseResult = GenerateQrRequestSchema.safeParse(json);
+
+    if (!parseResult.success) {
       return NextResponse.json(
-        { message: "week_number is required and must be a number" },
+        { message: "Invalid request", errors: parseResult.error.format() },
         { status: 400 }
       );
     }
+    const body = parseResult.data; // fully typed and validated
+
+    const {
+      week_number,
+      day_of_week,
+      radius,
+      validities,
+      validate_geo,
+      valid_room_id,
+    } = body;
 
     // Step 1: Authenticate
     const session = await auth.api.getSession({ headers: await headers() });
@@ -252,64 +422,95 @@ export async function POST(
         { status: 403 }
       );
     }
-    // Step 2b: Check that it's the correct day and time window
-    const timeCheckSql = `
-  SELECT 
-    ss.day_of_week,
-    ss.start_time,
-    ss.end_time,
-    CASE 
-      WHEN ss.day_of_week = DAYNAME(NOW()) 
-       AND TIME(NOW()) BETWEEN ss.start_time AND ss.end_time
-      THEN 1 ELSE 0 
-    END AS valid_time
-  FROM study_session ss
-  WHERE ss.id = ?
-`;
-
-    const [timeCheck] = await rawQuery<{
+    // 2b) Fetch session schedule info (used for validity window calculation)
+    const sessionInfoSql = `
+      SELECT day_of_week, start_time, end_time
+      FROM study_session
+      WHERE id = ?
+      LIMIT 1
+    `;
+    const [sessionInfo] = await rawQuery<{
       day_of_week: string;
       start_time: string;
       end_time: string;
-      valid_time: number;
-    }>(timeCheckSql, [studySessionId]);
+    }>(sessionInfoSql, [studySessionId]);
 
-    if (!timeCheck || timeCheck.valid_time === 0) {
+    if (!sessionInfo) {
       return NextResponse.json(
-        {
-          message:
-            "This request is outside the allowed session time or wrong day",
-          valid_day: timeCheck?.day_of_week,
-          valid_start_time: timeCheck?.start_time,
-          valid_end_time: timeCheck?.end_time,
-        },
-        { status: 403 }
+        { message: "Study session not found" },
+        { status: 404 }
       );
     }
 
-    // Step 3: Create qr in DB
-    const validDuration =
-      duration && typeof duration === "number" ? duration : 15; // default 15 minutes
-    const now = new Date();
-    const validUntil = new Date(now.getTime() + validDuration * 60 * 1000); // valid for `duration` in minutes
+    // Determine the calendar DATE for the requested week_number.
+    // Strategy:
+    //  - If there is an existing QR for this session with any week_number,
+    //    use the earliest known week as a baseline, then offset by weeks.
+    //  - Else, anchor on the next occurrence of the session's weekday from "now",
+    //    and treat that as the requested week_number's date (so future weeks are consistent).
+    const anchor = await getAnchorForStudySession(studySessionId);
+    const sessionDate = computeQrDateForWeek(day_of_week, week_number, anchor);
 
-    // Insert into qr_code
+    // Step 3: Create qr in DB
+    // Query to check room existence
+    const roomCheckSql = `SELECT id FROM room WHERE id = ? LIMIT 1`;
+    const [roomRow] = await rawQuery<{ id: number }>(roomCheckSql, [
+      valid_room_id,
+    ]);
+
+    if (!roomRow) {
+      return NextResponse.json(
+        { message: `Room with id ${valid_room_id} does not exist` },
+        { status: 400 }
+      );
+    }
+    // Create QR code record
+    const createdAt = new Date();
+    const validateGeoFlag =
+      typeof validate_geo === "boolean" ? validate_geo : true;
     const insertQrSql = `
-      INSERT INTO qr_code (createdAt, valid_radius)
-      VALUES (?, ?)
+      INSERT INTO qr_code (createdAt, valid_radius, validate_geo, valid_room_id)
+      VALUES (?, ?, ?, ?)
     `;
-    const qrResult: any = await rawQuery(insertQrSql, [now, radius ?? 100]);
+    const qrResult: any = await rawQuery(insertQrSql, [
+      createdAt,
+      radius,
+      validateGeoFlag ? 1 : 0,
+      valid_room_id,
+    ]);
     const qrCodeId = qrResult.insertId;
     // Step 4: Generate QR URL
     const redirectPath = "/scan";
     const qrUrl = `${APP_URL}${redirectPath}?qr_code_id=${qrCodeId}`;
     const qrDataUrl = await QRCode.toDataURL(qrUrl);
-    // Insert into validity (1st validity window)
-    const insertValiditySql = `
-      INSERT INTO validity (qr_code_id, count, start_time, end_time)
-      VALUES (?, ?, ?, ?)
-    `;
-    await rawQuery(insertValiditySql, [qrCodeId, 1, now, validUntil]);
+    // Build validity windows from HH:MM strings on sessionDate
+    type ValidityWindow = { start_time: string; end_time: string };
+
+    const windows: ValidityWindow[] = [];
+    for (let i = 0; i < validities.length; i++) {
+      const win = validities[i];
+      const start = parseTimeToDate(sessionDate, win.start_time);
+      const end = parseTimeToDate(sessionDate, win.end_time);
+
+      if (end <= start) {
+        return NextResponse.json(
+          { message: `validities[${i}]: end_time must be after start_time` },
+          { status: 400 }
+        );
+      }
+
+      // Insert each window
+      const insertValiditySql = `
+    INSERT INTO validity (qr_code_id, count, start_time, end_time)
+    VALUES (?, ?, ?, ?)
+  `;
+      await rawQuery(insertValiditySql, [qrCodeId, i + 1, start, end]);
+
+      windows.push({
+        start_time: start.toISOString(),
+        end_time: end.toISOString(),
+      });
+    }
 
     // Insert into qr_code_study_session
     const insertMapSql = `
@@ -334,7 +535,7 @@ export async function POST(
       qr_url: qrDataUrl,
       study_session_id: studySessionId,
       week_number,
-      valid_until: validUntil.toISOString(),
+      validities: windows,
     };
     return NextResponse.json(response);
   } catch (err: any) {
@@ -394,14 +595,17 @@ export async function GET(
     SELECT 
       qrs.qr_code_id,      
       qc.valid_radius,
+      qc.validate_geo,
       qc.createdAt,
       qrs.week_number,
+      ss.day_of_week,
       v.id AS validity_id,
       v.count,
       v.start_time,
       v.end_time
     FROM qr_code_study_session qrs
     JOIN qr_code qc ON qc.id = qrs.qr_code_id
+    JOIN study_session ss ON ss.id = qrs.study_session_id
     LEFT JOIN validity v ON v.qr_code_id = qc.id
     WHERE qrs.study_session_id = ?
   `;
@@ -419,8 +623,10 @@ export async function GET(
     interface QrCodeWithValidity {
       qr_code_id: number;
       valid_radius: number | null;
+      validate_geo: boolean;
       createdAt: string;
       week_number: number;
+      day_of_week: string;
       validity_id: number;
       count: number;
       start_time: string;
@@ -434,8 +640,10 @@ export async function GET(
       {
         qr_code_id: number;
         valid_radius: number | null;
+        validate_geo: boolean;
         createdAt: string;
         week_number: number;
+        day_of_week: string;
         validities: {
           validity_id: number;
           count: number;
@@ -449,9 +657,11 @@ export async function GET(
       if (!qrMap[row.qr_code_id]) {
         qrMap[row.qr_code_id] = {
           qr_code_id: row.qr_code_id,
-          valid_radius: row.valid_radius,
+          valid_radius: Number(row.valid_radius),
+          validate_geo: row.validate_geo ? true : false,
           createdAt: row.createdAt,
           week_number: row.week_number,
+          day_of_week: row.day_of_week,
           validities: [],
         };
       }
@@ -490,15 +700,24 @@ export async function PUT(
   try {
     const { id } = await context.params;
     const studySessionId = parseInt(id);
-    const body = await req.json();
-    const { qr_code_id } = body;
+    const json = await req.json();
+    const parseResult = UpdateQrRequestSchema.safeParse(json);
 
-    if (!qr_code_id || typeof qr_code_id !== "number") {
+    if (!parseResult.success) {
       return NextResponse.json(
-        { message: "qr_code_id is required and must be a number" },
+        { message: "Invalid request", errors: parseResult.error.format() },
         { status: 400 }
       );
     }
+
+    const {
+      qr_code_id,
+      radius,
+      validities,
+      validate_geo,
+      day_of_week,
+      valid_room_id,
+    } = parseResult.data;
 
     // Step 1: Authenticate
     const session = await auth.api.getSession({ headers: await headers() });
@@ -508,7 +727,7 @@ export async function PUT(
 
     const lecturerId = session.user.id;
 
-    // Step 2: Check if lecturer is assigned to this study session
+    // Step 2: Check lecturer assignment
     const checkSql = `
       SELECT ss.id AS study_session_id
       FROM study_session ss
@@ -519,7 +738,6 @@ export async function PUT(
       checkSql,
       [studySessionId, lecturerId]
     );
-
     if (!studySessionRow) {
       return NextResponse.json(
         { message: "You are not assigned to this course session" },
@@ -527,105 +745,133 @@ export async function PUT(
       );
     }
 
-    // Step 3: Check QR code mapping
+    // Step 3: Validate QR belongs to this session
     const qrCheckSql = `
-      SELECT qcss.week_number
+      SELECT qcss.qr_code_id, qcss.week_number
       FROM qr_code_study_session qcss
       WHERE qcss.study_session_id = ? AND qcss.qr_code_id = ?
     `;
-    const [qrCodeRow] = await rawQuery<{ week_number: number }>(qrCheckSql, [
-      studySessionId,
-      qr_code_id,
-    ]);
-
-    if (!qrCodeRow) {
-      return NextResponse.json(
-        { message: "QR code not found for this session" },
-        { status: 403 }
-      );
-    }
-
-    // Step 4: Get existing validities
-    const validitySql = `
-      SELECT id, end_time  FROM validity
-      WHERE qr_code_id = ?
-      ORDER BY count ASC
-    `;
-    const validities = await rawQuery<{ id: number; end_time: string }>(
-      validitySql,
-      [qr_code_id]
+    const [qrRow] = await rawQuery<{ qr_code_id: number; week_number: number }>(
+      qrCheckSql,
+      [studySessionId, qr_code_id]
     );
-    console.log("Existing validities:", validities);
-    if (validities.length >= 2) {
-      return NextResponse.json(
-        { message: "Maximum validities reached for this QR code" },
-        { status: 409 }
-      );
-    }
 
-    const firstValidity = validities[0];
-    if (!firstValidity) {
+    if (!qrRow) {
       return NextResponse.json(
-        { message: "First validity not found. Cannot create second validity." },
-        { status: 400 }
-      );
-    }
-    //Ensure action is after first validity's end_time
-    const now = new Date();
-    const firstEndTime = new Date(firstValidity.end_time);
-
-    if (now <= firstEndTime) {
-      return NextResponse.json(
-        {
-          message: "Cannot create second validity before first validity ends.",
-        },
-        { status: 400 }
-      );
-    }
-
-    // Step 5: Get study session end time
-    const ssSql = `SELECT end_time FROM study_session WHERE id = ?`;
-    const [ssRow] = await rawQuery<{ end_time: string }>(ssSql, [
-      studySessionId,
-    ]);
-    if (!ssRow) {
-      return NextResponse.json(
-        { message: "Study session not found" },
+        { message: "QR code does not belong to this study session" },
         { status: 404 }
       );
     }
 
-    const newStart = new Date(); // starts validity now
-    const today = new Date().toISOString().split("T")[0];
-    const newEnd = `${today} ${ssRow.end_time}`;
+    // Optional day_of_week update: Persist new day on the study_session itself if it changed.
+    // NOTE: day_of_week lives on study_session (not on qr_code). Previously the PUT endpoint
+    // only used the provided day_of_week to recompute validity window datetimes without
+    // persisting the change, so subsequent GETs still showed the old day. This block fixes that.
+    const currentDayRows = await rawQuery<{ day_of_week: string }>(
+      `SELECT day_of_week FROM study_session WHERE id = ? LIMIT 1`,
+      [studySessionId]
+    );
+    if (
+      currentDayRows.length === 1 &&
+      currentDayRows[0].day_of_week !== day_of_week
+    ) {
+      await rawQuery(
+        `UPDATE study_session SET day_of_week = ? WHERE id = ? LIMIT 1`,
+        [day_of_week, studySessionId]
+      );
+      // After changing the canonical day_of_week, subsequent anchor computations (earliest
+      // validity for week 1) may shift if this session's first-week QR windows moved.
+      // We recompute validity window datetimes below using the new day_of_week; if multiple
+      // week 1 QR codes exist, the earliest one (possibly old date) will still anchor future
+      // computations. Additional logic could normalize that, but we keep scope minimal here.
+    }
 
-    // Step 6: Insert second validity
-    const insertSql = `
-      INSERT INTO validity (qr_code_id, count, start_time, end_time)
-      VALUES (?, ?, ?, ?)
+    // Step 4: Validate room
+    const roomCheckSql = `SELECT id FROM room WHERE id = ? LIMIT 1`;
+    const [roomRow] = await rawQuery<{ id: number }>(roomCheckSql, [
+      valid_room_id,
+    ]);
+    if (!roomRow) {
+      return NextResponse.json(
+        { message: `Room with id ${valid_room_id} does not exist` },
+        { status: 400 }
+      );
+    }
+
+    // Step 5: Update qr_code record(validate_geo, radius, valid_room_id,)
+    const updateQrSql = `
+      UPDATE qr_code
+      SET valid_radius = ?, validate_geo = ?, valid_room_id = ?
+      WHERE id = ?
     `;
-    const result: any = await rawQuery(insertSql, [
+    await rawQuery(updateQrSql, [
+      radius ?? 100,
+      validate_geo ? 1 : 0,
+      valid_room_id,
       qr_code_id,
-      2,
-      newStart,
-      newEnd,
     ]);
 
-    const response = {
-      message: "Validity added successfully",
-      qr_code_id,
-      week_number: qrCodeRow.week_number,
-      validity: {
-        validity_id: result.insertId,
-        count: 2,
-        start_time: newStart,
-        end_time: newEnd,
-      },
-    };
+    // Step 6) Update validity windows in place (no delete/insert)
+    type ValidityRow = { count: number; start_time: string; end_time: string };
 
-    return NextResponse.json(response);
-  } catch (err: any) {
-    console.error("Error adding validity:", err);
+    const existing = await rawQuery<ValidityRow>(
+      `SELECT count, start_time, end_time
+   FROM validity
+   WHERE qr_code_id = ?
+   ORDER BY count ASC`,
+      [qr_code_id]
+    );
+
+    // Expect exactly 2 validity rows (count = 1 and 2)
+    if (existing.length !== validities.length) {
+      return NextResponse.json(
+        {
+          message:
+            "Existing validity windows do not match the request. Expected exactly two windows.",
+          details: {
+            existing_count: existing.length,
+            requested_count: validities.length,
+          },
+        },
+        { status: 409 }
+      );
+    }
+    // compute sessionDate from existing rows (in case day_of_week changed above)
+    const anchor = await getAnchorForStudySession(studySessionId);
+    const sessionDate = computeQrDateForWeek(
+      day_of_week,
+      qrRow.week_number,
+      anchor
+    );
+    for (let i = 0; i < validities.length; i++) {
+      const win = validities[i];
+      const row = existing[i];
+      // Derive the base date from the existing row (prefer start_time; fallback to end_time)
+      const _baseDateString = row.start_time ?? row.end_time; // retained for potential debugging/reference
+      const start = parseTimeToDate(sessionDate, win.start_time);
+      const end = parseTimeToDate(sessionDate, win.end_time);
+
+      if (end <= start) {
+        return NextResponse.json(
+          { message: `validities[${i}]: end_time must be after start_time` },
+          { status: 400 }
+        );
+      }
+
+      // Update by (qr_code_id, count)
+      const updateValiditySql = `
+    UPDATE validity
+    SET start_time = ?, end_time = ?
+    WHERE qr_code_id = ? AND count = ?
+    LIMIT 1
+  `;
+      await rawQuery(updateValiditySql, [start, end, qr_code_id, i + 1]);
+    }
+    return NextResponse.json({
+      message: "QR code updated successfully",
+    });
+  } catch (err) {
+    console.error(err);
     return NextResponse.json(
       { message: "Internal Server Error" },
       { status: 500 }

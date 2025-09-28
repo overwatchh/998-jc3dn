@@ -8,17 +8,6 @@ export const auth = betterAuth({
     enabled: true,
   },
   socialProviders: {
-    google: {
-      prompt: "select_account",
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-      mapProfileToUser: profile => {
-        return {
-          firstName: profile.given_name,
-          lastName: profile.family_name,
-        };
-      },
-    },
     microsoft: {
       clientId: process.env.MICROSOFT_CLIENT_ID as string,
       clientSecret: process.env.MICROSOFT_CLIENT_SECRET as string,

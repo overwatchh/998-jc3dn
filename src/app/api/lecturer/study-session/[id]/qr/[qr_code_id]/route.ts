@@ -90,10 +90,12 @@ export async function GET(
       SELECT 
         qrs.study_session_id,
         qrs.week_number,
-        v.end_time AS valid_until
+        v.end_time AS valid_until,
+        ss.day_of_week
       FROM qr_code_study_session qrs
       JOIN qr_code qc ON qrs.qr_code_id = qc.id
       JOIN validity v ON v.qr_code_id = qc.id
+      JOIN study_session ss ON ss.id = qrs.study_session_id
       WHERE qrs.study_session_id = ? AND qc.id = ?
         AND NOW() BETWEEN v.start_time AND v.end_time
       ORDER BY v.count DESC
@@ -103,10 +105,12 @@ export async function GET(
       SELECT 
         qrs.study_session_id,
         qrs.week_number,
-        v.end_time AS valid_until
+        v.end_time AS valid_until,
+        ss.day_of_week
       FROM qr_code_study_session qrs
       JOIN qr_code qc ON qrs.qr_code_id = qc.id
       JOIN validity v ON v.qr_code_id = qc.id
+      JOIN study_session ss ON ss.id = qrs.study_session_id
       WHERE qrs.study_session_id = ? AND qc.id = ?
       ORDER BY v.end_time DESC
       LIMIT 1
@@ -116,10 +120,14 @@ export async function GET(
       study_session_id: number;
       week_number: number;
       valid_until: string;
+      day_of_week: string;
     }>(activeSql, [studySessionId, qrId]);
 
     if (rows.length === 0) {
-      rows = await rawQuery(activeSql.replace("ORDER BY v.count DESC", "ORDER BY v.end_time DESC"), [studySessionId, qrId]);
+      rows = await rawQuery(
+        activeSql.replace("ORDER BY v.count DESC", "ORDER BY v.end_time DESC"),
+        [studySessionId, qrId]
+      );
     }
 
     if (rows.length === 0) {
@@ -133,7 +141,7 @@ export async function GET(
       );
     }
 
-    const { study_session_id, week_number, valid_until } = rows[0];
+    const { study_session_id, week_number, valid_until, day_of_week } = rows[0];
 
     // Build QR url
     const qrUrl = `${APP_URL}${redirect_path}?qr_code_id=${qrId}`;
@@ -145,6 +153,7 @@ export async function GET(
       study_session_id,
       week_number,
       valid_until,
+      day_of_week,
     });
   } catch (error) {
     console.error(error);

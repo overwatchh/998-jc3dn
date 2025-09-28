@@ -77,7 +77,7 @@ INSERT INTO room (building_number, room_number, description, latitude, longitude
 ('22', '103', 'Building 22', -34.404630436746494, 150.87661222539015, 1),
 ('40', '103', 'Building 40', -34.4062537916668, 150.87683726956962, 1),
 ('35', '103', 'Building 35', -34.40582005010667, 150.88081766767468, 1),
-('12', '2', 'Nha cua Duong', -34.406946, 150.878454, 1);
+('12', '2', 'Building 67', -34.427031, 150.885741, 1);
 
 
 -- Semesters
@@ -150,10 +150,10 @@ INSERT INTO study_session (id, type, day_of_week, start_time, end_time, room_id)
 (8, 'tutorial', 'Thursday', '10:00:00', '12:00:00', 8),
 (9, 'tutorial', 'Friday', '14:00:00', '16:00:00', 9),
 -- MTS9307
-(10, 'lecture', 'Thursday', '00:00:00', '15:00:00', 10), -- create QR code all day
+(10, 'lecture', 'Thursday', '21:30:00', '22:30:00', 10),
 (11, 'tutorial', 'Friday', '13:00:00', '15:00:00', 1),
 (12, 'tutorial', 'Thursday', '08:00:00', '10:00:00', 2),
--- CSCI935, CSCI435
+-- CSCI935
 (13, 'lecture', 'Friday', '09:00:00', '11:00:00', 3),
 (14, 'tutorial', 'Wednesday', '15:00:00', '17:00:00', 4),
 (15, 'tutorial', 'Thursday', '16:00:00', '18:00:00', 5),
@@ -171,11 +171,17 @@ INSERT INTO study_session (id, type, day_of_week, start_time, end_time, room_id)
 (23, 'tutorial', 'Monday', '14:00:00', '16:00:00', 3),
 -- Machine Learning Applications
 (24, 'lecture', 'Friday', '09:00:00', '11:00:00', 4),
-(25, 'tutorial', 'Thursday', '12:00:00', '15:00:00', 5),
-(26, 'lecture', 'Thursday', '00:30:00', '15:30:00', 6), -- create QR code all day
+(25, 'tutorial', 'Thursday', '13:30:00', '14:30:00', 5),
+(26, 'lecture', 'Thursday', '13:30:00', '14:30:00', 6), -- create QR code all day
 (27, 'tutorial', 'Wednesday', '13:30:00', '15:30:00', 7),
 (28, 'lecture', 'Thursday', '13:30:00', '15:30:00', 8),
 (29, 'lecture', 'Thursday', '13:30:00', '15:30:00', 9);
+
+-- CSCI435 (separate sessions from CSCI935 to avoid shared study_session_id)
+INSERT INTO study_session (id, type, day_of_week, start_time, end_time, room_id) VALUES
+(30, 'lecture', 'Friday', '09:00:00', '11:00:00', 3),
+(31, 'tutorial', 'Wednesday', '15:00:00', '17:00:00', 4),
+(32, 'tutorial', 'Thursday', '16:00:00', '18:00:00', 5);
 
 
 -- Subject-StudySession
@@ -185,7 +191,8 @@ INSERT INTO subject_study_session (subject_id, study_session_id) VALUES
 (3, 7), (3, 8), (3, 9),
 (4, 10), (4, 11), (4, 12),
 (5, 13), (5, 14), (5, 15),
-(6, 13), (6, 14), (6, 15),
+-- CSCI435 mapped to its own sessions (30, 31, 32)
+(6, 30), (6, 31), (6, 32),
 (7, 16), (7, 17),
 (8, 18), (8, 19),
 (9, 20), (9, 21),
@@ -212,12 +219,12 @@ INSERT INTO student_study_session (student_id, study_session_id) VALUES
 INSERT INTO lecturer_study_session (study_session_id, lecturer_id) VALUES
 -- lec1 
 (10, 'hrEpeIa27ITirYij0FJRAYgbMledKcuw'),
--- lec2
-(11, 'Pl3aUloS8SowYGhvBTnUH2nocxPPXE41'),
+-- lec2 and khoa teaches study session 11
+(11, 'Pl3aUloS8SowYGhvBTnUH2nocxPPXE41'), (11, 'I9vweFqQtLTzP7UqemwUlwWIuOYs3hJ6'),
 -- lec3
 (13, 'QNZ4aS743Pn4hUsd0dskFnnAUQ3JIxaw'),
--- lec1 teaches study sesion 14-25
-(14, 'hrEpeIa27ITirYij0FJRAYgbMledKcuw'),
+-- lec1 teaches study sesion 13 (CSCI935 lecture) and 16-25
+(13, 'hrEpeIa27ITirYij0FJRAYgbMledKcuw'),
 (15, 'Pl3aUloS8SowYGhvBTnUH2nocxPPXE41'),
 (16, 'hrEpeIa27ITirYij0FJRAYgbMledKcuw'),
 (17, 'hrEpeIa27ITirYij0FJRAYgbMledKcuw'),

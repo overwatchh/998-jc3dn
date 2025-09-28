@@ -1,56 +1,28 @@
-# Agent Guidelines for 998-jc3dn
+# AGENTS.md - QR Attendance System
 
 ## Build/Lint/Test Commands
 
-- **Build**: `npm run build` (only when prompted)
-- **Dev server**: `npm run dev` (only when prompted)
-- **Lint**: `npm run lint`
-- **Format**: `npm run format`
-- **Type check**: `npm run check` (TypeScript + ESLint) - run as final validation step
-- **Clean**: `npm run clean`
-- **Start production**: `npm run start`
-- **Auth migration**: `npm run auth:migrate`
-
-## Testing
-
-- No test framework configured yet
-- Test APIs manually with Postman/curl
-- Consider Jest + React Testing Library for future component testing
-- Always manually test API routes before deploying
+- Build: `npm run build` (Next.js build)
+- Lint: `npm run lint` (ESLint check)
+- Type check: `tsc -p tsconfig.check.json --noEmit`
+- Format: `npm run format` (Prettier + import sort)
+- Full check: `npm run check` (type + lint)
+- Dev: `npm run dev`
+- DB init: `npm run db:init`
+- No test framework configured; add if needed for single test runs.
 
 ## Code Style Guidelines
 
-### Imports & Formatting
+- **Imports**: Sort with Prettier plugin: core (@core), third-party, server (@server), UI (@ui), relative (./).
+- **Formatting**: Prettier: semicolons, double quotes, 2-space tabs, 80-width, ES5 trailing commas, LF end-of-line.
+- **Types**: TypeScript strict mode off, no implicit any; use explicit types; paths: @/_ -> ./src/_.
+- **Naming**: camelCase for vars/functions, PascalCase for components/types; unused vars prefixed with \_.
+- **Error Handling**: Throw plain Error for DUPLICATE_ENTRY; return structured JSON errors (400/401/403/409); no raw SQL leaks.
+- **Conventions**: Use rawQuery for DB, role gates on server, React Query keys as arrays, Tailwind + shadcn UI patterns, OpenAPI JSDoc for API routes.
 
-- Use `@/` alias for `src/` directory (no relative imports beyond current directory)
-- Group: React/React-related → third-party libraries → internal modules
-- Prettier: semicolons, double quotes, 2 spaces, 80 char width, ES5 trailing commas
-- Use .prettierrc.json as source of truth
+## Copilot Rules
 
-### Types & Naming
-
-- Strict TypeScript enabled with full type checking
-- camelCase for variables/functions, PascalCase for components/types
-- Descriptive names, prefix unused params with `_`
-- Define interfaces for API responses and component props
-
-### Error Handling & Security
-
-- Use try-catch in async functions with NextResponse.json error responses
-- Never log/expose sensitive information
-- Validate all user inputs and API requests
-- Use proper HTTP status codes
-
-### React & API Patterns
-
-- Functional components with hooks (no classes)
-- React Query for server state, Zustand for client state
-- Next.js API routes with OpenAPI docs in JSDoc comments
-- Follow class-variance-authority component patterns
-
-## Project Structure
-
-- `src/app/` - Next.js app router (auth/protected/admin/lecturer/student route groups)
-- `src/components/` - shadcn/ui components
-- `src/lib/` - utilities, `src/hooks/` - custom hooks, `src/types/` - type definitions
-- `src/app/api/` - API routes organized by feature with RESTful conventions
+- Enforce roles in server layouts/routes early; use better-auth for sessions; React Query for client state.
+- Keep server logic in src/lib/server/\*; thin route handlers; initialize server-only logic in initializeServer().
+- Reuse attendance calc functions; geo utils from lib/utils.ts; email service requires SMTP config; cron in America/New_York.
+- Add OpenAPI JSDoc for new API routes; follow existing API response shapes with count + data arrays.

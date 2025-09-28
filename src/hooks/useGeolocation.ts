@@ -7,7 +7,9 @@ export interface UseGeolocationReturn {
   loading: boolean;
 }
 
-export const useGeolocation = (enabled: boolean = true): UseGeolocationReturn => {
+export const useGeolocation = (
+  enabled: boolean = true
+): UseGeolocationReturn => {
   const [position, setPosition] = useState<GeolocationCoords | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(enabled);
@@ -25,11 +27,13 @@ export const useGeolocation = (enabled: boolean = true): UseGeolocationReturn =>
     }
 
     const successHandler = (pos: GeolocationPosition) => {
-      setPosition({
+      const newPosition = {
         latitude: pos.coords.latitude,
         longitude: pos.coords.longitude,
         accuracy: pos.coords.accuracy,
-      });
+      };
+
+      setPosition(newPosition);
       setLoading(false);
       setError(null);
     };
@@ -57,5 +61,3 @@ export const useGeolocation = (enabled: boolean = true): UseGeolocationReturn =>
 
   return { position, error, loading };
 };
-
-export default useGeolocation;
