@@ -226,7 +226,7 @@ export const Header = () => {
             </TooltipContent>
           </Tooltip>
           <ThemeToggler />
-          <NotificationIcon />
+          {session?.user && <NotificationIcon />}
           <LoginButton />
         </div>
       </div>
