@@ -68,6 +68,10 @@ const faqItems: FaqItemProps[] = [
     q: "Manual check‑in button is disabled or missing.",
     a: "You might be outside the allowed second window or the lecturer disabled manual mode. Refresh the page after the announced start time, and if still missing, contact the lecturer.",
   },
+  {
+    q: "I don't have a phone or camera. How can I check in?",
+    a: "If you're unable to use the QR scanning system due to not having a phone or camera access, please speak with your lecturer at the end of the class. They can perform a manual check-in for you to ensure your attendance is properly recorded.",
+  },
 ];
 
 export { FaqItem, faqItems };

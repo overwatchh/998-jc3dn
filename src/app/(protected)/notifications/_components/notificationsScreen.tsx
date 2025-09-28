@@ -3,17 +3,12 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useNotifications } from "@/hooks/useNotifications";
 import { AlertTriangle, Bell, CheckCheck } from "lucide-react";
-import { useState } from "react";
 import { NotificationCard } from "./NotificationCard";
-import { mockNotifications } from "./mockdata";
 
 export function NotificationsScreen() {
-  const [notifications, setNotifications] = useState(mockNotifications);
-
-  function markAllAsRead() {
-    setNotifications(prev => prev.map(notif => ({ ...notif, unread: false })));
-  }
+  const { notifications, unreadCount, markAllAsRead } = useNotifications();
 
   function filterNotifications(filter: string) {
     switch (filter) {
@@ -29,7 +24,6 @@ export function NotificationsScreen() {
     }
   }
 
-  const unreadCount = notifications.filter(n => n.unread).length;
 
   return (
     <div className="space-y-6 p-4">

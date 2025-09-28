@@ -1,5 +1,6 @@
 "use client";
 
+import { Footer } from "@/components/footer";
 import { Header } from "@/components/header";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
@@ -18,7 +19,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
         {/* Add necessary head elements here, like meta tags, title, etc. */}
         <title>QR Attendance System</title>
       </head>
-      <body className="flex h-screen flex-col overflow-y-auto">
+      <body className="flex min-h-screen flex-col">
         <ReactQueryProvider>
           <ThemeProvider
             attribute="class"
@@ -27,7 +28,11 @@ export default function RootLayout({ children }: RootLayoutProps) {
             disableTransitionOnChange
           >
             <Header />
-            {children}
+            <main className="flex-1">
+              {children}
+            </main>
+            <div className="h-20"></div>
+            <Footer />
             <Toaster richColors />
           </ThemeProvider>
         </ReactQueryProvider>

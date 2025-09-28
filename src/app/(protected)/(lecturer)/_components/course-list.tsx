@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { CourseSessionResponse } from "@/types/course";
 import { useTour } from "@reactour/tour";
 import { ArrowLeft, Clock, HelpCircle } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useQrGenContext } from "../qr-generation/qr-gen-context";
 import { QRGenScreens } from "../qr-generation/types";
 
@@ -15,6 +16,7 @@ interface Props {
 export function CoursesList({ courses }: Props) {
   const { setCurrentScreen, setSelectedCourse } = useQrGenContext();
   const { setIsOpen, currentStep, setCurrentStep, isOpen } = useTour();
+  const router = useRouter();
 
   function handleCourseSelection(course: {
     id: number;
@@ -57,8 +59,8 @@ export function CoursesList({ courses }: Props) {
           <div className="flex items-start gap-4">
             <Button
               variant="ghost"
-              aria-label="Go back"
-              onClick={() => setCurrentScreen(QRGenScreens.COURSE_SELECTION)}
+              aria-label="Go back to dashboard"
+              onClick={() => router.push("/")}
             >
               <ArrowLeft />
             </Button>
