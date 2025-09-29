@@ -239,3 +239,27 @@ INSERT INTO lecturer_study_session (study_session_id, lecturer_id) VALUES
 (26, 'I9vweFqQtLTzP7UqemwUlwWIuOYs3hJ6'), (10, 'I9vweFqQtLTzP7UqemwUlwWIuOYs3hJ6'), (25, 'I9vweFqQtLTzP7UqemwUlwWIuOYs3hJ6');
 
 
+-- ---------------------------------------------------------------------------
+-- Seed: Static demo QR code (id = 9999) with an always-active validity window
+-- Purpose: Allow students to visit /scan?qr_code_id=9999 and always retrieve
+--          a valid QR response (validity_count = 1) without needing a lecturer
+--          to generate one manually.
+-- Notes:
+--  * validity window spans 2025-01-01 through 2026-12-31 to cover the demo year
+--  * validate_geo disabled for simpler testing; radius still provided
+--  * mapped to study_session_id = 10 (already in seed data) with week_number = 1
+--  * Only one validity record (count = 1) to keep logic simple
+-- ---------------------------------------------------------------------------
+INSERT INTO qr_code (id, createdAt, validate_geo, valid_room_id, valid_radius)
+VALUES (9999, NOW(), 0, 1, 150.00)
+ON DUPLICATE KEY UPDATE createdAt = createdAt; -- idempotent for repeated db:init
+
+INSERT INTO validity (qr_code_id, count, start_time, end_time)
+VALUES (9999, 1, '2025-01-01 00:00:00', '2026-12-31 23:59:59')
+ON DUPLICATE KEY UPDATE start_time = start_time;
+
+INSERT INTO qr_code_study_session (study_session_id, qr_code_id, week_number)
+VALUES (10, 9999, 1)
+ON DUPLICATE KEY UPDATE week_number = week_number;
+
+
