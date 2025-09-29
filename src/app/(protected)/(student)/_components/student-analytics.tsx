@@ -175,16 +175,17 @@ export function StudentAnalytics() {
   const [attendanceGoals, setAttendanceGoals] = useState<AttendanceGoals | null>(null);
   const [recentActivity, setRecentActivity] = useState<RecentActivity | null>(null);
   const [loading, setLoading] = useState(true);
+  const [sessionType, setSessionType] = useState<'lecture' | 'tutorial'>('lecture');
 
   useEffect(() => {
     const fetchAnalytics = async () => {
       try {
         const [summaryRes, weeklyRes, performanceRes, goalsRes, activityRes] = await Promise.all([
-          fetch('/api/student/analytics/attendance-summary'),
-          fetch('/api/student/analytics/weekly-progress'),
-          fetch('/api/student/analytics/subject-performance'),
-          fetch('/api/student/analytics/attendance-goals'),
-          fetch('/api/student/analytics/recent-activity')
+          fetch(`/api/student/analytics/attendance-summary?sessionType=${sessionType}`),
+          fetch(`/api/student/analytics/weekly-progress?sessionType=${sessionType}`),
+          fetch(`/api/student/analytics/subject-performance?sessionType=${sessionType}`),
+          fetch(`/api/student/analytics/attendance-goals?sessionType=${sessionType}`),
+          fetch(`/api/student/analytics/recent-activity?sessionType=${sessionType}`)
         ]);
 
         const [summaryData, weeklyData, performanceData, goalsData, activityData] = await Promise.all([
@@ -222,7 +223,7 @@ export function StudentAnalytics() {
     };
 
     fetchAnalytics();
-  }, []);
+  }, [sessionType]);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -293,6 +294,18 @@ export function StudentAnalytics() {
 
   return (
     <div className="p-6 space-y-6">
+      {/* Session Type Filter */}
+      <Tabs value={sessionType} onValueChange={(value) => setSessionType(value as 'lecture' | 'tutorial')} className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="lecture" className="text-sm">
+            📚 Lectures
+          </TabsTrigger>
+          <TabsTrigger value="tutorial" className="text-sm">
+            🎯 Tutorials
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
+
       {/* Header with Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>

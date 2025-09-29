@@ -4,12 +4,10 @@ import { useQuery } from "@tanstack/react-query";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -33,18 +31,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
 import {
   Table,
   TableBody,
@@ -55,7 +47,7 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCurrentUser } from "@/hooks/useAuth";
-import { format } from "date-fns";
+import DayOfWeekPatterns from "@/components/day-of-week-patterns";
 import {
   ArrowDown,
   ArrowUp,
@@ -69,7 +61,6 @@ import {
   User,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import type { DateRange } from "react-day-picker";
 import {
   CartesianGrid,
   Line,
@@ -82,6 +73,42 @@ import {
   Bar,
   BarChart,
 } from "recharts";
+
+// TypeScript interfaces for data structures
+interface StudentPerformance {
+  student_name: string;
+  student_id_anon: string;
+  initials: string;
+  student_email: string;
+  subject_code: string;
+  subject_name: string;
+  total_weeks: number;
+  weeks_attended: number;
+  attendance_percentage: number;
+  performance_category: 'Excellent' | 'Good' | 'Average' | 'Poor';
+  trend: 'up' | 'none' | 'down';
+}
+
+interface Course {
+  id: number;
+  name: string;
+  code: string;
+  sessionType: string;
+  startTime: string;
+  endTime: string;
+  dayOfWeek: string;
+}
+
+interface DetailedAttendanceData {
+  id: number;
+  name: string;
+  email: string;
+  initials: string;
+  totalSessions: number;
+  attendedSessions: number;
+  attendancePercentage: number;
+  trend: 'up' | 'stable' | 'down';
+}
 
 export default function ReportsAnalytics() {
   // Report generation states
@@ -133,7 +160,7 @@ export default function ReportsAnalytics() {
         alert(`Error generating report: ${result.error || 'Unknown error'}`);
       }
     } catch (error) {
-      console.error('Report generation error:', error);
+      console.error("Report generation error:", error);
       alert('Failed to generate report. Please try again.');
     } finally {
       setIsGeneratingReport(false);
@@ -142,15 +169,28 @@ export default function ReportsAnalytics() {
 
 
   // Use analytics-specific courses endpoint that shows all courses with attendance data
-  const { data: courses, isLoading: isCoursesLoading } = useQuery({
+  const { data: courses, isLoading: _isCoursesLoading } = useQuery({
     queryKey: ['analytics-courses'],
     queryFn: async () => {
       const response = await fetch('/api/analytics/available-courses');
       const data = await response.json();
-      return data;
+      // Return empty array if error or not an array
+      return Array.isArray(data) ? data : [];
     }
   });
   const [selectedCourseId, setSelectedCourseId] = useState<string>("");
+  const [sessionType, setSessionType] = useState<'lecture' | 'tutorial'>('lecture');
+
+  // Fetch session types that this lecturer teaches
+  const { data: sessionTypesData } = useQuery({
+    queryKey: ['lecturer-session-types'],
+    queryFn: async () => {
+      const response = await fetch('/api/lecturer/session-types');
+      const data = await response.json();
+      // Return default structure if error
+      return data && !data.error ? data : { sessionTypes: [] };
+    }
+  });
 
   // Real-time data states
   const [weeklyAttendanceData, setWeeklyAttendanceData] = useState([]);
@@ -171,6 +211,11 @@ export default function ReportsAnalytics() {
   // const [dayOfWeekData, setDayOfWeekData] = useState({});
   // const [timeBasedData, setTimeBasedData] = useState([]);
   // const [riskPredictionData, setRiskPredictionData] = useState([]);
+
+  // Pagination and Filter States
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
+  const [attendanceFilter, setAttendanceFilter] = useState<'all' | 'excellent' | 'good' | 'poor'>('all');
 
   // Calculate real-time advanced analytics data
   const calculateDayOfWeekData = () => {
@@ -226,9 +271,12 @@ export default function ReportsAnalytics() {
       };
     }
 
-    const criticalRisk = studentPerformanceData.filter(s => s.attendance < 60);
-    const moderateRisk = studentPerformanceData.filter(s => s.attendance >= 60 && s.attendance < 75);
-    const watchList = studentPerformanceData.filter(s => s.trend === 'down' && s.attendance >= 75);
+    const criticalRisk = studentPerformanceData.filter(s => parseFloat(String(s.attendance_percentage)) < 60);
+    const moderateRisk = studentPerformanceData.filter(s => {
+      const attendance = parseFloat(String(s.attendance_percentage));
+      return attendance >= 60 && attendance < 75;
+    });
+    const watchList = studentPerformanceData.filter(s => s.trend === 'down' && parseFloat(String(s.attendance_percentage)) >= 75);
 
     return {
       critical: criticalRisk,
@@ -255,17 +303,17 @@ export default function ReportsAnalytics() {
     engagementPatterns: [],
     insights: {}
   });
-  const [isLoadingData, setIsLoadingData] = useState(false);
+  const [_isLoadingData, setIsLoadingData] = useState(false);
 
   // Detailed attendance states
   const [detailedAttendanceTab, setDetailedAttendanceTab] = useState<string>("student");
-  const [detailedAttendanceData, setDetailedAttendanceData] = useState<any[]>([]);
+  const [detailedAttendanceData, setDetailedAttendanceData] = useState<DetailedAttendanceData[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [isLoadingDetailedData, setIsLoadingDetailedData] = useState(false);
 
   // Modal states for actions
   const [showDetailsModal, setShowDetailsModal] = useState(false);
-  const [selectedStudent, setSelectedStudent] = useState<any>(null);
+  const [selectedStudent, setSelectedStudent] = useState<StudentPerformance | null>(null);
   const [showNotificationModal, setShowNotificationModal] = useState(false);
 
   useEffect(() => {
@@ -274,6 +322,27 @@ export default function ReportsAnalytics() {
     }
   }, [courses, selectedCourseId]);
 
+  // Auto-set session type based on what the lecturer teaches
+  useEffect(() => {
+    if (sessionTypesData && sessionTypesData.sessionTypes) {
+      const availableTypes = sessionTypesData.sessionTypes;
+      // If lecturer only teaches one type, automatically set it
+      if (availableTypes.length === 1) {
+        setSessionType(availableTypes[0] as 'lecture' | 'tutorial');
+      } else if (availableTypes.length > 1) {
+        // If they teach both, default to lectures (or keep current selection if valid)
+        if (!availableTypes.includes(sessionType)) {
+          setSessionType('lecture'); // Default to lecture if current selection is invalid
+        }
+      }
+    }
+  }, [sessionTypesData, sessionType]);
+
+  // Reset pagination when data changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [detailedAttendanceData, selectedCourseId, detailedAttendanceTab, sessionType]);
+
   // Fetch real-time data
   useEffect(() => {
     const fetchAnalyticsData = async () => {
@@ -281,24 +350,30 @@ export default function ReportsAnalytics() {
 
       setIsLoadingData(true);
       try {
-        // Fetch all analytics data
-        const [weeklyRes, studentRes, distributionRes, metricsRes, trendsRes, checkinTypesRes] = await Promise.all([
-          fetch(`/api/analytics/weekly-attendance?subjectId=${selectedCourseId}`),
-          fetch(`/api/analytics/student-performance?subjectId=${selectedCourseId}&limit=20`),
-          fetch(`/api/analytics/attendance-distribution?subjectId=${selectedCourseId}`),
-          fetch(`/api/analytics/key-metrics?subjectId=${selectedCourseId}`),
-          fetch(`/api/analytics/lecturer-trends`), // Remove course filter to show all courses
-          fetch(`/api/analytics/checkin-types?subjectId=${selectedCourseId}`)
-        ]);
+        // Fetch analytics data sequentially to reduce database connection load
+        console.log("Fetching weekly attendance...");
+        const weeklyRes = await fetch(`/api/analytics/weekly-attendance?subjectId=${selectedCourseId}&sessionType=${sessionType}`);
+        const weeklyData = await weeklyRes.json();
 
-        const [weeklyData, studentPerformanceData, distributionData, metricsData, trendsData, checkinTypesData] = await Promise.all([
-          weeklyRes.json(),
-          studentRes.json(),
-          distributionRes.json(),
-          metricsRes.json(),
-          trendsRes.json(),
-          checkinTypesRes.json()
-        ]);
+        console.log("Fetching student performance...");
+        const studentRes = await fetch(`/api/analytics/student-performance?subjectId=${selectedCourseId}&limit=500&sessionType=${sessionType}`);
+        const studentPerformanceData = await studentRes.json();
+
+        console.log("Fetching distribution data...");
+        const distributionRes = await fetch(`/api/analytics/attendance-distribution?subjectId=${selectedCourseId}&sessionType=${sessionType}`);
+        const distributionData = await distributionRes.json();
+
+        console.log("Fetching key metrics...");
+        const metricsRes = await fetch(`/api/analytics/key-metrics?subjectId=${selectedCourseId}&sessionType=${sessionType}`);
+        const metricsData = await metricsRes.json();
+
+        console.log("Fetching lecturer trends...");
+        const trendsRes = await fetch(`/api/analytics/lecturer-trends?sessionType=${sessionType}`);
+        const trendsData = await trendsRes.json();
+
+        console.log("Fetching checkin types...");
+        const checkinTypesRes = await fetch(`/api/analytics/checkin-types?subjectId=${selectedCourseId}&sessionType=${sessionType}`);
+        const checkinTypesData = await checkinTypesRes.json();
 
         // Transform data for charts
         setWeeklyAttendanceData(weeklyData.map(item => ({
@@ -329,7 +404,7 @@ export default function ReportsAnalytics() {
                   return stringified;
                 }
               } catch (e) {
-                console.error('Failed to stringify object:', e);
+                console.error("Failed to stringify object:", e);
               }
               return fallback;
             }
@@ -337,13 +412,16 @@ export default function ReportsAnalytics() {
           };
 
           return {
-            id: extractString(item.student_id_anon, `student-${index}`),
-            name: extractString(item.student_name, 'Unknown'),
-            email: extractString(item.student_email, ''),
+            student_id_anon: extractString(item.student_id_anon, `student-${index}`),
+            student_name: extractString(item.student_name, 'Unknown'),
+            student_email: extractString(item.student_email, ''),
             initials: extractString(item.initials, 'XX'),
-            attendance: parseFloat(item.attendance_percentage) || 0,
-            attended: parseInt(item.weeks_attended) || 0,
-            total: parseInt(item.total_weeks) || 0,
+            subject_code: extractString(item.subject_code, ''),
+            subject_name: extractString(item.subject_name, ''),
+            attendance_percentage: parseFloat(item.attendance_percentage) || 0,
+            weeks_attended: parseInt(item.weeks_attended) || 0,
+            total_weeks: parseInt(item.total_weeks) || 0,
+            performance_category: item.performance_category,
             trend: item.trend
           };
         }));
@@ -374,14 +452,14 @@ export default function ReportsAnalytics() {
         });
 
       } catch (error) {
-        console.error('Failed to fetch analytics data:', error);
+        console.error("Failed to fetch analytics data:", error);
       } finally {
         setIsLoadingData(false);
       }
     };
 
     fetchAnalyticsData();
-  }, [selectedCourseId]);
+  }, [selectedCourseId, sessionType]);
 
   // Fetch detailed attendance data
   useEffect(() => {
@@ -391,18 +469,18 @@ export default function ReportsAnalytics() {
       setIsLoadingDetailedData(true);
       try {
         const response = await fetch(
-          `/api/analytics/detailed-attendance?subjectId=${selectedCourseId}&viewType=${detailedAttendanceTab}&search=${searchQuery}`
+          `/api/analytics/detailed-attendance?subjectId=${selectedCourseId}&viewType=${detailedAttendanceTab}&search=${searchQuery}&sessionType=${sessionType}`
         );
 
         if (response.ok) {
           const data = await response.json();
           setDetailedAttendanceData(data);
         } else {
-          console.error('Failed to fetch detailed attendance');
+          console.error("Failed to fetch detailed attendance");
           setDetailedAttendanceData([]);
         }
       } catch (error) {
-        console.error('Error fetching detailed attendance:', error);
+        console.error("Error fetching detailed attendance:", error);
         setDetailedAttendanceData([]);
       } finally {
         setIsLoadingDetailedData(false);
@@ -410,18 +488,18 @@ export default function ReportsAnalytics() {
     };
 
     fetchDetailedAttendance();
-  }, [selectedCourseId, detailedAttendanceTab, searchQuery]);
+  }, [selectedCourseId, detailedAttendanceTab, searchQuery, sessionType]);
 
   // Action handlers
-  const handleViewDetails = (student: any) => {
-    setSelectedStudent(student);
+  const handleViewDetails = (student: StudentPerformance | DetailedAttendanceData) => {
+    setSelectedStudent(student as any);
     setShowDetailsModal(true);
   };
 
   const [isSendingNotification, setIsSendingNotification] = useState(false);
 
-  const handleSendNotification = (student: any) => {
-    setSelectedStudent(student);
+  const handleSendNotification = (student: StudentPerformance | DetailedAttendanceData) => {
+    setSelectedStudent(student as any);
     setShowNotificationModal(true);
   };
 
@@ -431,45 +509,59 @@ export default function ReportsAnalytics() {
     setIsSendingNotification(true);
 
     try {
+      // Handle both StudentPerformance and DetailedAttendanceData property names
+      const studentEmail = (selectedStudent as any).student_email || (selectedStudent as any).email;
+      const studentName = (selectedStudent as any).student_name || (selectedStudent as any).name;
+      const attendancePercentage = (selectedStudent as any).attendance_percentage || (selectedStudent as any).attendancePercentage;
+
       const response = await fetch('/api/lecturer/send-notification', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          studentEmail: selectedStudent.email || selectedStudent.student_email,
-          studentName: selectedStudent.name || selectedStudent.student_name,
-          attendancePercentage: selectedStudent.attendance || selectedStudent.attendance_percentage
+          studentEmail,
+          studentName,
+          attendancePercentage
         }),
       });
 
       const result = await response.json();
 
       if (response.ok) {
-        alert(`Notification sent successfully to ${selectedStudent.name || selectedStudent.student_name}!`);
+        alert(`Notification sent successfully to ${selectedStudent.student_name}!`);
         setShowNotificationModal(false);
       } else {
         alert(`Error sending notification: ${result.error || 'Unknown error'}`);
       }
     } catch (error) {
-      console.error('Notification send error:', error);
+      console.error("Notification send error:", error);
       alert('Failed to send notification. Please try again.');
     } finally {
       setIsSendingNotification(false);
     }
   };
 
-  const handleExportData = (student: any) => {
+  const handleExportData = (student: StudentPerformance | DetailedAttendanceData) => {
+    // Handle both StudentPerformance and DetailedAttendanceData property names
+    const studentData = student as any;
+    const name = studentData.student_name || studentData.name;
+    const email = studentData.student_email || studentData.email;
+    const attendancePercentage = studentData.attendance_percentage || studentData.attendancePercentage;
+    const attendedSessions = studentData.weeks_attended || studentData.attendedSessions;
+    const totalSessions = studentData.total_weeks || studentData.totalSessions;
+    const trend = studentData.trend;
+
     // Create CSV content
     const csvContent = [
       ['Name', 'Email', 'Attendance %', 'Attended Weeks', 'Total Weeks', 'Trend'],
       [
-        student.name,
-        student.email,
-        `${student.attendancePercentage || student.attendance}%`,
-        student.attendedSessions,
-        student.totalSessions,
-        student.trend
+        name,
+        email,
+        `${attendancePercentage}%`,
+        attendedSessions,
+        totalSessions,
+        trend
       ]
     ].map(row => row.join(',')).join('\n');
 
@@ -478,7 +570,7 @@ export default function ReportsAnalytics() {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${student.name.replace(/\s+/g, '_')}_attendance.csv`;
+    a.download = `${name.replace(/\s+/g, '_')}_attendance.csv`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -486,12 +578,13 @@ export default function ReportsAnalytics() {
   };
 
   const handleExportAllData = () => {
+    const dataToExport = attendanceFilter === 'all' ? detailedAttendanceData : filteredData;
     const csvContent = [
       ['Name', 'Email', 'Attendance %', 'Attended Weeks', 'Total Weeks', 'Trend'],
-      ...detailedAttendanceData.map(student => [
+      ...dataToExport.map(student => [
         student.name,
         student.email,
-        `${student.attendancePercentage || student.attendance}%`,
+        `${student.attendancePercentage}%`,
         student.attendedSessions,
         student.totalSessions,
         student.trend
@@ -502,11 +595,51 @@ export default function ReportsAnalytics() {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `detailed_attendance_${new Date().toISOString().split('T')[0]}.csv`;
+    const filterSuffix = attendanceFilter !== 'all' ? `_${attendanceFilter}` : '';
+    a.download = `detailed_attendance${filterSuffix}_${new Date().toISOString().split('T')[0]}.csv`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     window.URL.revokeObjectURL(url);
+  };
+
+  // Filter and Pagination Logic
+  const getFilteredData = () => {
+    if (!Array.isArray(detailedAttendanceData)) return [];
+
+    switch (attendanceFilter) {
+      case 'excellent':
+        return detailedAttendanceData.filter(s => s.attendancePercentage >= 80);
+      case 'good':
+        return detailedAttendanceData.filter(s => s.attendancePercentage >= 70 && s.attendancePercentage < 80);
+      case 'poor':
+        return detailedAttendanceData.filter(s => s.attendancePercentage < 70);
+      default:
+        return detailedAttendanceData;
+    }
+  };
+
+  const filteredData = getFilteredData();
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedData = filteredData.slice(startIndex, endIndex);
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const handlePreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  const handleFilterChange = (filter: 'all' | 'excellent' | 'good' | 'poor') => {
+    setAttendanceFilter(filter);
+    setCurrentPage(1); // Reset to first page when filter changes
   };
 
   const { data } = useCurrentUser();
@@ -527,9 +660,9 @@ export default function ReportsAnalytics() {
 
       {/* Main Analytics Dashboard */}
       <section className="space-y-8">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h2 className="text-2xl font-semibold tracking-tight text-foreground">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex-1 min-w-0">
+            <h2 className="text-xl sm:text-2xl font-semibold tracking-tight text-foreground">
               Performance Analytics Overview
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
@@ -538,8 +671,8 @@ export default function ReportsAnalytics() {
           </div>
 
           {/* Subject Selection */}
-          <div className="flex items-center gap-4">
-            <div className="min-w-[200px]">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end lg:items-center">
+            <div className="w-full sm:w-auto sm:min-w-[200px]">
               <Label htmlFor="courseSelect" className="text-sm font-medium">
                 Select Subject
               </Label>
@@ -547,22 +680,52 @@ export default function ReportsAnalytics() {
                 value={selectedCourseId}
                 onValueChange={setSelectedCourseId}
               >
-                <SelectTrigger className="mt-1">
+                <SelectTrigger className="mt-1 w-full">
                   <SelectValue placeholder="Choose a subject" />
                 </SelectTrigger>
-                <SelectContent>
-                  {courses?.map((course: any) => (
+                <SelectContent className="max-w-[320px]">
+                  {courses?.map((course: Course) => (
                     <SelectItem key={course.id} value={String(course.id)}>
-                      {course.code} - {course.name}
+                      <div className="flex flex-col text-left">
+                        <span className="font-medium">{course.code}</span>
+                        <span className="text-xs text-muted-foreground truncate">{course.name}</span>
+                      </div>
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Session Type Tabs */}
+            {sessionTypesData && sessionTypesData.sessionTypes && sessionTypesData.sessionTypes.length > 1 && (
+              <div className="w-full sm:w-auto sm:min-w-[240px] lg:min-w-[280px]">
+                <Label className="text-sm font-medium mb-2 block">
+                  Session Type
+                </Label>
+                <Tabs
+                  value={sessionType}
+                  onValueChange={(value: string) => setSessionType(value as 'lecture' | 'tutorial')}
+                  className="w-full"
+                >
+                  <TabsList className="grid w-full grid-cols-2">
+                    {sessionTypesData.sessionTypes.includes('lecture') && (
+                      <TabsTrigger value="lecture" className="text-xs sm:text-sm">
+                        📚 Lectures
+                      </TabsTrigger>
+                    )}
+                    {sessionTypesData.sessionTypes.includes('tutorial') && (
+                      <TabsTrigger value="tutorial" className="text-xs sm:text-sm">
+                        💡 Tutorials
+                      </TabsTrigger>
+                    )}
+                  </TabsList>
+                </Tabs>
+              </div>
+            )}
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 xl:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 xl:grid-cols-3">
         {/* Weekly Attendance vs Enrollment Trends */}
         <Card className="h-full shadow-sm border-border/50">
           <CardHeader className="pb-6">
@@ -667,7 +830,7 @@ export default function ReportsAnalytics() {
             </ChartContainer>
 
             {/* Enhanced Weekly Insights */}
-            <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
               <div className="text-center p-4 bg-primary/5 rounded-lg border border-primary/20">
                 <div className="text-2xl font-bold text-primary">
                   {(() => {
@@ -717,7 +880,7 @@ export default function ReportsAnalytics() {
             </CardDescription>
           </CardHeader>
           <CardContent className="pb-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-center">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 items-center">
               {/* Radial Chart */}
               <div className="flex justify-center">
                 <div className="relative">
@@ -1084,7 +1247,7 @@ export default function ReportsAnalytics() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-2">
                 {(Array.isArray(weeklyAttendanceData) ? weeklyAttendanceData : []).map((week, index) => (
                   <div
-                    key={`week-${week.week_label || week.date || index}`}
+                    key={`week-heatmap-${index}-${week.week_number || 0}`}
                     className={`relative p-3 rounded-lg border transition-all duration-200 hover:scale-105 cursor-pointer ${
                       week.attendance >= 90 ? 'bg-green-500 border-green-600 text-white' :
                       week.attendance >= 80 ? 'bg-green-400 border-green-500 text-white' :
@@ -1176,51 +1339,7 @@ export default function ReportsAnalytics() {
 
             {/* Day-of-Week Patterns */}
             {selectedAnalyticType === "day-patterns" && (
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-sm font-medium text-foreground">Weekly Day Attendance Heatmap</h4>
-                  <div className="text-xs text-muted-foreground">
-                    Shows which days have better attendance rates
-                  </div>
-                </div>
-                <div className="grid grid-cols-7 gap-2">
-                  {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, index) => {
-                    const dayAttendanceData = calculateDayOfWeekData();
-                    const attendance = dayAttendanceData[index] || 0;
-                    const hasData = attendance > 0;
-                    return (
-                      <div
-                        key={day}
-                        className={`text-center p-4 rounded-lg border transition-all duration-200 hover:scale-105 cursor-pointer ${
-                          !hasData ? 'bg-gray-200 border-gray-300 text-gray-500' :
-                          attendance >= 40 ? 'bg-green-500 border-green-600 text-white' :
-                          attendance >= 30 ? 'bg-blue-400 border-blue-500 text-white' :
-                          attendance >= 20 ? 'bg-yellow-400 border-yellow-500 text-gray-900' :
-                          'bg-red-400 border-red-500 text-white'
-                        }`}
-                        title={`${day}: ${hasData ? attendance.toFixed(1) + '% average attendance' : 'No classes scheduled'}`}
-                      >
-                        <div className="text-xs font-medium opacity-90">{day}</div>
-                        <div className="text-lg font-bold">
-                          {hasData ? `${attendance.toFixed(1)}%` : 'N/A'}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-                <div className="mt-4 p-3 bg-muted/30 rounded-lg border border-border">
-                  <p className="text-sm text-muted-foreground">
-                    <span className="font-medium text-foreground">Insight:</span> {(() => {
-                      const dayData = calculateDayOfWeekData();
-                      const activeDays = dayData.filter(d => d > 0);
-                      if (activeDays.length === 0) return 'No attendance data available.';
-                      const bestDay = dayData.indexOf(Math.max(...dayData));
-                      const bestDayName = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][bestDay];
-                      return `${bestDayName} has the highest attendance (${dayData[bestDay].toFixed(1)}%). Classes are currently scheduled on ${dayData.filter(d => d > 0).length} day(s) per week.`;
-                    })()}
-                  </p>
-                </div>
-              </div>
+              <DayOfWeekPatterns sessionType={sessionType} />
             )}
 
             {/* Time-Based Analysis */}
@@ -1325,11 +1444,11 @@ export default function ReportsAnalytics() {
                                     </div>
                                     <div>
                                       <p className="font-medium text-foreground">{student.name}</p>
-                                      <p className="text-xs text-muted-foreground">Attended {student.attended}/{student.total} weeks</p>
+                                      <p className="text-xs text-muted-foreground">Attended {student.attendedSessions}/{student.totalSessions} weeks</p>
                                     </div>
                                   </div>
                                   <div className="text-right">
-                                    <div className="text-lg font-bold text-red-600 dark:text-red-400">{student.attendance.toFixed(1)}%</div>
+                                    <div className="text-lg font-bold text-red-600 dark:text-red-400">{parseFloat(String(student.attendance_percentage || 0)).toFixed(1)}%</div>
                                     <div className="text-xs text-muted-foreground">{trendIcon} {student.trend}</div>
                                   </div>
                                 </div>
@@ -1430,11 +1549,12 @@ export default function ReportsAnalytics() {
                 {(() => {
                   // Calculate retention patterns from real student data
                   const retentionData = studentPerformanceData.reduce((acc, student) => {
-                    if (student.trend === 'down' && student.attendance < 75) {
+                    const attendance = parseFloat(String(student.attendance_percentage));
+                    if (student.trend === 'down' && attendance < 75) {
                       acc.declining.push(student);
                     } else if (student.trend === 'up') {
                       acc.improving.push(student);
-                    } else if (student.attendance > 80) {
+                    } else if (attendance > 80) {
                       acc.consistent.push(student);
                     }
                     return acc;
@@ -1472,12 +1592,12 @@ export default function ReportsAnalytics() {
                                   {student.initials}
                                 </div>
                                 <div>
-                                  <p className="font-medium text-foreground">{student.name}</p>
-                                  <p className="text-xs text-muted-foreground">Attended {student.attended}/{student.total} weeks</p>
+                                  <p className="font-medium text-foreground">{student.student_name}</p>
+                                  <p className="text-xs text-muted-foreground">Attended {student.weeks_attended}/{student.total_weeks} weeks</p>
                                 </div>
                               </div>
                               <div className="text-right">
-                                <div className="text-lg font-bold text-red-600 dark:text-red-400">{student.attendance.toFixed(1)}%</div>
+                                <div className="text-lg font-bold text-red-600 dark:text-red-400">{parseFloat(String(student.attendance_percentage || 0)).toFixed(1)}%</div>
                                 <div className="text-xs text-muted-foreground">↘ declining</div>
                               </div>
                             </div>
@@ -1769,8 +1889,8 @@ export default function ReportsAnalytics() {
                                           weeklyVariance < 15 ? 'moderate' : 'poor';
 
                   // Improvement potential
-                  // const highPerformers = studentPerformanceData.filter(s => s.attendance >= 90).length;
-                  const lowPerformers = studentPerformanceData.filter(s => s.attendance < 70).length;
+                  // const highPerformers = studentPerformanceData.filter(s => parseFloat(String(s.attendance_percentage)) >= 90).length;
+                  const lowPerformers = studentPerformanceData.filter(s => parseFloat(String(s.attendance_percentage)) < 70).length;
                   const improvementPotential = (lowPerformers / studentPerformanceData.length) * 100;
 
                   return (
@@ -2188,7 +2308,7 @@ export default function ReportsAnalytics() {
         </CardHeader>
         <CardContent>
           <Tabs value={detailedAttendanceTab} onValueChange={setDetailedAttendanceTab} className="w-full">
-            <TabsList className="grid w-full max-w-md grid-cols-3 gap-1">
+            <TabsList className="grid w-full max-w-md grid-cols-3 gap-1 h-auto p-1">
               <TabsTrigger value="student" className="text-xs sm:text-sm">
                 By Student
               </TabsTrigger>
@@ -2202,7 +2322,7 @@ export default function ReportsAnalytics() {
 
             {/* Student Tab Content */}
             <TabsContent value="student" className="mt-4 space-y-4">
-              <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="mb-4 flex flex-col gap-3 sm:gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="relative w-full sm:max-w-sm">
                   <Search className="text-muted-foreground absolute top-2.5 left-2.5 h-4 w-4" />
                   <Input
@@ -2213,7 +2333,7 @@ export default function ReportsAnalytics() {
                     className="bg-background w-full pl-8"
                   />
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <Button
                     variant="outline"
                     size="sm"
@@ -2223,25 +2343,44 @@ export default function ReportsAnalytics() {
                     <Download className="mr-2 h-4 w-4" />
                     Export All
                   </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="bg-transparent"
-                  >
-                    <Filter className="mr-2 h-4 w-4" />
-                    Filter
-                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="bg-transparent whitespace-nowrap"
+                      >
+                        <Filter className="mr-1 sm:mr-2 h-4 w-4" />
+                        <span className="hidden sm:inline">Filter</span>
+                        {attendanceFilter !== 'all' && <span className="ml-1">({attendanceFilter})</span>}
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => handleFilterChange('all')}>
+                        All Students
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleFilterChange('excellent')}>
+                        Excellent (≥80%)
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleFilterChange('good')}>
+                        Good (70-79%)
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleFilterChange('poor')}>
+                        Poor (&lt;70%)
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </div>
 
               {/* Mobile Card View */}
-              <div className="block space-y-4 sm:hidden">
+              <div className="block space-y-3 sm:hidden">
                 {isLoadingDetailedData ? (
                   <div className="flex justify-center p-4">
                     <Loader2 className="h-8 w-8 animate-spin" />
                   </div>
                 ) : (
-                  (Array.isArray(detailedAttendanceData) ? detailedAttendanceData : []).map((student, index) => (
+                  paginatedData.map((student, index) => (
               <Card key={`mobile-student-${index}`}>
                 <CardContent className="p-4">
                   <div className="mb-3 flex items-center justify-between">
@@ -2285,14 +2424,14 @@ export default function ReportsAnalytics() {
                     <div className="flex items-center gap-4">
                       <Badge
                         variant={
-                          student.attendance >= 80
+                          student.attendancePercentage >= 80
                             ? "default"
-                            : student.attendance >= 70
+                            : student.attendancePercentage >= 70
                               ? "outline"
                               : "destructive"
                         }
                       >
-                          {student.attendancePercentage || student.attendance}%
+                          {student.attendancePercentage}%
                       </Badge>
                       <span className="text-muted-foreground text-sm">
                           {student.attendedSessions}/{student.totalSessions} weeks
@@ -2314,8 +2453,8 @@ export default function ReportsAnalytics() {
                 )}
               </div>
 
-              {/* Desktop Table View */}
-              <div className="hidden overflow-x-auto rounded-md border sm:block">
+              {/* Table View */}
+              <div className="overflow-x-auto rounded-md border">
                 {isLoadingDetailedData ? (
                   <div className="flex justify-center p-8">
                     <Loader2 className="h-8 w-8 animate-spin" />
@@ -2327,33 +2466,33 @@ export default function ReportsAnalytics() {
                   <TableHead className="hidden w-[50px] lg:table-cell">
                     ID
                   </TableHead>
-                  <TableHead>Student</TableHead>
-                  <TableHead className="text-center">Attendance</TableHead>
-                  <TableHead className="hidden text-center md:table-cell">
+                  <TableHead className="min-w-[160px]">Student</TableHead>
+                  <TableHead className="text-center min-w-[100px]">Attendance</TableHead>
+                  <TableHead className="hidden text-center md:table-cell min-w-[80px]">
                     Weeks
                   </TableHead>
-                  <TableHead className="hidden text-center lg:table-cell">
+                  <TableHead className="hidden text-center lg:table-cell min-w-[80px]">
                     Trend
                   </TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead className="text-right min-w-[80px]">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                    {(Array.isArray(detailedAttendanceData) ? detailedAttendanceData : []).map((student, index) => (
-                  <TableRow key={`table-student-${typeof student.id === 'object' ? index : (student.id || index)}`}>
+                    {paginatedData.map((student, index) => (
+                  <TableRow key={`table-student-${student.id || index}`}>
                     <TableCell className="hidden font-medium lg:table-cell">
-                      {typeof student.id === 'object' ? JSON.stringify(student.id) : student.id}
+                      {student.id}
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <Avatar className="h-8 w-8">
                           <AvatarFallback>{student.initials}</AvatarFallback>
                         </Avatar>
-                        <div>
-                          <p className="leading-none font-medium">
+                        <div className="min-w-0 flex-1">
+                          <p className="leading-none font-medium truncate">
                             {student.name}
                           </p>
-                          <p className="text-muted-foreground hidden text-sm md:block">
+                          <p className="text-muted-foreground hidden text-sm md:block truncate">
                             {student.email}
                           </p>
                         </div>
@@ -2362,14 +2501,14 @@ export default function ReportsAnalytics() {
                     <TableCell className="text-center">
                       <Badge
                         variant={
-                          student.attendance >= 80
+                          student.attendancePercentage >= 80
                             ? "default"
-                            : student.attendance >= 70
+                            : student.attendancePercentage >= 70
                               ? "outline"
                               : "destructive"
                         }
                       >
-                          {student.attendancePercentage || student.attendance}%
+                          {student.attendancePercentage}%
                       </Badge>
                     </TableCell>
                     <TableCell className="hidden text-center md:table-cell">
@@ -2422,15 +2561,31 @@ export default function ReportsAnalytics() {
               </div>
 
           <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="text-muted-foreground text-center text-sm sm:text-left">
-              Showing <strong>1</strong> to <strong>10</strong> of{" "}
-              <strong>{(Array.isArray(detailedAttendanceData) ? detailedAttendanceData.length : 0)}</strong> results
+            <div className="text-muted-foreground text-center text-sm sm:text-left order-2 sm:order-1">
+              Showing <strong>{filteredData.length > 0 ? startIndex + 1 : 0}</strong> to <strong>{Math.min(endIndex, filteredData.length)}</strong> of{" "}
+              <strong>{filteredData.length}</strong> results
+              {attendanceFilter !== 'all' && <span className="ml-1">(filtered)</span>}
             </div>
-            <div className="flex items-center justify-center gap-2 sm:justify-end">
-              <Button variant="outline" size="sm" disabled>
-                Previous
+            <div className="flex items-center justify-center gap-2 sm:justify-end order-1 sm:order-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handlePreviousPage}
+                disabled={currentPage === 1}
+                className="px-3"
+              >
+                Prev
               </Button>
-              <Button variant="outline" size="sm">
+              <span className="text-sm text-muted-foreground whitespace-nowrap">
+                {currentPage} of {totalPages || 1}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleNextPage}
+                disabled={currentPage >= totalPages}
+                className="px-3"
+              >
                 Next
               </Button>
             </div>
@@ -2444,20 +2599,20 @@ export default function ReportsAnalytics() {
                   <Loader2 className="h-8 w-8 animate-spin" />
                 </div>
               ) : (
-                <div className="overflow-x-auto rounded-md border">
-                  <Table>
+                <div className="overflow-x-auto rounded-md border min-w-0">
+                  <Table className="min-w-[600px]">
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Week</TableHead>
-                        <TableHead>Date</TableHead>
-                        <TableHead className="text-center">Check-in Type</TableHead>
-                        <TableHead className="text-center">Present</TableHead>
-                        <TableHead className="text-center">Absent</TableHead>
-                        <TableHead className="text-center">Attendance Rate</TableHead>
+                        <TableHead className="min-w-[80px]">Week</TableHead>
+                        <TableHead className="min-w-[100px]">Date</TableHead>
+                        <TableHead className="text-center min-w-[100px]">Check-in Type</TableHead>
+                        <TableHead className="text-center min-w-[80px]">Present</TableHead>
+                        <TableHead className="text-center min-w-[80px]">Absent</TableHead>
+                        <TableHead className="text-center min-w-[120px]">Attendance Rate</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {(Array.isArray(detailedAttendanceData) ? detailedAttendanceData : []).map((session, index) => (
+                      {(Array.isArray(detailedAttendanceData) ? detailedAttendanceData : []).map((session: any, index) => (
                         <TableRow key={`session-${index}`}>
                           <TableCell className="font-medium">{session.weekLabel}</TableCell>
                           <TableCell>{new Date(session.date).toLocaleDateString()}</TableCell>
@@ -2494,20 +2649,20 @@ export default function ReportsAnalytics() {
                   <Loader2 className="h-8 w-8 animate-spin" />
                 </div>
               ) : (
-                <div className="overflow-x-auto rounded-md border">
-                  <Table>
+                <div className="overflow-x-auto rounded-md border min-w-0">
+                  <Table className="min-w-[700px]">
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Course Code</TableHead>
-                        <TableHead>Course Name</TableHead>
-                        <TableHead className="text-center">Total Sessions</TableHead>
-                        <TableHead className="text-center">Total Students</TableHead>
-                        <TableHead className="text-center">Avg Attendance</TableHead>
-                        <TableHead>Last Session</TableHead>
+                        <TableHead className="min-w-[100px]">Course Code</TableHead>
+                        <TableHead className="min-w-[200px]">Course Name</TableHead>
+                        <TableHead className="text-center min-w-[100px]">Total Sessions</TableHead>
+                        <TableHead className="text-center min-w-[100px]">Total Students</TableHead>
+                        <TableHead className="text-center min-w-[120px]">Avg Attendance</TableHead>
+                        <TableHead className="min-w-[120px]">Last Session</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {(Array.isArray(detailedAttendanceData) ? detailedAttendanceData : []).map((course, index) => (
+                      {(Array.isArray(detailedAttendanceData) ? detailedAttendanceData : []).map((course: any, index) => (
                         <TableRow key={`course-${index}`}>
                           <TableCell className="font-medium">{course.code}</TableCell>
                           <TableCell>{course.name}</TableCell>
@@ -2536,6 +2691,7 @@ export default function ReportsAnalytics() {
                 </div>
               )}
             </TabsContent>
+
           </Tabs>
         </CardContent>
       </Card>
@@ -2551,8 +2707,8 @@ export default function ReportsAnalytics() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-            <div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="space-y-2">
               <Label htmlFor="reportType" className="text-sm font-medium">
                 Report Type
               </Label>
@@ -2560,7 +2716,7 @@ export default function ReportsAnalytics() {
                 value={selectedReportType}
                 onValueChange={setSelectedReportType}
               >
-                <SelectTrigger>
+                <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select report type" />
                 </SelectTrigger>
                 <SelectContent>
@@ -2571,7 +2727,7 @@ export default function ReportsAnalytics() {
                 </SelectContent>
               </Select>
             </div>
-            <div>
+            <div className="space-y-2">
               <Label htmlFor="dateRange" className="text-sm font-medium">
                 Date Range
               </Label>
@@ -2579,7 +2735,7 @@ export default function ReportsAnalytics() {
                 value={selectedDateRange}
                 onValueChange={setSelectedDateRange}
               >
-                <SelectTrigger>
+                <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select date range" />
                 </SelectTrigger>
                 <SelectContent>
@@ -2591,7 +2747,7 @@ export default function ReportsAnalytics() {
                 </SelectContent>
               </Select>
             </div>
-            <div>
+            <div className="space-y-2 sm:col-span-2 lg:col-span-1">
               <Label htmlFor="reportSubject" className="text-sm font-medium">
                 Subject
               </Label>
@@ -2599,21 +2755,26 @@ export default function ReportsAnalytics() {
                 value={selectedCourseId}
                 onValueChange={setSelectedCourseId}
               >
-                <SelectTrigger>
+                <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select subject" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="max-w-[350px]">
                   <SelectItem value="all">All Subjects</SelectItem>
-                  {courses?.map((course: any) => (
+                  {courses?.map((course: Course) => (
                     <SelectItem key={course.id} value={String(course.id)}>
-                      {course.code} - {course.name}
+                      <div className="flex flex-col">
+                        <span className="font-medium">{course.code}</span>
+                        <span className="text-xs text-muted-foreground truncate">
+                          {course.name}
+                        </span>
+                      </div>
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
           </div>
-          <div>
+          <div className="space-y-2">
             <Label htmlFor="customEmail" className="text-sm font-medium">
               Email Address
             </Label>
@@ -2623,7 +2784,7 @@ export default function ReportsAnalytics() {
               placeholder="Enter email address to send report to"
               value={customEmail}
               onChange={(e) => setCustomEmail(e.target.value)}
-              className="mt-1"
+              className="w-full"
             />
           </div>
           <Button
@@ -2654,7 +2815,7 @@ export default function ReportsAnalytics() {
           <DialogHeader>
             <DialogTitle>Student Details</DialogTitle>
             <DialogDescription>
-              Detailed attendance information for {selectedStudent?.name}
+              Detailed attendance information for {(selectedStudent as any)?.student_name || (selectedStudent as any)?.name}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -2665,8 +2826,8 @@ export default function ReportsAnalytics() {
                     <AvatarFallback>{selectedStudent.initials}</AvatarFallback>
                   </Avatar>
                   <div>
-                    <h3 className="font-semibold">{selectedStudent.name}</h3>
-                    <p className="text-sm text-muted-foreground">{selectedStudent.email}</p>
+                    <h3 className="font-semibold">{(selectedStudent as any).student_name || (selectedStudent as any).name}</h3>
+                    <p className="text-sm text-muted-foreground">{(selectedStudent as any).student_email || (selectedStudent as any).email}</p>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
@@ -2674,22 +2835,22 @@ export default function ReportsAnalytics() {
                     <p className="text-sm font-medium">Attendance Rate</p>
                     <Badge
                       variant={
-                        (selectedStudent.attendancePercentage || selectedStudent.attendance) >= 80
+                        parseFloat(String((selectedStudent as any).attendance_percentage || (selectedStudent as any).attendancePercentage)) >= 80
                           ? "default"
-                          : (selectedStudent.attendancePercentage || selectedStudent.attendance) >= 70
+                          : parseFloat(String((selectedStudent as any).attendance_percentage || (selectedStudent as any).attendancePercentage)) >= 70
                             ? "outline"
                             : "destructive"
                       }
                       className="text-lg px-3 py-1"
                     >
-                      {selectedStudent.attendancePercentage || selectedStudent.attendance}%
+                      {parseFloat(String((selectedStudent as any).attendance_percentage || (selectedStudent as any).attendancePercentage || 0)).toFixed(1)}%
                     </Badge>
                   </div>
                   <div className="space-y-2">
                     <p className="text-sm font-medium">Weeks</p>
                     <p className="text-lg font-semibold">
-                      {selectedStudent.attendedSessions}/
-                      {selectedStudent.totalSessions}
+                      {(selectedStudent as any).weeks_attended || (selectedStudent as any).attendedSessions}/
+                      {(selectedStudent as any).total_weeks || (selectedStudent as any).totalSessions}
                     </p>
                   </div>
                 </div>
@@ -2718,7 +2879,7 @@ export default function ReportsAnalytics() {
           <DialogHeader>
             <DialogTitle>Send Notification</DialogTitle>
             <DialogDescription>
-              Send an attendance notification to {selectedStudent?.name}
+              Send an attendance notification to {(selectedStudent as any)?.student_name || (selectedStudent as any)?.name}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">

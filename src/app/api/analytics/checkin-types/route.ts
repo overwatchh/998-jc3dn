@@ -55,6 +55,7 @@ export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const subjectId = searchParams.get('subjectId');
+    const sessionType = searchParams.get('sessionType');
 
     // Build WHERE conditions
     const conditions = [];
@@ -65,28 +66,32 @@ export async function GET(request: NextRequest) {
       params.push(parseInt(subjectId));
     }
 
+    if (sessionType && sessionType !== 'both') {
+      conditions.push('ss.type = ?');
+      params.push(sessionType);
+    }
+
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
-    // Get weekly breakdown of checkins using actual method from database
+    // Get weekly breakdown of checkins using actual checkin_type from database
+    const needsSubjectJoin = subjectId && subjectId !== 'all';
     const weeklyQuery = `
       SELECT
         qrss.week_number,
         c.checkin_type,
-        c.checkin_method,
         COUNT(*) as count
       FROM checkin c
       JOIN qr_code_study_session qrss ON qrss.id = c.qr_code_study_session_id
       JOIN study_session ss ON ss.id = qrss.study_session_id
-      ${subjectId ? 'JOIN subject_study_session sss ON sss.study_session_id = ss.id' : ''}
+      ${needsSubjectJoin ? 'JOIN subject_study_session sss ON sss.study_session_id = ss.id' : ''}
       ${whereClause}
-      GROUP BY qrss.week_number, c.checkin_type, c.checkin_method
-      ORDER BY qrss.week_number, c.checkin_method
+      GROUP BY qrss.week_number, c.checkin_type
+      ORDER BY qrss.week_number, c.checkin_type
     `;
 
     const weeklyResults = await rawQuery(weeklyQuery, params) as {
       week_number: number;
       checkin_type: string;
-      checkin_method: string;
       count: number;
     }[];
 
@@ -107,15 +112,14 @@ export async function GET(request: NextRequest) {
 
       const weekData = weeklyMap.get(row.week_number);
 
-      // Map database enum values to frontend property names
-      // Group by checkin method for the chart
-      if (row.checkin_method === 'qr_scan') {
+      // Map database checkin_type values to frontend property names
+      if (row.checkin_type === 'In-person') {
         weekData.inPerson += row.count;
         weekData.total += row.count;
-      } else if (row.checkin_method === 'geofence' || row.checkin_method === 'facial_recognition') {
+      } else if (row.checkin_type === 'Online') {
         weekData.online += row.count;
         weekData.total += row.count;
-      } else if (row.checkin_method === 'manual_entry') {
+      } else if (row.checkin_type === 'Manual') {
         weekData.manual += row.count;
         weekData.total += row.count;
       }
@@ -128,7 +132,7 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Check-in types analytics API error:', error);
-    return NextResponse.json({ error: 'Failed to fetch check-in type analytics' }, { status: 500 });
+    console.error("Check-in types analytics API error:", error);
+    return NextResponse.json({ error: "Failed to fetch check-in type analytics" }, { status: 500 });
   }
 }

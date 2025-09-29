@@ -3,50 +3,89 @@ import { auth } from '@/lib/server/auth';
 import { rawQuery } from '@/lib/server/query';
 import { headers } from 'next/headers';
 
+interface Student {
+  student_id: number;
+  student_name: string;
+  student_email: string;
+  initials: string;
+}
+
+interface AttendanceSession {
+  qr_session_id: number;
+  week_number: number;
+  checkin_count: string | number;
+}
+
+interface CheckinData {
+  checkin_count: string | number;
+}
+
+interface CourseData {
+  subject_id: number;
+  subject_code: string;
+  subject_name: string;
+  total_sessions: string | number;
+  total_students: string | number;
+  average_attendance: string | number;
+  last_session: string;
+}
+
+interface SessionAttendanceData {
+  qr_session_id: number;
+  week_number: number;
+  session_label: string;
+  formatted_date: string;
+  primary_checkin_type: string;
+  total_enrolled: number;
+}
+
 export async function GET(request: NextRequest) {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
 
     if (!session || !session.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const searchParams = request.nextUrl.searchParams;
     const subjectId = searchParams.get('subjectId');
     const viewType = searchParams.get('viewType') || 'student';
     const searchQuery = searchParams.get('search') || '';
+    const sessionType = searchParams.get('sessionType') || 'lecture';
 
     if (!subjectId || subjectId === 'all') {
-      return NextResponse.json({ error: 'Specific Subject ID is required for detailed attendance' }, { status: 400 });
+      return NextResponse.json({ error: "Specific Subject ID is required for detailed attendance" }, { status: 400 });
     }
 
     let data;
 
     switch (viewType) {
       case 'student':
-        data = await getStudentAttendance(parseInt(subjectId), searchQuery);
+        data = await getStudentAttendance(parseInt(subjectId), searchQuery, sessionType);
         break;
       case 'session':
-        data = await getSessionAttendance(parseInt(subjectId));
+        data = await getSessionAttendance(parseInt(subjectId), sessionType);
         break;
       case 'course':
-        data = await getCourseAttendance(session.user.id);
+        data = await getCourseAttendance(session.user.id, sessionType);
         break;
       default:
-        data = await getStudentAttendance(parseInt(subjectId), searchQuery);
+        data = await getStudentAttendance(parseInt(subjectId), searchQuery, sessionType);
     }
 
     return NextResponse.json(data);
   } catch (error) {
-    console.error('Error fetching detailed attendance:', error);
+    console.error("Error fetching detailed attendance:", error);
     return NextResponse.json(
-      { error: 'Failed to fetch detailed attendance data' },
+      { error: "Failed to fetch detailed attendance data" },
       { status: 500 }
     );
   }
 }
 
-async function getStudentAttendance(subjectId: number, searchQuery: string) {
+async function getStudentAttendance(subjectId: number, searchQuery: string, sessionType: string) {
+  // Build session type filter
+  const sessionFilter = `AND ss.type = '${sessionType}'`;
   // Get all students with their attendance data using the EMAIL CALCULATOR METHOD
   // This uses the same logic as the email reminder system:
   // - Count total check-ins per QR session for each student
@@ -83,7 +122,7 @@ async function getStudentAttendance(subjectId: number, searchQuery: string) {
   const students = await rawQuery(baseQuery, params);
 
   // For each student, calculate attendance using EMAIL CALCULATOR METHOD
-  const studentsWithAttendance = await Promise.all(students.map(async (student: any) => {
+  const studentsWithAttendance = await Promise.all(students.map(async (student: Student) => {
     // Get all QR sessions for this subject and student's checkins
     const attendanceQuery = `
       SELECT
@@ -101,7 +140,7 @@ async function getStudentAttendance(subjectId: number, searchQuery: string) {
         WHERE student_id = ?
         GROUP BY qr_code_study_session_id
       ) checkin_data ON checkin_data.qr_code_study_session_id = qrss.id
-      WHERE sss.subject_id = ? AND ss.type = 'lecture'
+      WHERE sss.subject_id = ? ${sessionFilter}
       ORDER BY qrss.week_number
     `;
 
@@ -111,9 +150,9 @@ async function getStudentAttendance(subjectId: number, searchQuery: string) {
     let totalAttendancePoints = 0;
     let totalPossiblePoints = 0;
 
-    attendanceData.forEach((session: any) => {
+    attendanceData.forEach((session: AttendanceSession) => {
       // Apply email calculator scoring: 2+ checkins = 100%, 1 checkin = 50%, 0 checkins = 0%
-      const checkinCount = parseInt(session.checkin_count) || 0;
+      const checkinCount = parseInt(String(session.checkin_count)) || 0;
       let sessionPoints = 0;
 
       if (checkinCount >= 2) {
@@ -140,13 +179,13 @@ async function getStudentAttendance(subjectId: number, searchQuery: string) {
       const recent = recentSessions.slice(-3); // Last 3
       const earlier = recentSessions.slice(-6, -3); // Previous 3
 
-      const recentPoints = recent.reduce((sum: number, session: any): number => {
-        const checkinCount = parseInt(session.checkin_count) || 0;
+      const recentPoints = recent.reduce((sum: number, session: AttendanceSession): number => {
+        const checkinCount = parseInt(String(session.checkin_count)) || 0;
         return sum + (checkinCount >= 2 ? 100 : checkinCount === 1 ? 50 : 0);
       }, 0 as number);
 
-      const earlierPoints = earlier.reduce((sum: number, session: any): number => {
-        const checkinCount = parseInt(session.checkin_count) || 0;
+      const earlierPoints = earlier.reduce((sum: number, session: AttendanceSession): number => {
+        const checkinCount = parseInt(String(session.checkin_count)) || 0;
         return sum + (checkinCount >= 2 ? 100 : checkinCount === 1 ? 50 : 0);
       }, 0 as number);
 
@@ -157,7 +196,7 @@ async function getStudentAttendance(subjectId: number, searchQuery: string) {
       else if (recentRate < earlierRate - 0.1) trend = 'down';
     }
 
-    const attendedSessions = attendanceData.filter((session: any) => parseInt(session.checkin_count) > 0).length;
+    const attendedSessions = attendanceData.filter((session: AttendanceSession) => parseInt(String(session.checkin_count)) > 0).length;
 
     return {
       id: student.student_id,
@@ -174,7 +213,10 @@ async function getStudentAttendance(subjectId: number, searchQuery: string) {
   return studentsWithAttendance;
 }
 
-async function getSessionAttendance(subjectId: number) {
+async function getSessionAttendance(subjectId: number, sessionType: string) {
+  // Build session type filter
+  const sessionFilter = `AND ss.type = '${sessionType}'`;
+
   // Get session attendance using EMAIL CALCULATOR METHOD
   // Each QR session is scored individually using the 0/45/90 point system
   const query = `
@@ -199,7 +241,7 @@ async function getSessionAttendance(subjectId: number) {
     JOIN subject_study_session sss ON sss.study_session_id = ss.id
     LEFT JOIN enrolment e ON e.subject_id = sss.subject_id
     LEFT JOIN checkin c ON c.qr_code_study_session_id = qrss.id AND c.student_id = e.student_id
-    WHERE sss.subject_id = ? AND ss.type = 'lecture'
+    WHERE sss.subject_id = ? ${sessionFilter}
     GROUP BY qrss.id, qrss.week_number
     ORDER BY qrss.week_number ASC, qrss.id ASC
   `;
@@ -207,7 +249,7 @@ async function getSessionAttendance(subjectId: number) {
   const sessions = await rawQuery(query, [subjectId]);
 
   // For each session, calculate attendance using email calculator method
-  const sessionsWithAttendance = await Promise.all(sessions.map(async (session: any) => {
+  const sessionsWithAttendance = await Promise.all(sessions.map(async (session: SessionAttendanceData) => {
     // Get checkin counts for each student for this specific QR session
     const checkinQuery = `
       SELECT
@@ -234,8 +276,8 @@ async function getSessionAttendance(subjectId: number) {
     let partialAttendanceCount = 0; // Students with 1 checkin (50 points)
     let absentCount = 0; // Students with 0 checkins
 
-    checkinData.forEach((student: any) => {
-      const checkinCount = parseInt(student.checkin_count) || 0;
+    checkinData.forEach((student: CheckinData) => {
+      const checkinCount = parseInt(String(student.checkin_count)) || 0;
       maxPoints += 100;
 
       if (checkinCount >= 2) {
@@ -258,7 +300,7 @@ async function getSessionAttendance(subjectId: number) {
       checkInType: session.primary_checkin_type || 'QR Code',
       presentCount: fullAttendanceCount + partialAttendanceCount,
       absentCount: absentCount,
-      totalCount: parseInt(session.total_enrolled) || 0,
+      totalCount: parseInt(String(session.total_enrolled)) || 0,
       attendanceRate: Math.round(attendanceRate * 10) / 10,
       // Additional breakdown for detailed view
       fullAttendanceCount: fullAttendanceCount,
@@ -269,7 +311,11 @@ async function getSessionAttendance(subjectId: number) {
   return sessionsWithAttendance;
 }
 
-async function getCourseAttendance(lecturerId: string) {
+async function getCourseAttendance(lecturerId: string, sessionType: string) {
+  // Build session type filter
+  const sessionFilter = `AND ss.type = '${sessionType}'`;
+
+  // Using EMAIL CALCULATOR METHOD: 2+ checkins = 100 points, 1 checkin = 50 points, 0 checkins = 0 points
   const query = `
     SELECT
       s.id as subject_id,
@@ -278,8 +324,13 @@ async function getCourseAttendance(lecturerId: string) {
       COUNT(DISTINCT qrss.id) as total_sessions,
       COUNT(DISTINCT e.student_id) as total_students,
       ROUND(
-        (COUNT(DISTINCT CONCAT(c.student_id, '-', qrss.id)) /
-         NULLIF(COUNT(DISTINCT e.student_id) * COUNT(DISTINCT qrss.id), 0)) * 100,
+        (SUM(
+          CASE
+            WHEN checkin_counts.checkin_count >= 2 THEN 100
+            WHEN checkin_counts.checkin_count = 1 THEN 50
+            ELSE 0
+          END
+        ) / (COUNT(DISTINCT qrss.id) * COUNT(DISTINCT e.student_id) * 100)) * 100,
         1
       ) as average_attendance,
       MAX(ss.start_time) as last_session
@@ -289,21 +340,29 @@ async function getCourseAttendance(lecturerId: string) {
     INNER JOIN lecturer_study_session lss ON lss.study_session_id = ss.id
     LEFT JOIN enrolment e ON e.subject_id = s.id
     LEFT JOIN qr_code_study_session qrss ON qrss.study_session_id = ss.id
-    LEFT JOIN checkin c ON c.qr_code_study_session_id = qrss.id AND c.student_id = e.student_id
-    WHERE lss.lecturer_id = ? AND ss.type = 'lecture'
+    LEFT JOIN (
+      SELECT
+        qr_code_study_session_id,
+        student_id,
+        COUNT(*) as checkin_count
+      FROM checkin
+      GROUP BY qr_code_study_session_id, student_id
+    ) checkin_counts ON checkin_counts.qr_code_study_session_id = qrss.id
+                     AND checkin_counts.student_id = e.student_id
+    WHERE lss.lecturer_id = ? ${sessionFilter}
     GROUP BY s.id, s.code, s.name
     ORDER BY s.code ASC
   `;
 
   const courses = await rawQuery(query, [lecturerId]);
 
-  return courses.map((course: any) => ({
+  return courses.map((course: CourseData) => ({
     id: course.subject_id,
     code: course.subject_code,
     name: course.subject_name,
-    totalSessions: parseInt(course.total_sessions) || 0,
-    totalStudents: parseInt(course.total_students) || 0,
-    averageAttendance: parseFloat(course.average_attendance) || 0,
+    totalSessions: parseInt(String(course.total_sessions)) || 0,
+    totalStudents: parseInt(String(course.total_students)) || 0,
+    averageAttendance: parseFloat(String(course.average_attendance)) || 0,
     lastSession: course.last_session
   }));
 }

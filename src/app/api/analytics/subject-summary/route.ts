@@ -9,6 +9,15 @@ import { NextRequest, NextResponse } from "next/server";
  *     description: Returns aggregated attendance data across all subjects including enrollment numbers, average attendance rates, and at-risk student counts.
  *     tags:
  *       - Statistics
+ *     parameters:
+ *       - in: query
+ *         name: sessionType
+ *         required: false
+ *         schema:
+ *           type: string
+ *           enum: [lecture, tutorial, both]
+ *           default: lecture
+ *         description: Type of sessions to include in analysis
  *     responses:
  *       200:
  *         description: Subject summary data retrieved successfully
@@ -53,8 +62,14 @@ import { NextRequest, NextResponse } from "next/server";
  *                   type: string
  *                   example: "Failed to fetch subject summary data"
  */
-export async function GET(_request: NextRequest) {
+export async function GET(request: NextRequest) {
   try {
+    const searchParams = request.nextUrl.searchParams;
+    const sessionType = searchParams.get('sessionType') || 'lecture';
+
+    // Build session type filter
+    const sessionFilter = `AND ss.type = '${sessionType}'`;
+
     const query = `
       SELECT
           s.code as subject_code,
@@ -95,7 +110,7 @@ export async function GET(_request: NextRequest) {
             GROUP BY qr_code_study_session_id, student_id
           ) checkin_counts ON checkin_counts.qr_code_study_session_id = qrss.id
                            AND checkin_counts.student_id = e.student_id
-          WHERE ss.type = 'lecture'
+          WHERE 1=1 ${sessionFilter}
           GROUP BY sss.subject_id, qrss.id
       ) weekly_attendance ON weekly_attendance.subject_id = s.id
       LEFT JOIN (
@@ -125,10 +140,10 @@ export async function GET(_request: NextRequest) {
             GROUP BY qr_code_study_session_id, student_id
           ) checkin_counts ON checkin_counts.qr_code_study_session_id = qrss.id
                            AND checkin_counts.student_id = e.student_id
-          WHERE ss.type = 'lecture'
+          WHERE 1=1 ${sessionFilter}
           GROUP BY e.student_id, sss.subject_id
       ) student_avg ON student_avg.subject_id = s.id
-      WHERE ss.type = 'lecture'
+      WHERE 1=1 ${sessionFilter}
       GROUP BY s.code, s.name
       ORDER BY s.code
     `;
@@ -137,7 +152,7 @@ export async function GET(_request: NextRequest) {
 
     return NextResponse.json(data);
   } catch (error) {
-    console.error('Subject summary API error:', error);
-    return NextResponse.json({ error: 'Failed to fetch subject summary data' }, { status: 500 });
+    console.error("Subject summary API error:", error);
+    return NextResponse.json({ error: "Failed to fetch subject summary data" }, { status: 500 });
   }
 }

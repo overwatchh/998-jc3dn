@@ -3,6 +3,21 @@ import { rawQuery } from "@/lib/server/query";
 import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
+interface SummaryData {
+  subject_name: string;
+  subject_code: string;
+  total_students: string | number;
+  total_weeks: string | number;
+  total_checkins: string | number;
+  average_attendance: string | number;
+}
+
+interface ReportData {
+  summary: SummaryData[];
+  details?: unknown[];
+  students?: unknown[];
+}
+
 // Reuse the same report generation logic from the email route
 async function generateReportData({
   lecturerId,
@@ -40,7 +55,7 @@ async function generateReportData({
   }
 }
 
-async function generateOverviewReport(params: any[], subjectFilter: string) {
+async function generateOverviewReport(params: (string | number)[], subjectFilter: string) {
   const [summaryData] = await rawQuery(`
     SELECT
       s.name as subject_name,
@@ -87,7 +102,7 @@ async function generateOverviewReport(params: any[], subjectFilter: string) {
 }
 
 // Generate downloadable HTML report
-function generateDownloadableHtml(reportData: any, {
+function generateDownloadableHtml(reportData: ReportData, {
   lecturerName,
   reportTypeName,
   dateRange,
@@ -132,15 +147,15 @@ function generateDownloadableHtml(reportData: any, {
   }
 
   // Calculate statistics
-  const totalStudents = summary.reduce((sum: any, s: any) => sum + (parseInt(s.total_students) || 0), 0);
+  const totalStudents = summary.reduce((sum: number, s: SummaryData) => sum + (parseInt(String(s.total_students)) || 0), 0);
   const avgAttendanceOverall = summary.length > 0
-    ? summary.reduce((sum: any, s: any) => sum + (parseFloat(s.average_attendance) || 0), 0) / summary.length
+    ? summary.reduce((sum: number, s: SummaryData) => sum + (parseFloat(String(s.average_attendance)) || 0), 0) / summary.length
     : 0;
-  const subjectsAbove80 = summary.filter((s: any) => (parseFloat(s.average_attendance) || 0) >= 80).length;
-  const subjectsBelow70 = summary.filter((s: any) => (parseFloat(s.average_attendance) || 0) < 70).length;
+  const subjectsAbove80 = summary.filter((s: SummaryData) => (parseFloat(String(s.average_attendance)) || 0) >= 80).length;
+  const subjectsBelow70 = summary.filter((s: SummaryData) => (parseFloat(String(s.average_attendance)) || 0) < 70).length;
 
-  const subjectsList = summary.map((subject: any) => {
-    const attendance = parseFloat(subject.average_attendance || '0');
+  const subjectsList = summary.map((subject: SummaryData) => {
+    const attendance = parseFloat(String(subject.average_attendance || '0'));
     const attendanceColor = attendance >= 80 ? '#22c55e' : attendance >= 70 ? '#f59e0b' : '#ef4444';
     const status = attendance >= 80 ? '✅' : attendance >= 70 ? '⚠️' : '❌';
 

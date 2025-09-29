@@ -1,5 +1,15 @@
 import { rawQuery } from "@/lib/server/query";
 import { NextRequest, NextResponse } from "next/server";
+
+interface SessionData {
+  subject_code: string;
+  subject_name: string;
+  qr_session_id: number;
+  week_number: number;
+  total_enrolled: number;
+  week_label: string;
+  date_label: string;
+}
 import { calculateSessionAttendanceRate } from "@/lib/server/email-calculator";
 
 /**
@@ -18,6 +28,14 @@ import { calculateSessionAttendanceRate } from "@/lib/server/email-calculator";
  *           type: integer
  *           example: 101
  *         description: Study session ID to filter results (optional)
+ *       - in: query
+ *         name: sessionType
+ *         required: false
+ *         schema:
+ *           type: string
+ *           enum: [lecture, tutorial, both]
+ *           default: lecture
+ *         description: Type of sessions to include in analysis
  *     responses:
  *       200:
  *         description: Weekly attendance data retrieved successfully
@@ -69,6 +87,10 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const subjectId = searchParams.get('subjectId'); // Now correctly using subject ID
     const subjectIdNum = subjectId ? parseInt(subjectId) : null;
+    const sessionType = searchParams.get('sessionType') || 'lecture';
+
+    // Build session type filter
+    const sessionFilter = `AND ss.type = '${sessionType}'`;
 
     // Get basic session info
     const query = `
@@ -88,7 +110,7 @@ export async function GET(request: NextRequest) {
       JOIN subject_study_session sss ON sss.study_session_id = ss.id
       JOIN subject s ON s.id = sss.subject_id
       JOIN enrolment e ON e.subject_id = s.id
-      WHERE ss.type = 'lecture' ${subjectIdNum ? 'AND s.id = ?' : ''}
+      WHERE 1=1 ${sessionFilter} ${subjectIdNum ? 'AND s.id = ?' : ''}
       GROUP BY s.code, s.name, qrss.id, qrss.week_number
       ORDER BY s.code, qrss.week_number
     `;
@@ -98,7 +120,7 @@ export async function GET(request: NextRequest) {
 
     // Calculate attendance using email calculator method for each session
     const dataWithAttendance = await Promise.all(
-      sessions.map(async (session: any) => {
+      sessions.map(async (session: SessionData) => {
         const attendanceRate = await calculateSessionAttendanceRate(
           session.qr_session_id,
           subjectIdNum || 1 // If no subject specified, use a default (this is edge case)
@@ -119,7 +141,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(dataWithAttendance);
   } catch (error) {
-    console.error('Weekly attendance API error:', error);
-    return NextResponse.json({ error: 'Failed to fetch weekly attendance data' }, { status: 500 });
+    console.error("Weekly attendance API error:", error);
+    return NextResponse.json({ error: "Failed to fetch weekly attendance data" }, { status: 500 });
   }
 }

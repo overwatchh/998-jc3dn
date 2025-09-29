@@ -138,10 +138,14 @@ export async function GET(request: NextRequest) {
 
     const searchParams = request.nextUrl.searchParams;
     const courseId = searchParams.get('subjectId'); // This is actually a subject_id now
+    const sessionType = searchParams.get('sessionType') || 'lecture';
+
+    // Build session type filter
+    const sessionFilter = `AND ss.type = '${sessionType}'`;
 
     // Build lecturer filter based on user role
     let lecturerFilter = '';
-    let params: any[] = [];
+    const params: (string | number)[] = [];
 
     if (session.user.role === "lecturer") {
       lecturerFilter = 'AND lss.lecturer_id = ?';
@@ -184,7 +188,7 @@ export async function GET(request: NextRequest) {
         GROUP BY qr_code_study_session_id, student_id
       ) checkin_counts ON checkin_counts.qr_code_study_session_id = qrss.id
                        AND checkin_counts.student_id = e.student_id
-      WHERE ss.type = 'lecture' ${lecturerFilter} ${courseId ? 'AND s.id = ?' : ''}
+      WHERE 1=1 ${sessionFilter} ${lecturerFilter} ${courseId ? 'AND s.id = ?' : ''}
       GROUP BY s.id, s.code, s.name
       ORDER BY average_attendance DESC
     `;
@@ -219,7 +223,7 @@ export async function GET(request: NextRequest) {
         GROUP BY qr_code_study_session_id, student_id
       ) checkin_counts ON checkin_counts.qr_code_study_session_id = qrss.id
                        AND checkin_counts.student_id = e.student_id
-      WHERE ss.type = 'lecture' ${lecturerFilter} ${courseId ? 'AND s.id = ?' : ''}
+      WHERE 1=1 ${sessionFilter} ${lecturerFilter} ${courseId ? 'AND s.id = ?' : ''}
       GROUP BY qrss.week_number
       ORDER BY qrss.week_number
     `;
@@ -317,7 +321,7 @@ export async function GET(request: NextRequest) {
     // console.log('Final API response:', responseData); // Removed for production
     return NextResponse.json(responseData);
   } catch (error) {
-    console.error('Lecturer trends API error:', error);
-    return NextResponse.json({ error: 'Failed to fetch lecturer trends data' }, { status: 500 });
+    console.error("Lecturer trends API error:", error);
+    return NextResponse.json({ error: "Failed to fetch lecturer trends data" }, { status: 500 });
   }
 }

@@ -114,7 +114,8 @@ export async function GET(request: Request) {
   try {
     const studentId = session.user.id;
     const url = new URL(request.url);
-    const weeks = parseInt(url.searchParams.get('weeks') || '12');
+    const weeks = parseInt(url.searchParams.get("weeks") || "12");
+    const sessionType = url.searchParams.get("sessionType") || "lecture";
 
     // Using EMAIL CALCULATOR METHOD: 2+ checkins = 100 points, 1 checkin = 50 points, 0 checkins = 0 points
     const sql = `
@@ -136,7 +137,8 @@ export async function GET(request: Request) {
       FROM enrolment e
       JOIN subject s ON e.subject_id = s.id
       JOIN subject_study_session sss ON sss.subject_id = s.id
-      JOIN qr_code_study_session qcss ON qcss.study_session_id = sss.study_session_id
+      JOIN study_session ss ON ss.id = sss.study_session_id
+      JOIN qr_code_study_session qcss ON qcss.study_session_id = ss.id
       LEFT JOIN (
         SELECT
           qr_code_study_session_id,
@@ -148,12 +150,13 @@ export async function GET(request: Request) {
                        AND checkin_counts.student_id = e.student_id
       WHERE e.student_id = ?
         AND s.status = 'active'
+        AND ss.type = ?
         AND qcss.week_number BETWEEN 1 AND ?
       GROUP BY qcss.week_number
       ORDER BY qcss.week_number;
     `;
 
-    const weeklyData = await rawQuery<WeeklyRow>(sql, [studentId, weeks]);
+    const weeklyData = await rawQuery<WeeklyRow>(sql, [studentId, sessionType, weeks]);
 
     // Use attendance rates from email calculator method
     const weeklyStats = weeklyData.map(row => ({
