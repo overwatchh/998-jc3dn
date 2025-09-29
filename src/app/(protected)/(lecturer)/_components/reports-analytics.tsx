@@ -336,12 +336,12 @@ export default function ReportsAnalytics() {
         }
       }
     }
-  }, [sessionTypesData, sessionType]);
+  }, [sessionTypesData]);
 
   // Reset pagination when data changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [detailedAttendanceData, selectedCourseId, detailedAttendanceTab, sessionType]);
+  }, [detailedAttendanceData, selectedCourseId, detailedAttendanceTab]);
 
   // Fetch real-time data
   useEffect(() => {

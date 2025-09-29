@@ -237,13 +237,14 @@ export async function GET(request: Request) {
         ? (subject.total_attended / subject.total_sessions) * 100
         : 0;
 
-      // Determine status
+      // Determine status based on overall percentage vs required threshold
       let status = 'good';
+
+      // If attendance percentage is below the required threshold, it's at risk
       if (overallPercentage < subject.required_threshold) {
         status = 'at_risk';
-      } else if (overallPercentage < subject.required_threshold + 10) {
-        status = 'warning';
       }
+      // If meeting or exceeding the requirement, it's good
 
       // Calculate trend direction
       const recentAttended = subject.recent_sessions.slice(0, 5);

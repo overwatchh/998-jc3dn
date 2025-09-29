@@ -157,11 +157,11 @@ export async function GET(request: Request) {
       const attendancePercentage = parseFloat(String(row.attendance_percentage)) || 0;
 
       let status = 'good';
-      if (attendancePercentage < row.required_attendance_thresh) {
+      const requiredThresholdPercentage = row.required_attendance_thresh * 100; // Convert to percentage
+      if (attendancePercentage < requiredThresholdPercentage) {
         status = 'at_risk';
-      } else if (attendancePercentage < row.required_attendance_thresh + 10) {
-        status = 'warning';
       }
+      // If meeting or exceeding the requirement, it's good (no warning zone needed)
 
       return {
         subject_name: row.subject_name,
