@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useCurrentUser } from "@/hooks/useAuth";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -9,16 +9,24 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AlertCircle, BookOpen, HelpCircle, Mail, Users, QrCode, Settings } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import Link from "next/link";
+import { Textarea } from "@/components/ui/textarea";
+import { useCurrentUser } from "@/hooks/useAuth";
 import { Roles } from "@/types";
+import {
+  AlertCircle,
+  BookOpen,
+  HelpCircle,
+  Mail,
+  QrCode,
+  Settings,
+  Users,
+} from "lucide-react";
+import Link from "next/link";
+import { useState } from "react";
 
 interface SupportFormData {
   subject: string;
@@ -62,7 +70,8 @@ export default function SupportPage() {
           Support Center
         </h1>
         <p className="text-muted-foreground mx-auto max-w-2xl text-base md:text-lg">
-          Get help with Attendease - your comprehensive QR code attendance system
+          Get help with Attendease - your comprehensive QR code attendance
+          system
         </p>
       </header>
 
@@ -87,21 +96,22 @@ export default function SupportPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-muted-foreground">
-                Attendease is a modern QR code-based attendance system designed to streamline
-                the attendance process for educational institutions. The system uses a
-                two-phase verification process to ensure accurate attendance recording.
+                Attendease is a modern QR code-based attendance system designed
+                to streamline the attendance process for educational
+                institutions. The system uses a two-phase verification process
+                to ensure accurate attendance recording.
               </p>
 
               <div className="grid gap-4 md:grid-cols-2">
                 <Card>
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-lg flex items-center gap-2">
+                    <CardTitle className="flex items-center gap-2 text-lg">
                       <QrCode className="h-4 w-4" />
                       How It Works
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <ol className="space-y-2 text-sm text-muted-foreground">
+                    <ol className="text-muted-foreground space-y-2 text-sm">
                       <li>1. Lecturers generate QR codes for sessions</li>
                       <li>2. Students scan QR codes to check in</li>
                       <li>3. Two-phase verification ensures accuracy</li>
@@ -112,16 +122,24 @@ export default function SupportPage() {
 
                 <Card>
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-lg flex items-center gap-2">
+                    <CardTitle className="flex items-center gap-2 text-lg">
                       <Users className="h-4 w-4" />
                       User Roles
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <ul className="space-y-2 text-sm text-muted-foreground">
-                      <li><strong>Students:</strong> Scan QR codes, view records</li>
-                      <li><strong>Lecturers:</strong> Generate QR codes, track attendance</li>
-                      <li><strong>Admins:</strong> System management, user oversight</li>
+                    <ul className="text-muted-foreground space-y-2 text-sm">
+                      <li>
+                        <strong>Students:</strong> Scan QR codes, view records
+                      </li>
+                      <li>
+                        <strong>Lecturers:</strong> Generate QR codes, track
+                        attendance
+                      </li>
+                      <li>
+                        <strong>Admins:</strong> System management, user
+                        oversight
+                      </li>
                     </ul>
                   </CardContent>
                 </Card>
@@ -132,12 +150,18 @@ export default function SupportPage() {
                 <AlertDescription>
                   <strong>Need help getting started?</strong>{" "}
                   {isStudent && (
-                    <Link href="/tutorial" className="underline hover:no-underline">
+                    <Link
+                      href="/tutorial"
+                      className="underline hover:no-underline"
+                    >
                       View our step-by-step tutorial
                     </Link>
                   )}
                   {isLecturer && (
-                    <span>Check the guides section for lecturer-specific instructions.</span>
+                    <span>
+                      Check the guides section for lecturer-specific
+                      instructions.
+                    </span>
                   )}
                 </AlertDescription>
               </Alert>
@@ -161,7 +185,7 @@ export default function SupportPage() {
                 <CardContent className="space-y-4">
                   <div className="space-y-3">
                     <h4 className="font-medium">Quick Start:</h4>
-                    <ul className="space-y-2 text-sm text-muted-foreground">
+                    <ul className="text-muted-foreground space-y-2 text-sm">
                       <li>• Enable camera permissions in your browser</li>
                       <li>• Navigate to the Scan page during class</li>
                       <li>• Scan the QR code shown by your lecturer</li>
@@ -189,7 +213,7 @@ export default function SupportPage() {
                 <CardContent className="space-y-4">
                   <div className="space-y-3">
                     <h4 className="font-medium">Key Features:</h4>
-                    <ul className="space-y-2 text-sm text-muted-foreground">
+                    <ul className="text-muted-foreground space-y-2 text-sm">
                       <li>• Generate unique QR codes for each session</li>
                       <li>• Monitor real-time attendance</li>
                       <li>• View detailed attendance reports</li>
@@ -200,17 +224,31 @@ export default function SupportPage() {
                   <Separator />
 
                   <div className="space-y-3">
-                    <h4 className="font-medium">Manual Check-in for Students</h4>
-                    <p className="text-sm text-muted-foreground">
-                      For students who cannot use the QR scanning system due to technical issues or lack of access to a camera/phone:
+                    <h4 className="font-medium">
+                      Manual Check-in for Students
+                    </h4>
+                    <p className="text-muted-foreground text-sm">
+                      For students who cannot use the QR scanning system due to
+                      technical issues or lack of access to a camera/phone:
                     </p>
-                    <ul className="space-y-2 text-sm text-muted-foreground">
-                      <li>• Students should approach you at the end of class</li>
-                      <li>• Navigate to Attendance Tracking from your dashboard</li>
-                      <li>• Select the current session to view the student list</li>
+                    <ul className="text-muted-foreground space-y-2 text-sm">
+                      <li>
+                        • Students should approach you at the end of class
+                      </li>
+                      <li>
+                        • Navigate to Attendance Tracking from your dashboard
+                      </li>
+                      <li>
+                        • Select the current session to view the student list
+                      </li>
                       <li>• Find the student in the attendance table/list</li>
-                      <li>• Click "Check In" to record their attendance</li>
-                      <li>• This ensures all students can be properly recorded even with technical limitations</li>
+                      <li>
+                        • Click &quot;Check In&quot; to record their attendance
+                      </li>
+                      <li>
+                        • This ensures all students can be properly recorded
+                        even with technical limitations
+                      </li>
                     </ul>
                   </div>
 
@@ -234,7 +272,7 @@ export default function SupportPage() {
               <CardContent className="space-y-4">
                 <div className="space-y-3">
                   <h4 className="font-medium">Available Features:</h4>
-                  <ul className="space-y-2 text-sm text-muted-foreground">
+                  <ul className="text-muted-foreground space-y-2 text-sm">
                     <li>• Real-time attendance tracking</li>
                     <li>• QR code generation and scanning</li>
                     <li>• Two-phase verification system</li>
@@ -262,13 +300,17 @@ export default function SupportPage() {
             <CardContent>
               <div className="space-y-6">
                 <div>
-                  <h4 className="font-medium mb-2">Camera Issues</h4>
-                  <p className="text-sm text-muted-foreground mb-2">
-                    If you're having trouble with camera access:
+                  <h4 className="mb-2 font-medium">Camera Issues</h4>
+                  <p className="text-muted-foreground mb-2 text-sm">
+                    If you&apos;re having trouble with camera access:
                   </p>
-                  <ul className="space-y-1 text-sm text-muted-foreground">
-                    <li>• Ensure camera permissions are enabled in your browser</li>
-                    <li>• Try refreshing the page and granting permissions again</li>
+                  <ul className="text-muted-foreground space-y-1 text-sm">
+                    <li>
+                      • Ensure camera permissions are enabled in your browser
+                    </li>
+                    <li>
+                      • Try refreshing the page and granting permissions again
+                    </li>
                     <li>• Check if another application is using the camera</li>
                   </ul>
                 </div>
@@ -276,14 +318,20 @@ export default function SupportPage() {
                 <Separator />
 
                 <div>
-                  <h4 className="font-medium mb-2">QR Code Scanning</h4>
-                  <p className="text-sm text-muted-foreground mb-2">
-                    If QR codes aren't scanning properly:
+                  <h4 className="mb-2 font-medium">QR Code Scanning</h4>
+                  <p className="text-muted-foreground mb-2 text-sm">
+                    If QR codes aren&apos;t scanning properly:
                   </p>
-                  <ul className="space-y-1 text-sm text-muted-foreground">
-                    <li>• Ensure good lighting and steady camera positioning</li>
-                    <li>• Keep the entire QR code visible in the camera frame</li>
-                    <li>• Clean your camera lens if the image appears blurry</li>
+                  <ul className="text-muted-foreground space-y-1 text-sm">
+                    <li>
+                      • Ensure good lighting and steady camera positioning
+                    </li>
+                    <li>
+                      • Keep the entire QR code visible in the camera frame
+                    </li>
+                    <li>
+                      • Clean your camera lens if the image appears blurry
+                    </li>
                     <li>• Try moving closer to or farther from the QR code</li>
                   </ul>
                 </div>
@@ -291,14 +339,18 @@ export default function SupportPage() {
                 <Separator />
 
                 <div>
-                  <h4 className="font-medium mb-2">Attendance Recording</h4>
-                  <p className="text-sm text-muted-foreground mb-2">
-                    If attendance isn't being recorded correctly:
+                  <h4 className="mb-2 font-medium">Attendance Recording</h4>
+                  <p className="text-muted-foreground mb-2 text-sm">
+                    If attendance isn&apos;t being recorded correctly:
                   </p>
-                  <ul className="space-y-1 text-sm text-muted-foreground">
-                    <li>• Ensure you're scanning during the valid time window</li>
+                  <ul className="text-muted-foreground space-y-1 text-sm">
+                    <li>
+                      • Ensure you&apos;re scanning during the valid time window
+                    </li>
                     <li>• Check your internet connection</li>
-                    <li>• Verify you're logged in with the correct account</li>
+                    <li>
+                      • Verify you&apos;re logged in with the correct account
+                    </li>
                     <li>• Contact your lecturer if issues persist</li>
                   </ul>
                 </div>
@@ -306,17 +358,31 @@ export default function SupportPage() {
                 <Separator />
 
                 <div>
-                  <h4 className="font-medium mb-2">Manual Check-in (For Lecturers)</h4>
-                  <p className="text-sm text-muted-foreground mb-2">
+                  <h4 className="mb-2 font-medium">
+                    Manual Check-in (For Lecturers)
+                  </h4>
+                  <p className="text-muted-foreground mb-2 text-sm">
                     When performing manual check-ins for students:
                   </p>
-                  <ul className="space-y-1 text-sm text-muted-foreground">
-                    <li>• Navigate to Attendance Tracking from your dashboard</li>
-                    <li>• Select the current session to view all enrolled students</li>
-                    <li>• Look for the student who approached you (they may show as absent)</li>
-                    <li>• Click "Check In" next to their name</li>
-                    <li>• Confirm the attendance was recorded successfully in the list</li>
-                    <li>• Manual check-ins count toward attendance requirements</li>
+                  <ul className="text-muted-foreground space-y-1 text-sm">
+                    <li>
+                      • Navigate to Attendance Tracking from your dashboard
+                    </li>
+                    <li>
+                      • Select the current session to view all enrolled students
+                    </li>
+                    <li>
+                      • Look for the student who approached you (they may show
+                      as absent)
+                    </li>
+                    <li>• Click &quot;Check In&quot; next to their name</li>
+                    <li>
+                      • Confirm the attendance was recorded successfully in the
+                      list
+                    </li>
+                    <li>
+                      • Manual check-ins count toward attendance requirements
+                    </li>
                   </ul>
                 </div>
               </div>
@@ -338,17 +404,19 @@ export default function SupportPage() {
             <CardContent>
               {!submitted ? (
                 <form onSubmit={handleSubmit} className="space-y-4">
-                  <div>
+                  <div className="flex flex-col gap-2">
                     <Label htmlFor="category">Category</Label>
                     <select
                       id="category"
-                      className="w-full mt-1 px-3 py-2 border border-input bg-background rounded-md"
+                      className="border-input bg-background mt-1 w-full rounded-md border px-3 py-2"
                       value={formData.category}
-                      onChange={(e) => handleInputChange("category", e.target.value)}
+                      onChange={e =>
+                        handleInputChange("category", e.target.value)
+                      }
                       required
                     >
                       <option value="">Select a category</option>
-                      <option value="technical">Technical Issue</option>
+                      <option value="teịhnical">Technical Issue</option>
                       <option value="feature">Feature Request</option>
                       <option value="account">Account Problem</option>
                       <option value="attendance">Attendance Issue</option>
@@ -356,47 +424,52 @@ export default function SupportPage() {
                     </select>
                   </div>
 
-                  <div>
+                  <div className="flex flex-col gap-2">
                     <Label htmlFor="subject">Subject</Label>
                     <Input
                       id="subject"
                       type="text"
                       placeholder="Brief description of your issue"
                       value={formData.subject}
-                      onChange={(e) => handleInputChange("subject", e.target.value)}
+                      onChange={e =>
+                        handleInputChange("subject", e.target.value)
+                      }
                       required
                     />
                   </div>
 
-                  <div>
+                  <div className="flex flex-col gap-2">
                     <Label htmlFor="message">Message</Label>
                     <Textarea
                       id="message"
                       placeholder="Please provide detailed information about your question or issue..."
                       rows={5}
                       value={formData.message}
-                      onChange={(e) => handleInputChange("message", e.target.value)}
+                      onChange={e =>
+                        handleInputChange("message", e.target.value)
+                      }
                       required
                     />
                   </div>
 
-                  <Button type="submit" disabled={isSubmitting} className="w-full">
+                  <Button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="w-full"
+                  >
                     {isSubmitting ? "Submitting..." : "Submit Support Request"}
                   </Button>
                 </form>
               ) : (
-                <div className="text-center space-y-4">
-                  <div className="text-green-600 font-medium">
+                <div className="space-y-4 text-center">
+                  <div className="font-medium text-green-600">
                     ✓ Support request submitted successfully!
                   </div>
-                  <p className="text-sm text-muted-foreground">
-                    We've received your message and will respond as soon as possible.
-                    You can expect a response within 24-48 hours.
+                  <p className="text-muted-foreground text-sm">
+                    We&apos;ve received your message and will respond as soon as
+                    possible. You can expect a response within 24-48 hours.
                   </p>
-                  <Button
-                    onClick={() => setSubmitted(false)}
-                    variant="outline"
-                  >
+                  <Button onClick={() => setSubmitted(false)} variant="outline">
                     Submit Another Request
                   </Button>
                 </div>
