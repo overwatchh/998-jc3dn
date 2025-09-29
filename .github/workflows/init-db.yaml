@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - master
-      - demo-week10
+      - demo-week10-temp
     paths:
       - src/lib/server/db_schema/db_*.sql
 
@@ -49,7 +49,7 @@ jobs:
       - name: Run SQL scripts on Cloud SQL
         run: |
           set -e  # Exit immediately if a command fails
-          for script in db_drop.sql db_create.sql db_load.sql; do
+          for script in db_drop.sql qr_attendance_app.sql; do
             echo "Running $script..."
             mysql -u ${{ secrets.DB_USER }} \
                   -p${{ secrets.DB_PASS }} \
