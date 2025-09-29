@@ -476,7 +476,8 @@ export default function ReportsAnalytics() {
           const data = await response.json();
           setDetailedAttendanceData(data);
         } else {
-          console.error("Failed to fetch detailed attendance");
+          const errorData = await response.text();
+          console.error("Failed to fetch detailed attendance:", response.status, errorData);
           setDetailedAttendanceData([]);
         }
       } catch (error) {
