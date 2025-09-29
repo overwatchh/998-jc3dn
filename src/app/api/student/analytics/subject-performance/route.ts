@@ -114,6 +114,7 @@ interface SubjectDetailRow {
   session_type: string;
   total_sessions: number;
   attended_sessions: number;
+  attendance_percentage: number;
 }
 
 interface RecentSessionRow {
@@ -141,7 +142,7 @@ export async function GET(request: Request) {
     const url = new URL(request.url);
     const sessionType = url.searchParams.get("sessionType") || "lecture";
 
-    // Get subject performance breakdown by session type
+    // Get subject performance breakdown by session type using EMAIL CALCULATOR METHOD
     const subjectDetailSql = `
       SELECT
         s.id as subject_id,
@@ -150,13 +151,31 @@ export async function GET(request: Request) {
         s.required_attendance_thresh,
         ss.type as session_type,
         COUNT(DISTINCT qcss.id) as total_sessions,
-        COUNT(DISTINCT c.qr_code_study_session_id) as attended_sessions
+        ROUND(
+          (SUM(
+            CASE
+              WHEN checkin_counts.checkin_count >= 2 THEN 100
+              WHEN checkin_counts.checkin_count = 1 THEN 50
+              ELSE 0
+            END
+          ) / (COUNT(DISTINCT qcss.id) * 100)) * 100,
+          1
+        ) as attendance_percentage,
+        COUNT(DISTINCT CASE WHEN checkin_counts.checkin_count > 0 THEN qcss.id END) as attended_sessions
       FROM enrolment e
       JOIN subject s ON e.subject_id = s.id
       JOIN subject_study_session sss ON sss.subject_id = s.id
       JOIN study_session ss ON ss.id = sss.study_session_id
       JOIN qr_code_study_session qcss ON qcss.study_session_id = ss.id
-      LEFT JOIN checkin c ON c.qr_code_study_session_id = qcss.id AND c.student_id = e.student_id
+      LEFT JOIN (
+        SELECT
+          qr_code_study_session_id,
+          student_id,
+          COUNT(*) as checkin_count
+        FROM checkin
+        GROUP BY qr_code_study_session_id, student_id
+      ) checkin_counts ON checkin_counts.qr_code_study_session_id = qcss.id
+                       AND checkin_counts.student_id = e.student_id
       WHERE e.student_id = ?
         AND s.status = 'active'
         AND ss.type = ?
@@ -202,6 +221,7 @@ export async function GET(request: Request) {
           subject_code: row.subject_code,
           required_threshold: row.required_attendance_thresh * 100,
           sessions_by_type: new Map(),
+          total_attendance_points: 0,
           total_attended: 0,
           total_sessions: 0,
           recent_sessions: []
@@ -212,11 +232,13 @@ export async function GET(request: Request) {
       subject.sessions_by_type.set(row.session_type, {
         attended: row.attended_sessions,
         total: row.total_sessions,
-        percentage: row.total_sessions > 0 ? (row.attended_sessions / row.total_sessions) * 100 : 0
+        percentage: parseFloat(String(row.attendance_percentage)) || 0
       });
 
-      subject.total_attended += row.attended_sessions;
+      // Use the EMAIL CALCULATOR percentage for overall calculation
+      subject.total_attendance_points += (parseFloat(String(row.attendance_percentage)) || 0) * row.total_sessions;
       subject.total_sessions += row.total_sessions;
+      subject.total_attended += row.attended_sessions;
     });
 
     // Process recent trends
@@ -234,7 +256,7 @@ export async function GET(request: Request) {
     // Convert to final format
     const subjectPerformance = Array.from(subjectMap.values()).map(subject => {
       const overallPercentage = subject.total_sessions > 0
-        ? (subject.total_attended / subject.total_sessions) * 100
+        ? subject.total_attendance_points / subject.total_sessions
         : 0;
 
       // Determine status based on overall percentage vs required threshold
