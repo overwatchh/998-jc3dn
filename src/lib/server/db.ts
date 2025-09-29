@@ -1,10 +1,9 @@
 import mysql from "mysql2/promise";
 
 const isProd = process.env.NODE_ENV === "production";
-const useLocalDB = process.env.USE_LOCAL_DB === "true" || !isProd;
 
 export const db = mysql.createPool(
-  useLocalDB
+  isProd
     ? {
         socketPath: `/cloudsql/${process.env.GCP_PROJECT_ID}:${process.env.GCP_REGION}:${process.env.DB_INSTANCE}`,
         user: process.env.DB_USER!,
