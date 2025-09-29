@@ -93,7 +93,8 @@ export async function GET(request: NextRequest) {
           END
     `;
 
-    const params = subjectId ? [parseInt(subjectId)] : [];
+    const subjectIdNum = subjectId && subjectId !== 'all' ? parseInt(subjectId) : null;
+    const params = subjectIdNum ? [subjectIdNum] : [];
     const data = await rawQuery(query, params);
 
     return NextResponse.json(data);

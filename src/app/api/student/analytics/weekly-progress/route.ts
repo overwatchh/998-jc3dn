@@ -94,6 +94,7 @@ interface WeeklyRow {
   week_start_date: string;
   total_sessions: number;
   attended_sessions: number;
+  attendance_rate: number;
 }
 
 export async function GET(request: Request) {
@@ -115,17 +116,36 @@ export async function GET(request: Request) {
     const url = new URL(request.url);
     const weeks = parseInt(url.searchParams.get('weeks') || '12');
 
+    // Using EMAIL CALCULATOR METHOD: 2+ checkins = 100 points, 1 checkin = 50 points, 0 checkins = 0 points
     const sql = `
       SELECT
         qcss.week_number,
         DATE_ADD('2024-01-01', INTERVAL (qcss.week_number - 1) * 7 DAY) as week_start_date,
         COUNT(DISTINCT qcss.id) as total_sessions,
-        COUNT(DISTINCT c.qr_code_study_session_id) as attended_sessions
+        ROUND(
+          (SUM(
+            CASE
+              WHEN checkin_counts.checkin_count >= 2 THEN 100
+              WHEN checkin_counts.checkin_count = 1 THEN 50
+              ELSE 0
+            END
+          ) / (COUNT(DISTINCT qcss.id) * 100)) * 100,
+          1
+        ) as attendance_rate,
+        COUNT(DISTINCT CASE WHEN checkin_counts.checkin_count > 0 THEN qcss.id END) as attended_sessions
       FROM enrolment e
       JOIN subject s ON e.subject_id = s.id
       JOIN subject_study_session sss ON sss.subject_id = s.id
       JOIN qr_code_study_session qcss ON qcss.study_session_id = sss.study_session_id
-      LEFT JOIN checkin c ON c.qr_code_study_session_id = qcss.id AND c.student_id = e.student_id
+      LEFT JOIN (
+        SELECT
+          qr_code_study_session_id,
+          student_id,
+          COUNT(*) as checkin_count
+        FROM checkin
+        GROUP BY qr_code_study_session_id, student_id
+      ) checkin_counts ON checkin_counts.qr_code_study_session_id = qcss.id
+                       AND checkin_counts.student_id = e.student_id
       WHERE e.student_id = ?
         AND s.status = 'active'
         AND qcss.week_number BETWEEN 1 AND ?
@@ -135,15 +155,13 @@ export async function GET(request: Request) {
 
     const weeklyData = await rawQuery<WeeklyRow>(sql, [studentId, weeks]);
 
-    // Calculate weekly stats with attendance rates
+    // Use attendance rates from email calculator method
     const weeklyStats = weeklyData.map(row => ({
       week_number: row.week_number,
       week_start_date: row.week_start_date,
       total_sessions: row.total_sessions,
       attended_sessions: row.attended_sessions,
-      attendance_rate: row.total_sessions > 0
-        ? Math.round((row.attended_sessions / row.total_sessions) * 10000) / 100
-        : 0
+      attendance_rate: parseFloat(String(row.attendance_rate)) || 0
     }));
 
     // Calculate trends

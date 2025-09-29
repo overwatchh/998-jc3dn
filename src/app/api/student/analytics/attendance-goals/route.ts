@@ -107,6 +107,7 @@ interface GoalRow {
   subject_name: string;
   subject_code: string;
   required_attendance_thresh: number;
+  current_attendance_percentage: number;
   attended_sessions: number;
   total_sessions_so_far: number;
   total_planned_sessions: number;
@@ -129,20 +130,39 @@ export async function GET() {
   try {
     const studentId = session.user.id;
 
+    // Using EMAIL CALCULATOR METHOD: 2+ checkins = 100 points, 1 checkin = 50 points, 0 checkins = 0 points
     const sql = `
       SELECT
         s.id as subject_id,
         s.name as subject_name,
         s.code as subject_code,
         s.required_attendance_thresh,
-        COUNT(DISTINCT CASE WHEN c.student_id IS NOT NULL THEN qcss.id END) as attended_sessions,
+        ROUND(
+          (SUM(
+            CASE
+              WHEN checkin_counts.checkin_count >= 2 THEN 100
+              WHEN checkin_counts.checkin_count = 1 THEN 50
+              ELSE 0
+            END
+          ) / (COUNT(DISTINCT qcss.id) * 100)) * 100,
+          1
+        ) as current_attendance_percentage,
+        COUNT(DISTINCT CASE WHEN checkin_counts.checkin_count > 0 THEN qcss.id END) as attended_sessions,
         COUNT(DISTINCT CASE WHEN qcss.week_number <= WEEK(CURDATE()) THEN qcss.id END) as total_sessions_so_far,
         COUNT(DISTINCT qcss.id) as total_planned_sessions
       FROM enrolment e
       JOIN subject s ON e.subject_id = s.id
       JOIN subject_study_session sss ON sss.subject_id = s.id
       JOIN qr_code_study_session qcss ON qcss.study_session_id = sss.study_session_id
-      LEFT JOIN checkin c ON c.qr_code_study_session_id = qcss.id AND c.student_id = e.student_id
+      LEFT JOIN (
+        SELECT
+          qr_code_study_session_id,
+          student_id,
+          COUNT(*) as checkin_count
+        FROM checkin
+        GROUP BY qr_code_study_session_id, student_id
+      ) checkin_counts ON checkin_counts.qr_code_study_session_id = qcss.id
+                       AND checkin_counts.student_id = e.student_id
       WHERE e.student_id = ?
         AND s.status = 'active'
       GROUP BY s.id, s.name, s.code, s.required_attendance_thresh;
@@ -150,12 +170,10 @@ export async function GET() {
 
     const goalsData = await rawQuery<GoalRow>(sql, [studentId]);
 
-    // Calculate subject goals
+    // Calculate subject goals using email calculator percentages
     const subjectGoals = goalsData.map(row => {
       const requiredPercentage = row.required_attendance_thresh * 100;
-      const currentPercentage = row.total_sessions_so_far > 0
-        ? (row.attended_sessions / row.total_sessions_so_far) * 100
-        : 0;
+      const currentPercentage = parseFloat(String(row.current_attendance_percentage)) || 0;
 
       const remainingSessions = row.total_planned_sessions - row.total_sessions_so_far;
       const requiredTotalAttended = Math.ceil((requiredPercentage / 100) * row.total_planned_sessions);

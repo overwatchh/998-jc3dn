@@ -18,6 +18,13 @@ import {
   ChartTooltip,
 } from "@/components/ui/chart";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -46,18 +53,20 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCurrentUser } from "@/hooks/useAuth";
 import { format } from "date-fns";
 import {
   ArrowDown,
   ArrowUp,
   Calendar,
+  Download,
   Filter,
   Loader2,
   Mail,
   MoreHorizontal,
   Search,
+  User,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { DateRange } from "react-day-picker";
@@ -104,7 +113,7 @@ export default function ReportsAnalytics() {
       const requestBody = {
         reportType: selectedReportType,
         dateRange: selectedDateRange,
-        subjectIds: selectedCourseId ? [parseInt(selectedCourseId)] : [],
+        subjectIds: selectedCourseId && selectedCourseId !== 'all' ? [parseInt(selectedCourseId)] : [],
         email: customEmail.trim()
       };
 
@@ -248,6 +257,17 @@ export default function ReportsAnalytics() {
   });
   const [isLoadingData, setIsLoadingData] = useState(false);
 
+  // Detailed attendance states
+  const [detailedAttendanceTab, setDetailedAttendanceTab] = useState<string>("student");
+  const [detailedAttendanceData, setDetailedAttendanceData] = useState<any[]>([]);
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [isLoadingDetailedData, setIsLoadingDetailedData] = useState(false);
+
+  // Modal states for actions
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [selectedStudent, setSelectedStudent] = useState<any>(null);
+  const [showNotificationModal, setShowNotificationModal] = useState(false);
+
   useEffect(() => {
     if (!selectedCourseId && courses && courses.length > 0) {
       setSelectedCourseId(String(courses[0].id));
@@ -362,6 +382,132 @@ export default function ReportsAnalytics() {
 
     fetchAnalyticsData();
   }, [selectedCourseId]);
+
+  // Fetch detailed attendance data
+  useEffect(() => {
+    const fetchDetailedAttendance = async () => {
+      if (!selectedCourseId) return;
+
+      setIsLoadingDetailedData(true);
+      try {
+        const response = await fetch(
+          `/api/analytics/detailed-attendance?subjectId=${selectedCourseId}&viewType=${detailedAttendanceTab}&search=${searchQuery}`
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+          setDetailedAttendanceData(data);
+        } else {
+          console.error('Failed to fetch detailed attendance');
+          setDetailedAttendanceData([]);
+        }
+      } catch (error) {
+        console.error('Error fetching detailed attendance:', error);
+        setDetailedAttendanceData([]);
+      } finally {
+        setIsLoadingDetailedData(false);
+      }
+    };
+
+    fetchDetailedAttendance();
+  }, [selectedCourseId, detailedAttendanceTab, searchQuery]);
+
+  // Action handlers
+  const handleViewDetails = (student: any) => {
+    setSelectedStudent(student);
+    setShowDetailsModal(true);
+  };
+
+  const [isSendingNotification, setIsSendingNotification] = useState(false);
+
+  const handleSendNotification = (student: any) => {
+    setSelectedStudent(student);
+    setShowNotificationModal(true);
+  };
+
+  const sendNotificationEmail = async () => {
+    if (!selectedStudent) return;
+
+    setIsSendingNotification(true);
+
+    try {
+      const response = await fetch('/api/lecturer/send-notification', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          studentEmail: selectedStudent.email || selectedStudent.student_email,
+          studentName: selectedStudent.name || selectedStudent.student_name,
+          attendancePercentage: selectedStudent.attendance || selectedStudent.attendance_percentage
+        }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        alert(`Notification sent successfully to ${selectedStudent.name || selectedStudent.student_name}!`);
+        setShowNotificationModal(false);
+      } else {
+        alert(`Error sending notification: ${result.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Notification send error:', error);
+      alert('Failed to send notification. Please try again.');
+    } finally {
+      setIsSendingNotification(false);
+    }
+  };
+
+  const handleExportData = (student: any) => {
+    // Create CSV content
+    const csvContent = [
+      ['Name', 'Email', 'Attendance %', 'Attended Weeks', 'Total Weeks', 'Trend'],
+      [
+        student.name,
+        student.email,
+        `${student.attendancePercentage || student.attendance}%`,
+        student.attendedSessions,
+        student.totalSessions,
+        student.trend
+      ]
+    ].map(row => row.join(',')).join('\n');
+
+    // Create and download file
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${student.name.replace(/\s+/g, '_')}_attendance.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+  };
+
+  const handleExportAllData = () => {
+    const csvContent = [
+      ['Name', 'Email', 'Attendance %', 'Attended Weeks', 'Total Weeks', 'Trend'],
+      ...detailedAttendanceData.map(student => [
+        student.name,
+        student.email,
+        `${student.attendancePercentage || student.attendance}%`,
+        student.attendedSessions,
+        student.totalSessions,
+        student.trend
+      ])
+    ].map(row => row.join(',')).join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `detailed_attendance_${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+  };
 
   const { data } = useCurrentUser();
 
@@ -1166,28 +1312,30 @@ export default function ReportsAnalytics() {
 
                       {/* Critical Risk Students */}
                       <div className="space-y-2">
-                        <h5 className="text-sm font-medium text-red-600 dark:text-red-400">🚨 Critical Risk Students</h5>
+                        <h5 className="text-sm font-medium text-red-600 dark:text-red-400">🚨 Critical Risk Students - Immediate Intervention Required</h5>
                         {riskData.critical?.length > 0 ? (
-                          riskData.critical.slice(0, 5).map((student, index) => {
-                            const trendIcon = student.trend === 'down' ? '↓' : student.trend === 'up' ? '↑' : '→';
-                            return (
-                              <div key={index} className="flex items-center justify-between p-3 bg-red-50 dark:bg-red-950/20 rounded-lg border border-red-200 dark:border-red-800">
-                                <div className="flex items-center space-x-3">
-                                  <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
-                                    {student.initials || student.name?.split(' ').map(n => n[0]).join('') || '?'}
+                          <div className="max-h-[400px] overflow-y-auto space-y-2 pr-2">
+                            {riskData.critical.map((student, index) => {
+                              const trendIcon = student.trend === 'down' ? '↓' : student.trend === 'up' ? '↑' : '→';
+                              return (
+                                <div key={index} className="flex items-center justify-between p-3 bg-red-50 dark:bg-red-950/20 rounded-lg border border-red-200 dark:border-red-800">
+                                  <div className="flex items-center space-x-3">
+                                    <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
+                                      {student.initials || student.name?.split(' ').map(n => n[0]).join('') || '?'}
+                                    </div>
+                                    <div>
+                                      <p className="font-medium text-foreground">{student.name}</p>
+                                      <p className="text-xs text-muted-foreground">Attended {student.attended}/{student.total} weeks</p>
+                                    </div>
                                   </div>
-                                  <div>
-                                    <p className="font-medium text-foreground">{student.name}</p>
-                                    <p className="text-xs text-muted-foreground">Attended {student.attended}/{student.total} weeks</p>
+                                  <div className="text-right">
+                                    <div className="text-lg font-bold text-red-600 dark:text-red-400">{student.attendance.toFixed(1)}%</div>
+                                    <div className="text-xs text-muted-foreground">{trendIcon} {student.trend}</div>
                                   </div>
                                 </div>
-                                <div className="text-right">
-                                  <div className="text-lg font-bold text-red-600 dark:text-red-400">{student.attendance.toFixed(1)}%</div>
-                                  <div className="text-xs text-muted-foreground">{trendIcon} {student.trend}</div>
-                                </div>
-                              </div>
-                            );
-                          })
+                              );
+                            })}
+                          </div>
                         ) : (
                           <div className="text-center py-4 text-muted-foreground">
                             <div className="text-2xl mb-2">✅</div>
@@ -2037,7 +2185,9 @@ export default function ReportsAnalytics() {
           <CardTitle className="text-lg sm:text-xl">
             Detailed Attendance
           </CardTitle>
-          <Tabs defaultValue="student" className="w-full">
+        </CardHeader>
+        <CardContent>
+          <Tabs value={detailedAttendanceTab} onValueChange={setDetailedAttendanceTab} className="w-full">
             <TabsList className="grid w-full max-w-md grid-cols-3 gap-1">
               <TabsTrigger value="student" className="text-xs sm:text-sm">
                 By Student
@@ -2049,31 +2199,49 @@ export default function ReportsAnalytics() {
                 By Course
               </TabsTrigger>
             </TabsList>
-          </Tabs>
-        </CardHeader>
-        <CardContent>
-          <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="relative w-full sm:max-w-sm">
-              <Search className="text-muted-foreground absolute top-2.5 left-2.5 h-4 w-4" />
-              <Input
-                type="search"
-                placeholder="Search students..."
-                className="bg-background w-full pl-8"
-              />
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full bg-transparent sm:w-auto"
-            >
-              <Filter className="mr-2 h-4 w-4" />
-              Filter
-            </Button>
-          </div>
 
-          {/* Mobile Card View */}
-          <div className="block space-y-4 sm:hidden">
-            {(Array.isArray(studentPerformanceData) ? studentPerformanceData : []).map((student, index) => (
+            {/* Student Tab Content */}
+            <TabsContent value="student" className="mt-4 space-y-4">
+              <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="relative w-full sm:max-w-sm">
+                  <Search className="text-muted-foreground absolute top-2.5 left-2.5 h-4 w-4" />
+                  <Input
+                    type="search"
+                    placeholder="Search students..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="bg-background w-full pl-8"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="bg-transparent"
+                    onClick={handleExportAllData}
+                  >
+                    <Download className="mr-2 h-4 w-4" />
+                    Export All
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="bg-transparent"
+                  >
+                    <Filter className="mr-2 h-4 w-4" />
+                    Filter
+                  </Button>
+                </div>
+              </div>
+
+              {/* Mobile Card View */}
+              <div className="block space-y-4 sm:hidden">
+                {isLoadingDetailedData ? (
+                  <div className="flex justify-center p-4">
+                    <Loader2 className="h-8 w-8 animate-spin" />
+                  </div>
+                ) : (
+                  (Array.isArray(detailedAttendanceData) ? detailedAttendanceData : []).map((student, index) => (
               <Card key={`mobile-student-${index}`}>
                 <CardContent className="p-4">
                   <div className="mb-3 flex items-center justify-between">
@@ -2098,9 +2266,18 @@ export default function ReportsAnalytics() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem>View Details</DropdownMenuItem>
-                        <DropdownMenuItem>Send Notification</DropdownMenuItem>
-                        <DropdownMenuItem>Export Data</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleViewDetails(student)}>
+                          <User className="mr-2 h-4 w-4" />
+                          View Details
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleSendNotification(student)}>
+                          <Mail className="mr-2 h-4 w-4" />
+                          Send Notification
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleExportData(student)}>
+                          <Download className="mr-2 h-4 w-4" />
+                          Export Data
+                        </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
@@ -2115,10 +2292,10 @@ export default function ReportsAnalytics() {
                               : "destructive"
                         }
                       >
-                        {student.attendance}%
+                          {student.attendancePercentage || student.attendance}%
                       </Badge>
                       <span className="text-muted-foreground text-sm">
-                        {student.attended}/{student.total} sessions
+                          {student.attendedSessions}/{student.totalSessions} weeks
                       </span>
                     </div>
                     <div className="flex items-center">
@@ -2133,12 +2310,18 @@ export default function ReportsAnalytics() {
                   </div>
                 </CardContent>
               </Card>
-            ))}
-          </div>
+                  ))
+                )}
+              </div>
 
-          {/* Desktop Table View */}
-          <div className="hidden overflow-x-auto rounded-md border sm:block">
-            <Table>
+              {/* Desktop Table View */}
+              <div className="hidden overflow-x-auto rounded-md border sm:block">
+                {isLoadingDetailedData ? (
+                  <div className="flex justify-center p-8">
+                    <Loader2 className="h-8 w-8 animate-spin" />
+                  </div>
+                ) : (
+                  <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead className="hidden w-[50px] lg:table-cell">
@@ -2147,7 +2330,7 @@ export default function ReportsAnalytics() {
                   <TableHead>Student</TableHead>
                   <TableHead className="text-center">Attendance</TableHead>
                   <TableHead className="hidden text-center md:table-cell">
-                    Sessions
+                    Weeks
                   </TableHead>
                   <TableHead className="hidden text-center lg:table-cell">
                     Trend
@@ -2156,7 +2339,7 @@ export default function ReportsAnalytics() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {(Array.isArray(studentPerformanceData) ? studentPerformanceData : []).map((student, index) => (
+                    {(Array.isArray(detailedAttendanceData) ? detailedAttendanceData : []).map((student, index) => (
                   <TableRow key={`table-student-${typeof student.id === 'object' ? index : (student.id || index)}`}>
                     <TableCell className="hidden font-medium lg:table-cell">
                       {typeof student.id === 'object' ? JSON.stringify(student.id) : student.id}
@@ -2186,11 +2369,11 @@ export default function ReportsAnalytics() {
                               : "destructive"
                         }
                       >
-                        {student.attendance}%
+                          {student.attendancePercentage || student.attendance}%
                       </Badge>
                     </TableCell>
                     <TableCell className="hidden text-center md:table-cell">
-                      {student.attended}/{student.total}
+                        {student.attendedSessions}/{student.totalSessions}
                     </TableCell>
                     <TableCell className="hidden text-center lg:table-cell">
                       {student.trend === "up" ? (
@@ -2216,22 +2399,32 @@ export default function ReportsAnalytics() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem>View Details</DropdownMenuItem>
-                          <DropdownMenuItem>Send Notification</DropdownMenuItem>
-                          <DropdownMenuItem>Export Data</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleViewDetails(student)}>
+                            <User className="mr-2 h-4 w-4" />
+                            View Details
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleSendNotification(student)}>
+                            <Mail className="mr-2 h-4 w-4" />
+                            Send Notification
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleExportData(student)}>
+                            <Download className="mr-2 h-4 w-4" />
+                            Export Data
+                          </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
                   </TableRow>
                 ))}
-              </TableBody>
-            </Table>
-          </div>
+                </TableBody>
+                  </Table>
+                )}
+              </div>
 
           <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="text-muted-foreground text-center text-sm sm:text-left">
               Showing <strong>1</strong> to <strong>10</strong> of{" "}
-              <strong>{(Array.isArray(studentPerformanceData) ? studentPerformanceData.length : 0)}</strong> results
+              <strong>{(Array.isArray(detailedAttendanceData) ? detailedAttendanceData.length : 0)}</strong> results
             </div>
             <div className="flex items-center justify-center gap-2 sm:justify-end">
               <Button variant="outline" size="sm" disabled>
@@ -2242,6 +2435,108 @@ export default function ReportsAnalytics() {
               </Button>
             </div>
           </div>
+            </TabsContent>
+
+            {/* Session Tab Content */}
+            <TabsContent value="session" className="mt-4 space-y-4">
+              {isLoadingDetailedData ? (
+                <div className="flex justify-center p-8">
+                  <Loader2 className="h-8 w-8 animate-spin" />
+                </div>
+              ) : (
+                <div className="overflow-x-auto rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Week</TableHead>
+                        <TableHead>Date</TableHead>
+                        <TableHead className="text-center">Check-in Type</TableHead>
+                        <TableHead className="text-center">Present</TableHead>
+                        <TableHead className="text-center">Absent</TableHead>
+                        <TableHead className="text-center">Attendance Rate</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {(Array.isArray(detailedAttendanceData) ? detailedAttendanceData : []).map((session, index) => (
+                        <TableRow key={`session-${index}`}>
+                          <TableCell className="font-medium">{session.weekLabel}</TableCell>
+                          <TableCell>{new Date(session.date).toLocaleDateString()}</TableCell>
+                          <TableCell className="text-center">
+                            <Badge variant="outline">{session.checkInType}</Badge>
+                          </TableCell>
+                          <TableCell className="text-center">{session.presentCount}</TableCell>
+                          <TableCell className="text-center">{session.absentCount}</TableCell>
+                          <TableCell className="text-center">
+                            <Badge
+                              variant={
+                                session.attendanceRate >= 80
+                                  ? "default"
+                                  : session.attendanceRate >= 70
+                                    ? "outline"
+                                    : "destructive"
+                              }
+                            >
+                              {session.attendanceRate}%
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </TabsContent>
+
+            {/* Course Tab Content */}
+            <TabsContent value="course" className="mt-4 space-y-4">
+              {isLoadingDetailedData ? (
+                <div className="flex justify-center p-8">
+                  <Loader2 className="h-8 w-8 animate-spin" />
+                </div>
+              ) : (
+                <div className="overflow-x-auto rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Course Code</TableHead>
+                        <TableHead>Course Name</TableHead>
+                        <TableHead className="text-center">Total Sessions</TableHead>
+                        <TableHead className="text-center">Total Students</TableHead>
+                        <TableHead className="text-center">Avg Attendance</TableHead>
+                        <TableHead>Last Session</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {(Array.isArray(detailedAttendanceData) ? detailedAttendanceData : []).map((course, index) => (
+                        <TableRow key={`course-${index}`}>
+                          <TableCell className="font-medium">{course.code}</TableCell>
+                          <TableCell>{course.name}</TableCell>
+                          <TableCell className="text-center">{course.totalSessions}</TableCell>
+                          <TableCell className="text-center">{course.totalStudents}</TableCell>
+                          <TableCell className="text-center">
+                            <Badge
+                              variant={
+                                course.averageAttendance >= 80
+                                  ? "default"
+                                  : course.averageAttendance >= 70
+                                    ? "outline"
+                                    : "destructive"
+                              }
+                            >
+                              {course.averageAttendance}%
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            {course.lastSession ? new Date(course.lastSession).toLocaleDateString() : 'N/A'}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
 
@@ -2298,16 +2593,17 @@ export default function ReportsAnalytics() {
             </div>
             <div>
               <Label htmlFor="reportSubject" className="text-sm font-medium">
-                Subject (Optional)
+                Subject
               </Label>
               <Select
                 value={selectedCourseId}
                 onValueChange={setSelectedCourseId}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select subject (optional)" />
+                  <SelectValue placeholder="Select subject" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="all">All Subjects</SelectItem>
                   {courses?.map((course: any) => (
                     <SelectItem key={course.id} value={String(course.id)}>
                       {course.code} - {course.name}
@@ -2351,6 +2647,125 @@ export default function ReportsAnalytics() {
       </Card>
       </div>
       </section>
+
+      {/* Student Details Modal */}
+      <Dialog open={showDetailsModal} onOpenChange={setShowDetailsModal}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Student Details</DialogTitle>
+            <DialogDescription>
+              Detailed attendance information for {selectedStudent?.name}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            {selectedStudent && (
+              <>
+                <div className="flex items-center gap-3">
+                  <Avatar className="h-12 w-12">
+                    <AvatarFallback>{selectedStudent.initials}</AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <h3 className="font-semibold">{selectedStudent.name}</h3>
+                    <p className="text-sm text-muted-foreground">{selectedStudent.email}</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium">Attendance Rate</p>
+                    <Badge
+                      variant={
+                        (selectedStudent.attendancePercentage || selectedStudent.attendance) >= 80
+                          ? "default"
+                          : (selectedStudent.attendancePercentage || selectedStudent.attendance) >= 70
+                            ? "outline"
+                            : "destructive"
+                      }
+                      className="text-lg px-3 py-1"
+                    >
+                      {selectedStudent.attendancePercentage || selectedStudent.attendance}%
+                    </Badge>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium">Weeks</p>
+                    <p className="text-lg font-semibold">
+                      {selectedStudent.attendedSessions}/
+                      {selectedStudent.totalSessions}
+                    </p>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-sm font-medium">Trend</p>
+                  <div className="flex items-center gap-2">
+                    {selectedStudent.trend === "up" ? (
+                      <ArrowUp className="h-4 w-4 text-green-500" />
+                    ) : selectedStudent.trend === "down" ? (
+                      <ArrowDown className="h-4 w-4 text-red-500" />
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                    <span className="capitalize">{selectedStudent.trend || 'Stable'}</span>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Send Notification Modal */}
+      <Dialog open={showNotificationModal} onOpenChange={setShowNotificationModal}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Send Notification</DialogTitle>
+            <DialogDescription>
+              Send an attendance notification to {selectedStudent?.name}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="notification-type">Notification Type</Label>
+              <Select defaultValue="low-attendance">
+                <SelectTrigger>
+                  <SelectValue placeholder="Select notification type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="low-attendance">Low Attendance Warning</SelectItem>
+                  <SelectItem value="improvement-needed">Improvement Needed</SelectItem>
+                  <SelectItem value="good-progress">Good Progress</SelectItem>
+                  <SelectItem value="custom">Custom Message</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="message">Message</Label>
+              <textarea
+                id="message"
+                className="w-full min-h-[100px] px-3 py-2 border rounded-md resize-none"
+                placeholder="Enter your message here..."
+                defaultValue="Dear student, your attendance rate is currently below the recommended threshold. Please ensure regular attendance to avoid any academic issues."
+              />
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" onClick={() => setShowNotificationModal(false)} disabled={isSendingNotification}>
+                Cancel
+              </Button>
+              <Button onClick={sendNotificationEmail} disabled={isSendingNotification}>
+                {isSendingNotification ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    <Mail className="mr-2 h-4 w-4" />
+                    Send Notification
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </main>
   );
 }
