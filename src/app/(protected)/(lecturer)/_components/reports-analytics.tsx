@@ -47,6 +47,7 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCurrentUser } from "@/hooks/useAuth";
+import DayOfWeekPatterns from "@/components/day-of-week-patterns";
 import {
   ArrowDown,
   ArrowUp,
@@ -659,9 +660,9 @@ export default function ReportsAnalytics() {
 
       {/* Main Analytics Dashboard */}
       <section className="space-y-8">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h2 className="text-2xl font-semibold tracking-tight text-foreground">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex-1 min-w-0">
+            <h2 className="text-xl sm:text-2xl font-semibold tracking-tight text-foreground">
               Performance Analytics Overview
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
@@ -670,8 +671,8 @@ export default function ReportsAnalytics() {
           </div>
 
           {/* Subject Selection */}
-          <div className="flex items-center gap-4">
-            <div className="min-w-[200px]">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end lg:items-center">
+            <div className="w-full sm:w-auto sm:min-w-[200px]">
               <Label htmlFor="courseSelect" className="text-sm font-medium">
                 Select Subject
               </Label>
@@ -679,13 +680,16 @@ export default function ReportsAnalytics() {
                 value={selectedCourseId}
                 onValueChange={setSelectedCourseId}
               >
-                <SelectTrigger className="mt-1">
+                <SelectTrigger className="mt-1 w-full">
                   <SelectValue placeholder="Choose a subject" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="max-w-[320px]">
                   {courses?.map((course: Course) => (
                     <SelectItem key={course.id} value={String(course.id)}>
-                      {course.code} - {course.name}
+                      <div className="flex flex-col text-left">
+                        <span className="font-medium">{course.code}</span>
+                        <span className="text-xs text-muted-foreground truncate">{course.name}</span>
+                      </div>
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -694,7 +698,7 @@ export default function ReportsAnalytics() {
 
             {/* Session Type Tabs */}
             {sessionTypesData && sessionTypesData.sessionTypes && sessionTypesData.sessionTypes.length > 1 && (
-              <div className="min-w-[320px]">
+              <div className="w-full sm:w-auto sm:min-w-[240px] lg:min-w-[280px]">
                 <Label className="text-sm font-medium mb-2 block">
                   Session Type
                 </Label>
@@ -705,12 +709,12 @@ export default function ReportsAnalytics() {
                 >
                   <TabsList className="grid w-full grid-cols-2">
                     {sessionTypesData.sessionTypes.includes('lecture') && (
-                      <TabsTrigger value="lecture" className="text-sm">
+                      <TabsTrigger value="lecture" className="text-xs sm:text-sm">
                         📚 Lectures
                       </TabsTrigger>
                     )}
                     {sessionTypesData.sessionTypes.includes('tutorial') && (
-                      <TabsTrigger value="tutorial" className="text-sm">
+                      <TabsTrigger value="tutorial" className="text-xs sm:text-sm">
                         💡 Tutorials
                       </TabsTrigger>
                     )}
@@ -721,7 +725,7 @@ export default function ReportsAnalytics() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 xl:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 xl:grid-cols-3">
         {/* Weekly Attendance vs Enrollment Trends */}
         <Card className="h-full shadow-sm border-border/50">
           <CardHeader className="pb-6">
@@ -826,7 +830,7 @@ export default function ReportsAnalytics() {
             </ChartContainer>
 
             {/* Enhanced Weekly Insights */}
-            <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
               <div className="text-center p-4 bg-primary/5 rounded-lg border border-primary/20">
                 <div className="text-2xl font-bold text-primary">
                   {(() => {
@@ -876,7 +880,7 @@ export default function ReportsAnalytics() {
             </CardDescription>
           </CardHeader>
           <CardContent className="pb-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-center">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 items-center">
               {/* Radial Chart */}
               <div className="flex justify-center">
                 <div className="relative">
@@ -1335,51 +1339,7 @@ export default function ReportsAnalytics() {
 
             {/* Day-of-Week Patterns */}
             {selectedAnalyticType === "day-patterns" && (
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-sm font-medium text-foreground">Weekly Day Attendance Heatmap</h4>
-                  <div className="text-xs text-muted-foreground">
-                    Shows which days have better attendance rates
-                  </div>
-                </div>
-                <div className="grid grid-cols-7 gap-2">
-                  {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, index) => {
-                    const dayAttendanceData = calculateDayOfWeekData();
-                    const attendance = dayAttendanceData[index] || 0;
-                    const hasData = attendance > 0;
-                    return (
-                      <div
-                        key={day}
-                        className={`text-center p-4 rounded-lg border transition-all duration-200 hover:scale-105 cursor-pointer ${
-                          !hasData ? 'bg-gray-200 border-gray-300 text-gray-500' :
-                          attendance >= 40 ? 'bg-green-500 border-green-600 text-white' :
-                          attendance >= 30 ? 'bg-blue-400 border-blue-500 text-white' :
-                          attendance >= 20 ? 'bg-yellow-400 border-yellow-500 text-gray-900' :
-                          'bg-red-400 border-red-500 text-white'
-                        }`}
-                        title={`${day}: ${hasData ? attendance.toFixed(1) + '% average attendance' : 'No classes scheduled'}`}
-                      >
-                        <div className="text-xs font-medium opacity-90">{day}</div>
-                        <div className="text-lg font-bold">
-                          {hasData ? `${attendance.toFixed(1)}%` : 'N/A'}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-                <div className="mt-4 p-3 bg-muted/30 rounded-lg border border-border">
-                  <p className="text-sm text-muted-foreground">
-                    <span className="font-medium text-foreground">Insight:</span> {(() => {
-                      const dayData = calculateDayOfWeekData();
-                      const activeDays = dayData.filter(d => d > 0);
-                      if (activeDays.length === 0) return 'No attendance data available.';
-                      const bestDay = dayData.indexOf(Math.max(...dayData));
-                      const bestDayName = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][bestDay];
-                      return `${bestDayName} has the highest attendance (${dayData[bestDay].toFixed(1)}%). Classes are currently scheduled on ${dayData.filter(d => d > 0).length} day(s) per week.`;
-                    })()}
-                  </p>
-                </div>
-              </div>
+              <DayOfWeekPatterns sessionType={sessionType} />
             )}
 
             {/* Time-Based Analysis */}
@@ -2348,7 +2308,7 @@ export default function ReportsAnalytics() {
         </CardHeader>
         <CardContent>
           <Tabs value={detailedAttendanceTab} onValueChange={setDetailedAttendanceTab} className="w-full">
-            <TabsList className="grid w-full max-w-md grid-cols-3 gap-1">
+            <TabsList className="grid w-full max-w-md grid-cols-3 gap-1 h-auto p-1">
               <TabsTrigger value="student" className="text-xs sm:text-sm">
                 By Student
               </TabsTrigger>
@@ -2362,7 +2322,7 @@ export default function ReportsAnalytics() {
 
             {/* Student Tab Content */}
             <TabsContent value="student" className="mt-4 space-y-4">
-              <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="mb-4 flex flex-col gap-3 sm:gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="relative w-full sm:max-w-sm">
                   <Search className="text-muted-foreground absolute top-2.5 left-2.5 h-4 w-4" />
                   <Input
@@ -2373,7 +2333,7 @@ export default function ReportsAnalytics() {
                     className="bg-background w-full pl-8"
                   />
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <Button
                     variant="outline"
                     size="sm"
@@ -2388,10 +2348,11 @@ export default function ReportsAnalytics() {
                       <Button
                         variant="outline"
                         size="sm"
-                        className="bg-transparent"
+                        className="bg-transparent whitespace-nowrap"
                       >
-                        <Filter className="mr-2 h-4 w-4" />
-                        Filter {attendanceFilter !== 'all' && `(${attendanceFilter})`}
+                        <Filter className="mr-1 sm:mr-2 h-4 w-4" />
+                        <span className="hidden sm:inline">Filter</span>
+                        {attendanceFilter !== 'all' && <span className="ml-1">({attendanceFilter})</span>}
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
@@ -2413,7 +2374,7 @@ export default function ReportsAnalytics() {
               </div>
 
               {/* Mobile Card View */}
-              <div className="block space-y-4 sm:hidden">
+              <div className="block space-y-3 sm:hidden">
                 {isLoadingDetailedData ? (
                   <div className="flex justify-center p-4">
                     <Loader2 className="h-8 w-8 animate-spin" />
@@ -2492,8 +2453,8 @@ export default function ReportsAnalytics() {
                 )}
               </div>
 
-              {/* Desktop Table View */}
-              <div className="hidden overflow-x-auto rounded-md border sm:block">
+              {/* Table View */}
+              <div className="overflow-x-auto rounded-md border">
                 {isLoadingDetailedData ? (
                   <div className="flex justify-center p-8">
                     <Loader2 className="h-8 w-8 animate-spin" />
@@ -2505,15 +2466,15 @@ export default function ReportsAnalytics() {
                   <TableHead className="hidden w-[50px] lg:table-cell">
                     ID
                   </TableHead>
-                  <TableHead>Student</TableHead>
-                  <TableHead className="text-center">Attendance</TableHead>
-                  <TableHead className="hidden text-center md:table-cell">
+                  <TableHead className="min-w-[160px]">Student</TableHead>
+                  <TableHead className="text-center min-w-[100px]">Attendance</TableHead>
+                  <TableHead className="hidden text-center md:table-cell min-w-[80px]">
                     Weeks
                   </TableHead>
-                  <TableHead className="hidden text-center lg:table-cell">
+                  <TableHead className="hidden text-center lg:table-cell min-w-[80px]">
                     Trend
                   </TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead className="text-right min-w-[80px]">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -2527,11 +2488,11 @@ export default function ReportsAnalytics() {
                         <Avatar className="h-8 w-8">
                           <AvatarFallback>{student.initials}</AvatarFallback>
                         </Avatar>
-                        <div>
-                          <p className="leading-none font-medium">
+                        <div className="min-w-0 flex-1">
+                          <p className="leading-none font-medium truncate">
                             {student.name}
                           </p>
-                          <p className="text-muted-foreground hidden text-sm md:block">
+                          <p className="text-muted-foreground hidden text-sm md:block truncate">
                             {student.email}
                           </p>
                         </div>
@@ -2600,28 +2561,30 @@ export default function ReportsAnalytics() {
               </div>
 
           <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="text-muted-foreground text-center text-sm sm:text-left">
+            <div className="text-muted-foreground text-center text-sm sm:text-left order-2 sm:order-1">
               Showing <strong>{filteredData.length > 0 ? startIndex + 1 : 0}</strong> to <strong>{Math.min(endIndex, filteredData.length)}</strong> of{" "}
               <strong>{filteredData.length}</strong> results
               {attendanceFilter !== 'all' && <span className="ml-1">(filtered)</span>}
             </div>
-            <div className="flex items-center justify-center gap-2 sm:justify-end">
+            <div className="flex items-center justify-center gap-2 sm:justify-end order-1 sm:order-2">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={handlePreviousPage}
                 disabled={currentPage === 1}
+                className="px-3"
               >
-                Previous
+                Prev
               </Button>
-              <span className="text-sm text-muted-foreground">
-                Page {currentPage} of {totalPages || 1}
+              <span className="text-sm text-muted-foreground whitespace-nowrap">
+                {currentPage} of {totalPages || 1}
               </span>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={handleNextPage}
                 disabled={currentPage >= totalPages}
+                className="px-3"
               >
                 Next
               </Button>
@@ -2636,16 +2599,16 @@ export default function ReportsAnalytics() {
                   <Loader2 className="h-8 w-8 animate-spin" />
                 </div>
               ) : (
-                <div className="overflow-x-auto rounded-md border">
-                  <Table>
+                <div className="overflow-x-auto rounded-md border min-w-0">
+                  <Table className="min-w-[600px]">
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Week</TableHead>
-                        <TableHead>Date</TableHead>
-                        <TableHead className="text-center">Check-in Type</TableHead>
-                        <TableHead className="text-center">Present</TableHead>
-                        <TableHead className="text-center">Absent</TableHead>
-                        <TableHead className="text-center">Attendance Rate</TableHead>
+                        <TableHead className="min-w-[80px]">Week</TableHead>
+                        <TableHead className="min-w-[100px]">Date</TableHead>
+                        <TableHead className="text-center min-w-[100px]">Check-in Type</TableHead>
+                        <TableHead className="text-center min-w-[80px]">Present</TableHead>
+                        <TableHead className="text-center min-w-[80px]">Absent</TableHead>
+                        <TableHead className="text-center min-w-[120px]">Attendance Rate</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -2686,16 +2649,16 @@ export default function ReportsAnalytics() {
                   <Loader2 className="h-8 w-8 animate-spin" />
                 </div>
               ) : (
-                <div className="overflow-x-auto rounded-md border">
-                  <Table>
+                <div className="overflow-x-auto rounded-md border min-w-0">
+                  <Table className="min-w-[700px]">
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Course Code</TableHead>
-                        <TableHead>Course Name</TableHead>
-                        <TableHead className="text-center">Total Sessions</TableHead>
-                        <TableHead className="text-center">Total Students</TableHead>
-                        <TableHead className="text-center">Avg Attendance</TableHead>
-                        <TableHead>Last Session</TableHead>
+                        <TableHead className="min-w-[100px]">Course Code</TableHead>
+                        <TableHead className="min-w-[200px]">Course Name</TableHead>
+                        <TableHead className="text-center min-w-[100px]">Total Sessions</TableHead>
+                        <TableHead className="text-center min-w-[100px]">Total Students</TableHead>
+                        <TableHead className="text-center min-w-[120px]">Avg Attendance</TableHead>
+                        <TableHead className="min-w-[120px]">Last Session</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -2728,6 +2691,7 @@ export default function ReportsAnalytics() {
                 </div>
               )}
             </TabsContent>
+
           </Tabs>
         </CardContent>
       </Card>
@@ -2743,8 +2707,8 @@ export default function ReportsAnalytics() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-            <div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="space-y-2">
               <Label htmlFor="reportType" className="text-sm font-medium">
                 Report Type
               </Label>
@@ -2752,7 +2716,7 @@ export default function ReportsAnalytics() {
                 value={selectedReportType}
                 onValueChange={setSelectedReportType}
               >
-                <SelectTrigger>
+                <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select report type" />
                 </SelectTrigger>
                 <SelectContent>
@@ -2763,7 +2727,7 @@ export default function ReportsAnalytics() {
                 </SelectContent>
               </Select>
             </div>
-            <div>
+            <div className="space-y-2">
               <Label htmlFor="dateRange" className="text-sm font-medium">
                 Date Range
               </Label>
@@ -2771,7 +2735,7 @@ export default function ReportsAnalytics() {
                 value={selectedDateRange}
                 onValueChange={setSelectedDateRange}
               >
-                <SelectTrigger>
+                <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select date range" />
                 </SelectTrigger>
                 <SelectContent>
@@ -2783,7 +2747,7 @@ export default function ReportsAnalytics() {
                 </SelectContent>
               </Select>
             </div>
-            <div>
+            <div className="space-y-2 sm:col-span-2 lg:col-span-1">
               <Label htmlFor="reportSubject" className="text-sm font-medium">
                 Subject
               </Label>
@@ -2791,21 +2755,26 @@ export default function ReportsAnalytics() {
                 value={selectedCourseId}
                 onValueChange={setSelectedCourseId}
               >
-                <SelectTrigger>
+                <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select subject" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="max-w-[350px]">
                   <SelectItem value="all">All Subjects</SelectItem>
                   {courses?.map((course: Course) => (
                     <SelectItem key={course.id} value={String(course.id)}>
-                      {course.code} - {course.name}
+                      <div className="flex flex-col">
+                        <span className="font-medium">{course.code}</span>
+                        <span className="text-xs text-muted-foreground truncate">
+                          {course.name}
+                        </span>
+                      </div>
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
           </div>
-          <div>
+          <div className="space-y-2">
             <Label htmlFor="customEmail" className="text-sm font-medium">
               Email Address
             </Label>
@@ -2815,7 +2784,7 @@ export default function ReportsAnalytics() {
               placeholder="Enter email address to send report to"
               value={customEmail}
               onChange={(e) => setCustomEmail(e.target.value)}
-              className="mt-1"
+              className="w-full"
             />
           </div>
           <Button
