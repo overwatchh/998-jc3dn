@@ -67,17 +67,17 @@ INSERT INTO campus (id, name) VALUES
 (2, 'Sydney');
 
 -- Rooms
-INSERT INTO room (building_number, room_number, description, latitude, longitude, campus_id) VALUES
-('17', '101', 'Library', -34.406735319735034, 150.87855122064795, 1),
-('20', '102', 'Building 20', -34.405756696459065, 150.8784914211785, 1),
-('14', '201', 'Building 14', -34.40637101770338, 150.8801386108864, 1),
-('17', '202', 'Building 17', -34.40689043969014, 150.87804938559652, 1),
-('2', '103', 'Building 2', -34.40661777021882, 150.88137803896953, 1),
-('3', '213', 'Building 3', -34.40620183243544, 150.88242181118372, 1),
-('22', '103', 'Building 22', -34.404630436746494, 150.87661222539015, 1),
-('40', '103', 'Building 40', -34.4062537916668, 150.87683726956962, 1),
-('35', '103', 'Building 35', -34.40582005010667, 150.88081766767468, 1),
-('12', '2', 'Building 67', -34.427031, 150.885741, 1);
+INSERT INTO room (id, building_number, room_number, description, latitude, longitude, campus_id) VALUES
+(1, '17', '101', 'Library', -34.406735319735034, 150.87855122064795, 1),
+(2, '20', '102', 'Building 20', -34.405756696459065, 150.8784914211785, 1),
+(3, '14', '201', 'Building 14', -34.40637101770338, 150.8801386108864, 1),
+(4, '17', '202', 'Building 17', -34.40689043969014, 150.87804938559652, 1),
+(5, '2', '103', 'Building 2', -34.40661777021882, 150.88137803896953, 1),
+(6, '3', '213', 'Building 3', -34.40620183243544, 150.88242181118372, 1),
+(7, '22', '103', 'Building 22', -34.404630436746494, 150.87661222539015, 1),
+(8, '40', '103', 'Building 40', -34.4062537916668, 150.87683726956962, 1),
+(9, '35', '103', 'Building 35', -34.40582005010667, 150.88081766767468, 1),
+(10, '12', '2', 'Building 67', -34.427031, 150.885741, 1);
 
 
 -- Semesters
@@ -175,7 +175,7 @@ INSERT INTO study_session (id, type, day_of_week, start_time, end_time, room_id)
 (26, 'lecture', 'Thursday', '13:30:00', '14:30:00', 6), -- create QR code all day
 (27, 'tutorial', 'Wednesday', '13:30:00', '15:30:00', 7),
 (28, 'lecture', 'Thursday', '13:30:00', '15:30:00', 8),
-(29, 'lecture', 'Thursday', '13:30:00', '15:30:00', 9);
+(29, 'tutorial', 'Thursday', '13:30:00', '15:30:00', 9);
 
 -- CSCI435 (separate sessions from CSCI935 to avoid shared study_session_id)
 INSERT INTO study_session (id, type, day_of_week, start_time, end_time, room_id) VALUES
@@ -191,14 +191,13 @@ INSERT INTO subject_study_session (subject_id, study_session_id) VALUES
 (3, 7), (3, 8), (3, 9),
 (4, 10), (4, 11), (4, 12),
 (5, 13), (5, 14), (5, 15),
--- CSCI435 mapped to its own sessions (30, 31, 32)
-(6, 30), (6, 31), (6, 32),
-(7, 16), (7, 17),
-(8, 18), (8, 19),
-(9, 20), (9, 21),
-(10, 22), (10, 23),
-(11, 24), (11, 25),
-(12, 26);
+(6, 16), (7, 17),
+(7, 18), (8, 19),
+(8, 20), (9, 21),
+(9, 22), (10, 23),
+(10, 24), (11, 25),
+(11, 26), (12, 27),
+(12, 28), (12, 29);
 
 -- Student-StudySession
 INSERT INTO student_study_session (student_id, study_session_id) VALUES
