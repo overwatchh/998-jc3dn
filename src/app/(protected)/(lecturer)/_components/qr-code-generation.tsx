@@ -28,7 +28,7 @@ import {
   Calendar,
   Download,
   FileText,
-  
+  Mail,
   Plus,
   Share2,
 } from "lucide-react";
@@ -54,6 +54,7 @@ export function QrCodeGeneration() {
   const [geoRadius, setGeoRadius] = useState(100);
   const [hasGeneratedQrForCurrentWeek, setHasGeneratedQrForCurrentWeek] =
     useState(false);
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
 
   // Courses for subject selection
   const { data: courses, isLoading: isCoursesLoading } = useGetCourses();
@@ -426,6 +427,48 @@ export function QrCodeGeneration() {
                   <Button variant="outline" className="gap-1">
                     <Share2 className="h-4 w-4" />
                     Share QR
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="gap-1"
+                    disabled={!hasQr || isSendingEmail || !existingQrCodeId}
+                    onClick={async () => {
+                      if (!existingQrCodeId) {
+                        toast.error("No QR code to send");
+                        return;
+                      }
+
+                      setIsSendingEmail(true);
+                      try {
+                        const response = await fetch('/api/lecturer/send-qr-email', {
+                          method: 'POST',
+                          headers: {
+                            'Content-Type': 'application/json',
+                          },
+                          body: JSON.stringify({
+                            qr_code_id: existingQrCodeId,
+                          }),
+                        });
+
+                        const result = await response.json();
+
+                        if (response.ok) {
+                          toast.success(
+                            `QR code sent to ${result.emails_sent} student${result.emails_sent !== 1 ? 's' : ''}!`
+                          );
+                        } else {
+                          toast.error(result.message || 'Failed to send QR code emails');
+                        }
+                      } catch (error) {
+                        toast.error('Failed to send QR code emails');
+                        console.error('Error sending QR emails:', error);
+                      } finally {
+                        setIsSendingEmail(false);
+                      }
+                    }}
+                  >
+                    <Mail className="h-4 w-4" />
+                    {isSendingEmail ? 'Sending...' : 'Email to Students'}
                   </Button>
                 </CardFooter>
               </Card>
