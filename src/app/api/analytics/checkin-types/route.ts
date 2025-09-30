@@ -73,13 +73,13 @@ export async function GET(request: NextRequest) {
 
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
-    // Get weekly breakdown of checkins using actual checkin_type from database
+    // Get weekly breakdown of UNIQUE STUDENTS by checkin type
     const needsSubjectJoin = subjectId && subjectId !== 'all';
     const weeklyQuery = `
       SELECT
         qrss.week_number,
         c.checkin_type,
-        COUNT(*) as count
+        COUNT(DISTINCT c.student_id) as count
       FROM checkin c
       JOIN qr_code_study_session qrss ON qrss.id = c.qr_code_study_session_id
       JOIN study_session ss ON ss.id = qrss.study_session_id
