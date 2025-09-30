@@ -201,7 +201,7 @@ CREATE TABLE checkin (
     validity_id INT NOT NULL,
     latitude DECIMAL(18,14),
     longitude DECIMAL(18,14),        
-    checkin_type VARCHAR(16) NOT NULL DEFAULT 'In-person',    
+    checkin_type VARCHAR(16) NOT NULL DEFAULT 'In-person',
     PRIMARY KEY (student_id, qr_code_study_session_id, validity_id),
     CONSTRAINT fk_check_validity FOREIGN KEY (validity_id) REFERENCES validity(id),
     CONSTRAINT fk_check_student FOREIGN KEY (student_id) REFERENCES user(id),
