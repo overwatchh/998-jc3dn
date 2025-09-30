@@ -2250,10 +2250,11 @@ export default function ReportsAnalytics() {
                     <Line
                       type="monotone"
                       dataKey="attendance_rate"
-                      stroke="hsl(var(--primary))"
+                      stroke="#3b82f6"
                       strokeWidth={3}
-                      dot={{ fill: "hsl(var(--primary))", stroke: "hsl(var(--background))", strokeWidth: 2, r: 4 }}
-                      activeDot={{ r: 6, stroke: "hsl(var(--primary))", strokeWidth: 2 }}
+                      dot={{ fill: "#3b82f6", stroke: "#ffffff", strokeWidth: 2, r: 5 }}
+                      activeDot={{ r: 7, stroke: "#3b82f6", strokeWidth: 2 }}
+                      name="Average Attendance"
                     />
                   </LineChart>
                 </ChartContainer>
@@ -2298,6 +2299,116 @@ export default function ReportsAnalytics() {
             </div>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Email Report Panel */}
+      <Card className="h-full shadow-sm border-border/50">
+        <CardHeader className="pb-6">
+          <CardTitle className="text-xl font-semibold text-foreground">
+            📧 Email Report
+          </CardTitle>
+          <CardDescription className="text-base text-muted-foreground">
+            Send attendance reports directly to your email
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="space-y-2">
+              <Label htmlFor="reportType" className="text-sm font-medium">
+                Report Type
+              </Label>
+              <Select
+                value={selectedReportType}
+                onValueChange={setSelectedReportType}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select report type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="overview">Overview Report</SelectItem>
+                  <SelectItem value="detailed">Detailed Report</SelectItem>
+                  <SelectItem value="student">Student Summary</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="dateRange" className="text-sm font-medium">
+                Date Range
+              </Label>
+              <Select
+                value={selectedDateRange}
+                onValueChange={setSelectedDateRange}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select date range" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="this_week">This Week</SelectItem>
+                  <SelectItem value="this_month">This Month</SelectItem>
+                  <SelectItem value="this_semester">This Semester</SelectItem>
+                  <SelectItem value="custom">Custom Range</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="course-select-report" className="text-sm font-medium">
+                Course
+              </Label>
+              <Select
+                value={selectedCourseId || 'all'}
+                onValueChange={setSelectedCourseId}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select course" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Courses</SelectItem>
+                  {courses?.map((course: Course) => (
+                    <SelectItem key={course.id} value={String(course.id)}>
+                      <div className="flex flex-col">
+                        <span className="font-medium">{course.code}</span>
+                        <span className="text-xs text-muted-foreground truncate">
+                          {course.name}
+                        </span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="customEmail" className="text-sm font-medium">
+              Email Address
+            </Label>
+            <Input
+              id="customEmail"
+              type="email"
+              placeholder="Enter email address to send report to"
+              value={customEmail}
+              onChange={(e) => setCustomEmail(e.target.value)}
+              className="w-full"
+            />
+          </div>
+          <Button
+            onClick={handleGenerateReport}
+            disabled={isGeneratingReport || !customEmail.trim()}
+            className="w-full"
+          >
+            {isGeneratingReport ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Sending Report...
+              </>
+            ) : (
+              <>
+                <Mail className="mr-2 h-4 w-4" />
+                Send Email Report
+              </>
+            )}
+          </Button>
+        </CardContent>
+      </Card>
       </div>
 
       {/* Detailed Attendance Tables */}
@@ -2464,9 +2575,6 @@ export default function ReportsAnalytics() {
                   <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="hidden w-[50px] lg:table-cell">
-                    ID
-                  </TableHead>
                   <TableHead className="min-w-[160px]">Student</TableHead>
                   <TableHead className="text-center min-w-[100px]">Attendance</TableHead>
                   <TableHead className="hidden text-center md:table-cell min-w-[80px]">
@@ -2481,9 +2589,6 @@ export default function ReportsAnalytics() {
               <TableBody>
                     {paginatedData.map((student, index) => (
                   <TableRow key={`table-student-${student.id || index}`}>
-                    <TableCell className="hidden font-medium lg:table-cell">
-                      {student.id}
-                    </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <Avatar className="h-8 w-8">
@@ -2696,118 +2801,6 @@ export default function ReportsAnalytics() {
           </Tabs>
         </CardContent>
       </Card>
-
-      {/* Email Report Panel */}
-      <Card className="shadow-sm border-border/50">
-        <CardHeader className="pb-6">
-          <CardTitle className="text-xl font-semibold text-foreground">
-            📧 Email Report
-          </CardTitle>
-          <CardDescription className="text-base text-muted-foreground">
-            Send attendance reports directly to your email
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <div className="space-y-2">
-              <Label htmlFor="reportType" className="text-sm font-medium">
-                Report Type
-              </Label>
-              <Select
-                value={selectedReportType}
-                onValueChange={setSelectedReportType}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select report type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="overview">Overview Report</SelectItem>
-                  <SelectItem value="student">Student Performance</SelectItem>
-                  <SelectItem value="session">Session Analysis</SelectItem>
-                  <SelectItem value="detailed">Detailed Report</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="dateRange" className="text-sm font-medium">
-                Date Range
-              </Label>
-              <Select
-                value={selectedDateRange}
-                onValueChange={setSelectedDateRange}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select date range" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="this_week">This Week</SelectItem>
-                  <SelectItem value="last_week">Last Week</SelectItem>
-                  <SelectItem value="this_month">This Month</SelectItem>
-                  <SelectItem value="last_month">Last Month</SelectItem>
-                  <SelectItem value="this_semester">This Semester</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2 sm:col-span-2 lg:col-span-1">
-              <Label htmlFor="reportSubject" className="text-sm font-medium">
-                Subject
-              </Label>
-              <Select
-                value={selectedCourseId}
-                onValueChange={setSelectedCourseId}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select subject" />
-                </SelectTrigger>
-                <SelectContent className="max-w-[350px]">
-                  <SelectItem value="all">All Subjects</SelectItem>
-                  {courses?.map((course: Course) => (
-                    <SelectItem key={course.id} value={String(course.id)}>
-                      <div className="flex flex-col">
-                        <span className="font-medium">{course.code}</span>
-                        <span className="text-xs text-muted-foreground truncate">
-                          {course.name}
-                        </span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="customEmail" className="text-sm font-medium">
-              Email Address
-            </Label>
-            <Input
-              id="customEmail"
-              type="email"
-              placeholder="Enter email address to send report to"
-              value={customEmail}
-              onChange={(e) => setCustomEmail(e.target.value)}
-              className="w-full"
-            />
-          </div>
-          <Button
-            onClick={handleGenerateReport}
-            disabled={isGeneratingReport || !customEmail.trim()}
-            className="w-full"
-          >
-            {isGeneratingReport ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Sending Report...
-              </>
-            ) : (
-              <>
-                <Mail className="mr-2 h-4 w-4" />
-                Send Email Report
-              </>
-            )}
-          </Button>
-        </CardContent>
-      </Card>
-      </div>
       </section>
 
       {/* Student Details Modal */}
