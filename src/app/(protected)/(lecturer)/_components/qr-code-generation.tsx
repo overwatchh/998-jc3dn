@@ -55,6 +55,7 @@ export function QrCodeGeneration() {
   const [hasGeneratedQrForCurrentWeek, setHasGeneratedQrForCurrentWeek] =
     useState(false);
   const [isSendingEmail, setIsSendingEmail] = useState(false);
+  const [isSendingReminder, setIsSendingReminder] = useState(false);
 
   // Courses for subject selection
   const { data: courses, isLoading: isCoursesLoading } = useGetCourses();
@@ -151,8 +152,8 @@ export function QrCodeGeneration() {
   const hasQr = useMemo(() => !!(existingQrCodeId && qrCode?.qr_url), [existingQrCodeId, qrCode]);
 
   // Determine validity states for enabling/disabling actions
-  const { isFirstExpired, hasSecondValidity } = useMemo(() => {
-    const result = { isFirstExpired: false, hasSecondValidity: false };
+  const { isFirstExpired, hasSecondValidity, isSecondExpired, isLectureComplete } = useMemo(() => {
+    const result = { isFirstExpired: false, hasSecondValidity: false, isSecondExpired: false, isLectureComplete: false };
     const validities = qrCodesData?.data?.[0]?.validities ?? [];
     const first = validities.find(v => v.count === 1);
     const second = validities.find(v => v.count === 2);
@@ -160,6 +161,24 @@ export function QrCodeGeneration() {
       result.isFirstExpired = Date.now() > new Date(first.end_time).getTime();
     }
     result.hasSecondValidity = !!second;
+    if (second?.end_time) {
+      result.isSecondExpired = Date.now() > new Date(second.end_time).getTime();
+    }
+    // Lecture is complete when both validities exist and both are expired
+    result.isLectureComplete = result.hasSecondValidity && result.isFirstExpired && result.isSecondExpired;
+
+    // Debug logging
+    console.log('Validity check:', {
+      validities,
+      firstEndTime: first?.end_time,
+      secondEndTime: second?.end_time,
+      now: Date.now(),
+      firstExpired: result.isFirstExpired,
+      secondExpired: result.isSecondExpired,
+      hasSecondValidity: result.hasSecondValidity,
+      isLectureComplete: result.isLectureComplete
+    });
+
     return result;
   }, [qrCodesData]);
 
@@ -469,6 +488,50 @@ export function QrCodeGeneration() {
                   >
                     <Mail className="h-4 w-4" />
                     {isSendingEmail ? 'Sending...' : 'Email to Students'}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="gap-1"
+                    disabled={!isLectureComplete || isSendingReminder}
+                    onClick={async () => {
+                      if (!sessionId || !selectedCourse?.weekNumber) {
+                        toast.error("Missing session or week information");
+                        return;
+                      }
+
+                      setIsSendingReminder(true);
+                      try {
+                        const response = await fetch('/api/system/lecture-end-trigger', {
+                          method: 'POST',
+                          headers: {
+                            'Content-Type': 'application/json',
+                          },
+                          body: JSON.stringify({
+                            study_session_id: sessionId,
+                            week_number: selectedCourse.weekNumber,
+                            system_key: 'attendance_email_system_2024',
+                          }),
+                        });
+
+                        const result = await response.json();
+
+                        if (response.ok) {
+                          toast.success(
+                            `Attendance reminders sent to ${result.emails_sent} student${result.emails_sent !== 1 ? 's' : ''}!`
+                          );
+                        } else {
+                          toast.error(result.message || 'Failed to send attendance reminders');
+                        }
+                      } catch (error) {
+                        toast.error('Failed to send attendance reminders');
+                        console.error('Error sending attendance reminders:', error);
+                      } finally {
+                        setIsSendingReminder(false);
+                      }
+                    }}
+                  >
+                    <Mail className="h-4 w-4" />
+                    {isSendingReminder ? 'Sending...' : 'Send Attendance Reminders'}
                   </Button>
                 </CardFooter>
               </Card>

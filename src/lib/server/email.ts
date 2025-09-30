@@ -30,6 +30,7 @@ export interface QRCodeEmailData {
   sessionType: string;
   weekNumber: number;
   qrCodeUrl: string;
+  scanUrl?: string; // The actual URL to scan (not the data URL)
 }
 
 class EmailService {
@@ -317,7 +318,7 @@ QR Attendance System
 
       <div class="qr-container">
         <img src="${data.qrCodeUrl}" alt="QR Code" class="qr-image" />
-        <p style="margin-top: 15px; color: #64748b; font-size: 14px;">Click the QR code to scan or save it</p>
+        <p style="margin-top: 15px; color: #64748b; font-size: 14px;">Scan the QR code above or use the link below</p>
       </div>
 
       <div class="instructions">
@@ -325,14 +326,15 @@ QR Attendance System
         <ol>
           <li>Open the QR code scanner on your phone</li>
           <li>Scan the QR code above</li>
-          <li>Follow the link to complete your check-in</li>
+          <li>Or click the "Check In Now" button below to open the link directly</li>
           <li>Remember: There are 2 check-in windows per session</li>
         </ol>
         <p><strong>Note:</strong> Make sure you're within the designated location when scanning if geolocation validation is enabled.</p>
       </div>
 
       <div style="text-align: center; margin: 30px 0;">
-        <a href="${data.qrCodeUrl}" class="button" download>Download QR Code</a>
+        <a href="${data.scanUrl || data.qrCodeUrl}" class="button">🔗 Check In Now</a>
+        <p style="margin-top: 10px; font-size: 12px; color: #64748b;">Click this button to open the check-in page directly</p>
       </div>
     </div>
 
@@ -358,12 +360,12 @@ SUBJECT: ${data.subjectCode} - ${data.subjectName}
 SESSION TYPE: ${data.sessionType.charAt(0).toUpperCase() + data.sessionType.slice(1)}
 WEEK: Week ${data.weekNumber}
 
-QR CODE LINK: ${data.qrCodeUrl}
+CHECK-IN LINK: ${data.scanUrl || data.qrCodeUrl}
 
 HOW TO CHECK IN:
-1. Open the QR code scanner on your phone
-2. Scan the QR code (or visit the link above)
-3. Follow the link to complete your check-in
+1. Open the QR code scanner on your phone and scan the QR code in the email
+2. OR click the link above to check in directly
+3. Follow the prompts to complete your check-in
 4. Remember: There are 2 check-in windows per session
 
 NOTE: Make sure you're within the designated location when scanning if geolocation validation is enabled.
@@ -380,16 +382,37 @@ QR Attendance System
 
     const subject = `📱 QR Code: ${data.subjectCode} - ${data.sessionType.charAt(0).toUpperCase() + data.sessionType.slice(1)} Week ${data.weekNumber}`;
 
-    const htmlContent = this.generateQRCodeEmailHtml(data);
+    // If qrCodeUrl is a data URL, extract the base64 data and use CID attachment
+    let htmlContent = this.generateQRCodeEmailHtml(data);
     const textContent = this.generateQRCodeEmailText(data);
 
-    const mailOptions = {
+    const mailOptions: any = {
       from: `"${this.config.fromName}" <${this.config.fromEmail}>`,
       to: data.studentEmail,
       subject: subject,
       text: textContent,
       html: htmlContent,
     };
+
+    // If it's a data URL (base64 image), attach it as an inline image
+    if (data.qrCodeUrl.startsWith('data:image')) {
+      const base64Data = data.qrCodeUrl.split(',')[1];
+      const imageType = data.qrCodeUrl.match(/data:image\/(.*?);/)?.[1] || 'png';
+
+      mailOptions.attachments = [{
+        filename: 'qrcode.' + imageType,
+        content: base64Data,
+        encoding: 'base64',
+        cid: 'qrcode@attendance'
+      }];
+
+      // Replace the image src in HTML with CID reference
+      htmlContent = htmlContent.replace(
+        `src="${data.qrCodeUrl}"`,
+        'src="cid:qrcode@attendance"'
+      );
+      mailOptions.html = htmlContent;
+    }
 
     try {
       await (this.transporter as any).sendMail(mailOptions);

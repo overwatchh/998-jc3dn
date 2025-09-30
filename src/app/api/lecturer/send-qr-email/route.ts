@@ -3,6 +3,9 @@ import { auth } from "@/lib/server/auth";
 import { headers } from "next/headers";
 import { z } from "zod";
 import { rawQuery } from "@/lib/server/query";
+import QRCode from "qrcode";
+
+const APP_URL = process.env.BASE_URL || "http://localhost:3000";
 
 /**
  * @openapi
@@ -76,10 +79,9 @@ export async function POST(req: NextRequest) {
     const { qr_code_id } = parsed.data;
 
     // Get QR code details and verify lecturer ownership
-    const [qrCodeData] = await rawQuery<QRCodeData>(
+    const [qrCodeData] = await rawQuery<Omit<QRCodeData, 'qr_url'>>(
       `
       SELECT
-        qcss.qr_url,
         ss.id as study_session_id,
         qcss.week_number,
         sub.code as subject_code,
@@ -102,6 +104,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Generate QR code URL dynamically
+    const qrUrl = `${APP_URL}/scan?qr_code_id=${qr_code_id}`;
+    const qrDataUrl = await QRCode.toDataURL(qrUrl);
+
     // Get all enrolled students for this study session
     const students = await rawQuery<Student>(
       `
@@ -112,7 +118,7 @@ export async function POST(req: NextRequest) {
       FROM enrolment e
       JOIN user u ON u.id = e.student_id
       JOIN subject_study_session sss ON sss.subject_id = e.subject_id
-      WHERE sss.study_session_id = ? AND e.status = 'active'
+      WHERE sss.study_session_id = ?
       `,
       [qrCodeData.study_session_id]
     );
@@ -127,12 +133,28 @@ export async function POST(req: NextRequest) {
     // Import email service
     const { emailService } = await import("@/lib/server/email");
 
-    // Check if email service is initialized
+    // Initialize email service if not already initialized
     if (!emailService.isInitialized()) {
-      return NextResponse.json(
-        { message: "Email service not configured. Please configure SMTP settings first." },
-        { status: 500 }
-      );
+      // Use environment variables for SMTP configuration
+      const smtpUser = process.env.SMTP_USER;
+      const smtpPass = process.env.SMTP_PASS;
+      const smtpPort = process.env.SMTP_PORT;
+
+      if (!smtpUser || !smtpPass || !smtpPort) {
+        return NextResponse.json(
+          { message: "Email service not configured. Please configure SMTP settings in environment variables." },
+          { status: 500 }
+        );
+      }
+
+      await emailService.initialize({
+        smtpHost: "smtp.gmail.com",
+        smtpPort: parseInt(smtpPort),
+        smtpUser: smtpUser,
+        smtpPass: smtpPass,
+        fromEmail: smtpUser,
+        fromName: "QR Attendance System",
+      });
     }
 
     // Send emails to all students
@@ -149,7 +171,8 @@ export async function POST(req: NextRequest) {
           subjectCode: qrCodeData.subject_code,
           sessionType: qrCodeData.session_type,
           weekNumber: qrCodeData.week_number,
-          qrCodeUrl: qrCodeData.qr_url,
+          qrCodeUrl: qrDataUrl,
+          scanUrl: qrUrl, // The actual scan URL
         });
 
         emailResults.push({

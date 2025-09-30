@@ -255,17 +255,28 @@ export async function POST(req: NextRequest) {
     console.log(`✅ All QR codes expired - lecture complete! Sending emails...`);
 
     // Get SMTP configuration from environment
+    const smtpUser = process.env.SMTP_USER;
+    const smtpPass = process.env.SMTP_PASS;
+    const smtpPort = process.env.SMTP_PORT;
+
+    if (!smtpUser || !smtpPass || !smtpPort) {
+      return NextResponse.json(
+        { message: "Email service not configured. SMTP settings missing in environment variables." },
+        { status: 500 }
+      );
+    }
+
     const emailConfig: EmailConfig = {
-      smtpHost: process.env.SMTP_HOST || 'smtp.gmail.com',
-      smtpPort: parseInt(process.env.SMTP_PORT || '587'),
-      smtpUser: process.env.SMTP_USER || '',
-      smtpPass: process.env.SMTP_PASS || '',
-      fromEmail: process.env.FROM_EMAIL || '',
-      fromName: process.env.FROM_NAME || 'QR Attendance System',
+      smtpHost: 'smtp.gmail.com',
+      smtpPort: parseInt(smtpPort),
+      smtpUser: smtpUser,
+      smtpPass: smtpPass,
+      fromEmail: smtpUser,
+      fromName: 'QR Attendance System',
     };
 
     // Initialize email service
-    emailService.initialize(emailConfig);
+    await emailService.initialize(emailConfig);
 
     // Test connection
     const connectionTest = await emailService.testConnection();
