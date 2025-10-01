@@ -3,6 +3,9 @@ import { db } from "./db";
 
 export const auth = betterAuth({
   database: db,
+  baseURL:
+    process.env.BASE_URL ||
+    "https://jc3dn-qr-attendance-kosgs4isma-ts.a.run.app",
   secret: process.env.BETTER_AUTH_SECRET!,
   emailAndPassword: {
     enabled: true,
