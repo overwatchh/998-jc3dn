@@ -13,7 +13,7 @@ import {
 import { rawQuery } from "@/lib/server/query";
 import { computeQrDateForWeek, DayOfWeek, parseTimeToDate } from "@/lib/utils";
 import { faker } from "@faker-js/faker";
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 
 /**
  * @openapi
@@ -21,26 +21,27 @@ import { NextResponse } from "next/server";
  *   post:
  *     tags:
  *       - System
- *     summary: Generate dummy users with Faker
+ *     summary: Generate dummy users and simulate check-ins with Faker
  *     description: >
- *       Seeds the database with a batch of fake users.
- *       Each user is created through the existing `auth.api.signUpEmail` flow.
- *       Email format follows the pattern:
- *       **first-initial + last-initial + random number @uowmail.edu.au**
- *       Example: John Smith → `js123@uowmail.edu.au`.
+ *       Seeds the database with a batch of fake students, generates QR codes for
+ *       study sessions, and simulates student check-ins across a range of weeks.
  *     requestBody:
  *       required: false
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               generate_checkins_only:
+ *                 type: boolean
+ *                 description: >
+ *                   If true, only generates check-in records for existing students
+ *                   without creating new fake students and other related infor such as study sessions, rooms, campus, etc
+ *                 example: true
+ *                 default: true
  *     responses:
  *       200:
- *         description: Faker seeding completed
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: Faker seeding complete
+ *         description: Faker seeding and check-in simulation completed
  */
 
 function shiftTimeByMinutes(
@@ -63,198 +64,209 @@ function shiftTimeByMinutes(
   return `${newH}:${newM}`;
 }
 
-export async function POST() {
-  //1. Create prefixed campuses, rooms, semesters, subjects
-  //1.1 create campuses
-  console.log("Creating campuses...");
-  for (const campus of CAMPUSES) {
-    const createCampusSql = `
+export async function POST(req: NextRequest) {
+  // Parse JSON body from the request
+  const body = await req.json();
+
+  // Destructure your fields with defaults
+  const {    
+    generate_checkins_only = true,
+  } = body;
+
+  if (!generate_checkins_only) {
+    //1. Create prefixed campuses, rooms, semesters, subjects
+    //1.1 create campuses
+    console.log("Creating campuses...");
+    for (const campus of CAMPUSES) {
+      const createCampusSql = `
         INSERT INTO campus (id, name) 
         VALUES (?, ?)`;
-    try {
-      await rawQuery(createCampusSql, [campus.id, campus.name]);
-    } catch (e) {
-      console.error("Create campuses error", e);
+      try {
+        await rawQuery(createCampusSql, [campus.id, campus.name]);
+      } catch (e) {
+        console.error("Create campuses error", e);
+      }
     }
-  }
-  //1.2 creat rooms
-  console.log("Creating rooms...");
-  for (const room of ROOMS) {
-    const createRoomSql = `
+    //1.2 creat rooms
+    console.log("Creating rooms...");
+    for (const room of ROOMS) {
+      const createRoomSql = `
         INSERT INTO room (id, building_number, room_number, description, latitude, longitude, campus_id) 
         VALUES (?, ?, ?, ?, ?, ?, ?)`;
-    try {
-      await rawQuery(createRoomSql, [
-        room.id,
-        room.building_number,
-        room.room_number,
-        room.description,
-        room.latitude,
-        room.longitude,
-        room.campus_id,
-      ]);
-    } catch (e) {
-      console.error("Create rooms error", e);
+      try {
+        await rawQuery(createRoomSql, [
+          room.id,
+          room.building_number,
+          room.room_number,
+          room.description,
+          room.latitude,
+          room.longitude,
+          room.campus_id,
+        ]);
+      } catch (e) {
+        console.error("Create rooms error", e);
+      }
     }
-  }
-  //1.3 create semesters
-  console.log("Creating semesters...");
-  for (const semester of SEMESTEERS) {
-    const createSemesterSql = `
+    //1.3 create semesters
+    console.log("Creating semesters...");
+    for (const semester of SEMESTEERS) {
+      const createSemesterSql = `
     INSERT INTO semester (id, name, year) 
     VALUES (?, ?, ?)`;
-    try {
-      await rawQuery(createSemesterSql, [
-        semester.id,
-        semester.name,
-        semester.year,
-      ]);
-    } catch (e) {
-      console.error("Create semesters error", e);
+      try {
+        await rawQuery(createSemesterSql, [
+          semester.id,
+          semester.name,
+          semester.year,
+        ]);
+      } catch (e) {
+        console.error("Create semesters error", e);
+      }
     }
-  }
-  //1.4 create subjects
-  console.log("Creating subjects...");
-  for (const subject of SUBJECTS) {
-    const createSubjectsSql = `
+    //1.4 create subjects
+    console.log("Creating subjects...");
+    for (const subject of SUBJECTS) {
+      const createSubjectsSql = `
     INSERT INTO subject (id, name, code, semester_id, status) 
     VALUES (?, ?, ?, ?, ?)`;
-    try {
-      await rawQuery(createSubjectsSql, [
-        subject.id,
-        subject.name,
-        subject.code,
-        subject.semester_id,
-        subject.status,
-      ]);
-    } catch (e) {
-      console.error("Create subjects error", e);
+      try {
+        await rawQuery(createSubjectsSql, [
+          subject.id,
+          subject.name,
+          subject.code,
+          subject.semester_id,
+          subject.status,
+        ]);
+      } catch (e) {
+        console.error("Create subjects error", e);
+      }
     }
-  }
 
-  //1.5 create study sessions
-  console.log("Creating study sessions...");
-  for (const study_session of STUDY_SESSIONS) {
-    const createStudySessionsSql = `
+    //1.5 create study sessions
+    console.log("Creating study sessions...");
+    for (const study_session of STUDY_SESSIONS) {
+      const createStudySessionsSql = `
     INSERT INTO study_session (id, type, day_of_week, start_time, end_time, room_id) 
     VALUES(?, ?, ?, ?, ?, ?)`;
-    try {
-      await rawQuery(createStudySessionsSql, [
-        study_session.id,
-        study_session.type,
-        study_session.day_of_week,
-        study_session.start_time,
-        study_session.end_time,
-        study_session.room_id,
-      ]);
-    } catch (e) {
-      console.error("Create study sessions error", e);
+      try {
+        await rawQuery(createStudySessionsSql, [
+          study_session.id,
+          study_session.type,
+          study_session.day_of_week,
+          study_session.start_time,
+          study_session.end_time,
+          study_session.room_id,
+        ]);
+      } catch (e) {
+        console.error("Create study sessions error", e);
+      }
     }
-  }
 
-  // 1.6 link subjects to study sessions
-  console.log("Linking subjects to study sessions...");
-  for (const ss of SUBJECT_STUDY_SESSIONS) {
-    const createSubjectStudySessionsSql = `
+    // 1.6 link subjects to study sessions
+    console.log("Linking subjects to study sessions...");
+    for (const ss of SUBJECT_STUDY_SESSIONS) {
+      const createSubjectStudySessionsSql = `
       INSERT INTO subject_study_session (subject_id, study_session_id) 
       VALUES(?, ?)`;
-    try {
-      await rawQuery(createSubjectStudySessionsSql, [
-        ss.subject_id,
-        ss.study_session_id,
-      ]);
-    } catch (e) {
-      console.error("Create subject-study_session link error", e);
+      try {
+        await rawQuery(createSubjectStudySessionsSql, [
+          ss.subject_id,
+          ss.study_session_id,
+        ]);
+      } catch (e) {
+        console.error("Create subject-study_session link error", e);
+      }
     }
-  }
 
-  //1.7 create a default lecturer and assign to all subjects
-  console.log("Creating default lecturers and assign to all subjects...");
-  for (const lecturer of LECTURERS) {
-    try {
-      const response = await auth.api.signUpEmail({
-        body: {
-          name: lecturer.name,
-          email: lecturer.email,
-          password: lecturer.password,
-          role: lecturer.role,
-        },
-      });
-      const lecID = response.user.id;
-      // assign lecturer to all subjects (study sessions) id=1..29
-      for (const ss of STUDY_SESSIONS) {
-        const assignLecturerSql = `
+    //1.7 create a default lecturer and assign to all subjects
+    console.log("Creating default lecturers and assign to all subjects...");
+    for (const lecturer of LECTURERS) {
+      try {
+        const response = await auth.api.signUpEmail({
+          body: {
+            name: lecturer.name,
+            email: lecturer.email,
+            password: lecturer.password,
+            role: lecturer.role,
+          },
+        });
+        const lecID = response.user.id;
+        // assign lecturer to all subjects (study sessions) id=1..29
+        for (const ss of STUDY_SESSIONS) {
+          const assignLecturerSql = `
           INSERT INTO lecturer_study_session (study_session_id, lecturer_id)
           VALUES(?, ?)`;
-        try {
-          await rawQuery(assignLecturerSql, [ss.id, lecID]);
-        } catch (e) {
-          console.error("Assign lecturer to study session error", e);
+          try {
+            await rawQuery(assignLecturerSql, [ss.id, lecID]);
+          } catch (e) {
+            console.error("Assign lecturer to study session error", e);
+          }
         }
+      } catch (e) {
+        console.error("Create default lecturer error", e);
       }
-    } catch (e) {
-      console.error("Create default lecturer error", e);
     }
-  }
-  //1.8. create students and and assign to subjects and tutorials
-  console.log("Creating users");
-  for (const [index, student] of STUDENTS.entries()) {
-    try {
-      // creating user number
-      console.log("User ", index + 1, " of " + STUDENTS.length);
-      // 2.1. create user via existing sign-up flow
-      const response = await auth.api.signUpEmail({
-        body: {
-          name: student.name,
-          email: student.email,
-          password: student.password,
-          role: student.role,
-        },
-      });
-      const userID = response.user.id;
-      // 2.2 Students enroll into subjects (automatically join lecture) and tutorials
-      // randomly enroll each student into 12 subjects
-      const subjectIds = [...Array(12).keys()].map(i => i + 1); // [1,2,3,...12]
-      for (const subjectId of subjectIds) {
-        const isJoinSubject = Math.random() < 0.85; // 85% chance to join each subject
-        if (isJoinSubject) {
-          // enroll student into subject
-          const enrollSubjectSql = `
+
+    //1.8. create students and and assign to subjects and tutorials
+    console.log("Creating users");
+    for (const [index, student] of STUDENTS.entries()) {
+      try {
+        // creating user number
+        console.log("User ", index + 1, " of " + STUDENTS.length);
+        // 2.1. create user via existing sign-up flow
+        const response = await auth.api.signUpEmail({
+          body: {
+            name: student.name,
+            email: student.email,
+            password: student.password,
+            role: student.role,
+          },
+        });
+        const userID = response.user.id;
+        // 2.2 Students enroll into subjects (automatically join lecture) and tutorials
+        // randomly enroll each student into 12 subjects
+        const subjectIds = [...Array(12).keys()].map(i => i + 1); // [1,2,3,...12]
+        for (const subjectId of subjectIds) {
+          const isJoinSubject = Math.random() < 0.85; // 85% chance to join each subject
+          if (isJoinSubject) {
+            // enroll student into subject
+            const enrollSubjectSql = `
             INSERT INTO enrolment (student_id, subject_id)
             VALUES (?, ?)`;
-          try {
-            await rawQuery(enrollSubjectSql, [userID, subjectId]);
-          } catch (e) {
-            console.error("Enroll subject error", e);
-          }
-          // enrol student into study tutorial session randomly
-          // find tutorial study session id for the subject
-          const tutorialStudySessionIds = SUBJECT_STUDY_SESSIONS.filter(
-            ss => ss.subject_id === subjectId
-          )
-            .map(ss => ss.study_session_id)
-            .filter(id =>
-              STUDY_SESSIONS.find(s => s.id === id && s.type === "tutorial")
-            );
+            try {
+              await rawQuery(enrollSubjectSql, [userID, subjectId]);
+            } catch (e) {
+              console.error("Enroll subject error", e);
+            }
+            // enrol student into study tutorial session randomly
+            // find tutorial study session id for the subject
+            const tutorialStudySessionIds = SUBJECT_STUDY_SESSIONS.filter(
+              ss => ss.subject_id === subjectId
+            )
+              .map(ss => ss.study_session_id)
+              .filter(id =>
+                STUDY_SESSIONS.find(s => s.id === id && s.type === "tutorial")
+              );
 
-          const pick = (xs: number[]) =>
-            xs[Math.floor(Math.random() * xs.length)];
+            const pick = (xs: number[]) =>
+              xs[Math.floor(Math.random() * xs.length)];
 
-          const rndTutSSId = pick(tutorialStudySessionIds);
-          //   console.log('subectId', subjectId, 'tutorialStudySessionIds', tutorialStudySessionIds, 'rndTutSSId', rndTutSSId);
-          // student joins the tutorial session randomly
-          try {
-            const studentStudySessionSql = `
+            const rndTutSSId = pick(tutorialStudySessionIds);
+            //   console.log('subectId', subjectId, 'tutorialStudySessionIds', tutorialStudySessionIds, 'rndTutSSId', rndTutSSId);
+            // student joins the tutorial session randomly
+            try {
+              const studentStudySessionSql = `
                 INSERT INTO student_study_session (student_id, study_session_id)
                 VALUES (?, ?)`;
-            await rawQuery(studentStudySessionSql, [userID, rndTutSSId]);
-          } catch (e) {
-            console.error("Enroll tutorial study session error", e);
+              await rawQuery(studentStudySessionSql, [userID, rndTutSSId]);
+            } catch (e) {
+              console.error("Enroll tutorial study session error", e);
+            }
           }
         }
+      } catch (e) {
+        console.error("Create dummy students error", e);
       }
-    } catch (e) {
-      console.error("Create dummy students error", e);
     }
   }
   //1.9. Create QR codes for all study sessions from week 1 to week 9 and checkin students
@@ -284,7 +296,8 @@ export async function POST() {
       ]);
       const qrCodeId = qrResult.insertId as number;
       // create validity for the qr code
-      const anchor = await getAnchorForStudySession(ss.id);
+      // seed week 1 at 2025-07-28
+      const anchor = { week_number: 1, date: "2025-07-28" };
       const sessionDate = computeQrDateForWeek(
         ss.day_of_week as DayOfWeek,
         weekNo,
@@ -350,10 +363,21 @@ export async function POST() {
       }
       // create check-in entries for all students in this study session for this week
       //query all students in this study session
-      const queryStudentsSql = `
-      SELECT ss.student_id
-      FROM student_study_session ss
-      WHERE ss.study_session_id = ?`;
+      let queryStudentsSql = null as null | string;
+      if (ss.type === "tutorial") {
+        queryStudentsSql = `
+        SELECT ss.student_id
+        FROM student_study_session ss
+        WHERE ss.study_session_id = ?`;
+      }
+      // if this is a lecture
+      else {
+        queryStudentsSql = `SELECT e.student_id
+        FROM subject_study_session sss
+        JOIN enrolment e ON e.subject_id = sss.subject_id
+        WHERE sss.study_session_id = ?;`;
+      }
+
       const ss_students = await rawQuery<{ student_id: string }>(
         queryStudentsSql,
         [ss.id]
@@ -362,7 +386,11 @@ export async function POST() {
       for (const s of ss_students) {
         const studentId = s.student_id;
         // 75%-95% chance the student checks in
-        const isCheckIn = Math.random() < 0.75 + Math.random() * 0.2;
+        // Assign a probability between 0.60 and 0.95
+        const checkinProb = 0.75 + Math.random() * 0.2;
+
+        // Roll to see if the student checks in
+        const isCheckIn = Math.random() < checkinProb;
         if (isCheckIn) {
           // only allow In-person or manually checkin
           let checkinType = null as null | "In-person" | "Online" | "Manual";
