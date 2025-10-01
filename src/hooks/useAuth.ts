@@ -1,3 +1,4 @@
+import { authClient } from "@/lib/api/apiClient";
 import apiClient from "@/lib/api/apiClient";
 import { queryClient } from "@/lib/queryClient";
 import { User } from "@/types";
@@ -64,8 +65,8 @@ export const useLogout = () => {
   const router = useRouter();
   return useMutation({
     mutationFn: async () => {
-      const response = await apiClient.post("/auth/signout");
-      return response.data;
+      await authClient.signOut();
+      return { success: true };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [CURRENT_USER_QUERY_KEY] });
