@@ -59,6 +59,7 @@ import {
   MoreHorizontal,
   Search,
   User,
+  Users,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
@@ -2064,58 +2065,49 @@ export default function ReportsAnalytics() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {/* Summary Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-              <div className="bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-950/20 dark:to-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
-                    <Calendar className="w-5 h-5 text-white" />
+            {/* Summary Cards - Fixed alignment and consistent heights */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+              <div className="bg-white dark:bg-slate-800 p-6 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-shadow h-full min-h-[120px] flex flex-col">
+                <div className="flex items-start justify-between flex-1">
+                  <div className="flex-1">
+                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-3">Total Courses</p>
+                    <p className="text-3xl font-bold text-slate-900 dark:text-white">{lecturerTrends.summary.totalSubjects}</p>
                   </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Total Courses</p>
-                    <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{lecturerTrends.summary.totalSubjects}</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-gradient-to-r from-emerald-50 to-emerald-100 dark:from-emerald-950/20 dark:to-emerald-900/20 p-4 rounded-lg border border-emerald-200 dark:border-emerald-800">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-emerald-500 rounded-full flex items-center justify-center">
-                    <span className="text-white text-sm font-bold">%</span>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Overall Average</p>
-                    <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{lecturerTrends.summary.overallAverage}%</p>
+                  <div className="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Calendar className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
                   </div>
                 </div>
               </div>
 
-              <div className="bg-gradient-to-r from-amber-50 to-amber-100 dark:from-amber-950/20 dark:to-amber-900/20 p-4 rounded-lg border border-amber-200 dark:border-amber-800">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-amber-500 rounded-full flex items-center justify-center">
-                    <span className="text-white text-xs font-bold">👥</span>
+              <div className="bg-white dark:bg-slate-800 p-6 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-shadow h-full min-h-[120px] flex flex-col">
+                <div className="flex items-start justify-between flex-1">
+                  <div className="flex-1">
+                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-3">Overall Average</p>
+                    <p className="text-3xl font-bold text-slate-900 dark:text-white">{lecturerTrends.summary.overallAverage}%</p>
                   </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Total Students</p>
-                    <p className="text-2xl font-bold text-amber-600 dark:text-amber-400">{lecturerTrends.summary.totalStudents}</p>
+                  <div className="w-12 h-12 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <span className="text-xl font-bold text-emerald-600 dark:text-emerald-400">%</span>
                   </div>
                 </div>
               </div>
 
-              <div className="bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-950/20 dark:to-purple-900/20 p-4 rounded-lg border border-purple-200 dark:border-purple-800">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-purple-500 rounded-full flex items-center justify-center">
-                    {lecturerTrends.summary.trendDirection === 'improving' ? (
-                      <ArrowUp className="w-5 h-5 text-white" />
-                    ) : lecturerTrends.summary.trendDirection === 'declining' ? (
-                      <ArrowDown className="w-5 h-5 text-white" />
-                    ) : (
-                      <span className="text-white text-sm">→</span>
-                    )}
+              <div className="bg-white dark:bg-slate-800 p-6 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-shadow h-full min-h-[120px] flex flex-col">
+                <div className="flex items-start justify-between flex-1">
+                  <div className="flex-1">
+                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-3">Total Students</p>
+                    <p className="text-3xl font-bold text-slate-900 dark:text-white">{lecturerTrends.summary.totalStudents}</p>
                   </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Trend</p>
-                    <p className={`text-lg font-bold capitalize ${
+                  <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Users className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white dark:bg-slate-800 p-6 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-shadow h-full min-h-[120px] flex flex-col">
+                <div className="flex items-start justify-between flex-1">
+                  <div className="flex-1">
+                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-3">Trend</p>
+                    <p className={`text-2xl font-bold capitalize ${
                       lecturerTrends.summary.trendDirection === 'improving' ? 'text-emerald-600 dark:text-emerald-400' :
                       lecturerTrends.summary.trendDirection === 'declining' ? 'text-rose-600 dark:text-rose-400' :
                       'text-slate-600 dark:text-slate-400'
@@ -2123,24 +2115,37 @@ export default function ReportsAnalytics() {
                       {lecturerTrends.summary.trendDirection}
                     </p>
                   </div>
+                  <div className={`w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                    lecturerTrends.summary.trendDirection === 'improving' ? 'bg-emerald-100 dark:bg-emerald-900/30' :
+                    lecturerTrends.summary.trendDirection === 'declining' ? 'bg-rose-100 dark:bg-rose-900/30' :
+                    'bg-slate-100 dark:bg-slate-700'
+                  }`}>
+                    {lecturerTrends.summary.trendDirection === 'improving' ? (
+                      <ArrowUp className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+                    ) : lecturerTrends.summary.trendDirection === 'declining' ? (
+                      <ArrowDown className="w-6 h-6 text-rose-600 dark:text-rose-400" />
+                    ) : (
+                      <span className="text-lg font-bold text-slate-600 dark:text-slate-400">→</span>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Course Performance Comparison */}
-            <div className="mb-6">
-              <div className="flex items-center justify-between mb-4">
+            {/* Course Performance Comparison - Improved spacing and at-risk prominence */}
+            <div className="mb-8">
+              <div className="flex items-center justify-between mb-5">
                 <h4 className="text-sm font-medium text-foreground">Course Performance Comparison</h4>
                 <div className="text-xs text-muted-foreground">
                   {lecturerTrends.subjectPerformance.length} course{lecturerTrends.subjectPerformance.length !== 1 ? 's' : ''} total
                 </div>
               </div>
               {lecturerTrends.subjectPerformance.length > 0 ? (
-                <div className="space-y-3 max-h-[300px] overflow-y-auto">
+                <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2">
                   {(Array.isArray(lecturerTrends.subjectPerformance) ? lecturerTrends.subjectPerformance : []).map((subject, index) => (
-                    <div key={`subject-${subject.subject_code || subject.subject_id || index}`} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border border-border hover:bg-muted/50 transition-colors">
-                      <div className="flex items-center space-x-3">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                    <div key={`subject-${subject.subject_code || subject.subject_id || index}`} className="flex items-center justify-between p-4 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 hover:shadow-md transition-all min-h-[80px]">
+                      <div className="flex items-center space-x-4">
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 ${
                           subject.performance_level === 'excellent' ? 'bg-emerald-500 text-white' :
                           subject.performance_level === 'good' ? 'bg-blue-500 text-white' :
                           subject.performance_level === 'average' ? 'bg-amber-500 text-white' :
@@ -2149,14 +2154,14 @@ export default function ReportsAnalytics() {
                           {subject.subject_code?.charAt(0) || 'C'}
                         </div>
                         <div>
-                          <p className="font-medium text-foreground">{subject.subject_code || 'Course ' + (index + 1)}</p>
+                          <p className="font-semibold text-foreground">{subject.subject_code || 'Course ' + (index + 1)}</p>
                           <p className="text-xs text-muted-foreground truncate max-w-[200px]">
                             {subject.subject_name || 'Course Name'}
                           </p>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <div className={`text-lg font-bold ${
+                      <div className="text-right flex flex-col items-end gap-2">
+                        <div className={`text-xl font-bold ${
                           subject.average_attendance >= 80 ? 'text-emerald-600 dark:text-emerald-400' :
                           subject.average_attendance >= 70 ? 'text-amber-600 dark:text-amber-400' :
                           'text-rose-600 dark:text-rose-400'
@@ -2167,8 +2172,11 @@ export default function ReportsAnalytics() {
                           {subject.total_students || 0} students
                         </div>
                         {subject.at_risk_count > 0 && (
-                          <div className="text-xs text-rose-600 dark:text-rose-400">
-                            {subject.at_risk_count} at risk
+                          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800">
+                            <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
+                            <span className="text-xs font-semibold text-red-700 dark:text-red-400">
+                              {subject.at_risk_count} at risk
+                            </span>
                           </div>
                         )}
                       </div>

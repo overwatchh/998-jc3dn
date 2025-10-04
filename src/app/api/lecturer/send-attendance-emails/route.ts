@@ -162,7 +162,7 @@ export async function POST(req: NextRequest) {
       fromName: smtp_config.from_name,
     };
 
-    emailService.initialize(emailConfig);
+    await emailService.initialize(emailConfig);
 
     // Test email connection first
     const connectionTest = await emailService.testConnection();

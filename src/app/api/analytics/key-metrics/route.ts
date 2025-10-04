@@ -98,20 +98,37 @@ export async function GET(request: NextRequest) {
     let averageAttendance = 0;
     let atRiskStudents = 0;
 
-    // Calculate average session attendance
+    // Calculate average session attendance using EMAIL CALCULATOR METHOD
     const [avgData] = await rawQuery<{ avg_attendance: number }>(
       `
       SELECT
-        ROUND(AVG(session_attendance), 1) as avg_attendance
+        ROUND(AVG(attendance_rate), 1) as avg_attendance
       FROM (
         SELECT
           qrss.id,
-          ROUND((COUNT(DISTINCT c.student_id) * 100.0 / COUNT(DISTINCT e.student_id)), 1) as session_attendance
+          ROUND(
+            (SUM(
+              CASE
+                WHEN checkin_counts.checkin_count >= 2 THEN 100
+                WHEN checkin_counts.checkin_count = 1 THEN 50
+                ELSE 0
+              END
+            ) / (COUNT(e.student_id) * 100)) * 100,
+            1
+          ) as attendance_rate
         FROM qr_code_study_session qrss
         JOIN study_session ss ON ss.id = qrss.study_session_id
         JOIN subject_study_session sss ON sss.study_session_id = ss.id
         JOIN enrolment e ON e.subject_id = sss.subject_id
-        LEFT JOIN checkin c ON c.qr_code_study_session_id = qrss.id AND c.student_id = e.student_id
+        LEFT JOIN (
+          SELECT
+            qr_code_study_session_id,
+            student_id,
+            COUNT(*) as checkin_count
+          FROM checkin
+          GROUP BY qr_code_study_session_id, student_id
+        ) checkin_counts ON checkin_counts.qr_code_study_session_id = qrss.id
+                         AND checkin_counts.student_id = e.student_id
         WHERE 1=1 ${sessionFilter} ${subjectIdNum ? 'AND sss.subject_id = ?' : ''}
         GROUP BY qrss.id
       ) session_stats
@@ -119,7 +136,7 @@ export async function GET(request: NextRequest) {
       subjectIdNum ? [subjectIdNum] : []
     );
 
-    // Calculate at-risk students (students with overall attendance < 80%)
+    // Calculate at-risk students using EMAIL CALCULATOR METHOD (students with overall attendance < 80%)
     const [atRiskData] = await rawQuery<{ at_risk_count: number }>(
       `
       SELECT
@@ -127,12 +144,29 @@ export async function GET(request: NextRequest) {
       FROM (
         SELECT
           e.student_id,
-          ROUND((COUNT(DISTINCT c.qr_code_study_session_id) * 100.0 / COUNT(DISTINCT qrss.id)), 1) as student_attendance
+          ROUND(
+            (SUM(
+              CASE
+                WHEN checkin_counts.checkin_count >= 2 THEN 100
+                WHEN checkin_counts.checkin_count = 1 THEN 50
+                ELSE 0
+              END
+            ) / (COUNT(qrss.id) * 100)) * 100,
+            1
+          ) as student_attendance
         FROM enrolment e
         JOIN subject_study_session sss ON sss.subject_id = e.subject_id
         JOIN study_session ss ON ss.id = sss.study_session_id
         JOIN qr_code_study_session qrss ON qrss.study_session_id = ss.id
-        LEFT JOIN checkin c ON c.qr_code_study_session_id = qrss.id AND c.student_id = e.student_id
+        LEFT JOIN (
+          SELECT
+            qr_code_study_session_id,
+            student_id,
+            COUNT(*) as checkin_count
+          FROM checkin
+          GROUP BY qr_code_study_session_id, student_id
+        ) checkin_counts ON checkin_counts.qr_code_study_session_id = qrss.id
+                         AND checkin_counts.student_id = e.student_id
         WHERE 1=1 ${sessionFilter} ${subjectIdNum ? 'AND e.subject_id = ?' : ''}
         GROUP BY e.student_id
         HAVING student_attendance < 80
