@@ -9,7 +9,7 @@ export const db = mysql.createPool(
         user: process.env.DB_USER!,
         password: process.env.DB_PASS!,
         database: process.env.DB_NAME!,
-        timezone: "+10:00", // convert datetime to UTC when querying
+        timezone: "+11:00", // convert datetime to UTC when querying
         dateStrings: false, // get JS Date objects; 
       }
     : {
@@ -17,7 +17,7 @@ export const db = mysql.createPool(
         user: process.env.DB_USER!,
         password: process.env.DB_PASS!,
         database: process.env.DB_NAME!,
-        timezone: "+10:00", // convert datetime to UTC when querying
+        timezone: "+11:00", // convert datetime to UTC when querying
         dateStrings: false, // get JS Date objects;
       }
 );
