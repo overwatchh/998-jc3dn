@@ -37,6 +37,7 @@ interface ApiResponse {
 export default function AttendanceRecordsScreen() {
   const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
   const [selectedCourse, setSelectedCourse] = useState("all");
+  const [selectedCourseId, setSelectedCourseId] = useState("all");
   const [selectedType, setSelectedType] = useState("all");
   const [selectedWeek, setSelectedWeek] = useState("all");
   const [selectedCampus, setSelectedCampus] = useState("all");
@@ -55,11 +56,24 @@ export default function AttendanceRecordsScreen() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const records = useMemo(() => data?.data || [], [data]);
+  const records = useMemo(() => {
+    const base = data?.data || [];
+    return [...base].sort(
+      (a, b) =>
+        new Date(b.latest_checkin_time).getTime() -
+        new Date(a.latest_checkin_time).getTime()
+    );
+  }, [data]);
 
   const courseOptions = useMemo(() => {
     const set = new Set<string>();
     records.forEach(r => set.add(r.subject_name));
+    return Array.from(set).sort();
+  }, [records]);
+
+  const courseIdOptions = useMemo(() => {
+    const set = new Set<string>();
+    records.forEach(r => set.add(r.subject_code));
     return Array.from(set).sort();
   }, [records]);
 
@@ -98,6 +112,8 @@ export default function AttendanceRecordsScreen() {
       records.filter(r => {
         const courseMatch =
           selectedCourse === "all" || r.subject_name === selectedCourse;
+        const courseIdMatch =
+          selectedCourseId === "all" || r.subject_code === selectedCourseId;
         const typeMatch =
           selectedType === "all" || r.session_type === selectedType;
         const weekMatch =
@@ -110,6 +126,7 @@ export default function AttendanceRecordsScreen() {
           selectedRoom === "all" || r.room_number === selectedRoom;
         return (
           courseMatch &&
+          courseIdMatch &&
           typeMatch &&
           weekMatch &&
           campusMatch &&
@@ -125,6 +142,7 @@ export default function AttendanceRecordsScreen() {
       selectedCampus,
       selectedBuilding,
       selectedRoom,
+      selectedCourseId,
     ]
   );
 
@@ -196,6 +214,7 @@ export default function AttendanceRecordsScreen() {
   const resetFilters = () => {
     setSelectedCourse("all");
     setSelectedType("all");
+    setSelectedCourseId("all");
     setSelectedWeek("all");
     setSelectedCampus("all");
     setSelectedBuilding("all");
@@ -301,6 +320,22 @@ export default function AttendanceRecordsScreen() {
                     ))}
                   </SelectContent>
                 </Select>
+                <Select
+                  value={selectedCourseId}
+                  onValueChange={setSelectedCourseId}
+                >
+                  <SelectTrigger className="w-44">
+                    <SelectValue placeholder="Course ID" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All IDs</SelectItem>
+                    {courseIdOptions.map(id => (
+                      <SelectItem key={id} value={id}>
+                        {id}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <Select value={selectedType} onValueChange={setSelectedType}>
                   <SelectTrigger className="w-40">
                     <SelectValue placeholder="Select type" />
@@ -347,27 +382,27 @@ export default function AttendanceRecordsScreen() {
                   value={selectedBuilding}
                   onValueChange={setSelectedBuilding}
                 >
-                  <SelectTrigger className="w-32">
+                  <SelectTrigger className="w-40">
                     <SelectValue placeholder="Building" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Buildings</SelectItem>
                     {buildingOptions.map(b => (
                       <SelectItem key={b} value={b}>
-                        Bld {b}
+                        Building {b}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
                 <Select value={selectedRoom} onValueChange={setSelectedRoom}>
-                  <SelectTrigger className="w-28">
+                  <SelectTrigger className="w-40">
                     <SelectValue placeholder="Room" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Rooms</SelectItem>
                     {roomOptions.map(rm => (
                       <SelectItem key={rm} value={rm}>
-                        Rm {rm}
+                        Room {rm}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -391,7 +426,8 @@ export default function AttendanceRecordsScreen() {
                   selectedWeek !== "all" ||
                   selectedCampus !== "all" ||
                   selectedBuilding !== "all" ||
-                  selectedRoom !== "all") && <span> matching filters</span>}
+                  selectedRoom !== "all" ||
+                  selectedCourseId !== "all") && <span> matching filters</span>}
               </div>
             </div>
           </CardContent>
@@ -436,10 +472,7 @@ export default function AttendanceRecordsScreen() {
                   {filteredRecords.map((r, idx) => (
                     <tr key={idx} className="hover:bg-muted/40">
                       <td className="px-3 py-2 font-medium">
-                        {r.subject_name}
-                        <span className="text-muted-foreground ml-1 text-xs">
-                          ({r.subject_code})
-                        </span>
+                        {r.subject_name} - {r.subject_code}
                       </td>
                       <td className="px-3 py-2">{r.week_number}</td>
                       <td className="px-3 py-2">
