@@ -10,19 +10,71 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Calendar, Filter, List } from "lucide-react";
-import { useState } from "react";
-import { attendanceRecords } from "./mockdata";
+import { useQuery } from "@tanstack/react-query";
+import { Calendar, Filter, List, Loader2 } from "lucide-react";
+import { useMemo, useState } from "react";
+
+type RecentCheckinRecord = {
+  subject_name: string;
+  subject_code: string;
+  session_type: string;
+  week_number: number;
+  latest_checkin_time: string;
+  building_number: string;
+  room_number: string;
+  campus_name: string;
+  checkin_count: number; // 1 or 2
+  attendance_status: "partial" | "present";
+  points_awarded: number; // 45 or 90
+};
+
+interface ApiResponse {
+  message: string;
+  count: number;
+  data: RecentCheckinRecord[];
+}
 
 export default function AttendanceRecordsScreen() {
   const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
   const [selectedCourse, setSelectedCourse] = useState("all");
 
-  const overallStats = {
-    percentage: 78,
-    attended: 23,
-    total: 30,
-  };
+  const { data, isLoading, error, refetch } = useQuery<ApiResponse>({
+    queryKey: ["student", "recent-checkins"],
+    queryFn: async () => {
+      const res = await fetch(
+        "/api/analytics/student-recent-checkins?limit=100"
+      );
+      if (!res.ok) throw new Error("Failed to load attendance records");
+      return res.json();
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const records = useMemo(() => data?.data || [], [data]);
+
+  const courseOptions = useMemo(() => {
+    const set = new Set<string>();
+    records.forEach(r => set.add(`${r.subject_name}`));
+    return Array.from(set).sort();
+  }, [records]);
+
+  const filteredRecords = useMemo(
+    () =>
+      selectedCourse === "all"
+        ? records
+        : records.filter(r => r.subject_name === selectedCourse),
+    [records, selectedCourse]
+  );
+
+  // Derive overall stats using attendance window points (present=90, partial=45)
+  const overallStats = useMemo(() => {
+    if (records.length === 0) return { percentage: 0, attended: 0, total: 0 };
+    const totalPossible = records.length * 90; // each session max 90 points
+    const earned = records.reduce((acc, r) => acc + r.points_awarded, 0);
+    const attended = records.length; // all listed are attended
+    const percentage = Math.round((earned / totalPossible) * 100);
+    return { percentage, attended, total: records.length };
+  }, [records]);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -55,23 +107,37 @@ export default function AttendanceRecordsScreen() {
     }
   };
 
-  const filteredRecords =
-    selectedCourse === "all"
-      ? attendanceRecords
-      : attendanceRecords.filter(record => record.course === selectedCourse);
+  const getDisplayDate = (iso: string) => {
+    try {
+      return new Date(iso).toLocaleString("en-GB", {
+        hour12: false,
+        year: "numeric",
+        month: "short",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } catch {
+      return iso;
+    }
+  };
 
   return (
     <div className="space-y-6 p-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
           <h1 className="text-primary text-xl font-semibold">My Attendance</h1>
+          <p className="text-muted-foreground mt-1 text-sm">
+            Review your recent check-ins and overall progress.
+          </p>
         </div>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center gap-2 self-start sm:self-auto">
           <Button
             variant={viewMode === "list" ? "default" : "outline"}
             size="sm"
             onClick={() => setViewMode("list")}
+            aria-label="List view"
           >
             <List className="h-4 w-4" />
           </Button>
@@ -79,25 +145,25 @@ export default function AttendanceRecordsScreen() {
             variant={viewMode === "calendar" ? "default" : "outline"}
             size="sm"
             onClick={() => setViewMode("calendar")}
+            aria-label="Calendar view"
           >
             <Calendar className="h-4 w-4" />
           </Button>
         </div>
       </div>
 
-      {/* Attendance Summary */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Attendance Summary</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between">
-            <div className="text-center">
-              <div className="relative mx-auto mb-2 h-20 w-20">
-                <svg
-                  className="h-20 w-20 -rotate-90 transform"
-                  viewBox="0 0 36 36"
-                >
+      {/* Summary Grid */}
+      <div className="grid gap-4 md:grid-cols-3">
+        <Card className="col-span-1">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">
+              Overall Attendance
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="flex items-center gap-4">
+              <div className="relative h-20 w-20 shrink-0">
+                <svg className="h-20 w-20 -rotate-90" viewBox="0 0 36 36">
                   <path
                     d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                     fill="none"
@@ -118,64 +184,115 @@ export default function AttendanceRecordsScreen() {
                   </span>
                 </div>
               </div>
-              <p className="text-primary/80 text-sm">Overall</p>
+              <div className="space-y-1">
+                <p className="text-primary/80 text-xs">Progress</p>
+                <p className="text-primary text-2xl font-bold">
+                  {overallStats.attended}/{overallStats.total}
+                </p>
+                <p className="text-muted-foreground text-xs">
+                  Sessions attended
+                </p>
+              </div>
             </div>
-            <div className="text-right">
-              <p className="text-primary text-2xl font-bold">
-                {overallStats.attended}/{overallStats.total}
-              </p>
-              <p className="text-primary/80 text-sm">Classes Attended</p>
+          </CardContent>
+        </Card>
+        <Card className="col-span-1 md:col-span-2">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">
+              Filters & Actions
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <Select
+                  value={selectedCourse}
+                  onValueChange={setSelectedCourse}
+                >
+                  <SelectTrigger className="w-56">
+                    <SelectValue placeholder="Select course" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Courses</SelectItem>
+                    {courseOptions.map(c => (
+                      <SelectItem key={c} value={c}>
+                        {c}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button variant="outline" size="sm" onClick={() => refetch()}>
+                  <Filter className="mr-2 h-4 w-4" /> Refresh
+                </Button>
+              </div>
+              <div className="text-muted-foreground text-xs">
+                {filteredRecords.length} record
+                {filteredRecords.length !== 1 && "s"}
+                {selectedCourse !== "all" && ` in ${selectedCourse}`}
+              </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Course Tabs and Filters */}
-      <div className="flex items-center justify-between">
-        <Select value={selectedCourse} onValueChange={setSelectedCourse}>
-          <SelectTrigger className="w-48">
-            <SelectValue placeholder="Select course" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Courses</SelectItem>
-            <SelectItem value="Computer Science 101">
-              Computer Science 101
-            </SelectItem>
-            <SelectItem value="Mathematics 201">Mathematics 201</SelectItem>
-            <SelectItem value="Physics 301">Physics 301</SelectItem>
-          </SelectContent>
-        </Select>
-        <Button variant="outline" size="sm">
-          <Filter className="mr-2 h-4 w-4" />
-          Filter
-        </Button>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Attendance Records */}
+      {/* Records */}
       <Card>
-        <CardContent className="p-0">
-          {filteredRecords.length > 0 ? (
-            <div className="divide-y">
-              {filteredRecords.map((record, index) => (
-                <div
-                  key={index}
-                  className="flex items-center justify-between p-4"
-                >
-                  <div>
-                    <p className="text-primary font-medium">{record.course}</p>
-                    <p className="text-primary/80 text-sm">{record.date}</p>
-                  </div>
-                  <div className="text-right">
-                    {getStatusBadge(record.status)}
-                    <p className="text-primary mt-1 text-sm">
-                      {record.checkInTime}
-                    </p>
-                  </div>
-                </div>
-              ))}
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-medium">
+            Recent Check-ins
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="pt-0">
+          {isLoading ? (
+            <div className="text-muted-foreground flex items-center justify-center py-12 text-sm">
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading recent
+              check-ins...
+            </div>
+          ) : error ? (
+            <div className="py-12 text-center text-sm text-red-600">
+              Failed to load attendance records
+            </div>
+          ) : filteredRecords.length > 0 ? (
+            <div className="overflow-hidden rounded-md border">
+              <table className="w-full text-sm">
+                <thead className="bg-muted/50">
+                  <tr className="border-b">
+                    <th className="px-3 py-2 text-left font-medium">Course</th>
+                    <th className="px-3 py-2 text-left font-medium">Week</th>
+                    <th className="px-3 py-2 text-left font-medium">Type</th>
+                    <th className="px-3 py-2 text-left font-medium">
+                      Location
+                    </th>
+                    <th className="px-3 py-2 text-left font-medium">Status</th>
+                    <th className="px-3 py-2 text-left font-medium">
+                      Check-in Time
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredRecords.map((r, idx) => (
+                    <tr key={idx} className="hover:bg-muted/40">
+                      <td className="px-3 py-2 font-medium">
+                        {r.subject_name}
+                      </td>
+                      <td className="px-3 py-2">{r.week_number}</td>
+                      <td className="px-3 py-2">{r.session_type}</td>
+                      <td className="text-muted-foreground px-3 py-2 text-xs">
+                        {r.building_number}-{r.room_number} · {r.campus_name}
+                      </td>
+                      <td className="px-3 py-2">
+                        {getStatusBadge(r.attendance_status)}
+                      </td>
+                      <td className="px-3 py-2 text-xs">
+                        {getDisplayDate(r.latest_checkin_time)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           ) : (
-            <div className="p-8 text-center">
+            <div className="py-12 text-center">
               <Calendar className="mx-auto mb-4 h-12 w-12 text-gray-400" />
               <p className="text-primary">No attendance records found</p>
               <p className="text-sm text-gray-500">
