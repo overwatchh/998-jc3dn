@@ -15,7 +15,7 @@ import { NextResponse } from "next/server";
  *       By default returns the authenticated student's data. Lecturers or admins may supply a `student_id` query param
  *       to fetch another student's records.
  *
- *       Attendance status is derived from the number of validity window check-ins: one window = partial (45 points), two = present (90 points).
+ *       Attendance status is derived from validity window check-ins: one window = partial (50 points), two = present (100 points).
  *     parameters:
  *       - in: query
  *         name: limit
@@ -61,7 +61,7 @@ import { NextResponse } from "next/server";
  *                       campus_name: { type: string }
  *                       checkin_count: { type: integer, description: "Number of validity windows checked in (1 or 2)" }
  *                       attendance_status: { type: string, enum: [partial, present] }
- *                       points_awarded: { type: integer, description: "Points per attendance-calculator rule (45 or 90)" }
+ *                       points_awarded: { type: integer, description: "Points per attendance rule (50 partial, 100 present)" }
  *       400:
  *         description: Invalid parameters
  *       401:
@@ -150,7 +150,7 @@ export async function GET(req: Request) {
 
     const data = rows.map(r => {
       const attendance_status = r.checkin_count >= 2 ? "present" : "partial"; // Aligns with attendance-calculator windows rule
-      const points_awarded = r.checkin_count >= 2 ? 90 : 45;
+      const points_awarded = r.checkin_count >= 2 ? 100 : 50;
       return {
         subject_name: r.subject_name,
         subject_code: r.subject_code,

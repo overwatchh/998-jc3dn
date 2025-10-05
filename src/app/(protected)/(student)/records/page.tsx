@@ -25,7 +25,7 @@ type RecentCheckinRecord = {
   campus_name: string;
   checkin_count: number; // 1 or 2
   attendance_status: "partial" | "present";
-  points_awarded: number; // 45 or 90
+  points_awarded: number; // 50 or 100
 };
 
 interface ApiResponse {
@@ -37,6 +37,11 @@ interface ApiResponse {
 export default function AttendanceRecordsScreen() {
   const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
   const [selectedCourse, setSelectedCourse] = useState("all");
+  const [selectedType, setSelectedType] = useState("all");
+  const [selectedWeek, setSelectedWeek] = useState("all");
+  const [selectedCampus, setSelectedCampus] = useState("all");
+  const [selectedBuilding, setSelectedBuilding] = useState("all");
+  const [selectedRoom, setSelectedRoom] = useState("all");
 
   const { data, isLoading, error, refetch } = useQuery<ApiResponse>({
     queryKey: ["student", "recent-checkins"],
@@ -54,27 +59,88 @@ export default function AttendanceRecordsScreen() {
 
   const courseOptions = useMemo(() => {
     const set = new Set<string>();
-    records.forEach(r => set.add(`${r.subject_name}`));
+    records.forEach(r => set.add(r.subject_name));
+    return Array.from(set).sort();
+  }, [records]);
+
+  const typeOptions = useMemo(() => {
+    const set = new Set<string>();
+    records.forEach(r => set.add(r.session_type));
+    return Array.from(set).sort();
+  }, [records]);
+
+  const weekOptions = useMemo(() => {
+    const set = new Set<number>();
+    records.forEach(r => set.add(r.week_number));
+    return Array.from(set).sort((a, b) => a - b);
+  }, [records]);
+
+  const campusOptions = useMemo(() => {
+    const set = new Set<string>();
+    records.forEach(r => set.add(r.campus_name));
+    return Array.from(set).sort();
+  }, [records]);
+
+  const buildingOptions = useMemo(() => {
+    const set = new Set<string>();
+    records.forEach(r => set.add(r.building_number));
+    return Array.from(set).sort();
+  }, [records]);
+
+  const roomOptions = useMemo(() => {
+    const set = new Set<string>();
+    records.forEach(r => set.add(r.room_number));
     return Array.from(set).sort();
   }, [records]);
 
   const filteredRecords = useMemo(
     () =>
-      selectedCourse === "all"
-        ? records
-        : records.filter(r => r.subject_name === selectedCourse),
-    [records, selectedCourse]
+      records.filter(r => {
+        const courseMatch =
+          selectedCourse === "all" || r.subject_name === selectedCourse;
+        const typeMatch =
+          selectedType === "all" || r.session_type === selectedType;
+        const weekMatch =
+          selectedWeek === "all" || r.week_number === Number(selectedWeek);
+        const campusMatch =
+          selectedCampus === "all" || r.campus_name === selectedCampus;
+        const buildingMatch =
+          selectedBuilding === "all" || r.building_number === selectedBuilding;
+        const roomMatch =
+          selectedRoom === "all" || r.room_number === selectedRoom;
+        return (
+          courseMatch &&
+          typeMatch &&
+          weekMatch &&
+          campusMatch &&
+          buildingMatch &&
+          roomMatch
+        );
+      }),
+    [
+      records,
+      selectedCourse,
+      selectedType,
+      selectedWeek,
+      selectedCampus,
+      selectedBuilding,
+      selectedRoom,
+    ]
   );
 
-  // Derive overall stats using attendance window points (present=90, partial=45)
+  // Derive overall stats for currently filtered set (present=100, partial=50)
   const overallStats = useMemo(() => {
-    if (records.length === 0) return { percentage: 0, attended: 0, total: 0 };
-    const totalPossible = records.length * 90; // each session max 90 points
-    const earned = records.reduce((acc, r) => acc + r.points_awarded, 0);
-    const attended = records.length; // all listed are attended
+    if (filteredRecords.length === 0)
+      return { percentage: 0, attended: 0, total: 0 };
+    const totalPossible = filteredRecords.length * 100; // each session max 100 points
+    const earned = filteredRecords.reduce(
+      (acc, r) => acc + r.points_awarded,
+      0
+    );
+    const attended = filteredRecords.length; // all listed are attended (partial or present)
     const percentage = Math.round((earned / totalPossible) * 100);
-    return { percentage, attended, total: records.length };
-  }, [records]);
+    return { percentage, attended, total: filteredRecords.length };
+  }, [filteredRecords]);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -120,6 +186,18 @@ export default function AttendanceRecordsScreen() {
     } catch {
       return iso;
     }
+  };
+
+  const capitalize = (val: string) =>
+    val ? val.charAt(0).toUpperCase() + val.slice(1) : val;
+
+  const resetFilters = () => {
+    setSelectedCourse("all");
+    setSelectedType("all");
+    setSelectedWeek("all");
+    setSelectedCampus("all");
+    setSelectedBuilding("all");
+    setSelectedRoom("all");
   };
 
   return (
@@ -203,8 +281,8 @@ export default function AttendanceRecordsScreen() {
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-0">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <div className="flex flex-col gap-3">
+              <div className="flex flex-wrap items-center gap-2">
                 <Select
                   value={selectedCourse}
                   onValueChange={setSelectedCourse}
@@ -221,14 +299,97 @@ export default function AttendanceRecordsScreen() {
                     ))}
                   </SelectContent>
                 </Select>
-                <Button variant="outline" size="sm" onClick={() => refetch()}>
-                  <Filter className="mr-2 h-4 w-4" /> Refresh
+                <Select value={selectedType} onValueChange={setSelectedType}>
+                  <SelectTrigger className="w-40">
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Types</SelectItem>
+                    {typeOptions.map(t => (
+                      <SelectItem key={t} value={t}>
+                        {capitalize(t)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select value={selectedWeek} onValueChange={setSelectedWeek}>
+                  <SelectTrigger className="w-28">
+                    <SelectValue placeholder="Week" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Weeks</SelectItem>
+                    {weekOptions.map(w => (
+                      <SelectItem key={w} value={String(w)}>
+                        Week {w}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select
+                  value={selectedCampus}
+                  onValueChange={setSelectedCampus}
+                >
+                  <SelectTrigger className="w-40">
+                    <SelectValue placeholder="Campus" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Campuses</SelectItem>
+                    {campusOptions.map(c => (
+                      <SelectItem key={c} value={c}>
+                        {c}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select
+                  value={selectedBuilding}
+                  onValueChange={setSelectedBuilding}
+                >
+                  <SelectTrigger className="w-32">
+                    <SelectValue placeholder="Building" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Buildings</SelectItem>
+                    {buildingOptions.map(b => (
+                      <SelectItem key={b} value={b}>
+                        Bld {b}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select value={selectedRoom} onValueChange={setSelectedRoom}>
+                  <SelectTrigger className="w-28">
+                    <SelectValue placeholder="Room" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Rooms</SelectItem>
+                    {roomOptions.map(rm => (
+                      <SelectItem key={rm} value={rm}>
+                        Rm {rm}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    resetFilters();
+                    refetch();
+                  }}
+                >
+                  <Filter className="mr-2 h-4 w-4" /> Reset
                 </Button>
               </div>
               <div className="text-muted-foreground text-xs">
                 {filteredRecords.length} record
                 {filteredRecords.length !== 1 && "s"}
-                {selectedCourse !== "all" && ` in ${selectedCourse}`}
+                {(selectedCourse !== "all" ||
+                  selectedType !== "all" ||
+                  selectedWeek !== "all" ||
+                  selectedCampus !== "all" ||
+                  selectedBuilding !== "all" ||
+                  selectedRoom !== "all") && <span> matching filters</span>}
               </div>
             </div>
           </CardContent>
@@ -274,9 +435,14 @@ export default function AttendanceRecordsScreen() {
                     <tr key={idx} className="hover:bg-muted/40">
                       <td className="px-3 py-2 font-medium">
                         {r.subject_name}
+                        <span className="text-muted-foreground ml-1 text-xs">
+                          ({r.subject_code})
+                        </span>
                       </td>
                       <td className="px-3 py-2">{r.week_number}</td>
-                      <td className="px-3 py-2">{r.session_type}</td>
+                      <td className="px-3 py-2">
+                        {capitalize(r.session_type)}
+                      </td>
                       <td className="text-muted-foreground px-3 py-2 text-xs">
                         {r.building_number}-{r.room_number} · {r.campus_name}
                       </td>
