@@ -386,7 +386,7 @@ export default function Page() {
                                     : "—"}
                                 </TableCell>
                                 <TableCell className="text-right">
-                                  {!isCheckedIn && enabled && (
+                                  {enabled && maxValidity < 2 && (
                                     <AlertDialog>
                                       <AlertDialogTrigger asChild>
                                         <Button
