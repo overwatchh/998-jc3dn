@@ -28,6 +28,7 @@ import {
   Share2,
   Shield,
   Square,
+  X,
 } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -123,6 +124,8 @@ export const QRGenerator = () => {
   );
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [isSendingReminders, setIsSendingReminders] = useState(false);
+  // Modal state for enlarged QR view
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [prevInfo, setPrevInfo] = useState<{
     roomLabel: string | null;
     validateGeo: boolean | null;
@@ -750,6 +753,17 @@ export const QRGenerator = () => {
     return () => clearTimeout(t);
   }, [successType]);
 
+  // Handle ESC key to close modal
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && isModalOpen) {
+        setIsModalOpen(false);
+      }
+    };
+    window.addEventListener("keydown", handleEsc);
+    return () => window.removeEventListener("keydown", handleEsc);
+  }, [isModalOpen]);
+
   return (
     <div className="w-full">
       {/* QR panel (used in a sticky container by parent) */}
@@ -782,8 +796,18 @@ export const QRGenerator = () => {
                   </div>
                 ) : qrGenerated && qrUrl ? (
                   <div
-                    className="bg-card flex w-full items-center justify-center rounded-lg border p-3 shadow"
+                    className="bg-card flex w-full cursor-pointer items-center justify-center rounded-lg border p-3 shadow transition-transform hover:scale-[1.02]"
                     style={{ aspectRatio: "1.15/1" }}
+                    onClick={() => setIsModalOpen(true)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={e => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        setIsModalOpen(true);
+                      }
+                    }}
+                    title="Click to enlarge"
                   >
                     <Image
                       src={qrUrl}
@@ -1478,6 +1502,43 @@ export const QRGenerator = () => {
           </div>
         )}
       </div>
+
+      {/* Enlarged QR Modal */}
+      {isModalOpen && qrUrl && (
+        <div
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm"
+          onClick={() => setIsModalOpen(false)}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Enlarged QR Code"
+        >
+          <div
+            className="animate-in fade-in zoom-in-95 relative max-h-[90vh] max-w-[90vw] duration-200"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Close button */}
+            <button
+              onClick={() => setIsModalOpen(false)}
+              className="absolute -top-4 -right-4 rounded-full bg-white p-2 shadow-lg transition-transform hover:scale-110 dark:bg-gray-800"
+              aria-label="Close enlarged view"
+            >
+              <X className="h-5 w-5 text-gray-700 dark:text-gray-200" />
+            </button>
+
+            {/* Enlarged QR Code */}
+            <div className="rounded-lg bg-white p-4 shadow-2xl">
+              <Image
+                src={qrUrl}
+                alt="Enlarged QR Code"
+                width={600}
+                height={600}
+                className="rounded object-contain"
+                style={{ maxHeight: "80vh", maxWidth: "80vw" }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

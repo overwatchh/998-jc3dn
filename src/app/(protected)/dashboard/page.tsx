@@ -7,7 +7,7 @@ import { Roles } from "@/types";
 import { redirect } from "next/navigation";
 import { useEffect, useState } from "react";
 import { InstructorDashboard } from "../(lecturer)/_components/lecturer-dashboard";
-import { StudentDashboard } from "../(student)/student-dashboard";
+import { StudentDashboard } from "../(student)/_components/student-dashboard";
 
 export default function DashboardPage() {
   const { data, isLoading } = useCurrentUser();
