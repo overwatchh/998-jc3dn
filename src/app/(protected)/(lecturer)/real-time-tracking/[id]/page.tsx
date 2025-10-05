@@ -5,6 +5,7 @@ import {
   useGetStudentList,
   useGetCourses,
   useGetQrCodes,
+  useGetQrCode,
 } from "@/app/(protected)/(lecturer)/qr-generation/queries";
 import {
   AlertDialog,
@@ -48,10 +49,12 @@ import {
   UserPlus,
   UserCheck,
   ChevronDown,
+  QrCode,
 } from "lucide-react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import Image from "next/image";
 
 export default function Page() {
   const params = useParams<{ id: string }>();
@@ -83,6 +86,16 @@ export default function Page() {
   const { data: qrCodes } = useGetQrCodes(studySessionId || 0, weekNumber, {
     enabled: Boolean(studySessionId && weekNumber),
   });
+
+  // Get the QR code image for the current week's QR code
+  const currentQrCodeId = qrCodes?.data?.[0]?.qr_code_id;
+  const { data: qrCodeImage } = useGetQrCode(
+    studySessionId || 0,
+    currentQrCodeId || 0,
+    {
+      enabled: Boolean(studySessionId && currentQrCodeId),
+    }
+  );
 
   const checkedInData = useMemo(() => checkedIn?.data ?? [], [checkedIn]);
 
@@ -212,6 +225,7 @@ export default function Page() {
   const [isStudentDialogOpen, setIsStudentDialogOpen] = useState(false);
   const [isCourseInfoOpen, setIsCourseInfoOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const [showQrCode, setShowQrCode] = useState(false);
   const filteredStudents = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return studentList ?? [];
@@ -279,6 +293,15 @@ export default function Page() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowQrCode(!showQrCode)}
+            disabled={!weekNumber || !studySessionId}
+          >
+            <QrCode className="mr-2 h-4 w-4" />
+            {showQrCode ? "Hide QR Code" : "View QR Code"}
+          </Button>
           <Sheet
             open={isStudentDialogOpen}
             onOpenChange={setIsStudentDialogOpen}
@@ -482,6 +505,48 @@ export default function Page() {
           <CardContent className="p-4 text-sm text-red-600">
             week_number is missing. Open the QR generation page and navigate
             here via the tracking button.
+          </CardContent>
+        </Card>
+      )}
+
+      {/* QR Code Display */}
+      {showQrCode && (
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <QrCode className="h-5 w-5" />
+              QR Code - Week {weekNumber}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex justify-center">
+            {qrCodeImage?.qr_url ? (
+              <div className="bg-white p-4 rounded-lg border">
+                <div className="relative" style={{ width: "300px", height: "300px" }}>
+                  <Image
+                    src={qrCodeImage.qr_url}
+                    alt={`QR Code for Week ${weekNumber}`}
+                    fill
+                    className="object-contain"
+                    sizes="300px"
+                  />
+                </div>
+                <div className="text-center mt-2">
+                  <span className="text-sm text-muted-foreground">
+                    QR Code ID: {qrCodes?.data?.[0]?.qr_code_id || "N/A"}
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-white p-4 rounded-lg border">
+                <p className="text-muted-foreground text-center">
+                  QR Code image will be displayed here when available.
+                  <br />
+                  <span className="text-sm">
+                    QR Code ID: {qrCodes?.data?.[0]?.qr_code_id || "N/A"}
+                  </span>
+                </p>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}

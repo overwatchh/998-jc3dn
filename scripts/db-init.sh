@@ -14,6 +14,6 @@ echo "Creating schema..."
 "$MYSQL_CLIENT" -h "$HOST" -P "$PORT" -u "$USER" <"$(dirname "$0")/../src/lib/server/db_schema/db_create.sql"
 
 echo "Loading seed data..."
-"$MYSQL_CLIENT" -h "$HOST" -P "$PORT" -u "$USER" <"$(dirname "$0")/../src/lib/server/db_schema/db_load.sql"
+"$MYSQL_CLIENT" -h "$HOST" -P "$PORT" -u "$USER" <"$(dirname "$0")/../src/lib/server/db_schema/db_dummy_load.sql"
 
 echo "Database initialization completed."

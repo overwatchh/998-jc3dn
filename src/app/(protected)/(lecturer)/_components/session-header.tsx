@@ -208,13 +208,13 @@ export function SessionSelector() {
                 </SelectTrigger>
                 <SelectContent className="border-border bg-popover">
                   {[
+                    "Sunday",
                     "Monday",
                     "Tuesday",
                     "Wednesday",
                     "Thursday",
                     "Friday",
                     "Saturday",
-                    "Sunday",
                   ].map(dow => (
                     <SelectItem
                       key={dow}

@@ -11,6 +11,7 @@ import {
   GenerateQrRequestBody,
   GenerateQrResponse,
   GetQrCodesResponse,
+  QrCodeWithValidities,
   UpdateQrRequestBody,
 } from "@/types/qr-code";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -285,5 +286,26 @@ export const useGetStudySessionRooms = (
     queryKey: [STUDY_SESSION_ROOMS_QUERY_KEY, studySessionId],
     queryFn,
     enabled: options?.enabled ?? Boolean(studySessionId),
+  });
+};
+
+// Get all QR codes for all sessions for the current lecturer
+const ALL_QR_CODES_QUERY_KEY = ["allQrCodes"];
+export const useGetAllQrCodes = (options?: { enabled?: boolean }) => {
+  const queryFn = async () => {
+    const { data } = await apiClient.get<{
+      message: string;
+      count: number;
+      data: Array<{
+        study_session_id: number;
+        qr_codes: QrCodeWithValidities[];
+      }>;
+    }>("/lecturer/qr-codes/all");
+    return data;
+  };
+  return useQuery({
+    queryKey: [ALL_QR_CODES_QUERY_KEY],
+    queryFn,
+    enabled: options?.enabled,
   });
 };

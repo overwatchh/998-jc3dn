@@ -5,19 +5,19 @@ const isProd = process.env.NODE_ENV === "production";
 export const db = mysql.createPool(
   isProd
     ? {
-        socketPath: `/cloudsql/${process.env.GCP_PROJECT_ID}:${process.env.GCP_REGION}:${process.env.DB_INSTANCE}`,
-        user: process.env.DB_USER!,
-        password: process.env.DB_PASS!,
-        database: process.env.DB_NAME!,
-        timezone: "+10:00", // convert datetime to UTC when querying
-        dateStrings: false, // get JS Date objects; 
-      }
+      socketPath: `/cloudsql/${process.env.GCP_PROJECT_ID}:${process.env.GCP_REGION}:${process.env.DB_INSTANCE}`,
+      user: process.env.DB_USER!,
+      password: process.env.DB_PASS!,
+      database: process.env.DB_NAME!,
+      timezone: "+10:00", // convert datetime to UTC when querying
+      dateStrings: false, // get JS Date objects; 
+    }
     : {
-        host: process.env.DB_HOST!,
-        user: process.env.DB_USER!,
-        password: process.env.DB_PASS!,
-        database: process.env.DB_NAME!,
-        timezone: "+10:00", // convert datetime to UTC when querying
-        dateStrings: false, // get JS Date objects;
-      }
+      host: process.env.DB_HOST!,
+      user: process.env.DB_USER!,
+      password: process.env.DB_PASS!,
+      database: process.env.DB_NAME!,
+      timezone: "+11:00", // convert datetime to UTC when querying
+      dateStrings: false, // get JS Date objects;
+    }
 );
