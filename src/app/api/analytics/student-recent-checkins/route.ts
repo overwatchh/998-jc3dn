@@ -60,8 +60,8 @@ import { NextResponse } from "next/server";
  *                       room_number: { type: string }
  *                       campus_name: { type: string }
  *                       checkin_count: { type: integer, description: "Number of validity windows checked in (1 or 2)" }
- *                       attendance_status: { type: string, enum: [partial, present] }
- *                       points_awarded: { type: integer, description: "Points per attendance rule (50 partial, 100 present)" }
+ *                       attendance_status: { type: string, enum: [absent, partial, present] }
+ *                       points_awarded: { type: integer, description: "Points per attendance rule (0 absent, 50 partial, 100 present)" }
  *       400:
  *         description: Invalid parameters
  *       401:
@@ -120,6 +120,10 @@ export async function GET(req: Request) {
     }
     values.push(limit);
 
+    // We want to include sessions with zero check-ins (absent). Strategy:
+    // 1. Get all qr_code_study_session (qcss) rows for subjects the student is enrolled in (active subjects) where a QR was generated.
+    // 2. LEFT JOIN aggregated checkins for the target student.
+    // This returns rows with NULL latest_checkin_time when absent.
     const sql = `
       SELECT
         s.name AS subject_name,
@@ -130,27 +134,35 @@ export async function GET(req: Request) {
         r.building_number,
         r.room_number,
         cam.name AS campus_name,
-        COUNT(*) AS checkin_count
-      FROM checkin c
-      JOIN qr_code_study_session qcss ON c.qr_code_study_session_id = qcss.id
+        COUNT(c.student_id) AS checkin_count
+      FROM qr_code_study_session qcss
       JOIN study_session ss ON qcss.study_session_id = ss.id
       JOIN subject_study_session sss ON sss.study_session_id = ss.id
       JOIN subject s ON s.id = sss.subject_id
+      JOIN enrolment e ON e.subject_id = s.id AND e.student_id = ?
       JOIN room r ON ss.room_id = r.id
       JOIN campus cam ON r.campus_id = cam.id
-      WHERE c.student_id = ?
-        AND s.status = 'active'
+      LEFT JOIN checkin c ON c.qr_code_study_session_id = qcss.id AND c.student_id = e.student_id
+      WHERE s.status = 'active'
         ${sessionTypeFilter}
       GROUP BY qcss.id
-      ORDER BY latest_checkin_time DESC
+      ORDER BY COALESCE(MAX(c.checkin_time), qcss.week_number) DESC
       LIMIT ?
     `;
 
     const rows = await rawQuery<RecentCheckinAggregateRow>(sql, values);
 
     const data = rows.map(r => {
-      const attendance_status = r.checkin_count >= 2 ? "present" : "partial"; // Aligns with attendance-calculator windows rule
-      const points_awarded = r.checkin_count >= 2 ? 100 : 50;
+      let attendance_status: "absent" | "partial" | "present";
+      if (r.checkin_count >= 2) attendance_status = "present";
+      else if (r.checkin_count === 1) attendance_status = "partial";
+      else attendance_status = "absent";
+      const points_awarded =
+        attendance_status === "present"
+          ? 100
+          : attendance_status === "partial"
+            ? 50
+            : 0;
       return {
         subject_name: r.subject_name,
         subject_code: r.subject_code,

@@ -24,7 +24,7 @@ type RecentCheckinRecord = {
   room_number: string;
   campus_name: string;
   checkin_count: number; // 1 or 2
-  attendance_status: "partial" | "present";
+  attendance_status: "absent" | "partial" | "present";
   points_awarded: number; // 50 or 100
 };
 
@@ -137,7 +137,9 @@ export default function AttendanceRecordsScreen() {
       (acc, r) => acc + r.points_awarded,
       0
     );
-    const attended = filteredRecords.length; // all listed are attended (partial or present)
+    const attended = filteredRecords.filter(
+      r => r.attendance_status !== "absent"
+    ).length;
     const percentage = Math.round((earned / totalPossible) * 100);
     return { percentage, attended, total: filteredRecords.length };
   }, [filteredRecords]);
