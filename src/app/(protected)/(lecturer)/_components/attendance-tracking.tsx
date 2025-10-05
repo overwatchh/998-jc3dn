@@ -218,15 +218,12 @@ export function AttendanceTrackingScreen() {
                   <CardHeader className="pb-2">
                     <div className="flex items-center justify-between">
                       <CardTitle className="text-lg text-green-800 dark:text-green-200">
-                        🔴 Live Session
+                        {currentLiveSession.subject_name} - {currentLiveSession.subject_code}
                       </CardTitle>
                       <Badge variant="outline" className="border-green-200 bg-green-100 text-green-800">
                         Active Now
                       </Badge>
                     </div>
-                    <CardDescription className="text-green-700 dark:text-green-300">
-                      {currentLiveSession.subject_name} - {currentLiveSession.subject_code}
-                    </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="grid gap-2">
