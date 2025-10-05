@@ -15,11 +15,13 @@ import apiClient from "@/lib/api/apiClient";
 import { DayOfWeek, formatHHMM, getQrDateForWeek } from "@/lib/utils";
 import { AxiosError } from "axios";
 import {
+  Bell,
   Calendar,
   CheckSquare,
   Clock,
   Download,
   Loader2,
+  Mail,
   MapPin,
   QrCode,
   RadioIcon,
@@ -119,6 +121,8 @@ export const QRGenerator = () => {
   const [successType, setSuccessType] = useState<null | "create" | "update">(
     null
   );
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
+  const [isSendingReminders, setIsSendingReminders] = useState(false);
   const [prevInfo, setPrevInfo] = useState<{
     roomLabel: string | null;
     validateGeo: boolean | null;
@@ -223,71 +227,75 @@ export const QRGenerator = () => {
   }
 
   async function handleShare(): Promise<void> {
-    if (!qrUrl) return;
-    // 1) Try native Web Share (mobile-friendly)
-    try {
-      const shareData = {
-        title: "Attendance QR",
-        text: selectedCourse
-          ? `Week ${selectedCourse.weekNumber} attendance QR`
-          : "Attendance QR",
-        url: qrUrl,
-      };
-      const navShare = navigator as Navigator & {
-        share?: (data: ShareData) => Promise<void>;
-        canShare?: (data?: ShareData) => boolean;
-      };
-      if (navShare?.canShare?.(shareData) || navShare?.share) {
-        await navShare.share?.(shareData);
-        return; // done if user shared
-      }
-    } catch {
-      // user cancelled or share failed; continue to email fallback
-    }
-
-    // 2) Email fallback (opens default mail client with prefilled content)
-    try {
-      const subject = `Attendance QR${selectedCourse ? ` - Week ${selectedCourse.weekNumber}` : ""}`;
-      const isHttp = /^https?:\/\//i.test(qrUrl);
-      const isData = qrUrl.startsWith("data:");
-      const bodyLines: string[] = ["Hello,", ""];
-      if (isHttp) {
-        bodyLines.push(
-          "Here is the attendance QR code link:",
-          qrUrl,
-          "",
-          "If the QR image doesn't load automatically, open the link above in a browser."
-        );
-      } else if (isData) {
-        // Don't include the giant data URL in the email body; instead prompt user to attach the PNG
-        // Proactively download so it's easy to attach
-        handleDownload();
-        bodyLines.push(
-          "The attendance QR code image has been downloaded as 'attendance-qr.png'.",
-          "Please attach it to this email before sending."
-        );
-      } else {
-        bodyLines.push("Attendance QR code");
-      }
-      const mailto = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyLines.join("\n"))}`;
-      // Use location.href so it works on mobile and desktop
-      window.location.href = mailto;
-      toast.success("Opening your email client…");
+    if (!qrUrl || !existingQrId) {
+      toast.error("No QR code to share");
       return;
-    } catch {
-      // ignore and try one last fallback
     }
 
-    // 3) Clipboard as last resort
+    setIsSendingEmail(true);
     try {
-      if (navigator.clipboard) {
-        await navigator.clipboard.writeText(qrUrl);
-        toast.success("QR link copied to clipboard");
+      const response = await fetch("/api/lecturer/send-qr-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ qr_code_id: existingQrId }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        toast.success(
+          `QR code sent to ${result.emails_sent} student${result.emails_sent !== 1 ? "s" : ""}!`
+        );
       } else {
-        toast.message("QR URL", { description: qrUrl });
+        toast.error(result.message || "Failed to send emails");
       }
-    } catch {
-      // swallow
+    } catch (error) {
+      console.error("Error sending QR emails:", error);
+      toast.error("Failed to send QR code emails");
+    } finally {
+      setIsSendingEmail(false);
+    }
+  }
+
+  async function handleSendAttendanceReminders(): Promise<void> {
+    if (!selectedCourse?.sessionId || !selectedCourse?.weekNumber) {
+      toast.error("No session or week selected");
+      return;
+    }
+
+    setIsSendingReminders(true);
+    try {
+      const response = await fetch("/api/lecturer/send-attendance-emails", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          study_session_id: selectedCourse.sessionId,
+          week_number: selectedCourse.weekNumber,
+          smtp_config: {
+            smtp_host: "smtp.gmail.com",
+            smtp_port: 587,
+            smtp_user: process.env.NEXT_PUBLIC_SMTP_USER || "qrattendancesystem2025@gmail.com",
+            smtp_pass: process.env.NEXT_PUBLIC_SMTP_PASS || "xjid lkdd adro kvrx",
+            from_email: process.env.NEXT_PUBLIC_SMTP_USER || "qrattendancesystem2025@gmail.com",
+            from_name: "QR Attendance System",
+          },
+        }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        toast.success(
+          `Attendance reminders sent to ${result.emails_sent} student${result.emails_sent !== 1 ? "s" : ""}!`
+        );
+      } else {
+        toast.error(result.message || "Failed to send attendance reminders");
+      }
+    } catch (error) {
+      console.error("Error sending attendance reminders:", error);
+      toast.error("Failed to send attendance reminders");
+    } finally {
+      setIsSendingReminders(false);
     }
   }
 
@@ -1196,10 +1204,10 @@ export const QRGenerator = () => {
                       variant="outline"
                       className="h-9 flex-1 bg-transparent"
                       onClick={handleShare}
-                      disabled={!qrUrl}
+                      disabled={!qrUrl || isSendingEmail || !existingQrId}
                     >
-                      <Share2 className="mr-2 h-4 w-4" />
-                      Share
+                      <Mail className="mr-2 h-4 w-4" />
+                      {isSendingEmail ? "Sending..." : "Share"}
                     </Button>
                   </div>
 
@@ -1212,6 +1220,17 @@ export const QRGenerator = () => {
                   >
                     <RadioIcon className="mr-2 h-4 w-4" />
                     Real-time Attendance Tracking
+                  </Button>
+
+                  {/* Send Attendance Reminders Button */}
+                  <Button
+                    variant="outline"
+                    className="mt-2 h-9 w-full"
+                    onClick={handleSendAttendanceReminders}
+                    disabled={isSendingReminders || !selectedCourse?.sessionId || !selectedCourse?.weekNumber}
+                  >
+                    <Bell className="mr-2 h-4 w-4" />
+                    {isSendingReminders ? "Sending..." : "Send Attendance Reminders"}
                   </Button>
                 </>
               ) : (
