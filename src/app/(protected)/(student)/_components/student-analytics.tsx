@@ -1,10 +1,27 @@
 "use client";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
-import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  TrendingUp,
+  TrendingDown,
+  Target,
+  Calendar,
+  AlertTriangle,
+  CheckCircle,
+  Award,
+  Activity,
+} from "lucide-react";
+import { useEffect, useState } from "react";
 import {
   BarChart,
   Bar,
@@ -16,17 +33,6 @@ import {
   LineChart,
   Line,
 } from "recharts";
-import {
-  TrendingUp,
-  TrendingDown,
-  Target,
-  Calendar,
-  AlertTriangle,
-  CheckCircle,
-  Award,
-  Activity
-} from "lucide-react";
-import { useEffect, useState } from "react";
 
 // Types
 interface AttendanceSummary {
@@ -43,7 +49,7 @@ interface AttendanceSummary {
     sessions_attended: number;
     total_sessions: number;
     required_threshold: number;
-    status: 'good' | 'warning' | 'at_risk';
+    status: "good" | "warning" | "at_risk";
   }>;
 }
 
@@ -57,7 +63,7 @@ interface WeeklyProgress {
   }>;
   trends: {
     average_weekly_attendance: number;
-    trend_direction: 'improving' | 'declining' | 'stable';
+    trend_direction: "improving" | "declining" | "stable";
     best_week: { week_number: number; attendance_rate: number };
     worst_week: { week_number: number; attendance_rate: number };
   };
@@ -72,7 +78,7 @@ interface SubjectPerformance {
     sessions_attended: number;
     total_sessions: number;
     required_threshold: number;
-    status: 'good' | 'warning' | 'at_risk';
+    status: "good" | "warning" | "at_risk";
   };
   session_breakdown: Array<{
     session_type: string;
@@ -86,7 +92,7 @@ interface SubjectPerformance {
       attended: boolean;
       session_type: string;
     }>;
-    trend_direction: 'improving' | 'declining' | 'stable';
+    trend_direction: "improving" | "declining" | "stable";
   };
   recommendations: string[];
 }
@@ -96,7 +102,7 @@ interface AttendanceGoals {
     target_percentage: number;
     current_percentage: number;
     progress: number;
-    status: 'on_track' | 'behind' | 'ahead';
+    status: "on_track" | "behind" | "ahead";
   };
   subject_goals: Array<{
     subject_id: number;
@@ -113,7 +119,7 @@ interface AttendanceGoals {
       if_perfect_attendance: number;
       minimum_sessions_needed: number;
     };
-    status: 'achieved' | 'on_track' | 'at_risk' | 'impossible';
+    status: "achieved" | "on_track" | "at_risk" | "impossible";
     recommendation: string;
   }>;
 }
@@ -169,31 +175,58 @@ interface RecentActivity {
 }
 
 export function StudentAnalytics() {
-  const [attendanceSummary, setAttendanceSummary] = useState<AttendanceSummary | null>(null);
-  const [weeklyProgress, setWeeklyProgress] = useState<WeeklyProgress | null>(null);
-  const [subjectPerformance, setSubjectPerformance] = useState<SubjectPerformance[] | null>(null);
-  const [attendanceGoals, setAttendanceGoals] = useState<AttendanceGoals | null>(null);
-  const [recentActivity, setRecentActivity] = useState<RecentActivity | null>(null);
+  const [attendanceSummary, setAttendanceSummary] =
+    useState<AttendanceSummary | null>(null);
+  const [weeklyProgress, setWeeklyProgress] = useState<WeeklyProgress | null>(
+    null
+  );
+  const [subjectPerformance, setSubjectPerformance] = useState<
+    SubjectPerformance[] | null
+  >(null);
+  const [attendanceGoals, setAttendanceGoals] =
+    useState<AttendanceGoals | null>(null);
+  const [recentActivity, setRecentActivity] = useState<RecentActivity | null>(
+    null
+  );
   const [loading, setLoading] = useState(true);
-  const [sessionType, setSessionType] = useState<'lecture' | 'tutorial'>('lecture');
+  const [sessionType, setSessionType] = useState<"lecture" | "tutorial">(
+    "lecture"
+  );
 
   useEffect(() => {
     const fetchAnalytics = async () => {
       try {
-        const [summaryRes, weeklyRes, performanceRes, goalsRes, activityRes] = await Promise.all([
-          fetch(`/api/student/analytics/attendance-summary?sessionType=${sessionType}`),
-          fetch(`/api/student/analytics/weekly-progress?sessionType=${sessionType}`),
-          fetch(`/api/student/analytics/subject-performance?sessionType=${sessionType}`),
-          fetch(`/api/student/analytics/attendance-goals?sessionType=${sessionType}`),
-          fetch(`/api/student/analytics/recent-activity?sessionType=${sessionType}`)
-        ]);
+        const [summaryRes, weeklyRes, performanceRes, goalsRes, activityRes] =
+          await Promise.all([
+            fetch(
+              `/api/student/analytics/attendance-summary?sessionType=${sessionType}`
+            ),
+            fetch(
+              `/api/student/analytics/weekly-progress?sessionType=${sessionType}`
+            ),
+            fetch(
+              `/api/student/analytics/subject-performance?sessionType=${sessionType}`
+            ),
+            fetch(
+              `/api/student/analytics/attendance-goals?sessionType=${sessionType}`
+            ),
+            fetch(
+              `/api/student/analytics/recent-activity?sessionType=${sessionType}`
+            ),
+          ]);
 
-        const [summaryData, weeklyData, performanceData, goalsData, activityData] = await Promise.all([
+        const [
+          summaryData,
+          weeklyData,
+          performanceData,
+          goalsData,
+          activityData,
+        ] = await Promise.all([
           summaryRes.json(),
           weeklyRes.json(),
           performanceRes.json(),
           goalsRes.json(),
-          activityRes.json()
+          activityRes.json(),
         ]);
 
         if (summaryRes.ok && summaryData.data) {
@@ -216,7 +249,7 @@ export function StudentAnalytics() {
           setRecentActivity(activityData.data);
         }
       } catch (error) {
-        console.error('Error fetching analytics:', error);
+        console.error("Error fetching analytics:", error);
       } finally {
         setLoading(false);
       }
@@ -227,16 +260,32 @@ export function StudentAnalytics() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'good':
-      case 'achieved':
-      case 'on_track':
-        return <Badge className="bg-green-100 text-green-800">Good</Badge>;
-      case 'warning':
-        return <Badge className="bg-yellow-100 text-yellow-800">Warning</Badge>;
-      case 'at_risk':
-        return <Badge className="bg-red-100 text-red-800">At Risk</Badge>;
-      case 'impossible':
-        return <Badge className="bg-gray-100 text-gray-800">Cannot Achieve</Badge>;
+      case "good":
+      case "achieved":
+      case "on_track":
+        return (
+          <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
+            Good
+          </Badge>
+        );
+      case "warning":
+        return (
+          <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300">
+            Warning
+          </Badge>
+        );
+      case "at_risk":
+        return (
+          <Badge className="bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300">
+            At Risk
+          </Badge>
+        );
+      case "impossible":
+        return (
+          <Badge className="bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300">
+            Cannot Achieve
+          </Badge>
+        );
       default:
         return <Badge variant="secondary">{status}</Badge>;
     }
@@ -244,9 +293,9 @@ export function StudentAnalytics() {
 
   const getTrendIcon = (direction: string) => {
     switch (direction) {
-      case 'improving':
+      case "improving":
         return <TrendingUp className="h-4 w-4 text-green-600" />;
-      case 'declining':
+      case "declining":
         return <TrendingDown className="h-4 w-4 text-red-600" />;
       default:
         return <Activity className="h-4 w-4 text-gray-600" />;
@@ -257,13 +306,13 @@ export function StudentAnalytics() {
 
   if (loading) {
     return (
-      <div className="p-6 space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="space-y-6 p-6">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
           {[...Array(4)].map((_, i) => (
             <Card key={i} className="animate-pulse">
               <CardContent className="p-6">
-                <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                <div className="h-8 bg-gray-200 rounded w-1/2"></div>
+                <div className="mb-2 h-4 w-3/4 rounded bg-gray-200"></div>
+                <div className="h-8 w-1/2 rounded bg-gray-200"></div>
               </CardContent>
             </Card>
           ))}
@@ -273,19 +322,26 @@ export function StudentAnalytics() {
   }
 
   // Show message if no data is available
-  if (!attendanceSummary && !weeklyProgress && !subjectPerformance && !attendanceGoals && !recentActivity) {
+  if (
+    !attendanceSummary &&
+    !weeklyProgress &&
+    !subjectPerformance &&
+    !attendanceGoals &&
+    !recentActivity
+  ) {
     return (
-      <div className="p-6 space-y-6">
+      <div className="space-y-6 p-6">
         <Alert>
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription>
             No analytics data available. This could be because:
-            <ul className="mt-2 list-disc list-inside space-y-1">
+            <ul className="mt-2 list-inside list-disc space-y-1">
               <li>You haven&apos;t enrolled in any subjects yet</li>
               <li>No attendance records exist for your enrolled subjects</li>
               <li>The data is still being processed</li>
             </ul>
-            Please try refreshing the page or contact support if the issue persists.
+            Please try refreshing the page or contact support if the issue
+            persists.
           </AlertDescription>
         </Alert>
       </div>
@@ -293,9 +349,13 @@ export function StudentAnalytics() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6 p-6">
       {/* Session Type Filter */}
-      <Tabs value={sessionType} onValueChange={(value) => setSessionType(value as 'lecture' | 'tutorial')} className="w-full">
+      <Tabs
+        value={sessionType}
+        onValueChange={value => setSessionType(value as "lecture" | "tutorial")}
+        className="w-full"
+      >
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="lecture" className="text-sm">
             📚 Lectures
@@ -307,14 +367,19 @@ export function StudentAnalytics() {
       </Tabs>
 
       {/* Header with Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Overall Attendance</p>
+                <p className="text-muted-foreground text-sm font-medium">
+                  Overall Attendance
+                </p>
                 <p className="text-2xl font-bold">
-                  {attendanceSummary?.overall_stats.attendance_percentage.toFixed(1)}%
+                  {attendanceSummary?.overall_stats.attendance_percentage.toFixed(
+                    1
+                  )}
+                  %
                 </p>
               </div>
               <Target className="h-8 w-8 text-blue-600" />
@@ -326,9 +391,12 @@ export function StudentAnalytics() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Sessions Attended</p>
+                <p className="text-muted-foreground text-sm font-medium">
+                  Sessions Attended
+                </p>
                 <p className="text-2xl font-bold">
-                  {attendanceSummary?.overall_stats.attended_sessions} / {attendanceSummary?.overall_stats.total_sessions}
+                  {attendanceSummary?.overall_stats.attended_sessions} /{" "}
+                  {attendanceSummary?.overall_stats.total_sessions}
                 </p>
               </div>
               <CheckCircle className="h-8 w-8 text-green-600" />
@@ -340,9 +408,12 @@ export function StudentAnalytics() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">This Week</p>
+                <p className="text-muted-foreground text-sm font-medium">
+                  This Week
+                </p>
                 <p className="text-2xl font-bold">
-                  {recentActivity?.activity_summary.total_checkins_this_week || 0}
+                  {recentActivity?.activity_summary.total_checkins_this_week ||
+                    0}
                 </p>
               </div>
               <Calendar className="h-8 w-8 text-purple-600" />
@@ -354,7 +425,9 @@ export function StudentAnalytics() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Current Streak</p>
+                <p className="text-muted-foreground text-sm font-medium">
+                  Current Streak
+                </p>
                 <p className="text-2xl font-bold">
                   {recentActivity?.activity_summary.current_streak || 0}
                 </p>
@@ -378,51 +451,60 @@ export function StudentAnalytics() {
         {/* Overview Tab */}
         <TabsContent value="overview" className="space-y-6">
           {/* At-Risk Subjects Alert */}
-          {attendanceSummary?.subject_breakdown.some(s => s.status === 'at_risk') && (
+          {attendanceSummary?.subject_breakdown.some(
+            s => s.status === "at_risk"
+          ) && (
             <Alert variant="destructive">
               <AlertTriangle className="h-4 w-4" />
               <AlertDescription>
-                You have subjects with attendance below the required threshold. Check the Subjects tab for details.
+                You have subjects with attendance below the required threshold.
+                Check the Subjects tab for details.
               </AlertDescription>
             </Alert>
           )}
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             {/* Subject Attendance Overview */}
             <Card>
               <CardHeader>
                 <CardTitle>Subject Attendance Overview</CardTitle>
-                <CardDescription>Your attendance percentage by subject</CardDescription>
+                <CardDescription>
+                  Your attendance percentage by subject
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {attendanceSummary?.subject_breakdown.map((subject, index) => (
-                    <div key={index} className="space-y-2">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm font-medium">{subject.subject_code}</span>
-                        <div className="flex items-center space-x-2">
-                          <span className="text-sm text-muted-foreground">
-                            {subject.attendance_percentage.toFixed(1)}%
+                  {attendanceSummary?.subject_breakdown.map(
+                    (subject, index) => (
+                      <div key={index} className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium">
+                            {subject.subject_code}
                           </span>
-                          {getStatusBadge(subject.status)}
+                          <div className="flex items-center space-x-2">
+                            <span className="text-muted-foreground text-sm">
+                              {subject.attendance_percentage.toFixed(1)}%
+                            </span>
+                            {getStatusBadge(subject.status)}
+                          </div>
+                        </div>
+                        <Progress
+                          value={subject.attendance_percentage}
+                          className={`h-2 ${
+                            subject.status === "at_risk"
+                              ? "[&>div]:bg-red-500"
+                              : subject.status === "warning"
+                                ? "[&>div]:bg-yellow-500"
+                                : "[&>div]:bg-green-500"
+                          }`}
+                        />
+                        <div className="text-muted-foreground flex justify-between text-xs">
+                          <span>{subject.sessions_attended} attended</span>
+                          <span>Required: {subject.required_threshold}%</span>
                         </div>
                       </div>
-                      <Progress
-                        value={subject.attendance_percentage}
-                        className={`h-2 ${
-                          subject.status === 'at_risk'
-                            ? '[&>div]:bg-red-500'
-                            : subject.status === 'warning'
-                            ? '[&>div]:bg-yellow-500'
-                            : '[&>div]:bg-green-500'
-                        }`}
-                      />
-                      <div className="flex justify-between text-xs text-muted-foreground">
-                        <span>{subject.sessions_attended} attended</span>
-                        <span>Required: {subject.required_threshold}%</span>
-                      </div>
-                    </div>
-                  ))}
+                    )
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -431,7 +513,9 @@ export function StudentAnalytics() {
             <Card>
               <CardHeader>
                 <CardTitle>Weekly Attendance Trend</CardTitle>
-                <CardDescription>Your attendance pattern over recent weeks</CardDescription>
+                <CardDescription>
+                  Your attendance pattern over recent weeks
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 {weeklyProgress?.weekly_stats?.length > 0 ? (
@@ -440,21 +524,28 @@ export function StudentAnalytics() {
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="week_number" />
                       <YAxis domain={[0, 100]} />
-                      <Tooltip formatter={(value) => [`${value}%`, 'Attendance']} />
+                      <Tooltip
+                        formatter={value => [`${value}%`, "Attendance"]}
+                      />
                       <Line
                         type="monotone"
                         dataKey="attendance_rate"
                         stroke="#8884d8"
                         strokeWidth={2}
-                        dot={{ fill: '#8884d8' }}
+                        dot={{ fill: "#8884d8" }}
                       />
                     </LineChart>
                   </ResponsiveContainer>
                 ) : (
-                  <div className="h-[300px] flex items-center justify-center border border-dashed border-gray-300 rounded-lg">
+                  <div className="flex h-[300px] items-center justify-center rounded-lg border border-dashed border-gray-300 dark:border-gray-700">
                     <div className="text-center">
-                      <p className="text-gray-500 mb-2">No weekly data available</p>
-                      <p className="text-sm text-gray-400">Weekly attendance trends will appear here once you have more attendance records</p>
+                      <p className="mb-2 text-gray-500 dark:text-gray-400">
+                        No weekly data available
+                      </p>
+                      <p className="text-sm text-gray-400 dark:text-gray-500">
+                        Weekly attendance trends will appear here once you have
+                        more attendance records
+                      </p>
                     </div>
                   </div>
                 )}
@@ -466,10 +557,10 @@ export function StudentAnalytics() {
         {/* Subjects Tab */}
         <TabsContent value="subjects" className="space-y-6">
           <div className="grid gap-6">
-            {subjectPerformance?.map((subject) => (
+            {subjectPerformance?.map(subject => (
               <Card key={subject.subject_id}>
                 <CardHeader>
-                  <div className="flex justify-between items-start">
+                  <div className="flex items-start justify-between">
                     <div>
                       <CardTitle>{subject.subject_name}</CardTitle>
                       <CardDescription>{subject.subject_code}</CardDescription>
@@ -481,14 +572,15 @@ export function StudentAnalytics() {
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                     <div>
                       <p className="text-sm font-medium">Overall Attendance</p>
                       <p className="text-2xl font-bold">
                         {subject.overall_attendance.percentage}%
                       </p>
-                      <p className="text-xs text-muted-foreground">
-                        {subject.overall_attendance.sessions_attended} / {subject.overall_attendance.total_sessions} sessions
+                      <p className="text-muted-foreground text-xs">
+                        {subject.overall_attendance.sessions_attended} /{" "}
+                        {subject.overall_attendance.total_sessions} sessions
                       </p>
                     </div>
 
@@ -503,8 +595,13 @@ export function StudentAnalytics() {
                       <p className="text-sm font-medium">Session Breakdown</p>
                       <div className="space-y-1">
                         {subject.session_breakdown.map((session, idx) => (
-                          <div key={idx} className="flex justify-between text-sm">
-                            <span className="capitalize">{session.session_type}:</span>
+                          <div
+                            key={idx}
+                            className="flex justify-between text-sm"
+                          >
+                            <span className="capitalize">
+                              {session.session_type}:
+                            </span>
                             <span>{session.percentage}%</span>
                           </div>
                         ))}
@@ -513,9 +610,11 @@ export function StudentAnalytics() {
                   </div>
 
                   {subject.recommendations.length > 0 && (
-                    <div className="bg-blue-50 p-3 rounded-lg">
-                      <p className="text-sm font-medium text-blue-900 mb-2">Recommendations:</p>
-                      <ul className="text-sm text-blue-800 space-y-1">
+                    <div className="rounded-lg bg-blue-50 p-3 dark:border dark:border-blue-800/40 dark:bg-blue-950/40">
+                      <p className="mb-2 text-sm font-medium text-blue-900 dark:text-blue-300">
+                        Recommendations:
+                      </p>
+                      <ul className="space-y-1 text-sm text-blue-800 dark:text-blue-200">
                         {subject.recommendations.map((rec, idx) => (
                           <li key={idx}>• {rec}</li>
                         ))}
@@ -530,7 +629,7 @@ export function StudentAnalytics() {
 
         {/* Trends Tab */}
         <TabsContent value="trends" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             <Card>
               <CardHeader>
                 <CardTitle>Weekly Attendance Pattern</CardTitle>
@@ -542,7 +641,9 @@ export function StudentAnalytics() {
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="week_number" />
                     <YAxis domain={[0, 100]} />
-                    <Tooltip formatter={(value) => [`${value}%`, 'Attendance Rate']} />
+                    <Tooltip
+                      formatter={value => [`${value}%`, "Attendance Rate"]}
+                    />
                     <Bar dataKey="attendance_rate" fill="#8884d8" />
                   </BarChart>
                 </ResponsiveContainer>
@@ -552,43 +653,58 @@ export function StudentAnalytics() {
             <Card>
               <CardHeader>
                 <CardTitle>Attendance Trends</CardTitle>
-                <CardDescription>Key insights about your attendance patterns</CardDescription>
+                <CardDescription>
+                  Key insights about your attendance patterns
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-green-50 p-3 rounded-lg">
-                    <p className="text-sm font-medium text-green-900">Best Week</p>
-                    <p className="text-lg font-bold text-green-800">
+                  <div className="rounded-lg bg-green-50 p-3 dark:border dark:border-green-800/40 dark:bg-green-950/40">
+                    <p className="text-sm font-medium text-green-900 dark:text-green-300">
+                      Best Week
+                    </p>
+                    <p className="text-lg font-bold text-green-800 dark:text-green-400">
                       Week {weeklyProgress?.trends.best_week.week_number}
                     </p>
-                    <p className="text-sm text-green-700">
-                      {weeklyProgress?.trends.best_week.attendance_rate}% attendance
+                    <p className="text-sm text-green-700 dark:text-green-300">
+                      {weeklyProgress?.trends.best_week.attendance_rate}%
+                      attendance
                     </p>
                   </div>
 
-                  <div className="bg-red-50 p-3 rounded-lg">
-                    <p className="text-sm font-medium text-red-900">Needs Improvement</p>
-                    <p className="text-lg font-bold text-red-800">
+                  <div className="rounded-lg bg-red-50 p-3 dark:border dark:border-red-800/40 dark:bg-red-950/40">
+                    <p className="text-sm font-medium text-red-900 dark:text-red-300">
+                      Needs Improvement
+                    </p>
+                    <p className="text-lg font-bold text-red-800 dark:text-red-400">
                       Week {weeklyProgress?.trends.worst_week.week_number}
                     </p>
-                    <p className="text-sm text-red-700">
-                      {weeklyProgress?.trends.worst_week.attendance_rate}% attendance
+                    <p className="text-sm text-red-700 dark:text-red-300">
+                      {weeklyProgress?.trends.worst_week.attendance_rate}%
+                      attendance
                     </p>
                   </div>
                 </div>
 
                 <div className="flex items-center space-x-2">
                   <span className="text-sm font-medium">Overall Trend:</span>
-                  {getTrendIcon(weeklyProgress?.trends.trend_direction || 'stable')}
+                  {getTrendIcon(
+                    weeklyProgress?.trends.trend_direction || "stable"
+                  )}
                   <span className="text-sm capitalize">
                     {weeklyProgress?.trends.trend_direction}
                   </span>
                 </div>
 
                 <div>
-                  <span className="text-sm font-medium">Average Weekly Attendance: </span>
+                  <span className="text-sm font-medium">
+                    Average Weekly Attendance:{" "}
+                  </span>
                   <span className="text-lg font-bold">
-                    {weeklyProgress?.trends.average_weekly_attendance.toFixed(1)}%
+                    {weeklyProgress?.trends.average_weekly_attendance.toFixed(
+                      1
+                    )}
+                    %
                   </span>
                 </div>
               </CardContent>
@@ -601,46 +717,62 @@ export function StudentAnalytics() {
           <Card>
             <CardHeader>
               <CardTitle>Overall Goal Progress</CardTitle>
-              <CardDescription>Your progress toward attendance requirements</CardDescription>
+              <CardDescription>
+                Your progress toward attendance requirements
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-lg font-medium">Overall Target: {attendanceGoals?.overall_goal.target_percentage}%</span>
-                  {getStatusBadge(attendanceGoals?.overall_goal.status || '')}
+                <div className="flex items-center justify-between">
+                  <span className="text-lg font-medium">
+                    Overall Target:{" "}
+                    {attendanceGoals?.overall_goal.target_percentage}%
+                  </span>
+                  {getStatusBadge(attendanceGoals?.overall_goal.status || "")}
                 </div>
                 <Progress
                   value={attendanceGoals?.overall_goal.progress || 0}
                   className="h-3"
                 />
-                <div className="flex justify-between text-sm text-muted-foreground">
-                  <span>Current: {attendanceGoals?.overall_goal.current_percentage}%</span>
-                  <span>Progress: {attendanceGoals?.overall_goal.progress.toFixed(1)}%</span>
+                <div className="text-muted-foreground flex justify-between text-sm">
+                  <span>
+                    Current: {attendanceGoals?.overall_goal.current_percentage}%
+                  </span>
+                  <span>
+                    Progress:{" "}
+                    {attendanceGoals?.overall_goal.progress.toFixed(1)}%
+                  </span>
                 </div>
               </div>
             </CardContent>
           </Card>
 
           <div className="grid gap-4">
-            {attendanceGoals?.subject_goals.map((goal) => (
+            {attendanceGoals?.subject_goals.map(goal => (
               <Card key={goal.subject_id}>
                 <CardContent className="p-4">
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
+                  <div className="grid grid-cols-1 items-center gap-4 md:grid-cols-4">
                     <div>
                       <p className="font-medium">{goal.subject_code}</p>
-                      <p className="text-sm text-muted-foreground">{goal.subject_name}</p>
+                      <p className="text-muted-foreground text-sm">
+                        {goal.subject_name}
+                      </p>
                     </div>
 
                     <div className="text-center">
-                      <p className="text-2xl font-bold">{goal.current_percentage}%</p>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-2xl font-bold">
+                        {goal.current_percentage}%
+                      </p>
+                      <p className="text-muted-foreground text-xs">
                         {goal.sessions_attended} / {goal.total_sessions}
                       </p>
                     </div>
 
                     <div className="text-center">
-                      <p className="text-sm font-medium">Need {goal.sessions_needed} more</p>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-sm font-medium">
+                        Need {goal.sessions_needed} more
+                      </p>
+                      <p className="text-muted-foreground text-xs">
                         {goal.remaining_sessions} sessions left
                       </p>
                     </div>
@@ -650,7 +782,7 @@ export function StudentAnalytics() {
                     </div>
                   </div>
 
-                  <div className="mt-3 p-2 bg-gray-50 rounded text-sm">
+                  <div className="mt-3 rounded bg-gray-50 p-2 text-sm dark:bg-gray-800/60">
                     {goal.recommendation}
                   </div>
                 </CardContent>
@@ -661,32 +793,42 @@ export function StudentAnalytics() {
 
         {/* Activity Tab */}
         <TabsContent value="activity" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             <Card>
               <CardHeader>
                 <CardTitle>Recent Check-ins</CardTitle>
-                <CardDescription>Your latest attendance records</CardDescription>
+                <CardDescription>
+                  Your latest attendance records
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {recentActivity?.recent_checkins.slice(0, 5).map((checkin, index) => (
-                    <div key={index} className="flex justify-between items-center p-2 border rounded">
-                      <div>
-                        <p className="font-medium">{checkin.subject_code}</p>
-                        <p className="text-sm text-muted-foreground capitalize">
-                          {checkin.session_type} • Week {checkin.week_number}
-                        </p>
+                  {recentActivity?.recent_checkins
+                    .slice(0, 5)
+                    .map((checkin, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between rounded border p-2 dark:border-gray-700"
+                      >
+                        <div>
+                          <p className="font-medium">{checkin.subject_code}</p>
+                          <p className="text-muted-foreground text-sm capitalize">
+                            {checkin.session_type} • Week {checkin.week_number}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm">
+                            {checkin.location.building_number}-
+                            {checkin.location.room_number}
+                          </p>
+                          <p className="text-muted-foreground text-xs">
+                            {new Date(
+                              checkin.checkin_time
+                            ).toLocaleDateString()}
+                          </p>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <p className="text-sm">
-                          {checkin.location.building_number}-{checkin.location.room_number}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {new Date(checkin.checkin_time).toLocaleDateString()}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
+                    ))}
                 </div>
               </CardContent>
             </Card>
@@ -698,59 +840,80 @@ export function StudentAnalytics() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {recentActivity?.upcoming_sessions.slice(0, 5).map((session, index) => (
-                    <div key={index} className="flex justify-between items-center p-2 border rounded">
-                      <div>
-                        <p className="font-medium">{session.subject_code}</p>
-                        <p className="text-sm text-muted-foreground capitalize">
-                          {session.session_type} • {session.day_of_week}
-                        </p>
+                  {recentActivity?.upcoming_sessions
+                    .slice(0, 5)
+                    .map((session, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between rounded border p-2 dark:border-gray-700"
+                      >
+                        <div>
+                          <p className="font-medium">{session.subject_code}</p>
+                          <p className="text-muted-foreground text-sm capitalize">
+                            {session.session_type} • {session.day_of_week}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm">
+                            {session.start_time.slice(0, 5)} -{" "}
+                            {session.end_time.slice(0, 5)}
+                          </p>
+                          <p className="text-muted-foreground text-xs">
+                            {session.days_until === 0
+                              ? "Today"
+                              : `${session.days_until} days`}
+                          </p>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <p className="text-sm">
-                          {session.start_time.slice(0, 5)} - {session.end_time.slice(0, 5)}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {session.days_until === 0 ? 'Today' : `${session.days_until} days`}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
+                    ))}
                 </div>
               </CardContent>
             </Card>
           </div>
 
-          {recentActivity?.missed_sessions && recentActivity.missed_sessions.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Recent Missed Sessions</CardTitle>
-                <CardDescription>Sessions you didn&apos;t attend recently</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {recentActivity.missed_sessions.slice(0, 3).map((missed, index) => (
-                    <div key={index} className="flex justify-between items-center p-2 border border-red-200 rounded bg-red-50">
-                      <div>
-                        <p className="font-medium text-red-900">{missed.subject_code}</p>
-                        <p className="text-sm text-red-700 capitalize">
-                          {missed.session_type} • {missed.day_of_week} • Week {missed.week_number}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm text-red-800">
-                          {missed.start_time.slice(0, 5)} - {missed.end_time.slice(0, 5)}
-                        </p>
-                        <p className="text-xs text-red-600">
-                          {missed.location.building_number}-{missed.location.room_number}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
+          {recentActivity?.missed_sessions &&
+            recentActivity.missed_sessions.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Recent Missed Sessions</CardTitle>
+                  <CardDescription>
+                    Sessions you didn&apos;t attend recently
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3 dark:[&_div.border]:border-gray-700">
+                    {recentActivity.missed_sessions
+                      .slice(0, 3)
+                      .map((missed, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center justify-between rounded border border-red-200 bg-red-50 p-2 dark:border-red-400/40 dark:bg-red-950/40"
+                        >
+                          <div>
+                            <p className="font-medium text-red-900">
+                              {missed.subject_code}
+                            </p>
+                            <p className="text-sm text-red-700 capitalize">
+                              {missed.session_type} • {missed.day_of_week} •
+                              Week {missed.week_number}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm text-red-800">
+                              {missed.start_time.slice(0, 5)} -{" "}
+                              {missed.end_time.slice(0, 5)}
+                            </p>
+                            <p className="text-xs text-red-600">
+                              {missed.location.building_number}-
+                              {missed.location.room_number}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
         </TabsContent>
       </Tabs>
     </div>
