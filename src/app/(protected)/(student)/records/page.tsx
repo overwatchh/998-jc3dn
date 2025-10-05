@@ -15,7 +15,6 @@ import { Calendar, Filter, List, Loader2 } from "lucide-react";
 import { useMemo, useState } from "react";
 
 type RecentCheckinRecord = {
-  subject_id?: number; // added from API
   subject_name: string;
   subject_code: string;
   session_type: string;
@@ -38,7 +37,6 @@ interface ApiResponse {
 export default function AttendanceRecordsScreen() {
   const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
   const [selectedCourse, setSelectedCourse] = useState("all");
-  const [selectedSubjectId, setSelectedSubjectId] = useState("all");
   const [selectedType, setSelectedType] = useState("all");
   const [selectedWeek, setSelectedWeek] = useState("all");
   const [selectedCampus, setSelectedCampus] = useState("all");
@@ -89,14 +87,6 @@ export default function AttendanceRecordsScreen() {
     return Array.from(set).sort();
   }, [records]);
 
-  const subjectIdOptions = useMemo(() => {
-    const set = new Set<number>();
-    records.forEach(r => {
-      if (typeof r.subject_id === "number") set.add(r.subject_id);
-    });
-    return Array.from(set).sort((a, b) => a - b);
-  }, [records]);
-
   const roomOptions = useMemo(() => {
     const set = new Set<string>();
     records.forEach(r => set.add(r.room_number));
@@ -118,12 +108,8 @@ export default function AttendanceRecordsScreen() {
           selectedBuilding === "all" || r.building_number === selectedBuilding;
         const roomMatch =
           selectedRoom === "all" || r.room_number === selectedRoom;
-        const subjectIdMatch =
-          selectedSubjectId === "all" ||
-          r.subject_id === Number(selectedSubjectId);
         return (
           courseMatch &&
-          subjectIdMatch &&
           typeMatch &&
           weekMatch &&
           campusMatch &&
@@ -134,7 +120,6 @@ export default function AttendanceRecordsScreen() {
     [
       records,
       selectedCourse,
-      selectedSubjectId,
       selectedType,
       selectedWeek,
       selectedCampus,
@@ -210,7 +195,6 @@ export default function AttendanceRecordsScreen() {
 
   const resetFilters = () => {
     setSelectedCourse("all");
-    setSelectedSubjectId("all");
     setSelectedType("all");
     setSelectedWeek("all");
     setSelectedCampus("all");
@@ -317,22 +301,6 @@ export default function AttendanceRecordsScreen() {
                     ))}
                   </SelectContent>
                 </Select>
-                <Select
-                  value={selectedSubjectId}
-                  onValueChange={setSelectedSubjectId}
-                >
-                  <SelectTrigger className="w-32">
-                    <SelectValue placeholder="Subject ID" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All IDs</SelectItem>
-                    {subjectIdOptions.map(id => (
-                      <SelectItem key={id} value={String(id)}>
-                        ID {id}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
                 <Select value={selectedType} onValueChange={setSelectedType}>
                   <SelectTrigger className="w-40">
                     <SelectValue placeholder="Select type" />
@@ -419,7 +387,6 @@ export default function AttendanceRecordsScreen() {
                 {filteredRecords.length} record
                 {filteredRecords.length !== 1 && "s"}
                 {(selectedCourse !== "all" ||
-                  selectedSubjectId !== "all" ||
                   selectedType !== "all" ||
                   selectedWeek !== "all" ||
                   selectedCampus !== "all" ||
@@ -453,9 +420,6 @@ export default function AttendanceRecordsScreen() {
               <table className="w-full text-sm">
                 <thead className="bg-muted/50">
                   <tr className="border-b">
-                    <th className="px-3 py-2 text-left font-medium">
-                      Subject ID
-                    </th>
                     <th className="px-3 py-2 text-left font-medium">Course</th>
                     <th className="px-3 py-2 text-left font-medium">Week</th>
                     <th className="px-3 py-2 text-left font-medium">Type</th>
@@ -471,9 +435,6 @@ export default function AttendanceRecordsScreen() {
                 <tbody>
                   {filteredRecords.map((r, idx) => (
                     <tr key={idx} className="hover:bg-muted/40">
-                      <td className="px-3 py-2 text-xs">
-                        {r.subject_id ?? "-"}
-                      </td>
                       <td className="px-3 py-2 font-medium">
                         {r.subject_name}
                         <span className="text-muted-foreground ml-1 text-xs">

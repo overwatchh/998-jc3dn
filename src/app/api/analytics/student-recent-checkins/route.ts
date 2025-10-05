@@ -53,7 +53,6 @@ import { NextResponse } from "next/server";
  *                     properties:
  *                       subject_name: { type: string }
  *                       subject_code: { type: string }
- *                       subject_id: { type: integer }
  *                       session_type: { type: string, enum: [lecture, lab, tutorial] }
  *                       week_number: { type: integer }
  *                       latest_checkin_time: { type: string, format: date-time }
@@ -74,7 +73,6 @@ import { NextResponse } from "next/server";
 interface RecentCheckinAggregateRow {
   subject_name: string;
   subject_code: string;
-  subject_id: number;
   session_type: string; // lecture | lab | tutorial
   week_number: number;
   latest_checkin_time: string; // DATETIME
@@ -130,7 +128,6 @@ export async function GET(req: Request) {
       SELECT
         s.name AS subject_name,
         s.code AS subject_code,
-        s.id AS subject_id,
         ss.type AS session_type,
         qcss.week_number,
         MAX(c.checkin_time) AS latest_checkin_time,
@@ -169,7 +166,6 @@ export async function GET(req: Request) {
       return {
         subject_name: r.subject_name,
         subject_code: r.subject_code,
-        subject_id: r.subject_id,
         session_type: r.session_type,
         week_number: r.week_number,
         latest_checkin_time: r.latest_checkin_time,
