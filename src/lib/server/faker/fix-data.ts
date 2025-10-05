@@ -268,8 +268,8 @@ export const STUDY_SESSIONS = [
     id: 4,
     type: "lecture",
     day_of_week: "Tuesday",
-    start_time: "08:00:00",
-    end_time: "10:00:00",
+    start_time: "22:55:00",
+    end_time: "23:55:00",
     room_id: 4,
   },
   {
