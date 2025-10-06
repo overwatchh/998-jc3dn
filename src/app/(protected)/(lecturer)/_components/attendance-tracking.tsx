@@ -217,9 +217,14 @@ export function AttendanceTrackingScreen() {
                 <Card className="border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950/20">
                   <CardHeader className="pb-2">
                     <div className="flex items-center justify-between">
-                      <CardTitle className="text-lg text-green-800 dark:text-green-200">
-                        {currentLiveSession.subject_name} - {currentLiveSession.subject_code}
-                      </CardTitle>
+                      <div className="flex items-center gap-2">
+                        <CardTitle className="text-lg text-green-800 dark:text-green-200">
+                          {currentLiveSession.subject_name} - {currentLiveSession.subject_code}
+                        </CardTitle>
+                        <Badge variant="secondary" className="text-xs capitalize">
+                          {currentLiveSession.session_type}
+                        </Badge>
+                      </div>
                       <Badge variant="outline" className="border-green-200 bg-green-100 text-green-800">
                         Active Now
                       </Badge>
@@ -292,9 +297,14 @@ function SessionCard({ session, isLive, onClick }: SessionCardProps) {
     >
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-base">
-            {session.subject_code}
-        </CardTitle>
+          <div className="flex items-center gap-2">
+            <CardTitle className="text-base">
+              {session.subject_code}
+            </CardTitle>
+            <Badge variant="secondary" className="text-xs capitalize">
+              {session.session_type}
+            </Badge>
+          </div>
           {isLive && (
             <Badge variant="outline" className="border-green-200 bg-green-100 text-green-800 text-xs">
               Live
