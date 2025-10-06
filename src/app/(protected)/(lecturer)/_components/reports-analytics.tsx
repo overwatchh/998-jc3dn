@@ -57,6 +57,7 @@ import {
   Loader2,
   Mail,
   MoreHorizontal,
+  RefreshCw,
   Search,
   User,
   Users,
@@ -305,6 +306,8 @@ export default function ReportsAnalytics() {
     insights: {}
   });
   const [_isLoadingData, setIsLoadingData] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
 
   // Detailed attendance states
   const [detailedAttendanceTab, setDetailedAttendanceTab] = useState<string>("student");
@@ -345,12 +348,16 @@ export default function ReportsAnalytics() {
   }, [detailedAttendanceData, selectedCourseId, detailedAttendanceTab]);
 
   // Fetch real-time data
-  useEffect(() => {
-    const fetchAnalyticsData = async () => {
-      if (!selectedCourseId) return;
+  const fetchAnalyticsData = async (isManualRefresh = false) => {
+    if (!selectedCourseId) return;
 
+    if (isManualRefresh) {
+      setRefreshing(true);
+    } else {
       setIsLoadingData(true);
-      try {
+    }
+
+    try {
         // Fetch analytics data sequentially to reduce database connection load
         console.log("Fetching weekly attendance...");
         const weeklyRes = await fetch(`/api/analytics/weekly-attendance?subjectId=${selectedCourseId}&sessionType=${sessionType}`);
@@ -377,14 +384,16 @@ export default function ReportsAnalytics() {
         const checkinTypesData = await checkinTypesRes.json();
 
         // Transform data for charts
-        setWeeklyAttendanceData(weeklyData.map(item => ({
+        const weeklyArray = Array.isArray(weeklyData) ? weeklyData : [];
+        setWeeklyAttendanceData(weeklyArray.map(item => ({
           week_label: item.week_label,
           date: item.date_label,
           attendance: parseFloat(item.attendance_rate) || 0,
           color: parseFloat(item.attendance_rate) >= 80 ? '#22c55e' : parseFloat(item.attendance_rate) >= 70 ? '#f59e0b' : '#ef4444'
         })));
 
-        setStudentPerformanceData(studentPerformanceData.map((item, index) => {
+        const studentArray = Array.isArray(studentPerformanceData) ? studentPerformanceData : [];
+        setStudentPerformanceData(studentArray.map((item, index) => {
           // Helper function to safely extract string from potential object
           const extractString = (value, fallback = '') => {
             if (!value) return fallback;
@@ -427,7 +436,7 @@ export default function ReportsAnalytics() {
           };
         }));
 
-        setDistributionData(distributionData);
+        setDistributionData(Array.isArray(distributionData) ? distributionData : []);
         setCheckinTypesData(checkinTypesData?.weeklyData || []);
         setKeyMetrics({
           averageAttendance: parseFloat(metricsData?.averageAttendance) || 0,
@@ -451,15 +460,19 @@ export default function ReportsAnalytics() {
           engagementPatterns: [],
           insights: {}
         });
+    } catch (error) {
+      console.error("Failed to fetch analytics data:", error);
+    } finally {
+      setIsLoadingData(false);
+      setRefreshing(false);
+      setLastRefresh(new Date());
+    }
+  };
 
-      } catch (error) {
-        console.error("Failed to fetch analytics data:", error);
-      } finally {
-        setIsLoadingData(false);
-      }
-    };
-
+  // Initial fetch on mount and when filters change
+  useEffect(() => {
     fetchAnalyticsData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCourseId, sessionType]);
 
   // Fetch detailed attendance data
@@ -651,12 +664,29 @@ export default function ReportsAnalytics() {
     <main className="flex flex-1 flex-col gap-8 p-6 lg:p-8">
       {/* Header Section */}
       <div className="border-b border-border pb-6">
-        <h1 className="text-3xl font-bold tracking-tight text-foreground lg:text-4xl">
-          Analytics Dashboard
-        </h1>
-        <p className="mt-2 text-lg text-muted-foreground">
-          Welcome back, {data?.user?.name}! Here&apos;s your comprehensive attendance analytics overview.
-        </p>
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight text-foreground lg:text-4xl">
+              Analytics Dashboard
+            </h1>
+            <p className="mt-2 text-lg text-muted-foreground">
+              Welcome back, {data?.user?.name}! Here&apos;s your comprehensive attendance analytics overview.
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Last updated: {lastRefresh.toLocaleTimeString()}
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => fetchAnalyticsData(true)}
+            disabled={refreshing}
+            className="ml-4"
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+            {refreshing ? 'Refreshing...' : 'Refresh'}
+          </Button>
+        </div>
       </div>
 
 
@@ -712,12 +742,12 @@ export default function ReportsAnalytics() {
                   <TabsList className="grid w-full grid-cols-2">
                     {sessionTypesData.sessionTypes.includes('lecture') && (
                       <TabsTrigger value="lecture" className="text-xs sm:text-sm">
-                        📚 Lectures
+                        Lectures
                       </TabsTrigger>
                     )}
                     {sessionTypesData.sessionTypes.includes('tutorial') && (
                       <TabsTrigger value="tutorial" className="text-xs sm:text-sm">
-                        💡 Tutorials
+                        Tutorials
                       </TabsTrigger>
                     )}
                   </TabsList>
@@ -732,7 +762,7 @@ export default function ReportsAnalytics() {
         <Card className="h-full shadow-sm border-border/50">
           <CardHeader className="pb-6">
             <CardTitle className="text-xl font-semibold text-foreground">
-              📈 Weekly Attendance Trends
+              Weekly Attendance Trends
             </CardTitle>
             <CardDescription className="text-base text-muted-foreground">
               Track attendance patterns against enrollment targets over time
@@ -788,13 +818,13 @@ export default function ReportsAnalytics() {
                       return (
                         <div className="bg-popover p-3 border border-border rounded-lg shadow-lg">
                           <p className="font-medium text-popover-foreground">{payload[0]?.payload?.week_label}</p>
-                          <p className="text-blue-600">
+                          <p className="text-blue-600 dark:text-blue-400">
                             Attended: {payload[1]?.value} students ({payload[0]?.payload?.attendance_rate}%)
                           </p>
-                          <p className="text-gray-600">
+                          <p className="text-muted-foreground">
                             Enrolled: {payload[0]?.value} students
                           </p>
-                          <p className="text-red-600">
+                          <p className="text-red-600 dark:text-red-400">
                             Target: {payload[2]?.value} students (80%)
                           </p>
                         </div>
@@ -875,7 +905,7 @@ export default function ReportsAnalytics() {
         <Card className="h-full shadow-sm border-border/50">
           <CardHeader className="pb-6">
             <CardTitle className="text-xl font-semibold text-foreground">
-              📊 Overall Performance
+              Overall Performance
             </CardTitle>
             <CardDescription className="text-base text-muted-foreground">
               Comprehensive attendance metrics and class health indicators
@@ -966,10 +996,10 @@ export default function ReportsAnalytics() {
                   </div>
                   <div className="text-xs text-muted-foreground mt-1">
                     {keyMetrics.averageAttendance >= 80
-                      ? '✅ Class is performing well above target'
+                      ? 'Class is performing well above target'
                       : keyMetrics.averageAttendance >= 70
-                      ? '⚠️ Class needs improvement to reach target'
-                      : '🚨 Class requires immediate attention'
+                      ? 'Class needs improvement to reach target'
+                      : 'Class requires immediate attention'
                     }
                   </div>
                 </div>
@@ -981,7 +1011,7 @@ export default function ReportsAnalytics() {
         {/* Weekly Check-in Types Analysis */}
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-base sm:text-lg">📊 Weekly Check-in Types Analysis</CardTitle>
+            <CardTitle className="text-base sm:text-lg">Weekly Check-in Types Analysis</CardTitle>
             <CardDescription className="text-sm">
               Breakdown of In-person, Online, and Manual attendance patterns
             </CardDescription>
@@ -1111,7 +1141,7 @@ export default function ReportsAnalytics() {
         <Card className="h-full shadow-sm border-border/50">
           <CardHeader className="pb-6">
             <CardTitle className="text-xl font-semibold text-foreground">
-              📊 Key Performance Indicators
+              Key Performance Indicators
             </CardTitle>
             <CardDescription className="text-base text-muted-foreground">
               Critical metrics with visual performance indicators and trends
@@ -1233,15 +1263,15 @@ export default function ReportsAnalytics() {
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">Attendance Rate</span>
                 <div className="flex items-center space-x-2">
-                  <span className="text-xs text-gray-500">Low</span>
+                  <span className="text-xs text-muted-foreground">Low</span>
                   <div className="flex space-x-1">
-                    <div className="w-4 h-4 bg-red-200 rounded-sm"></div>
-                    <div className="w-4 h-4 bg-yellow-200 rounded-sm"></div>
-                    <div className="w-4 h-4 bg-green-200 rounded-sm"></div>
-                    <div className="w-4 h-4 bg-green-400 rounded-sm"></div>
-                    <div className="w-4 h-4 bg-green-600 rounded-sm"></div>
+                    <div className="w-4 h-4 bg-red-200 dark:bg-red-900 rounded-sm"></div>
+                    <div className="w-4 h-4 bg-yellow-200 dark:bg-yellow-900 rounded-sm"></div>
+                    <div className="w-4 h-4 bg-green-200 dark:bg-green-900 rounded-sm"></div>
+                    <div className="w-4 h-4 bg-green-400 dark:bg-green-700 rounded-sm"></div>
+                    <div className="w-4 h-4 bg-green-600 dark:bg-green-500 rounded-sm"></div>
                   </div>
-                  <span className="text-xs text-gray-500">High</span>
+                  <span className="text-xs text-muted-foreground">High</span>
                 </div>
               </div>
 
@@ -1251,11 +1281,11 @@ export default function ReportsAnalytics() {
                   <div
                     key={`week-heatmap-${index}-${week.week_number || 0}`}
                     className={`relative p-3 rounded-lg border transition-all duration-200 hover:scale-105 cursor-pointer ${
-                      week.attendance >= 90 ? 'bg-green-500 border-green-600 text-white' :
-                      week.attendance >= 80 ? 'bg-green-400 border-green-500 text-white' :
-                      week.attendance >= 70 ? 'bg-yellow-400 border-yellow-500 text-gray-900' :
-                      week.attendance >= 60 ? 'bg-orange-400 border-orange-500 text-white' :
-                      'bg-red-400 border-red-500 text-white'
+                      week.attendance >= 90 ? 'bg-green-500 dark:bg-green-600 border-green-600 dark:border-green-500 text-white' :
+                      week.attendance >= 80 ? 'bg-green-400 dark:bg-green-700 border-green-500 dark:border-green-600 text-white' :
+                      week.attendance >= 70 ? 'bg-yellow-400 dark:bg-yellow-700 border-yellow-500 dark:border-yellow-600 text-gray-900 dark:text-gray-100' :
+                      week.attendance >= 60 ? 'bg-orange-400 dark:bg-orange-700 border-orange-500 dark:border-orange-600 text-white' :
+                      'bg-red-400 dark:bg-red-700 border-red-500 dark:border-red-600 text-white'
                     }`}
                     title={`${week.week_label}: ${week.attendance}% attendance`}
                   >
@@ -1308,7 +1338,7 @@ export default function ReportsAnalytics() {
         <Card className="h-full shadow-sm border-border/50">
           <CardHeader className="pb-6">
             <CardTitle className="text-xl font-semibold text-foreground">
-              🔬 Advanced Analytics
+              Advanced Analytics
             </CardTitle>
             <CardDescription className="text-base text-muted-foreground">
               Specialized insights for deeper course analysis and predictive modeling
@@ -1328,11 +1358,11 @@ export default function ReportsAnalytics() {
                     <SelectValue placeholder="Choose an advanced analytics view..." />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="day-patterns">📅 Day-of-Week Attendance Patterns</SelectItem>
-                    <SelectItem value="time-analysis">⏰ Time-Based Attendance Analysis</SelectItem>
-                    <SelectItem value="risk-prediction">🎯 Student Risk Prediction Dashboard</SelectItem>
-                    <SelectItem value="attendance-forecasting">📈 Attendance Forecasting & Trends</SelectItem>
-                    <SelectItem value="performance-metrics">📊 Performance Benchmarking</SelectItem>
+                    <SelectItem value="day-patterns">Day-of-Week Attendance Patterns</SelectItem>
+                    <SelectItem value="time-analysis">Time-Based Attendance Analysis</SelectItem>
+                    <SelectItem value="risk-prediction">Student Risk Prediction Dashboard</SelectItem>
+                    <SelectItem value="attendance-forecasting">Attendance Forecasting & Trends</SelectItem>
+                    <SelectItem value="performance-metrics">Performance Benchmarking</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -1433,7 +1463,7 @@ export default function ReportsAnalytics() {
 
                       {/* Critical Risk Students */}
                       <div className="space-y-2">
-                        <h5 className="text-sm font-medium text-red-600 dark:text-red-400">🚨 Critical Risk Students - Immediate Intervention Required</h5>
+                        <h5 className="text-sm font-medium text-red-600 dark:text-red-400">Critical Risk Students - Immediate Intervention Required</h5>
                         {riskData.critical?.length > 0 ? (
                           <div className="max-h-[400px] overflow-y-auto space-y-2 pr-2">
                             {riskData.critical.map((student, index) => {
@@ -1459,7 +1489,6 @@ export default function ReportsAnalytics() {
                           </div>
                         ) : (
                           <div className="text-center py-4 text-muted-foreground">
-                            <div className="text-2xl mb-2">✅</div>
                             <p>No students currently at critical risk</p>
                           </div>
                         )}
@@ -1518,8 +1547,8 @@ export default function ReportsAnalytics() {
                           <div className="text-right">
                             <div className="text-xl font-bold text-foreground">{course.attendance.toFixed(1)}%</div>
                             <div className={`text-sm flex items-center justify-end ${
-                              course.trend === 'up' ? 'text-green-600' :
-                              course.trend === 'down' ? 'text-red-600' : 'text-gray-600'
+                              course.trend === 'up' ? 'text-green-600 dark:text-green-400' :
+                              course.trend === 'down' ? 'text-red-600 dark:text-red-400' : 'text-muted-foreground'
                             }`}>
                               {course.trend === 'up' ? '↗ Improving' :
                                course.trend === 'down' ? '↘ Declining' : '→ Stable'}
@@ -1840,7 +1869,7 @@ export default function ReportsAnalytics() {
 
                       {/* Actionable Insights */}
                       <div className="p-4 bg-muted/30 rounded-lg border border-border">
-                        <h5 className="font-medium mb-2">📈 Predictive Insights & Recommendations</h5>
+                        <h5 className="font-medium mb-2">Predictive Insights & Recommendations</h5>
                         <p className="text-sm text-muted-foreground">
                           {trendDirection === 'improving' ?
                             `Positive momentum detected! Attendance has improved by ${trendChange.toFixed(1)}% over the last 4 weeks. Continue current engagement strategies and consider sharing successful methods with other courses.` :
@@ -1912,7 +1941,7 @@ export default function ReportsAnalytics() {
                               needsImprovement ? 'text-amber-600 dark:text-amber-400' :
                               'text-red-600 dark:text-red-400'
                             }`}>
-                              {exceedsExpectations ? '🏆' : meetsStandards ? '✅' : needsImprovement ? '⚠️' : '🚨'}
+                              {exceedsExpectations ? 'A+' : meetsStandards ? 'A' : needsImprovement ? 'B' : 'C'}
                             </div>
                             <div className="text-sm font-medium text-muted-foreground">Performance Level</div>
                             <div className={`text-lg font-bold ${
@@ -1928,7 +1957,6 @@ export default function ReportsAnalytics() {
 
                         <div className="p-3 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900 rounded-lg border">
                           <div className="text-center">
-                            <div className="text-2xl mb-2">📊</div>
                             <div className="text-sm font-medium text-muted-foreground">vs Benchmark</div>
                             <div className={`text-lg font-bold ${
                               currentAverage >= institutionalBenchmark ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
@@ -1940,7 +1968,6 @@ export default function ReportsAnalytics() {
 
                         <div className="p-3 bg-gradient-to-br from-indigo-50 to-indigo-100 dark:from-indigo-950 dark:to-indigo-900 rounded-lg border">
                           <div className="text-center">
-                            <div className="text-2xl mb-2">🎯</div>
                             <div className="text-sm font-medium text-muted-foreground">Consistency</div>
                             <div className={`text-lg font-bold ${
                               consistencyRating === 'excellent' ? 'text-emerald-600 dark:text-emerald-400' :
@@ -1955,7 +1982,6 @@ export default function ReportsAnalytics() {
 
                         <div className="p-3 bg-gradient-to-br from-violet-50 to-violet-100 dark:from-violet-950 dark:to-violet-900 rounded-lg border">
                           <div className="text-center">
-                            <div className="text-2xl mb-2">📈</div>
                             <div className="text-sm font-medium text-muted-foreground">Improvement Potential</div>
                             <div className={`text-lg font-bold ${
                               improvementPotential < 20 ? 'text-emerald-600 dark:text-emerald-400' :
@@ -2009,7 +2035,7 @@ export default function ReportsAnalytics() {
 
                       {/* Performance Insights */}
                       <div className="p-4 bg-muted/30 rounded-lg border border-border">
-                        <h5 className="font-medium mb-2">📊 Performance Analysis & Strategic Recommendations</h5>
+                        <h5 className="font-medium mb-2">Performance Analysis & Strategic Recommendations</h5>
                         <div className="space-y-2 text-sm text-muted-foreground">
                           <p>
                             <strong>Current Status:</strong> {
@@ -2043,7 +2069,6 @@ export default function ReportsAnalytics() {
 
             {!selectedAnalyticType && (
               <div className="text-center py-8 text-muted-foreground">
-                <div className="text-4xl mb-4">📊</div>
                 <p>Select an analytics type from the dropdown above to view detailed insights</p>
                 <p className="text-xs mt-2">Each view provides unique actionable intelligence for course management</p>
               </div>
@@ -2065,87 +2090,87 @@ export default function ReportsAnalytics() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {/* Summary Cards - Fixed alignment and consistent heights */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
-              <div className="bg-white dark:bg-slate-800 p-6 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-shadow h-full min-h-[120px] flex flex-col">
-                <div className="flex items-start justify-between flex-1">
-                  <div className="flex-1">
-                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-3">Total Courses</p>
-                    <p className="text-3xl font-bold text-slate-900 dark:text-white">{lecturerTrends.summary.totalSubjects}</p>
+            {/* Summary Cards - Responsive for zoom/magnification */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4 mb-6">
+              <div className="bg-card p-4 sm:p-5 rounded-lg border shadow-sm hover:shadow-md transition-all">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5 sm:mb-2">Total Courses</p>
+                    <p className="text-xl sm:text-2xl font-bold text-foreground">{lecturerTrends.summary.totalSubjects}</p>
                   </div>
-                  <div className="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <Calendar className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white dark:bg-slate-800 p-6 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-shadow h-full min-h-[120px] flex flex-col">
-                <div className="flex items-start justify-between flex-1">
-                  <div className="flex-1">
-                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-3">Overall Average</p>
-                    <p className="text-3xl font-bold text-slate-900 dark:text-white">{lecturerTrends.summary.overallAverage}%</p>
-                  </div>
-                  <div className="w-12 h-12 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <span className="text-xl font-bold text-emerald-600 dark:text-emerald-400">%</span>
+                  <div className="min-w-[2.5rem] min-h-[2.5rem] w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center shrink-0">
+                    <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
                   </div>
                 </div>
               </div>
 
-              <div className="bg-white dark:bg-slate-800 p-6 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-shadow h-full min-h-[120px] flex flex-col">
-                <div className="flex items-start justify-between flex-1">
-                  <div className="flex-1">
-                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-3">Total Students</p>
-                    <p className="text-3xl font-bold text-slate-900 dark:text-white">{lecturerTrends.summary.totalStudents}</p>
+              <div className="bg-card p-4 sm:p-5 rounded-lg border shadow-sm hover:shadow-md transition-all">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5 sm:mb-2">Overall Average</p>
+                    <p className="text-xl sm:text-2xl font-bold text-foreground">{lecturerTrends.summary.overallAverage}%</p>
                   </div>
-                  <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <Users className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                  <div className="min-w-[2.5rem] min-h-[2.5rem] w-10 h-10 bg-emerald-500/10 rounded-lg flex items-center justify-center shrink-0">
+                    <span className="text-base sm:text-lg font-bold text-emerald-600 dark:text-emerald-400">%</span>
                   </div>
                 </div>
               </div>
 
-              <div className="bg-white dark:bg-slate-800 p-6 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-shadow h-full min-h-[120px] flex flex-col">
-                <div className="flex items-start justify-between flex-1">
-                  <div className="flex-1">
-                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-3">Trend</p>
-                    <p className={`text-2xl font-bold capitalize ${
+              <div className="bg-card p-4 sm:p-5 rounded-lg border shadow-sm hover:shadow-md transition-all">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5 sm:mb-2">Total Students</p>
+                    <p className="text-xl sm:text-2xl font-bold text-foreground">{lecturerTrends.summary.totalStudents}</p>
+                  </div>
+                  <div className="min-w-[2.5rem] min-h-[2.5rem] w-10 h-10 bg-blue-500/10 rounded-lg flex items-center justify-center shrink-0">
+                    <Users className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 dark:text-blue-400" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-card p-4 sm:p-5 rounded-lg border shadow-sm hover:shadow-md transition-all">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5 sm:mb-2">Trend</p>
+                    <p className={`text-lg sm:text-xl font-bold capitalize whitespace-nowrap ${
                       lecturerTrends.summary.trendDirection === 'improving' ? 'text-emerald-600 dark:text-emerald-400' :
                       lecturerTrends.summary.trendDirection === 'declining' ? 'text-rose-600 dark:text-rose-400' :
-                      'text-slate-600 dark:text-slate-400'
+                      'text-muted-foreground'
                     }`}>
                       {lecturerTrends.summary.trendDirection}
                     </p>
                   </div>
-                  <div className={`w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                    lecturerTrends.summary.trendDirection === 'improving' ? 'bg-emerald-100 dark:bg-emerald-900/30' :
-                    lecturerTrends.summary.trendDirection === 'declining' ? 'bg-rose-100 dark:bg-rose-900/30' :
-                    'bg-slate-100 dark:bg-slate-700'
+                  <div className={`min-w-[2.5rem] min-h-[2.5rem] w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${
+                    lecturerTrends.summary.trendDirection === 'improving' ? 'bg-emerald-500/10' :
+                    lecturerTrends.summary.trendDirection === 'declining' ? 'bg-rose-500/10' :
+                    'bg-muted'
                   }`}>
                     {lecturerTrends.summary.trendDirection === 'improving' ? (
-                      <ArrowUp className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+                      <ArrowUp className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600 dark:text-emerald-400" />
                     ) : lecturerTrends.summary.trendDirection === 'declining' ? (
-                      <ArrowDown className="w-6 h-6 text-rose-600 dark:text-rose-400" />
+                      <ArrowDown className="w-4 h-4 sm:w-5 sm:h-5 text-rose-600 dark:text-rose-400" />
                     ) : (
-                      <span className="text-lg font-bold text-slate-600 dark:text-slate-400">→</span>
+                      <span className="text-sm sm:text-base font-bold text-muted-foreground">→</span>
                     )}
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Course Performance Comparison - Improved spacing and at-risk prominence */}
-            <div className="mb-8">
-              <div className="flex items-center justify-between mb-5">
-                <h4 className="text-sm font-medium text-foreground">Course Performance Comparison</h4>
-                <div className="text-xs text-muted-foreground">
-                  {lecturerTrends.subjectPerformance.length} course{lecturerTrends.subjectPerformance.length !== 1 ? 's' : ''} total
-                </div>
+            {/* Course Performance Comparison - Responsive */}
+            <div className="mb-6">
+              <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+                <h4 className="text-sm font-semibold text-foreground">Course Performance</h4>
+                <span className="text-xs text-muted-foreground whitespace-nowrap">
+                  {lecturerTrends.subjectPerformance.length} course{lecturerTrends.subjectPerformance.length !== 1 ? 's' : ''}
+                </span>
               </div>
               {lecturerTrends.subjectPerformance.length > 0 ? (
-                <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2">
+                <div className="space-y-2.5 sm:space-y-3 max-h-[280px] overflow-y-auto pr-1">
                   {(Array.isArray(lecturerTrends.subjectPerformance) ? lecturerTrends.subjectPerformance : []).map((subject, index) => (
-                    <div key={`subject-${subject.subject_code || subject.subject_id || index}`} className="flex items-center justify-between p-4 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 hover:shadow-md transition-all min-h-[80px]">
-                      <div className="flex items-center space-x-4">
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 ${
+                    <div key={`subject-${subject.subject_code || subject.subject_id || index}`} className="flex flex-wrap sm:flex-nowrap items-start sm:items-center gap-3 p-3 sm:p-3.5 bg-card rounded-lg border hover:shadow-md transition-all">
+                      <div className="flex items-center gap-2.5 sm:gap-3 flex-1 min-w-0">
+                        <div className={`min-w-[2rem] min-h-[2rem] w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center text-xs sm:text-sm font-bold shrink-0 ${
                           subject.performance_level === 'excellent' ? 'bg-emerald-500 text-white' :
                           subject.performance_level === 'good' ? 'bg-blue-500 text-white' :
                           subject.performance_level === 'average' ? 'bg-amber-500 text-white' :
@@ -2153,28 +2178,28 @@ export default function ReportsAnalytics() {
                         }`}>
                           {subject.subject_code?.charAt(0) || 'C'}
                         </div>
-                        <div>
-                          <p className="font-semibold text-foreground">{subject.subject_code || 'Course ' + (index + 1)}</p>
-                          <p className="text-xs text-muted-foreground truncate max-w-[200px]">
+                        <div className="min-w-0 flex-1">
+                          <p className="font-semibold text-sm sm:text-base text-foreground truncate">{subject.subject_code || 'Course ' + (index + 1)}</p>
+                          <p className="text-xs text-muted-foreground truncate">
                             {subject.subject_name || 'Course Name'}
                           </p>
                         </div>
                       </div>
-                      <div className="text-right flex flex-col items-end gap-2">
-                        <div className={`text-xl font-bold ${
+                      <div className="flex flex-row sm:flex-col items-center sm:items-end gap-2 sm:gap-1.5 shrink-0 w-full sm:w-auto justify-between sm:justify-start ml-10 sm:ml-0">
+                        <span className={`text-base sm:text-lg font-bold whitespace-nowrap ${
                           subject.average_attendance >= 80 ? 'text-emerald-600 dark:text-emerald-400' :
                           subject.average_attendance >= 70 ? 'text-amber-600 dark:text-amber-400' :
                           'text-rose-600 dark:text-rose-400'
                         }`}>
                           {subject.average_attendance || 0}%
-                        </div>
-                        <div className="text-xs text-muted-foreground">
+                        </span>
+                        <span className="text-xs text-muted-foreground whitespace-nowrap">
                           {subject.total_students || 0} students
-                        </div>
+                        </span>
                         {subject.at_risk_count > 0 && (
-                          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800">
-                            <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
-                            <span className="text-xs font-semibold text-red-700 dark:text-red-400">
+                          <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-destructive/10 border border-destructive/20 whitespace-nowrap">
+                            <span className="w-1 h-1 rounded-full bg-destructive animate-pulse"></span>
+                            <span className="text-xs font-medium text-destructive">
                               {subject.at_risk_count} at risk
                             </span>
                           </div>
@@ -2184,9 +2209,9 @@ export default function ReportsAnalytics() {
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  <p>No course data available</p>
-                  <p className="text-xs mt-1">Course performance will appear here once data is loaded</p>
+                <div className="text-center py-8 text-muted-foreground bg-muted/30 rounded-lg border-dashed border">
+                  <p className="text-sm">No course data available</p>
+                  <p className="text-xs mt-1">Performance data will appear here</p>
                 </div>
               )}
             </div>
@@ -2274,35 +2299,35 @@ export default function ReportsAnalytics() {
               )}
             </div>
 
-            {/* Performance Level Summary */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="text-center p-3 bg-emerald-50 dark:bg-emerald-950/20 rounded-lg border border-emerald-200 dark:border-emerald-800">
-                <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+            {/* Performance Level Summary - Zoom Responsive */}
+            <div className="grid grid-cols-2 xl:grid-cols-4 gap-2.5 sm:gap-3">
+              <div className="text-center p-2.5 sm:p-3 bg-emerald-500/5 rounded-lg border border-emerald-500/20">
+                <div className="text-lg sm:text-xl font-bold text-emerald-600 dark:text-emerald-400 break-words">
                   {lecturerTrends.summary.performanceLevels.excellent}
                 </div>
-                <div className="text-sm text-emerald-700 dark:text-emerald-300">Excellent Courses</div>
-                <div className="text-xs text-muted-foreground">(85%+ avg)</div>
+                <div className="text-xs sm:text-sm font-medium text-emerald-700 dark:text-emerald-300 break-words">Excellent</div>
+                <div className="text-xs text-muted-foreground whitespace-nowrap">85%+ avg</div>
               </div>
-              <div className="text-center p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+              <div className="text-center p-2.5 sm:p-3 bg-blue-500/5 rounded-lg border border-blue-500/20">
+                <div className="text-lg sm:text-xl font-bold text-blue-600 dark:text-blue-400 break-words">
                   {lecturerTrends.summary.performanceLevels.good}
                 </div>
-                <div className="text-sm text-blue-700 dark:text-blue-300">Good Courses</div>
-                <div className="text-xs text-muted-foreground">(75-84% avg)</div>
+                <div className="text-xs sm:text-sm font-medium text-blue-700 dark:text-blue-300 break-words">Good</div>
+                <div className="text-xs text-muted-foreground whitespace-nowrap">75-84% avg</div>
               </div>
-              <div className="text-center p-3 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-800">
-                <div className="text-2xl font-bold text-amber-600 dark:text-amber-400">
+              <div className="text-center p-2.5 sm:p-3 bg-amber-500/5 rounded-lg border border-amber-500/20">
+                <div className="text-lg sm:text-xl font-bold text-amber-600 dark:text-amber-400 break-words">
                   {lecturerTrends.summary.performanceLevels.average}
                 </div>
-                <div className="text-sm text-amber-700 dark:text-amber-300">Average Courses</div>
-                <div className="text-xs text-muted-foreground">(65-74% avg)</div>
+                <div className="text-xs sm:text-sm font-medium text-amber-700 dark:text-amber-300 break-words">Average</div>
+                <div className="text-xs text-muted-foreground whitespace-nowrap">65-74% avg</div>
               </div>
-              <div className="text-center p-3 bg-rose-50 dark:bg-rose-950/20 rounded-lg border border-rose-200 dark:border-rose-800">
-                <div className="text-2xl font-bold text-rose-600 dark:text-rose-400">
+              <div className="text-center p-2.5 sm:p-3 bg-rose-500/5 rounded-lg border border-rose-500/20">
+                <div className="text-lg sm:text-xl font-bold text-rose-600 dark:text-rose-400 break-words">
                   {lecturerTrends.summary.performanceLevels.needs_improvement}
                 </div>
-                <div className="text-sm text-rose-700 dark:text-rose-300">Needs Attention</div>
-                <div className="text-xs text-muted-foreground">(&lt;65% avg)</div>
+                <div className="text-xs sm:text-sm font-medium text-rose-700 dark:text-rose-300 break-words">Needs Attention</div>
+                <div className="text-xs text-muted-foreground whitespace-nowrap">&lt;65% avg</div>
               </div>
             </div>
           </CardContent>
@@ -2313,7 +2338,7 @@ export default function ReportsAnalytics() {
       <Card className="h-full shadow-sm border-border/50">
         <CardHeader className="pb-6">
           <CardTitle className="text-xl font-semibold text-foreground">
-            📧 Email Report
+            Email Report
           </CardTitle>
           <CardDescription className="text-base text-muted-foreground">
             Send attendance reports directly to your email

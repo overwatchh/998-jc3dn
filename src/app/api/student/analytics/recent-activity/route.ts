@@ -334,12 +334,20 @@ export async function GET(request: Request) {
     ]);
 
     // Calculate activity summary
+    // Count unique sessions attended this week (with 2+ checkins = fully attended)
     const thisWeekCheckinsSql = `
       SELECT COUNT(*) as count
-      FROM checkin c
-      JOIN qr_code_study_session qcss ON c.qr_code_study_session_id = qcss.id
-      JOIN study_session ss ON qcss.study_session_id = ss.id
-      WHERE c.student_id = ? AND qcss.week_number = WEEK(CURDATE()) AND ss.type = ?;
+      FROM (
+        SELECT qcss.id
+        FROM checkin c
+        JOIN qr_code_study_session qcss ON c.qr_code_study_session_id = qcss.id
+        JOIN study_session ss ON qcss.study_session_id = ss.id
+        WHERE c.student_id = ?
+          AND qcss.week_number = WEEK(CURDATE())
+          AND ss.type = ?
+        GROUP BY qcss.id
+        HAVING COUNT(c.student_id) >= 2
+      ) as attended_sessions;
     `;
 
     const thisWeekMissedSql = `
@@ -362,9 +370,62 @@ export async function GET(request: Request) {
       rawQuery<{ count: number }>(thisWeekMissedSql, [studentId, sessionType])
     ]);
 
-    // Calculate attendance streaks (simplified)
-    const currentStreak = Math.min(recentCheckins.length, 10); // Simplified calculation
-    const longestStreak = currentStreak + Math.floor(Math.random() * 5); // Placeholder
+    // Calculate attendance streaks using email calculator method
+    // Group by week - student attended if they have at least one session with 2+ checkins that week
+    const streakSql = `
+      SELECT
+        week_number,
+        MAX(CASE WHEN checkin_count >= 2 THEN 1 ELSE 0 END) as week_attended
+      FROM (
+        SELECT
+          qcss.week_number,
+          qcss.id,
+          COUNT(c.student_id) as checkin_count
+        FROM enrolment e
+        JOIN subject s ON e.subject_id = s.id
+        JOIN subject_study_session sss ON sss.subject_id = s.id
+        JOIN study_session ss ON sss.study_session_id = ss.id
+        JOIN qr_code_study_session qcss ON qcss.study_session_id = ss.id
+        LEFT JOIN checkin c ON c.qr_code_study_session_id = qcss.id AND c.student_id = e.student_id
+        WHERE e.student_id = ?
+          AND s.status = 'active'
+          AND ss.type = ?
+          AND qcss.week_number <= WEEK(CURDATE())
+        GROUP BY qcss.week_number, qcss.id
+      ) as session_checkins
+      GROUP BY week_number
+      ORDER BY week_number DESC;
+    `;
+
+    const streakData = await rawQuery<{ week_number: number; week_attended: number }>(
+      streakSql,
+      [studentId, sessionType]
+    );
+
+    // Calculate current streak (consecutive weeks with at least one fully attended session)
+    let currentStreak = 0;
+    for (const week of streakData) {
+      const attended = parseInt(String(week.week_attended)) || 0;
+      // Week is attended if student has at least one session with 2+ checkins
+      if (attended === 1) {
+        currentStreak++;
+      } else {
+        break; // Streak broken
+      }
+    }
+
+    // Calculate longest streak
+    let longestStreak = 0;
+    let tempStreak = 0;
+    for (const week of streakData.reverse()) { // Reverse to go from oldest to newest
+      const attended = parseInt(String(week.week_attended)) || 0;
+      if (attended === 1) {
+        tempStreak++;
+        longestStreak = Math.max(longestStreak, tempStreak);
+      } else {
+        tempStreak = 0;
+      }
+    }
 
     const response = {
       message: "Recent attendance activity retrieved successfully",

@@ -166,6 +166,17 @@ export default function Page() {
     }
     return map;
   }, [checkedInData]);
+
+  // Count total check-ins per student for email calculator method
+  const studentIdToCheckinCount = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const c of checkedInData) {
+      const current = map.get(c.student_id) ?? 0;
+      map.set(c.student_id, current + 1);
+    }
+    return map;
+  }, [checkedInData]);
+
   const studentIdToLatestCheckinTime = useMemo(() => {
     const map = new Map<string, string>();
     for (const c of checkedInData) {
@@ -186,6 +197,27 @@ export default function Page() {
 
   const present = studentIdToMaxValidity.size;
   const total = studentList?.length ?? 0;
+
+  // Calculate attendance using email calculator method
+  const attendanceRate = useMemo(() => {
+    if (total === 0) return 0;
+
+    let totalPoints = 0;
+    const maxPoints = total * 100;
+
+    // For each enrolled student, calculate their attendance score
+    studentList?.forEach(student => {
+      const checkinCount = studentIdToCheckinCount.get(student.student_id) ?? 0;
+      // Email calculator method: 2+ checkins = 100%, 1 checkin = 50%, 0 = 0%
+      if (checkinCount >= 2) {
+        totalPoints += 100;
+      } else if (checkinCount === 1) {
+        totalPoints += 50;
+      }
+    });
+
+    return Math.round((totalPoints / maxPoints) * 100);
+  }, [total, studentList, studentIdToCheckinCount]);
 
   // Determine current session status based on QR validity windows
   const sessionStatus = useMemo(() => {
@@ -678,8 +710,11 @@ export default function Page() {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">
-              {total > 0 ? `${Math.round((present / total) * 100)}%` : "—"}
+              {total > 0 ? `${attendanceRate}%` : "—"}
             </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Using email calculator method
+            </p>
           </CardContent>
         </Card>
       </div>

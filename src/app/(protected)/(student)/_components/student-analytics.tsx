@@ -2,6 +2,7 @@
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -20,6 +21,7 @@ import {
   CheckCircle,
   Award,
   Activity,
+  RefreshCw,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
@@ -189,73 +191,96 @@ export function StudentAnalytics() {
     null
   );
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [sessionType, setSessionType] = useState<"lecture" | "tutorial">(
     "lecture"
   );
+  const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
 
-  useEffect(() => {
-    const fetchAnalytics = async () => {
-      try {
-        const [summaryRes, weeklyRes, performanceRes, goalsRes, activityRes] =
-          await Promise.all([
-            fetch(
-              `/api/student/analytics/attendance-summary?sessionType=${sessionType}`
-            ),
-            fetch(
-              `/api/student/analytics/weekly-progress?sessionType=${sessionType}`
-            ),
-            fetch(
-              `/api/student/analytics/subject-performance?sessionType=${sessionType}`
-            ),
-            fetch(
-              `/api/student/analytics/attendance-goals?sessionType=${sessionType}`
-            ),
-            fetch(
-              `/api/student/analytics/recent-activity?sessionType=${sessionType}`
-            ),
-          ]);
+  const fetchAnalytics = async (isManualRefresh = false) => {
+    if (isManualRefresh) {
+      setRefreshing(true);
+    }
 
-        const [
-          summaryData,
-          weeklyData,
-          performanceData,
-          goalsData,
-          activityData,
-        ] = await Promise.all([
-          summaryRes.json(),
-          weeklyRes.json(),
-          performanceRes.json(),
-          goalsRes.json(),
-          activityRes.json(),
+    try {
+      const [summaryRes, weeklyRes, performanceRes, goalsRes, activityRes] =
+        await Promise.all([
+          fetch(
+            `/api/student/analytics/attendance-summary?sessionType=${sessionType}`
+          ),
+          fetch(
+            `/api/student/analytics/weekly-progress?sessionType=${sessionType}`
+          ),
+          fetch(
+            `/api/student/analytics/subject-performance?sessionType=${sessionType}`
+          ),
+          fetch(
+            `/api/student/analytics/attendance-goals?sessionType=${sessionType}`
+          ),
+          fetch(
+            `/api/student/analytics/recent-activity?sessionType=${sessionType}`
+          ),
         ]);
 
-        if (summaryRes.ok && summaryData.data) {
-          setAttendanceSummary(summaryData.data);
+      // Parse responses with error handling
+      const parseResponse = async (response: Response) => {
+        const text = await response.text();
+        if (!text) return null;
+        try {
+          return JSON.parse(text);
+        } catch (e) {
+          console.error('JSON parse error:', e, 'Response:', text);
+          return null;
         }
+      };
 
-        if (weeklyRes.ok && weeklyData.data) {
-          setWeeklyProgress(weeklyData.data);
-        }
+      const [
+        summaryData,
+        weeklyData,
+        performanceData,
+        goalsData,
+        activityData,
+      ] = await Promise.all([
+        parseResponse(summaryRes),
+        parseResponse(weeklyRes),
+        parseResponse(performanceRes),
+        parseResponse(goalsRes),
+        parseResponse(activityRes),
+      ]);
 
-        if (performanceRes.ok && performanceData.data) {
-          setSubjectPerformance(performanceData.data);
-        }
-
-        if (goalsRes.ok && goalsData.data) {
-          setAttendanceGoals(goalsData.data);
-        }
-
-        if (activityRes.ok && activityData.data) {
-          setRecentActivity(activityData.data);
-        }
-      } catch (error) {
-        console.error("Error fetching analytics:", error);
-      } finally {
-        setLoading(false);
+      if (summaryRes.ok && summaryData?.data) {
+        setAttendanceSummary(summaryData.data);
       }
-    };
 
+      if (weeklyRes.ok && weeklyData?.data) {
+        setWeeklyProgress(weeklyData.data);
+      }
+
+      if (performanceRes.ok && performanceData?.data) {
+        setSubjectPerformance(performanceData.data);
+      }
+
+      if (goalsRes.ok && goalsData?.data) {
+        setAttendanceGoals(goalsData.data);
+      }
+
+      if (activityRes.ok && activityData?.data) {
+        setRecentActivity(activityData.data);
+      }
+
+      setLastRefresh(new Date());
+    } catch (error) {
+      console.error("Error fetching analytics:", error);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  // Initial fetch on mount and when session type changes
+  useEffect(() => {
     fetchAnalytics();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionType]);
 
   const getStatusBadge = (status: string) => {
@@ -350,6 +375,25 @@ export function StudentAnalytics() {
 
   return (
     <div className="space-y-6 p-6">
+      {/* Header with Refresh Button */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">My Analytics</h1>
+          <p className="text-xs text-muted-foreground mt-1">
+            Last updated: {lastRefresh.toLocaleTimeString()}
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => fetchAnalytics(true)}
+          disabled={refreshing}
+        >
+          <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+          {refreshing ? 'Refreshing...' : 'Refresh'}
+        </Button>
+      </div>
+
       {/* Session Type Filter */}
       <Tabs
         value={sessionType}
@@ -409,11 +453,14 @@ export function StudentAnalytics() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-muted-foreground text-sm font-medium">
-                  This Week
+                  Attended This Week
                 </p>
                 <p className="text-2xl font-bold">
                   {recentActivity?.activity_summary.total_checkins_this_week ||
                     0}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  sessions
                 </p>
               </div>
               <Calendar className="h-8 w-8 text-purple-600" />
