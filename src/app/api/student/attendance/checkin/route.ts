@@ -291,7 +291,7 @@ export async function POST(req: NextRequest) {
       `
     INSERT INTO checkin
       (student_id, qr_code_study_session_id, validity_id, checkin_time, checkin_type)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?)
     `,
       [
         studentId,
