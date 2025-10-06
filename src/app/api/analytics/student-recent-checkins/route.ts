@@ -145,7 +145,7 @@ export async function GET(req: Request) {
       LEFT JOIN checkin c ON c.qr_code_study_session_id = qcss.id AND c.student_id = e.student_id
       WHERE s.status = 'active'
         ${sessionTypeFilter}
-      GROUP BY qcss.id
+      GROUP BY qcss.id, s.name, s.code, ss.type, qcss.week_number, r.building_number, r.room_number, cam.name
       ORDER BY COALESCE(MAX(c.checkin_time), qcss.week_number) DESC
       LIMIT ?
     `;
