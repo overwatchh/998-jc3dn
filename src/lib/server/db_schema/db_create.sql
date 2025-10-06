@@ -220,35 +220,3 @@ CREATE TABLE email_log (
     CONSTRAINT fk_email_log_session FOREIGN KEY (study_session_id) REFERENCES study_session(id),
     INDEX idx_email_log_sent_at (sent_at)
 );
-
--- Detailed email reminder logs with attendance context
-CREATE TABLE email_reminder_logs (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    student_id VARCHAR(36) NOT NULL,
-    subject_id INT NOT NULL,
-    reminder_type ENUM('first_absence', 'second_absence', 'critical_absence') NOT NULL,
-    session_type ENUM('lecture', 'lab') NOT NULL,
-    missed_count INT NOT NULL,
-    total_sessions INT NOT NULL,
-    attendance_percentage DECIMAL(5,2) NOT NULL,
-    email_subject TEXT NOT NULL,
-    email_body TEXT NOT NULL,
-    sent_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    email_status ENUM('sent', 'failed', 'pending') NOT NULL DEFAULT 'pending',
-    CONSTRAINT fk_email_reminder_student FOREIGN KEY (student_id) REFERENCES user(id),
-    CONSTRAINT fk_email_reminder_subject FOREIGN KEY (subject_id) REFERENCES subject(id),
-    INDEX idx_email_reminder_sent_at (sent_at)
-);
-
--- Global email reminder system settings
-CREATE TABLE email_reminder_settings (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    lecture_count INT NOT NULL DEFAULT 13,
-    lab_count INT NOT NULL DEFAULT 12,
-    attendance_threshold DECIMAL(3,2) NOT NULL DEFAULT 0.80,
-    email_enabled TINYINT(1) NOT NULL DEFAULT 1,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    subject_id INT,
-    CONSTRAINT fk_email_settings_subject FOREIGN KEY (subject_id) REFERENCES subject(id)
-);
