@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "db:init": "bash ./scripts/db-init.sh",
     "format": "prettier . --write",
     "clean": "rm -rf node_modules .next package-lock.json",
     "check": "tsc -p tsconfig.check.json --noEmit && npm run lint"

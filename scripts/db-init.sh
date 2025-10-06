@@ -13,7 +13,7 @@ echo "DROP DATABASE IF EXISTS qr_attendance_app;" | "$MYSQL_CLIENT" -h "$HOST" -
 echo "Creating schema..."
 "$MYSQL_CLIENT" -h "$HOST" -P "$PORT" -u "$USER" <"$(dirname "$0")/../src/lib/server/db_schema/db_create.sql"
 
-echo "Loading seed data..."
-"$MYSQL_CLIENT" -h "$HOST" -P "$PORT" -u "$USER" <"$(dirname "$0")/../src/lib/server/db_schema/db_dummy_load.sql"
+echo "Loading seed data into qr_attendance_app..."
+"$MYSQL_CLIENT" -h "$HOST" -P "$PORT" -u "$USER" -D qr_attendance_app <"$(dirname "$0")/../src/lib/server/db_schema/db_dummy_load.sql"
 
 echo "Database initialization completed."

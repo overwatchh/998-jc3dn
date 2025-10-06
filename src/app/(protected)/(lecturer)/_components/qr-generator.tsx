@@ -25,7 +25,6 @@ import {
   MapPin,
   QrCode,
   RadioIcon,
-  Share2,
   Shield,
   Square,
   X,
@@ -34,6 +33,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import type React from "react";
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { toast } from "sonner";
 import { useQrGenContext, Windows } from "../qr-generation/qr-gen-context";
 import {
@@ -1503,42 +1503,45 @@ export const QRGenerator = () => {
         )}
       </div>
 
-      {/* Enlarged QR Modal */}
-      {isModalOpen && qrUrl && (
-        <div
-          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm"
-          onClick={() => setIsModalOpen(false)}
-          role="dialog"
-          aria-modal="true"
-          aria-label="Enlarged QR Code"
-        >
+      {/* Enlarged QR Modal (rendered via portal to avoid z-index/stacking issues) */}
+      {isModalOpen && qrUrl &&
+        typeof window !== "undefined" &&
+        createPortal(
           <div
-            className="animate-in fade-in zoom-in-95 relative max-h-[90vh] max-w-[90vw] duration-200"
-            onClick={e => e.stopPropagation()}
+            className="fixed inset-0 z-[2147483647] flex items-center justify-center bg-black/70 backdrop-blur-sm"
+            onClick={() => setIsModalOpen(false)}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Enlarged QR Code"
           >
-            {/* Close button */}
-            <button
-              onClick={() => setIsModalOpen(false)}
-              className="absolute -top-4 -right-4 rounded-full bg-white p-2 shadow-lg transition-transform hover:scale-110 dark:bg-gray-800"
-              aria-label="Close enlarged view"
+            <div
+              className="animate-in fade-in zoom-in-95 relative max-h-[90vh] max-w-[90vw] duration-200"
+              onClick={e => e.stopPropagation()}
             >
-              <X className="h-5 w-5 text-gray-700 dark:text-gray-200" />
-            </button>
+              {/* Close button */}
+              <button
+                onClick={() => setIsModalOpen(false)}
+                className="absolute -top-4 -right-4 z-[2147483647] rounded-full bg-white p-2 shadow-lg transition-transform hover:scale-110 dark:bg-gray-800"
+                aria-label="Close enlarged view"
+              >
+                <X className="h-5 w-5 text-gray-700 dark:text-gray-200" />
+              </button>
 
-            {/* Enlarged QR Code */}
-            <div className="rounded-lg bg-white p-4 shadow-2xl">
-              <Image
-                src={qrUrl}
-                alt="Enlarged QR Code"
-                width={600}
-                height={600}
-                className="rounded object-contain"
-                style={{ maxHeight: "80vh", maxWidth: "80vw" }}
-              />
+              {/* Enlarged QR Code */}
+              <div className="rounded-lg bg-white p-4 shadow-2xl">
+                <Image
+                  src={qrUrl}
+                  alt="Enlarged QR Code"
+                  width={600}
+                  height={600}
+                  className="rounded object-contain"
+                  style={{ maxHeight: "80vh", maxWidth: "80vw" }}
+                />
+              </div>
             </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body
+        )}
     </div>
   );
 };
