@@ -5,6 +5,9 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const sessionType = searchParams.get("sessionType");
+    const subjectId = searchParams.get("subjectId");
+    // Note: tutorialSessionId is intentionally ignored for day-of-week patterns
+    // This analysis only makes sense when comparing across multiple sessions on different days
 
     // Base query for day-of-week patterns
     let query = `
@@ -13,28 +16,35 @@ export async function GET(request: NextRequest) {
         DAYOFWEEK(c.checkin_time) as day_number,
         COUNT(*) as total_checkins,
         COUNT(DISTINCT c.student_id) as unique_students,
-        ROUND(AVG(CASE
-          WHEN c.checkin_time <= DATE_ADD(
-            CONCAT(DATE(c.checkin_time), ' ', ss.start_time),
-            INTERVAL 15 MINUTE
-          ) THEN 1 ELSE 0 END) * 100, 1) as on_time_percentage,
         ROUND(COUNT(*) * 100.0 / SUM(COUNT(*)) OVER(), 1) as distribution_percentage
       FROM checkin c
       JOIN qr_code_study_session qcss ON c.qr_code_study_session_id = qcss.id
       JOIN study_session ss ON qcss.study_session_id = ss.id
+      JOIN subject_study_session sss ON sss.study_session_id = ss.id
     `;
 
-    // Add session type filter if specified
+    // Add filters
+    const params: (string | number)[] = [];
+    const conditions = [];
+
     if (sessionType && sessionType !== "both") {
-      query += ` WHERE ss.type = ?`;
+      conditions.push('ss.type = ?');
+      params.push(sessionType);
+    }
+
+    if (subjectId && subjectId !== 'all') {
+      conditions.push('sss.subject_id = ?');
+      params.push(parseInt(subjectId));
+    }
+
+    if (conditions.length > 0) {
+      query += ` WHERE ${conditions.join(' AND ')}`;
     }
 
     query += `
       GROUP BY DAYNAME(c.checkin_time), DAYOFWEEK(c.checkin_time)
       ORDER BY DAYOFWEEK(c.checkin_time)
     `;
-
-    const params = sessionType && sessionType !== "both" ? [sessionType] : [];
     const [results] = await db.execute(query, params);
 
     // Format results for frontend
@@ -43,11 +53,20 @@ export async function GET(request: NextRequest) {
       dayNumber: row.day_number,
       totalCheckins: row.total_checkins,
       uniqueStudents: row.unique_students,
-      onTimePercentage: parseFloat(row.on_time_percentage) || 0,
       distributionPercentage: parseFloat(row.distribution_percentage) || 0,
     }));
 
     // Get peak hours for each day
+    const peakConditions = [];
+    if (sessionType && sessionType !== "both") {
+      peakConditions.push('ss.type = ?');
+    }
+    if (subjectId && subjectId !== 'all') {
+      peakConditions.push('sss.subject_id = ?');
+    }
+
+    const whereClause = peakConditions.length > 0 ? `WHERE ${peakConditions.join(' AND ')}` : '';
+
     const peakHoursQuery = `
       SELECT
         DAYNAME(c.checkin_time) as day_name,
@@ -56,7 +75,8 @@ export async function GET(request: NextRequest) {
       FROM checkin c
       JOIN qr_code_study_session qcss ON c.qr_code_study_session_id = qcss.id
       JOIN study_session ss ON qcss.study_session_id = ss.id
-      ${sessionType && sessionType !== "both" ? "WHERE ss.type = ?" : ""}
+      JOIN subject_study_session sss ON sss.study_session_id = ss.id
+      ${whereClause}
       GROUP BY day_name, hour
       ORDER BY day_name, checkin_count DESC
     `;
@@ -88,21 +108,19 @@ export async function GET(request: NextRequest) {
 
     // Calculate summary statistics
     const totalCheckins = dayPatterns.reduce((sum, day) => sum + day.totalCheckins, 0);
-    const averageOnTime = dayPatterns.reduce((sum, day) => sum + day.onTimePercentage, 0) / dayPatterns.length;
 
     const busiestDay = dayPatterns.reduce((max, day) =>
       day.totalCheckins > max.totalCheckins ? day : max, dayPatterns[0] || { day: "N/A", totalCheckins: 0 });
 
-    const bestAttendanceDay = dayPatterns.reduce((max, day) =>
-      day.onTimePercentage > max.onTimePercentage ? day : max, dayPatterns[0] || { day: "N/A", onTimePercentage: 0 });
+    const bestDistributionDay = dayPatterns.reduce((max, day) =>
+      day.distributionPercentage > max.distributionPercentage ? day : max, dayPatterns[0] || { day: "N/A", distributionPercentage: 0 });
 
     return NextResponse.json({
       patterns: enhancedPatterns,
       summary: {
         totalCheckins,
-        averageOnTimePercentage: Math.round(averageOnTime * 10) / 10,
         busiestDay: busiestDay.day,
-        bestAttendanceDay: bestAttendanceDay.day,
+        bestAttendanceDay: bestDistributionDay.day,
         daysWithData: dayPatterns.length
       }
     });

@@ -52,6 +52,7 @@ export async function GET(request: NextRequest) {
     const viewType = searchParams.get('viewType') || 'student';
     const searchQuery = searchParams.get('search') || '';
     const sessionType = searchParams.get('sessionType') || 'lecture';
+    const tutorialSessionId = searchParams.get('tutorialSessionId');
 
     if (!subjectId || subjectId === 'all') {
       return NextResponse.json({ error: "Specific Subject ID is required for detailed attendance" }, { status: 400 });
@@ -61,16 +62,16 @@ export async function GET(request: NextRequest) {
 
     switch (viewType) {
       case 'student':
-        data = await getStudentAttendance(parseInt(subjectId), searchQuery, sessionType);
+        data = await getStudentAttendance(parseInt(subjectId), searchQuery, sessionType, tutorialSessionId ? parseInt(tutorialSessionId) : undefined);
         break;
       case 'session':
-        data = await getSessionAttendance(parseInt(subjectId), sessionType);
+        data = await getSessionAttendance(parseInt(subjectId), sessionType, tutorialSessionId ? parseInt(tutorialSessionId) : undefined);
         break;
       case 'course':
         data = await getCourseAttendance(session.user.id, sessionType);
         break;
       default:
-        data = await getStudentAttendance(parseInt(subjectId), searchQuery, sessionType);
+        data = await getStudentAttendance(parseInt(subjectId), searchQuery, sessionType, tutorialSessionId ? parseInt(tutorialSessionId) : undefined);
     }
 
     return NextResponse.json(data);
@@ -83,34 +84,57 @@ export async function GET(request: NextRequest) {
   }
 }
 
-async function getStudentAttendance(subjectId: number, searchQuery: string, sessionType: string) {
+async function getStudentAttendance(subjectId: number, searchQuery: string, sessionType: string, tutorialSessionId?: number) {
   // Build session type filter
-  const sessionFilter = `AND ss.type = '${sessionType}'`;
+  const sessionFilter = tutorialSessionId ? `AND ss.id = ${tutorialSessionId}` : `AND ss.type = '${sessionType}'`;
+
   // Get all students with their attendance data using the EMAIL CALCULATOR METHOD
-  // This uses the same logic as the email reminder system:
-  // - Count total check-ins per QR session for each student
-  // - Apply scoring: 2+ check-ins = 90%, 1 check-in = 45%, 0 check-ins = 0%
-  // - Calculate overall percentage based on total points vs possible points
+  // If tutorialSessionId is provided, get students from student_study_session
+  // Otherwise, get students from enrolment
 
-  // First get all students enrolled in the subject
-  let baseQuery = `
-    SELECT DISTINCT
-      u.id as student_id,
-      u.name as student_name,
-      u.email as student_email,
-      COALESCE(
-        CONCAT(
-          UPPER(SUBSTRING(u.name, 1, 1)),
-          UPPER(SUBSTRING(SUBSTRING_INDEX(u.name, ' ', -1), 1, 1))
-        ),
-        'XX'
-      ) as initials
-    FROM user u
-    INNER JOIN enrolment e ON u.id = e.student_id
-    WHERE e.subject_id = ?
-  `;
+  let baseQuery = '';
+  const params: (number | string)[] = [];
 
-  const params: (number | string)[] = [subjectId];
+  if (tutorialSessionId) {
+    // For specific tutorial, get students from student_study_session
+    baseQuery = `
+      SELECT DISTINCT
+        u.id as student_id,
+        u.name as student_name,
+        u.email as student_email,
+        COALESCE(
+          CONCAT(
+            UPPER(SUBSTRING(u.name, 1, 1)),
+            UPPER(SUBSTRING(SUBSTRING_INDEX(u.name, ' ', -1), 1, 1))
+          ),
+          'XX'
+        ) as initials
+      FROM user u
+      INNER JOIN student_study_session student_ss ON u.id = student_ss.student_id
+      INNER JOIN study_session ss ON ss.id = student_ss.study_session_id
+      WHERE ss.id = ?
+    `;
+    params.push(tutorialSessionId);
+  } else {
+    // For lectures or general view, get students from enrolment
+    baseQuery = `
+      SELECT DISTINCT
+        u.id as student_id,
+        u.name as student_name,
+        u.email as student_email,
+        COALESCE(
+          CONCAT(
+            UPPER(SUBSTRING(u.name, 1, 1)),
+            UPPER(SUBSTRING(SUBSTRING_INDEX(u.name, ' ', -1), 1, 1))
+          ),
+          'XX'
+        ) as initials
+      FROM user u
+      INNER JOIN enrolment e ON u.id = e.student_id
+      WHERE e.subject_id = ?
+    `;
+    params.push(subjectId);
+  }
 
   if (searchQuery) {
     baseQuery += ` AND (u.name LIKE ? OR u.email LIKE ?)`;
@@ -213,61 +237,124 @@ async function getStudentAttendance(subjectId: number, searchQuery: string, sess
   return studentsWithAttendance;
 }
 
-async function getSessionAttendance(subjectId: number, sessionType: string) {
+async function getSessionAttendance(subjectId: number, sessionType: string, tutorialSessionId?: number) {
   // Build session type filter
-  const sessionFilter = `AND ss.type = '${sessionType}'`;
+  const sessionFilter = tutorialSessionId ? `AND ss.id = ${tutorialSessionId}` : `AND ss.type = '${sessionType}'`;
 
   // Get session attendance using EMAIL CALCULATOR METHOD
   // Each QR session is scored individually using the 0/45/90 point system
-  const query = `
-    SELECT
-      qrss.id as qr_session_id,
-      qrss.week_number,
-      CONCAT('Week ', qrss.week_number) as session_label,
-      DATE_FORMAT(
-        DATE_ADD('2025-07-07', INTERVAL (qrss.week_number - 1) * 7 DAY),
-        '%d/%m/%Y'
-      ) as formatted_date,
-      CASE
-        WHEN COUNT(DISTINCT CASE WHEN c.checkin_type = 'on_time' THEN c.student_id END) > 0 THEN 'Mixed'
-        WHEN COUNT(DISTINCT CASE WHEN c.checkin_type = 'late' THEN c.student_id END) > 0 THEN 'Mixed'
-        WHEN COUNT(DISTINCT CASE WHEN c.checkin_type = 'very_late' THEN c.student_id END) > 0 THEN 'Mixed'
-        WHEN COUNT(DISTINCT CASE WHEN c.checkin_type = 'manual_override' THEN c.student_id END) > 0 THEN 'Manual Override'
-        ELSE 'QR Code'
-      END as primary_checkin_type,
-      COUNT(DISTINCT e.student_id) as total_enrolled
-    FROM qr_code_study_session qrss
-    JOIN study_session ss ON ss.id = qrss.study_session_id
-    JOIN subject_study_session sss ON sss.study_session_id = ss.id
-    LEFT JOIN enrolment e ON e.subject_id = sss.subject_id
-    LEFT JOIN checkin c ON c.qr_code_study_session_id = qrss.id AND c.student_id = e.student_id
-    WHERE sss.subject_id = ? ${sessionFilter}
-    GROUP BY qrss.id, qrss.week_number
-    ORDER BY qrss.week_number ASC, qrss.id ASC
-  `;
+  // Use student_study_session for tutorial-specific enrollment counts
+  let query = '';
+  let queryParams: number[] = [];
 
-  const sessions = await rawQuery(query, [subjectId]);
+  if (tutorialSessionId) {
+    // For specific tutorial, count students from student_study_session
+    query = `
+      SELECT
+        qrss.id as qr_session_id,
+        qrss.week_number,
+        CONCAT('Week ', qrss.week_number) as session_label,
+        DATE_FORMAT(
+          DATE_ADD('2025-07-07', INTERVAL (qrss.week_number - 1) * 7 DAY),
+          '%d/%m/%Y'
+        ) as formatted_date,
+        CASE
+          WHEN COUNT(DISTINCT CASE WHEN c.checkin_type = 'on_time' THEN c.student_id END) > 0 THEN 'Mixed'
+          WHEN COUNT(DISTINCT CASE WHEN c.checkin_type = 'late' THEN c.student_id END) > 0 THEN 'Mixed'
+          WHEN COUNT(DISTINCT CASE WHEN c.checkin_type = 'very_late' THEN c.student_id END) > 0 THEN 'Mixed'
+          WHEN COUNT(DISTINCT CASE WHEN c.checkin_type = 'manual_override' THEN c.student_id END) > 0 THEN 'Manual Override'
+          ELSE 'QR Code'
+        END as primary_checkin_type,
+        COUNT(DISTINCT student_ss.student_id) as total_enrolled
+      FROM qr_code_study_session qrss
+      JOIN study_session ss ON ss.id = qrss.study_session_id
+      JOIN subject_study_session sss ON sss.study_session_id = ss.id
+      LEFT JOIN student_study_session student_ss ON student_ss.study_session_id = ss.id
+      LEFT JOIN checkin c ON c.qr_code_study_session_id = qrss.id AND c.student_id = student_ss.student_id
+      WHERE ss.id = ?
+      GROUP BY qrss.id, qrss.week_number
+      ORDER BY qrss.week_number ASC, qrss.id ASC
+    `;
+    queryParams = [tutorialSessionId];
+  } else {
+    // For lectures or general view, count students from enrolment
+    query = `
+      SELECT
+        qrss.id as qr_session_id,
+        qrss.week_number,
+        CONCAT('Week ', qrss.week_number) as session_label,
+        DATE_FORMAT(
+          DATE_ADD('2025-07-07', INTERVAL (qrss.week_number - 1) * 7 DAY),
+          '%d/%m/%Y'
+        ) as formatted_date,
+        CASE
+          WHEN COUNT(DISTINCT CASE WHEN c.checkin_type = 'on_time' THEN c.student_id END) > 0 THEN 'Mixed'
+          WHEN COUNT(DISTINCT CASE WHEN c.checkin_type = 'late' THEN c.student_id END) > 0 THEN 'Mixed'
+          WHEN COUNT(DISTINCT CASE WHEN c.checkin_type = 'very_late' THEN c.student_id END) > 0 THEN 'Mixed'
+          WHEN COUNT(DISTINCT CASE WHEN c.checkin_type = 'manual_override' THEN c.student_id END) > 0 THEN 'Manual Override'
+          ELSE 'QR Code'
+        END as primary_checkin_type,
+        COUNT(DISTINCT e.student_id) as total_enrolled
+      FROM qr_code_study_session qrss
+      JOIN study_session ss ON ss.id = qrss.study_session_id
+      JOIN subject_study_session sss ON sss.study_session_id = ss.id
+      LEFT JOIN enrolment e ON e.subject_id = sss.subject_id
+      LEFT JOIN checkin c ON c.qr_code_study_session_id = qrss.id AND c.student_id = e.student_id
+      WHERE sss.subject_id = ? ${sessionFilter}
+      GROUP BY qrss.id, qrss.week_number
+      ORDER BY qrss.week_number ASC, qrss.id ASC
+    `;
+    queryParams = [subjectId];
+  }
+
+  const sessions = await rawQuery(query, queryParams);
 
   // For each session, calculate attendance using email calculator method
   const sessionsWithAttendance = await Promise.all(sessions.map(async (session: SessionAttendanceData) => {
     // Get checkin counts for each student for this specific QR session
-    const checkinQuery = `
-      SELECT
-        e.student_id,
-        COALESCE(checkin_data.checkin_count, 0) as checkin_count
-      FROM enrolment e
-      LEFT JOIN (
-        SELECT
-          student_id,
-          COUNT(*) as checkin_count
-        FROM checkin
-        WHERE qr_code_study_session_id = ?
-        GROUP BY student_id
-      ) checkin_data ON checkin_data.student_id = e.student_id
-      WHERE e.subject_id = ?
-    `;
+    // Use student_study_session for tutorials, enrolment for lectures
+    let checkinQuery = '';
+    let checkinParams: number[] = [];
 
-    const checkinData = await rawQuery(checkinQuery, [session.qr_session_id, subjectId]);
+    if (tutorialSessionId) {
+      // For tutorials, get students from student_study_session
+      checkinQuery = `
+        SELECT
+          student_ss.student_id,
+          COALESCE(checkin_data.checkin_count, 0) as checkin_count
+        FROM student_study_session student_ss
+        LEFT JOIN (
+          SELECT
+            student_id,
+            COUNT(*) as checkin_count
+          FROM checkin
+          WHERE qr_code_study_session_id = ?
+          GROUP BY student_id
+        ) checkin_data ON checkin_data.student_id = student_ss.student_id
+        WHERE student_ss.study_session_id = ?
+      `;
+      checkinParams = [session.qr_session_id, tutorialSessionId];
+    } else {
+      // For lectures, get students from enrolment
+      checkinQuery = `
+        SELECT
+          e.student_id,
+          COALESCE(checkin_data.checkin_count, 0) as checkin_count
+        FROM enrolment e
+        LEFT JOIN (
+          SELECT
+            student_id,
+            COUNT(*) as checkin_count
+          FROM checkin
+          WHERE qr_code_study_session_id = ?
+          GROUP BY student_id
+        ) checkin_data ON checkin_data.student_id = e.student_id
+        WHERE e.subject_id = ?
+      `;
+      checkinParams = [session.qr_session_id, subjectId];
+    }
+
+    const checkinData = await rawQuery(checkinQuery, checkinParams);
 
     // Apply email calculator scoring for each student
     let totalPoints = 0;
@@ -316,43 +403,86 @@ async function getCourseAttendance(lecturerId: string, sessionType: string) {
   const sessionFilter = `AND ss.type = '${sessionType}'`;
 
   // Using EMAIL CALCULATOR METHOD: 2+ checkins = 100 points, 1 checkin = 50 points, 0 checkins = 0 points
-  const query = `
-    SELECT
-      s.id as subject_id,
-      s.code as subject_code,
-      s.name as subject_name,
-      COUNT(DISTINCT qrss.id) as total_sessions,
-      COUNT(DISTINCT e.student_id) as total_students,
-      ROUND(
-        (SUM(
-          CASE
-            WHEN checkin_counts.checkin_count >= 2 THEN 100
-            WHEN checkin_counts.checkin_count = 1 THEN 50
-            ELSE 0
-          END
-        ) / (COUNT(DISTINCT qrss.id) * COUNT(DISTINCT e.student_id) * 100)) * 100,
-        1
-      ) as average_attendance,
-      MAX(ss.start_time) as last_session
-    FROM subject s
-    INNER JOIN subject_study_session sss ON sss.subject_id = s.id
-    INNER JOIN study_session ss ON ss.id = sss.study_session_id
-    INNER JOIN lecturer_study_session lss ON lss.study_session_id = ss.id
-    LEFT JOIN enrolment e ON e.subject_id = s.id
-    LEFT JOIN qr_code_study_session qrss ON qrss.study_session_id = ss.id
-    LEFT JOIN (
+  // For tutorials, use student_study_session; for lectures, use enrolment
+  let query = '';
+
+  if (sessionType === 'tutorial') {
+    query = `
       SELECT
-        qr_code_study_session_id,
-        student_id,
-        COUNT(*) as checkin_count
-      FROM checkin
-      GROUP BY qr_code_study_session_id, student_id
-    ) checkin_counts ON checkin_counts.qr_code_study_session_id = qrss.id
-                     AND checkin_counts.student_id = e.student_id
-    WHERE lss.lecturer_id = ? ${sessionFilter}
-    GROUP BY s.id, s.code, s.name
-    ORDER BY s.code ASC
-  `;
+        s.id as subject_id,
+        s.code as subject_code,
+        s.name as subject_name,
+        COUNT(DISTINCT qrss.id) as total_sessions,
+        COUNT(DISTINCT student_ss.student_id) as total_students,
+        ROUND(
+          (SUM(
+            CASE
+              WHEN checkin_counts.checkin_count >= 2 THEN 100
+              WHEN checkin_counts.checkin_count = 1 THEN 50
+              ELSE 0
+            END
+          ) / (COUNT(DISTINCT qrss.id) * COUNT(DISTINCT student_ss.student_id) * 100)) * 100,
+          1
+        ) as average_attendance,
+        MAX(ss.start_time) as last_session
+      FROM subject s
+      INNER JOIN subject_study_session sss ON sss.subject_id = s.id
+      INNER JOIN study_session ss ON ss.id = sss.study_session_id
+      INNER JOIN lecturer_study_session lss ON lss.study_session_id = ss.id
+      LEFT JOIN student_study_session student_ss ON student_ss.study_session_id = ss.id
+      LEFT JOIN qr_code_study_session qrss ON qrss.study_session_id = ss.id
+      LEFT JOIN (
+        SELECT
+          qr_code_study_session_id,
+          student_id,
+          COUNT(*) as checkin_count
+        FROM checkin
+        GROUP BY qr_code_study_session_id, student_id
+      ) checkin_counts ON checkin_counts.qr_code_study_session_id = qrss.id
+                       AND checkin_counts.student_id = student_ss.student_id
+      WHERE lss.lecturer_id = ? ${sessionFilter}
+      GROUP BY s.id, s.code, s.name
+      ORDER BY s.code ASC
+    `;
+  } else {
+    query = `
+      SELECT
+        s.id as subject_id,
+        s.code as subject_code,
+        s.name as subject_name,
+        COUNT(DISTINCT qrss.id) as total_sessions,
+        COUNT(DISTINCT e.student_id) as total_students,
+        ROUND(
+          (SUM(
+            CASE
+              WHEN checkin_counts.checkin_count >= 2 THEN 100
+              WHEN checkin_counts.checkin_count = 1 THEN 50
+              ELSE 0
+            END
+          ) / (COUNT(DISTINCT qrss.id) * COUNT(DISTINCT e.student_id) * 100)) * 100,
+          1
+        ) as average_attendance,
+        MAX(ss.start_time) as last_session
+      FROM subject s
+      INNER JOIN subject_study_session sss ON sss.subject_id = s.id
+      INNER JOIN study_session ss ON ss.id = sss.study_session_id
+      INNER JOIN lecturer_study_session lss ON lss.study_session_id = ss.id
+      LEFT JOIN enrolment e ON e.subject_id = s.id
+      LEFT JOIN qr_code_study_session qrss ON qrss.study_session_id = ss.id
+      LEFT JOIN (
+        SELECT
+          qr_code_study_session_id,
+          student_id,
+          COUNT(*) as checkin_count
+        FROM checkin
+        GROUP BY qr_code_study_session_id, student_id
+      ) checkin_counts ON checkin_counts.qr_code_study_session_id = qrss.id
+                       AND checkin_counts.student_id = e.student_id
+      WHERE lss.lecturer_id = ? ${sessionFilter}
+      GROUP BY s.id, s.code, s.name
+      ORDER BY s.code ASC
+    `;
+  }
 
   const courses = await rawQuery(query, [lecturerId]);
 

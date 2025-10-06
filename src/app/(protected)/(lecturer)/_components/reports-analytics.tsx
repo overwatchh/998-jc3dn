@@ -182,6 +182,8 @@ export default function ReportsAnalytics() {
   });
   const [selectedCourseId, setSelectedCourseId] = useState<string>("");
   const [sessionType, setSessionType] = useState<'lecture' | 'tutorial'>('lecture');
+  const [selectedTutorialId, setSelectedTutorialId] = useState<string>("");
+  const [tutorialSessions, setTutorialSessions] = useState<Array<{id: number, name: string}>>([]);
 
   // Fetch session types that this lecturer teaches
   const { data: sessionTypesData } = useQuery({
@@ -342,6 +344,38 @@ export default function ReportsAnalytics() {
     }
   }, [sessionTypesData]);
 
+  // Fetch tutorial sessions when tutorial type is selected
+  useEffect(() => {
+    const fetchTutorialSessions = async () => {
+      if (sessionType === 'tutorial' && selectedCourseId) {
+        // Reset to "student" tab if currently on "course" tab (not available for tutorials)
+        if (detailedAttendanceTab === 'course') {
+          setDetailedAttendanceTab('student');
+        }
+
+        try {
+          const response = await fetch(`/api/lecturer/tutorial-sessions?subjectId=${selectedCourseId}`);
+          const data = await response.json();
+          if (data && Array.isArray(data)) {
+            setTutorialSessions(data);
+            // Auto-select first tutorial if available
+            if (data.length > 0 && !selectedTutorialId) {
+              setSelectedTutorialId(String(data[0].id));
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching tutorial sessions:', error);
+          setTutorialSessions([]);
+        }
+      } else {
+        setTutorialSessions([]);
+        setSelectedTutorialId("");
+      }
+    };
+
+    fetchTutorialSessions();
+  }, [sessionType, selectedCourseId]);
+
   // Reset pagination when data changes
   useEffect(() => {
     setCurrentPage(1);
@@ -360,27 +394,30 @@ export default function ReportsAnalytics() {
     try {
         // Fetch analytics data sequentially to reduce database connection load
         console.log("Fetching weekly attendance...");
-        const weeklyRes = await fetch(`/api/analytics/weekly-attendance?subjectId=${selectedCourseId}&sessionType=${sessionType}`);
+        const tutorialParam = sessionType === 'tutorial' && selectedTutorialId ? `&tutorialSessionId=${selectedTutorialId}` : '';
+        const weeklyRes = await fetch(`/api/analytics/weekly-attendance?subjectId=${selectedCourseId}&sessionType=${sessionType}${tutorialParam}`);
         const weeklyData = await weeklyRes.json();
 
         console.log("Fetching student performance...");
-        const studentRes = await fetch(`/api/analytics/student-performance?subjectId=${selectedCourseId}&limit=500&sessionType=${sessionType}`);
+        const studentRes = await fetch(`/api/analytics/student-performance?subjectId=${selectedCourseId}&limit=500&sessionType=${sessionType}${tutorialParam}`);
         const studentPerformanceData = await studentRes.json();
 
         console.log("Fetching distribution data...");
-        const distributionRes = await fetch(`/api/analytics/attendance-distribution?subjectId=${selectedCourseId}&sessionType=${sessionType}`);
+        const distributionRes = await fetch(`/api/analytics/attendance-distribution?subjectId=${selectedCourseId}&sessionType=${sessionType}${tutorialParam}`);
         const distributionData = await distributionRes.json();
 
         console.log("Fetching key metrics...");
-        const metricsRes = await fetch(`/api/analytics/key-metrics?subjectId=${selectedCourseId}&sessionType=${sessionType}`);
+        const metricsRes = await fetch(`/api/analytics/key-metrics?subjectId=${selectedCourseId}&sessionType=${sessionType}${tutorialParam}`);
         const metricsData = await metricsRes.json();
 
         console.log("Fetching lecturer trends...");
+        // Teaching Performance Overview should show ALL lectures/tutorials taught by this lecturer
+        // Do NOT filter by subjectId - show complete teaching portfolio
         const trendsRes = await fetch(`/api/analytics/lecturer-trends?sessionType=${sessionType}`);
         const trendsData = await trendsRes.json();
 
         console.log("Fetching checkin types...");
-        const checkinTypesRes = await fetch(`/api/analytics/checkin-types?subjectId=${selectedCourseId}&sessionType=${sessionType}`);
+        const checkinTypesRes = await fetch(`/api/analytics/checkin-types?subjectId=${selectedCourseId}&sessionType=${sessionType}${tutorialParam}`);
         const checkinTypesData = await checkinTypesRes.json();
 
         // Transform data for charts
@@ -473,7 +510,7 @@ export default function ReportsAnalytics() {
   useEffect(() => {
     fetchAnalyticsData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedCourseId, sessionType]);
+  }, [selectedCourseId, sessionType, selectedTutorialId]);
 
   // Fetch detailed attendance data
   useEffect(() => {
@@ -482,8 +519,9 @@ export default function ReportsAnalytics() {
 
       setIsLoadingDetailedData(true);
       try {
+        const tutorialParam = sessionType === 'tutorial' && selectedTutorialId ? `&tutorialSessionId=${selectedTutorialId}` : '';
         const response = await fetch(
-          `/api/analytics/detailed-attendance?subjectId=${selectedCourseId}&viewType=${detailedAttendanceTab}&search=${searchQuery}&sessionType=${sessionType}`
+          `/api/analytics/detailed-attendance?subjectId=${selectedCourseId}&viewType=${detailedAttendanceTab}&search=${searchQuery}&sessionType=${sessionType}${tutorialParam}`
         );
 
         if (response.ok) {
@@ -503,7 +541,7 @@ export default function ReportsAnalytics() {
     };
 
     fetchDetailedAttendance();
-  }, [selectedCourseId, detailedAttendanceTab, searchQuery, sessionType]);
+  }, [selectedCourseId, detailedAttendanceTab, searchQuery, sessionType, selectedTutorialId]);
 
   // Action handlers
   const handleViewDetails = (student: StudentPerformance | DetailedAttendanceData) => {
@@ -752,6 +790,30 @@ export default function ReportsAnalytics() {
                     )}
                   </TabsList>
                 </Tabs>
+              </div>
+            )}
+
+            {/* Tutorial Session Selector */}
+            {sessionType === 'tutorial' && tutorialSessions.length > 0 && (
+              <div className="w-full sm:w-auto sm:min-w-[200px]">
+                <Label htmlFor="tutorialSelect" className="text-sm font-medium">
+                  Tutorial Session
+                </Label>
+                <Select
+                  value={selectedTutorialId}
+                  onValueChange={setSelectedTutorialId}
+                >
+                  <SelectTrigger className="mt-1 w-full">
+                    <SelectValue placeholder="Select tutorial" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {tutorialSessions.map((tutorial) => (
+                      <SelectItem key={tutorial.id} value={String(tutorial.id)}>
+                        {tutorial.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             )}
           </div>
@@ -1396,12 +1458,12 @@ export default function ReportsAnalytics() {
                       const attendance = period.data?.attendance || 0;
                       const weeks = period.data?.weeks || 0;
                       return (
-                        <div key={index} className={period.color === 'emerald' ? 'text-center p-4 bg-emerald-50 dark:bg-emerald-950/20 rounded-lg border border-emerald-200 dark:border-emerald-800' : period.color === 'amber' ? 'text-center p-4 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-800' : 'text-center p-4 bg-rose-50 dark:bg-rose-950/20 rounded-lg border border-rose-200 dark:border-rose-800'}>
-                          <div className={period.color === 'emerald' ? 'text-2xl font-bold text-emerald-600 dark:text-emerald-400' : period.color === 'amber' ? 'text-2xl font-bold text-amber-600 dark:text-amber-400' : 'text-2xl font-bold text-rose-600 dark:text-rose-400'}>
+                        <div key={index} className={period.color === 'blue' ? 'text-center p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800' : period.color === 'amber' ? 'text-center p-4 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-800' : 'text-center p-4 bg-rose-50 dark:bg-rose-950/20 rounded-lg border border-rose-200 dark:border-rose-800'}>
+                          <div className={period.color === 'blue' ? 'text-2xl font-bold text-blue-600 dark:text-blue-400' : period.color === 'amber' ? 'text-2xl font-bold text-amber-600 dark:text-amber-400' : 'text-2xl font-bold text-rose-600 dark:text-rose-400'}>
                             {attendance.toFixed(1)}%
                           </div>
                           <div className="text-sm text-muted-foreground">{period.name}</div>
-                          <div className={period.color === 'emerald' ? 'text-xs text-emerald-600 dark:text-emerald-400 mt-1' : period.color === 'amber' ? 'text-xs text-amber-600 dark:text-amber-400 mt-1' : 'text-xs text-rose-600 dark:text-rose-400 mt-1'}>
+                          <div className={period.color === 'blue' ? 'text-xs text-blue-600 dark:text-blue-400 mt-1' : period.color === 'amber' ? 'text-xs text-amber-600 dark:text-amber-400 mt-1' : 'text-xs text-rose-600 dark:text-rose-400 mt-1'}>
                             {weeks} week{weeks !== 1 ? 's' : ''}
                           </div>
                         </div>
@@ -1534,9 +1596,9 @@ export default function ReportsAnalytics() {
                           <div className="flex items-center space-x-4">
                             <div className="text-lg font-bold text-muted-foreground">#{index + 1}</div>
                             <div className={`w-3 h-12 rounded-full ${
-                              course.attendance >= 80 ? 'bg-green-500' :
-                              course.attendance >= 60 ? 'bg-blue-500' :
-                              course.attendance >= 40 ? 'bg-yellow-500' : 'bg-red-500'
+                              course.attendance >= 80 ? 'bg-green-500 dark:bg-green-600' :
+                              course.attendance >= 60 ? 'bg-blue-500 dark:bg-blue-600' :
+                              course.attendance >= 40 ? 'bg-yellow-500 dark:bg-yellow-600' : 'bg-red-500 dark:bg-red-600'
                             }`}></div>
                             <div>
                               <h4 className="font-medium text-foreground">{course.code}</h4>
@@ -1725,18 +1787,18 @@ export default function ReportsAnalytics() {
                         <h5 className="text-sm font-medium text-foreground">Key Correlations</h5>
                         <div className="space-y-1">
                           <div className="flex justify-between items-center p-2 bg-muted/20 rounded text-sm">
-                            <span>In-Person vs Online Success</span>
+                            <span className="text-foreground">In-Person vs Online Success</span>
                             <span className={`font-medium ${
-                              correlationData.inPersonSuccess > correlationData.onlineSuccess ? 'text-green-600' : 'text-blue-600'
+                              correlationData.inPersonSuccess > correlationData.onlineSuccess ? 'text-green-600 dark:text-green-400' : 'text-blue-600 dark:text-blue-400'
                             }`}>
                               {correlationData.inPersonSuccess > correlationData.onlineSuccess ?
                                 'In-person preferred' : 'Online effective'}
                             </span>
                           </div>
                           <div className="flex justify-between items-center p-2 bg-muted/20 rounded text-sm">
-                            <span>Manual Entry Frequency</span>
+                            <span className="text-foreground">Manual Entry Frequency</span>
                             <span className={`font-medium ${
-                              correlationData.manualEntries > correlationData.totalCheckins * 0.1 ? 'text-amber-600' : 'text-green-600'
+                              correlationData.manualEntries > correlationData.totalCheckins * 0.1 ? 'text-amber-600 dark:text-amber-400' : 'text-green-600 dark:text-green-400'
                             }`}>
                               {correlationData.manualEntries > correlationData.totalCheckins * 0.1 ?
                                 'High intervention needed' : 'Self-sufficient students'}
@@ -1795,13 +1857,13 @@ export default function ReportsAnalytics() {
                     <div className="space-y-4">
                       {/* Trend Summary Cards */}
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                        <div className="p-3 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 rounded-lg border">
+                        <div className="p-3 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/20 dark:to-blue-900/30 rounded-lg border border-blue-200 dark:border-blue-800">
                           <div className="flex items-center justify-between mb-2">
                             <span className="text-sm font-medium text-blue-700 dark:text-blue-300">Current Trend</span>
                             <span className={`text-xs px-2 py-1 rounded-full ${
-                              trendDirection === 'improving' ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' :
-                              trendDirection === 'declining' ? 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300' :
-                              'bg-gray-100 text-gray-700 dark:bg-gray-900 dark:text-gray-300'
+                              trendDirection === 'improving' ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300' :
+                              trendDirection === 'declining' ? 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300' :
+                              'bg-gray-100 text-gray-700 dark:bg-gray-900/50 dark:text-gray-300'
                             }`}>
                               {trendDirection === 'improving' ? '↗ Improving' :
                                trendDirection === 'declining' ? '↘ Declining' : '→ Stable'}
@@ -1815,10 +1877,10 @@ export default function ReportsAnalytics() {
                           </div>
                         </div>
 
-                        <div className="p-3 bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950 dark:to-purple-900 rounded-lg border">
+                        <div className="p-3 bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950/20 dark:to-purple-900/30 rounded-lg border border-purple-200 dark:border-purple-800">
                           <div className="flex items-center justify-between mb-2">
                             <span className="text-sm font-medium text-purple-700 dark:text-purple-300">Next Week Forecast</span>
-                            <span className="text-xs px-2 py-1 rounded-full bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300">
+                            <span className="text-xs px-2 py-1 rounded-full bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300">
                               Predicted
                             </span>
                           </div>
@@ -1830,7 +1892,7 @@ export default function ReportsAnalytics() {
                           </div>
                         </div>
 
-                        <div className="p-3 bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-950 dark:to-amber-900 rounded-lg border">
+                        <div className="p-3 bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-950/20 dark:to-amber-900/30 rounded-lg border border-amber-200 dark:border-amber-800">
                           <div className="flex items-center justify-between mb-2">
                             <span className="text-sm font-medium text-amber-700 dark:text-amber-300">Semester Pattern</span>
                             <span className="text-xs px-2 py-1 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300">
@@ -1929,10 +1991,10 @@ export default function ReportsAnalytics() {
                       {/* Performance Status Cards */}
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
                         <div className={`p-3 rounded-lg border ${
-                          exceedsExpectations ? 'bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-950 dark:to-emerald-900 border-emerald-200 dark:border-emerald-800' :
-                          meetsStandards ? 'bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 border-blue-200 dark:border-blue-800' :
-                          needsImprovement ? 'bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-950 dark:to-amber-900 border-amber-200 dark:border-amber-800' :
-                          'bg-gradient-to-br from-red-50 to-red-100 dark:from-red-950 dark:to-red-900 border-red-200 dark:border-red-800'
+                          exceedsExpectations ? 'bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-950/20 dark:to-emerald-900/30 border-emerald-200 dark:border-emerald-800' :
+                          meetsStandards ? 'bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/20 dark:to-blue-900/30 border-blue-200 dark:border-blue-800' :
+                          needsImprovement ? 'bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-950/20 dark:to-amber-900/30 border-amber-200 dark:border-amber-800' :
+                          'bg-gradient-to-br from-red-50 to-red-100 dark:from-red-950/20 dark:to-red-900/30 border-red-200 dark:border-red-800'
                         }`}>
                           <div className="text-center">
                             <div className={`text-2xl mb-2 ${
@@ -1955,7 +2017,7 @@ export default function ReportsAnalytics() {
                           </div>
                         </div>
 
-                        <div className="p-3 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900 rounded-lg border">
+                        <div className="p-3 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-950/20 dark:to-gray-900/30 rounded-lg border border-gray-200 dark:border-gray-800">
                           <div className="text-center">
                             <div className="text-sm font-medium text-muted-foreground">vs Benchmark</div>
                             <div className={`text-lg font-bold ${
@@ -1966,7 +2028,7 @@ export default function ReportsAnalytics() {
                           </div>
                         </div>
 
-                        <div className="p-3 bg-gradient-to-br from-indigo-50 to-indigo-100 dark:from-indigo-950 dark:to-indigo-900 rounded-lg border">
+                        <div className="p-3 bg-gradient-to-br from-indigo-50 to-indigo-100 dark:from-indigo-950/20 dark:to-indigo-900/30 rounded-lg border border-indigo-200 dark:border-indigo-800">
                           <div className="text-center">
                             <div className="text-sm font-medium text-muted-foreground">Consistency</div>
                             <div className={`text-lg font-bold ${
@@ -1980,7 +2042,7 @@ export default function ReportsAnalytics() {
                           </div>
                         </div>
 
-                        <div className="p-3 bg-gradient-to-br from-violet-50 to-violet-100 dark:from-violet-950 dark:to-violet-900 rounded-lg border">
+                        <div className="p-3 bg-gradient-to-br from-violet-50 to-violet-100 dark:from-violet-950/20 dark:to-violet-900/30 rounded-lg border border-violet-200 dark:border-violet-800">
                           <div className="text-center">
                             <div className="text-sm font-medium text-muted-foreground">Improvement Potential</div>
                             <div className={`text-lg font-bold ${
@@ -2095,7 +2157,9 @@ export default function ReportsAnalytics() {
               <div className="bg-card p-4 sm:p-5 rounded-lg border shadow-sm hover:shadow-md transition-all">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5 sm:mb-2">Total Courses</p>
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5 sm:mb-2">
+                      {sessionType === 'tutorial' ? 'Total Tutorials' : 'Total Lectures'}
+                    </p>
                     <p className="text-xl sm:text-2xl font-bold text-foreground">{lecturerTrends.summary.totalSubjects}</p>
                   </div>
                   <div className="min-w-[2.5rem] min-h-[2.5rem] w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center shrink-0">
@@ -2453,16 +2517,18 @@ export default function ReportsAnalytics() {
         </CardHeader>
         <CardContent>
           <Tabs value={detailedAttendanceTab} onValueChange={setDetailedAttendanceTab} className="w-full">
-            <TabsList className="grid w-full max-w-md grid-cols-3 gap-1 h-auto p-1">
+            <TabsList className={`grid w-full max-w-md ${sessionType === 'tutorial' ? 'grid-cols-2' : 'grid-cols-3'} gap-1 h-auto p-1`}>
               <TabsTrigger value="student" className="text-xs sm:text-sm">
                 By Student
               </TabsTrigger>
               <TabsTrigger value="session" className="text-xs sm:text-sm">
                 By Session
               </TabsTrigger>
-              <TabsTrigger value="course" className="text-xs sm:text-sm">
-                By Course
-              </TabsTrigger>
+              {sessionType !== 'tutorial' && (
+                <TabsTrigger value="course" className="text-xs sm:text-sm">
+                  By Course
+                </TabsTrigger>
+              )}
             </TabsList>
 
             {/* Student Tab Content */}
@@ -2754,7 +2820,11 @@ export default function ReportsAnalytics() {
                       {(Array.isArray(detailedAttendanceData) ? detailedAttendanceData : []).map((session: any, index) => (
                         <TableRow key={`session-${index}`}>
                           <TableCell className="font-medium">{session.weekLabel}</TableCell>
-                          <TableCell>{new Date(session.date).toLocaleDateString()}</TableCell>
+                          <TableCell>
+                            {session.date && !isNaN(new Date(session.date).getTime())
+                              ? new Date(session.date).toLocaleDateString()
+                              : 'N/A'}
+                          </TableCell>
                           <TableCell className="text-center">
                             <Badge variant="outline">{session.checkInType}</Badge>
                           </TableCell>
@@ -2821,7 +2891,9 @@ export default function ReportsAnalytics() {
                             </Badge>
                           </TableCell>
                           <TableCell>
-                            {course.lastSession ? new Date(course.lastSession).toLocaleDateString() : 'N/A'}
+                            {course.lastSession && !isNaN(new Date(course.lastSession).getTime())
+                              ? new Date(course.lastSession).toLocaleDateString()
+                              : 'N/A'}
                           </TableCell>
                         </TableRow>
                       ))}
