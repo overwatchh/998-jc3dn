@@ -112,7 +112,7 @@ export async function GET(req: Request) {
       }
     }
 
-    const values: (string | number)[] = [targetStudentId];
+    const values: (string | number)[] = [targetStudentId, targetStudentId];
     let sessionTypeFilter = "";
     if (sessionType) {
       sessionTypeFilter = " AND ss.type = ? ";
@@ -130,24 +130,37 @@ export async function GET(req: Request) {
         s.code AS subject_code,
         ss.type AS session_type,
         qcss.week_number,
-        MAX(c.checkin_time) AS latest_checkin_time,
+        ca.latest_checkin_time,
         r.building_number,
         r.room_number,
         cam.name AS campus_name,
-        COUNT(c.student_id) AS checkin_count
+        COALESCE(ca.checkin_count, 0) AS checkin_count
       FROM qr_code_study_session qcss
-      JOIN study_session ss ON qcss.study_session_id = ss.id
-      JOIN subject_study_session sss ON sss.study_session_id = ss.id
-      JOIN subject s ON s.id = sss.subject_id
-      JOIN enrolment e ON e.subject_id = s.id AND e.student_id = ?
-      JOIN room r ON ss.room_id = r.id
-      JOIN campus cam ON r.campus_id = cam.id
-      LEFT JOIN checkin c ON c.qr_code_study_session_id = qcss.id AND c.student_id = e.student_id
+      JOIN study_session ss           ON qcss.study_session_id = ss.id
+      JOIN subject_study_session sss  ON sss.study_session_id = ss.id
+      JOIN subject s                  ON s.id = sss.subject_id
+      JOIN enrolment e                ON e.subject_id = s.id AND e.student_id = ?
+      JOIN room r                     ON ss.room_id = r.id
+      JOIN campus cam                 ON r.campus_id = cam.id
+      LEFT JOIN (
+        SELECT
+          qr_code_study_session_id,
+          student_id,
+          COUNT(*) AS checkin_count,
+          MAX(checkin_time) AS latest_checkin_time
+        FROM checkin
+        WHERE student_id = ?
+        GROUP BY qr_code_study_session_id, student_id
+      ) ca
+        ON ca.qr_code_study_session_id = qcss.id
+      AND ca.student_id = e.student_id
       WHERE s.status = 'active'
         ${sessionTypeFilter}
-      GROUP BY qcss.id
-      ORDER BY COALESCE(MAX(c.checkin_time), qcss.week_number) DESC
-      LIMIT ?
+      ORDER BY
+        (ca.latest_checkin_time IS NULL),
+        ca.latest_checkin_time DESC,
+        qcss.week_number DESC
+      LIMIT ?;
     `;
 
     const rows = await rawQuery<RecentCheckinAggregateRow>(sql, values);
