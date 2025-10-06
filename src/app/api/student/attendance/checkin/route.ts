@@ -290,7 +290,7 @@ export async function POST(req: NextRequest) {
     await rawQuery(
       `
     INSERT INTO checkin
-      (student_id, qr_code_study_session_id, validity_id, checkin_time, latitude, longitude, checkin_type)
+      (student_id, qr_code_study_session_id, validity_id, checkin_time, checkin_type)
     VALUES (?, ?, ?, ?, ?, ?, ?)
     `,
       [
@@ -298,8 +298,6 @@ export async function POST(req: NextRequest) {
         qrRow.qr_code_study_session_id,
         currentWindow.id,
         now,
-        lat,
-        long,
         checkin_type,
       ]
     );

@@ -6,8 +6,6 @@ SET FOREIGN_KEY_CHECKS = 0;
 
 -- Email-related (depend on subject, study_session, user)
 DELETE FROM email_log;
-DELETE FROM email_reminder_logs;
-DELETE FROM email_reminder_settings;
 
 -- Attendance graph (deepest children first)
 DELETE FROM checkin;
@@ -48,8 +46,6 @@ ALTER TABLE qr_code               AUTO_INCREMENT = 1;
 ALTER TABLE validity              AUTO_INCREMENT = 1;
 ALTER TABLE qr_code_study_session AUTO_INCREMENT = 1;
 ALTER TABLE email_log             AUTO_INCREMENT = 1;
-ALTER TABLE email_reminder_logs   AUTO_INCREMENT = 1;
-ALTER TABLE email_reminder_settings AUTO_INCREMENT = 1;
 
 SET FOREIGN_KEY_CHECKS = 1;
 COMMIT;
