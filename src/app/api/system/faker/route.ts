@@ -1,5 +1,4 @@
 import { auth } from "@/lib/server/auth";
-import { getAnchorForStudySession } from "@/lib/server/db_service/validity_window";
 import { STUDENTS } from "@/lib/server/faker";
 import {
   CAMPUSES,
@@ -9,6 +8,7 @@ import {
   STUDY_SESSIONS,
   SUBJECT_STUDY_SESSIONS,
   LECTURERS,
+  JDC3DN_STUDENTS,
 } from "@/lib/server/faker/fix-data";
 import { rawQuery } from "@/lib/server/query";
 import { computeQrDateForWeek, DayOfWeek, parseTimeToDate } from "@/lib/utils";
@@ -69,9 +69,7 @@ export async function POST(req: NextRequest) {
   const body = await req.json();
 
   // Destructure your fields with defaults
-  const {    
-    generate_checkins_only = true,
-  } = body;
+  const { generate_checkins_only = true } = body;
 
   if (!generate_checkins_only) {
     //1. Create prefixed campuses, rooms, semesters, subjects
@@ -191,7 +189,7 @@ export async function POST(req: NextRequest) {
           },
         });
         const lecID = response.user.id;
-        // assign lecturer to all subjects (study sessions) id=1..29
+        // assign lecturer to all subjects (study sessions) id=1..12
         for (const ss of STUDY_SESSIONS) {
           const assignLecturerSql = `
           INSERT INTO lecturer_study_session (study_session_id, lecturer_id)
@@ -224,8 +222,42 @@ export async function POST(req: NextRequest) {
         });
         const userID = response.user.id;
         // 2.2 Students enroll into subjects (automatically join lecture) and tutorials
-        // randomly enroll each student into 12 subjects
-        const subjectIds = [...Array(12).keys()].map(i => i + 1); // [1,2,3,...12]
+        // handle jc3dn students
+        const isGroupmeber = JDC3DN_STUDENTS.find(
+          member => member.email === student.email
+        );
+        if (isGroupmeber) {
+          // enrol into subject 1
+          await rawQuery(
+            `INSERT INTO enrolment (student_id, subject_id) VALUES (?, ?)`,
+            [userID, 1]
+          );
+          // insert man into lab 1 female into lab 2
+          const maleEmails = [
+            "jjq157@uowmail.edu.au",
+            "dks695@uowmail.edu.au",
+            "ddp505@uowmail.edu.au",
+            "dtn939@uowmail.edu.au",
+          ];
+          const isMale = maleEmails.find(email => email === student.email);
+          if (isMale) {
+            // join tut 1 = stusy session = 2
+            await rawQuery(
+              `INSERT INTO student_study_session (student_id, study_session_id) VALUES (?, ?)`,
+              [userID, 2]
+            );
+          } else {
+            // join tut 2 = stusy session = 3
+            await rawQuery(
+              `INSERT INTO student_study_session (student_id, study_session_id) VALUES (?, ?)`,
+              [userID, 3]
+            );
+          }
+        }
+        // randomly enroll each student into  subjects(except subject=1 - reserved for jc3dn members)
+        const subjectIds = [...Array(SUBJECTS.length).keys()]
+          .map(i => i + 1)
+          .filter(id => id !== 1); // [2,3,...length]
         for (const subjectId of subjectIds) {
           const isJoinSubject = Math.random() < 0.85; // 85% chance to join each subject
           if (isJoinSubject) {
@@ -239,10 +271,11 @@ export async function POST(req: NextRequest) {
               console.error("Enroll subject error", e);
             }
             // enrol student into study tutorial session randomly
-            // find tutorial study session id for the subject
+            // find tutorial study session(except study session for subject 1 - reserved for jc3dn students) id for the subject
             const tutorialStudySessionIds = SUBJECT_STUDY_SESSIONS.filter(
-              ss => ss.subject_id === subjectId
+              item => item.subject_id !== 1
             )
+              .filter(ss => ss.subject_id === subjectId)
               .map(ss => ss.study_session_id)
               .filter(id =>
                 STUDY_SESSIONS.find(s => s.id === id && s.type === "tutorial")
@@ -296,8 +329,8 @@ export async function POST(req: NextRequest) {
       ]);
       const qrCodeId = qrResult.insertId as number;
       // create validity for the qr code
-      // seed week 1 at 2025-07-28
-      const anchor = { week_number: 1, date: "2025-07-28" };
+      // seed week 1 at 2025-08-04
+      const anchor = { week_number: 1, date: "2025-08-04" };
       const sessionDate = computeQrDateForWeek(
         ss.day_of_week as DayOfWeek,
         weekNo,
@@ -385,12 +418,8 @@ export async function POST(req: NextRequest) {
       // checkin students
       for (const s of ss_students) {
         const studentId = s.student_id;
-        // 75%-95% chance the student checks in
-        // Assign a probability between 0.60 and 0.95
-        const checkinProb = 0.75 + Math.random() * 0.2;
-
         // Roll to see if the student checks in
-        const isCheckIn = Math.random() < checkinProb;
+        const isCheckIn = Math.random() < 0.95;
         if (isCheckIn) {
           // only allow In-person or manually checkin
           let checkinType = null as null | "In-person" | "Online" | "Manual";
