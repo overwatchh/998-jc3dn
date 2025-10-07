@@ -1,4 +1,5 @@
 import { auth } from "@/lib/server/auth";
+import { getStudentsForStudySession } from "@/lib/server/db_service/student";
 import { rawQuery } from "@/lib/server/query";
 import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
@@ -85,25 +86,7 @@ export async function GET(
       );
     }
 
-    // Get all students enrolled in the subject that this study session belongs to
-    const studentsSql = `
-      SELECT 
-        u.id AS student_id,
-        u.name,
-        u.email
-      FROM user u
-      JOIN enrolment e ON e.student_id = u.id
-      JOIN subject_study_session sss ON sss.subject_id = e.subject_id
-      WHERE sss.study_session_id = ?
-        AND u.role = 'student'
-      ORDER BY u.name ASC
-    `;
-
-    const students = await rawQuery<{
-      student_id: string;
-      name: string;
-      email: string;
-    }>(studentsSql, [studySessionId]);
+    const students = await getStudentsForStudySession(studySessionId);
 
     return NextResponse.json(students);
   } catch (error: unknown) {

@@ -1,4 +1,5 @@
 import { auth } from "@/lib/server/auth";
+import { verifyStudentInStudySession } from "@/lib/server/db_service/student";
 import { rawQuery } from "@/lib/server/query";
 import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
@@ -99,22 +100,9 @@ export async function POST(req: NextRequest) {
     }
 
     // Check if student is enrolled in the subject for this study session
-    const checkStudentSql = `
-      SELECT u.id, u.name
-      FROM user u
-      JOIN enrolment e ON e.student_id = u.id
-      JOIN subject_study_session sss ON sss.subject_id = e.subject_id
-      WHERE sss.study_session_id = ? 
-        AND u.id = ? 
-        AND u.role = 'student'
-    `;
+    const isStudentAttend = await verifyStudentInStudySession(study_session_id, student_id)
 
-    const [studentRow] = await rawQuery<{ id: string; name: string }>(
-      checkStudentSql,
-      [study_session_id, student_id]
-    );
-
-    if (!studentRow) {
+    if (!isStudentAttend) {
       return NextResponse.json(
         { message: "Student is not enrolled in this course session" },
         { status: 403 }
@@ -136,28 +124,6 @@ export async function POST(req: NextRequest) {
     if (!qrSessionRow) {
       return NextResponse.json(
         { error: "No QR code session found for this study session and week" },
-        { status: 400 }
-      );
-    }
-
-    // Ensure session is active now by verifying at least one active validity window
-    const activeValiditySql = `
-      SELECT id, count AS validity_count
-      FROM validity
-      WHERE qr_code_id = ?
-        AND NOW() BETWEEN start_time AND end_time
-      ORDER BY count ASC
-      LIMIT 1
-    `;
-
-    const [activeValidityRow] = await rawQuery<{
-      id: number;
-      validity_count: number;
-    }>(activeValiditySql, [qrSessionRow.qr_code_id]);
-
-    if (!activeValidityRow) {
-      return NextResponse.json(
-        { error: "No active validity window found for this QR code session" },
         { status: 400 }
       );
     }
@@ -203,6 +169,7 @@ export async function POST(req: NextRequest) {
     // Insert check-ins for any missing validity windows (mark as Manual)
     if (missingValidityIds.length > 0) {
       for (const vId of missingValidityIds) {
+        const now = new Date();
         await rawQuery(
           `
           INSERT INTO checkin (
@@ -211,9 +178,9 @@ export async function POST(req: NextRequest) {
             validity_id,
             checkin_time,
             checkin_type
-          ) VALUES (?, ?, ?, NOW(), 'Manual')
+          ) VALUES (?, ?, ?, ?, 'Manual')
           `,
-          [student_id, qrSessionRow.id, vId]
+          [student_id, qrSessionRow.id, vId, now]
         );
       }
     } else {
@@ -226,7 +193,7 @@ export async function POST(req: NextRequest) {
 
     // Report success with validity_count 2 (i.e., 2/2)
     return NextResponse.json({
-      message: `${studentRow.name} has been checked in successfully`,
+      message: `Checked in successfully`,
       checkin_time: new Date().toISOString(),
       validity_count: 2,
     });
