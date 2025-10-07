@@ -11,7 +11,6 @@ interface DayPattern {
   dayNumber: number;
   totalCheckins: number;
   uniqueStudents: number;
-  onTimePercentage: number;
   distributionPercentage: number;
   peakHour: number | null;
 }
@@ -20,7 +19,6 @@ interface DayOfWeekData {
   patterns: DayPattern[];
   summary: {
     totalCheckins: number;
-    averageOnTimePercentage: number;
     busiestDay: string;
     bestAttendanceDay: string;
     daysWithData: number;
@@ -29,6 +27,7 @@ interface DayOfWeekData {
 
 interface DayOfWeekPatternsProps {
   sessionType?: string;
+  subjectId?: string;
 }
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D', '#FFC658'];
@@ -40,13 +39,13 @@ const formatTime = (hour: number | null) => {
   return `${displayHour}:00 ${ampm}`;
 };
 
-export default function DayOfWeekPatterns({ sessionType = "both" }: DayOfWeekPatternsProps) {
+export default function DayOfWeekPatterns({ sessionType = "both", subjectId }: DayOfWeekPatternsProps) {
   const [data, setData] = useState<DayOfWeekData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchData();
-  }, [sessionType]);
+  }, [sessionType, subjectId]);
 
   const fetchData = async () => {
     try {
@@ -54,6 +53,9 @@ export default function DayOfWeekPatterns({ sessionType = "both" }: DayOfWeekPat
       const params = new URLSearchParams();
       if (sessionType !== "both") {
         params.append("sessionType", sessionType);
+      }
+      if (subjectId && subjectId !== 'all') {
+        params.append("subjectId", subjectId);
       }
 
       const response = await fetch(`/api/analytics/day-of-week-patterns?${params}`);
@@ -74,10 +76,10 @@ export default function DayOfWeekPatterns({ sessionType = "both" }: DayOfWeekPat
         {[...Array(4)].map((_, i) => (
           <Card key={i}>
             <CardHeader className="animate-pulse">
-              <div className="h-6 bg-gray-200 rounded w-3/4"></div>
+              <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
             </CardHeader>
             <CardContent className="animate-pulse">
-              <div className="h-32 bg-gray-200 rounded"></div>
+              <div className="h-32 bg-gray-200 dark:bg-gray-700 rounded"></div>
             </CardContent>
           </Card>
         ))}
@@ -89,7 +91,7 @@ export default function DayOfWeekPatterns({ sessionType = "both" }: DayOfWeekPat
     return (
       <Card>
         <CardContent className="p-6">
-          <p className="text-center text-gray-500">No day-of-week attendance data available</p>
+          <p className="text-center text-muted-foreground">No day-of-week attendance data available</p>
         </CardContent>
       </Card>
     );
@@ -98,7 +100,6 @@ export default function DayOfWeekPatterns({ sessionType = "both" }: DayOfWeekPat
   const chartData = data.patterns.map(pattern => ({
     day: pattern.day.substring(0, 3), // Mon, Tue, etc.
     checkins: pattern.totalCheckins,
-    onTime: pattern.onTimePercentage,
     distribution: pattern.distributionPercentage,
   }));
 
@@ -106,8 +107,8 @@ export default function DayOfWeekPatterns({ sessionType = "both" }: DayOfWeekPat
     <div className="space-y-6">
       {/* Header */}
       <div className="text-center">
-        <h2 className="text-2xl font-bold text-gray-900">Day-of-Week Attendance Patterns</h2>
-        <p className="text-gray-600">Analyze attendance patterns across different days of the week</p>
+        <h2 className="text-2xl font-bold text-foreground">Day-of-Week Attendance Patterns</h2>
+        <p className="text-muted-foreground">Analyze attendance patterns across different days of the week</p>
       </div>
 
       {/* Summary Cards */}
@@ -115,10 +116,10 @@ export default function DayOfWeekPatterns({ sessionType = "both" }: DayOfWeekPat
         <Card>
           <CardContent className="p-4 sm:p-6">
             <div className="flex items-center">
-              <CalendarDays className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600 flex-shrink-0" />
+              <CalendarDays className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600 dark:text-blue-400 flex-shrink-0" />
               <div className="ml-3 sm:ml-4 min-w-0">
-                <p className="text-xs sm:text-sm font-medium text-gray-600">Total Check-ins</p>
-                <p className="text-lg sm:text-2xl font-bold text-gray-900 truncate">
+                <p className="text-xs sm:text-sm font-medium text-muted-foreground">Total Check-ins</p>
+                <p className="text-lg sm:text-2xl font-bold text-foreground truncate">
                   {data.summary.totalCheckins.toLocaleString()}
                 </p>
               </div>
@@ -129,10 +130,10 @@ export default function DayOfWeekPatterns({ sessionType = "both" }: DayOfWeekPat
         <Card>
           <CardContent className="p-4 sm:p-6">
             <div className="flex items-center">
-              <TrendingUp className="h-6 w-6 sm:h-8 sm:w-8 text-orange-600 flex-shrink-0" />
+              <TrendingUp className="h-6 w-6 sm:h-8 sm:w-8 text-orange-600 dark:text-orange-400 flex-shrink-0" />
               <div className="ml-3 sm:ml-4 min-w-0">
-                <p className="text-xs sm:text-sm font-medium text-gray-600">Busiest Day</p>
-                <p className="text-lg sm:text-2xl font-bold text-gray-900 truncate">
+                <p className="text-xs sm:text-sm font-medium text-muted-foreground">Busiest Day</p>
+                <p className="text-lg sm:text-2xl font-bold text-foreground truncate">
                   {data.summary.busiestDay}
                 </p>
               </div>
@@ -143,10 +144,10 @@ export default function DayOfWeekPatterns({ sessionType = "both" }: DayOfWeekPat
         <Card>
           <CardContent className="p-4 sm:p-6">
             <div className="flex items-center">
-              <Users className="h-6 w-6 sm:h-8 sm:w-8 text-purple-600 flex-shrink-0" />
+              <Users className="h-6 w-6 sm:h-8 sm:w-8 text-purple-600 dark:text-purple-400 flex-shrink-0" />
               <div className="ml-3 sm:ml-4 min-w-0">
-                <p className="text-xs sm:text-sm font-medium text-gray-600">Best Attendance</p>
-                <p className="text-lg sm:text-2xl font-bold text-gray-900 truncate">
+                <p className="text-xs sm:text-sm font-medium text-muted-foreground">Best Attendance</p>
+                <p className="text-lg sm:text-2xl font-bold text-foreground truncate">
                   {data.summary.bestAttendanceDay}
                 </p>
               </div>
@@ -180,62 +181,39 @@ export default function DayOfWeekPatterns({ sessionType = "both" }: DayOfWeekPat
           </CardContent>
         </Card>
 
-        {/* On-Time Percentage by Day */}
-        <Card>
-          <CardHeader>
-            <CardTitle>On-Time Percentage by Day</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="day" />
-                <YAxis />
-                <Tooltip
-                  formatter={(value) => [`${value}%`, 'On-Time Rate']}
-                />
-                <Bar dataKey="onTime" fill="#10B981" />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
       </div>
 
       {/* Detailed Day Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {data.patterns.map((pattern, index) => (
-          <Card key={pattern.day} className="hover:shadow-lg transition-shadow">
-            <CardHeader className="pb-2 p-4">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-base sm:text-lg">{pattern.day}</CardTitle>
+          <Card key={pattern.day} className="hover:shadow-lg transition-shadow min-w-0">
+            <CardHeader className="pb-2 p-3 sm:p-4">
+              <div className="flex items-center justify-between gap-2">
+                <CardTitle className="text-sm sm:text-base lg:text-lg truncate">{pattern.day}</CardTitle>
                 <Badge
                   variant={pattern.distributionPercentage > 30 ? "default" : "secondary"}
-                  className="text-xs flex-shrink-0"
+                  className="text-xs flex-shrink-0 whitespace-nowrap"
                 >
                   {pattern.distributionPercentage}%
                 </Badge>
               </div>
             </CardHeader>
-            <CardContent className="space-y-3 p-4">
+            <CardContent className="space-y-2 sm:space-y-3 p-3 sm:p-4">
               <div className="grid grid-cols-2 gap-2 text-xs sm:text-sm">
-                <div>
-                  <p className="text-gray-600">Check-ins</p>
-                  <p className="font-semibold truncate">{pattern.totalCheckins.toLocaleString()}</p>
+                <div className="min-w-0">
+                  <p className="text-muted-foreground text-xs">Check-ins</p>
+                  <p className="font-semibold text-foreground truncate text-sm sm:text-base">{pattern.totalCheckins.toLocaleString()}</p>
                 </div>
-                <div>
-                  <p className="text-gray-600">Students</p>
-                  <p className="font-semibold">{pattern.uniqueStudents}</p>
+                <div className="min-w-0">
+                  <p className="text-muted-foreground text-xs">Students</p>
+                  <p className="font-semibold text-foreground truncate text-sm sm:text-base">{pattern.uniqueStudents}</p>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-2 text-xs sm:text-sm">
-                <div>
-                  <p className="text-gray-600">On-Time</p>
-                  <p className="font-semibold text-green-600">{pattern.onTimePercentage}%</p>
-                </div>
-                <div>
-                  <p className="text-gray-600">Peak Hour</p>
-                  <p className="font-semibold text-blue-600 truncate">{formatTime(pattern.peakHour)}</p>
+              <div className="grid grid-cols-1 gap-2 text-xs sm:text-sm">
+                <div className="min-w-0">
+                  <p className="text-muted-foreground text-xs">Peak Hour</p>
+                  <p className="font-semibold text-blue-600 dark:text-blue-400 truncate text-sm sm:text-base">{formatTime(pattern.peakHour)}</p>
                 </div>
               </div>
             </CardContent>

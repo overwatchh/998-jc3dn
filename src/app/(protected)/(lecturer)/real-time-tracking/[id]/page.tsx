@@ -712,9 +712,6 @@ export default function Page() {
             <div className="text-3xl font-bold">
               {total > 0 ? `${attendanceRate}%` : "—"}
             </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Using email calculator method
-            </p>
           </CardContent>
         </Card>
       </div>
