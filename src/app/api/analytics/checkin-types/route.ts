@@ -56,6 +56,7 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const subjectId = searchParams.get('subjectId');
     const sessionType = searchParams.get('sessionType');
+    const tutorialSessionId = searchParams.get('tutorialSessionId');
 
     // Build WHERE conditions
     const conditions = [];
@@ -66,14 +67,24 @@ export async function GET(request: NextRequest) {
       params.push(parseInt(subjectId));
     }
 
-    if (sessionType && sessionType !== 'both') {
+    // If tutorial session ID is provided, filter by that specific session
+    if (tutorialSessionId) {
+      conditions.push('ss.id = ?');
+      params.push(parseInt(tutorialSessionId));
+    } else if (sessionType && sessionType !== 'both') {
       conditions.push('ss.type = ?');
       params.push(sessionType);
     }
 
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
+    // If filtering by tutorial session, join with student_study_session to only count students in that tutorial
+    const studentSessionJoin = tutorialSessionId
+      ? 'JOIN student_study_session student_ss ON student_ss.student_id = c.student_id AND student_ss.study_session_id = ss.id'
+      : '';
+
     // Get weekly breakdown of UNIQUE STUDENTS by checkin type
+    // This shows how many students used each check-in mode per week (preferred attendance method)
     const needsSubjectJoin = subjectId && subjectId !== 'all';
     const weeklyQuery = `
       SELECT
@@ -83,6 +94,7 @@ export async function GET(request: NextRequest) {
       FROM checkin c
       JOIN qr_code_study_session qrss ON qrss.id = c.qr_code_study_session_id
       JOIN study_session ss ON ss.id = qrss.study_session_id
+      ${studentSessionJoin}
       ${needsSubjectJoin ? 'JOIN subject_study_session sss ON sss.study_session_id = ss.id' : ''}
       ${whereClause}
       GROUP BY qrss.week_number, c.checkin_type

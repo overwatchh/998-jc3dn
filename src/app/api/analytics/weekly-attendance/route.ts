@@ -88,32 +88,63 @@ export async function GET(request: NextRequest) {
     const subjectId = searchParams.get('subjectId'); // Now correctly using subject ID
     const subjectIdNum = subjectId ? parseInt(subjectId) : null;
     const sessionType = searchParams.get('sessionType') || 'lecture';
+    const tutorialSessionId = searchParams.get('tutorialSessionId');
 
-    // Build session type filter
-    const sessionFilter = `AND ss.type = '${sessionType}'`;
+    // Build session filter - if tutorial session ID is provided, filter by that specific session
+    let sessionFilter = '';
+    if (tutorialSessionId) {
+      sessionFilter = `AND ss.id = ${parseInt(tutorialSessionId)}`;
+    } else {
+      sessionFilter = sessionType === 'both' ? '' : `AND ss.type = '${sessionType}'`;
+    }
 
-    // Get basic session info
-    const query = `
-      SELECT
-          s.code as subject_code,
-          s.name as subject_name,
-          qrss.id as qr_session_id,
-          qrss.week_number,
-          COUNT(DISTINCT e.student_id) as total_enrolled,
-          CONCAT('Week ', qrss.week_number) as week_label,
-          DATE_FORMAT(
-            DATE_ADD('2025-07-07', INTERVAL (qrss.week_number - 1) * 7 DAY),
-            '%b %d'
-          ) as date_label
-      FROM qr_code_study_session qrss
-      JOIN study_session ss ON ss.id = qrss.study_session_id
-      JOIN subject_study_session sss ON sss.study_session_id = ss.id
-      JOIN subject s ON s.id = sss.subject_id
-      JOIN enrolment e ON e.subject_id = s.id
-      WHERE 1=1 ${sessionFilter} ${subjectIdNum ? 'AND s.id = ?' : ''}
-      GROUP BY s.code, s.name, qrss.id, qrss.week_number
-      ORDER BY s.code, qrss.week_number
-    `;
+    // Get basic session info - use student_study_session when filtering by tutorial
+    let query = '';
+    if (tutorialSessionId) {
+      query = `
+        SELECT
+            s.code as subject_code,
+            s.name as subject_name,
+            qrss.id as qr_session_id,
+            qrss.week_number,
+            COUNT(DISTINCT student_ss.student_id) as total_enrolled,
+            CONCAT('Week ', qrss.week_number) as week_label,
+            DATE_FORMAT(
+              DATE_ADD('2025-07-07', INTERVAL (qrss.week_number - 1) * 7 DAY),
+              '%b %d'
+            ) as date_label
+        FROM qr_code_study_session qrss
+        JOIN study_session ss ON ss.id = qrss.study_session_id
+        JOIN subject_study_session sss ON sss.study_session_id = ss.id
+        JOIN subject s ON s.id = sss.subject_id
+        JOIN student_study_session student_ss ON student_ss.study_session_id = ss.id
+        WHERE 1=1 AND ss.id = ${parseInt(tutorialSessionId)} ${subjectIdNum ? 'AND s.id = ?' : ''}
+        GROUP BY s.code, s.name, qrss.id, qrss.week_number
+        ORDER BY s.code, qrss.week_number
+      `;
+    } else {
+      query = `
+        SELECT
+            s.code as subject_code,
+            s.name as subject_name,
+            qrss.id as qr_session_id,
+            qrss.week_number,
+            COUNT(DISTINCT e.student_id) as total_enrolled,
+            CONCAT('Week ', qrss.week_number) as week_label,
+            DATE_FORMAT(
+              DATE_ADD('2025-07-07', INTERVAL (qrss.week_number - 1) * 7 DAY),
+              '%b %d'
+            ) as date_label
+        FROM qr_code_study_session qrss
+        JOIN study_session ss ON ss.id = qrss.study_session_id
+        JOIN subject_study_session sss ON sss.study_session_id = ss.id
+        JOIN subject s ON s.id = sss.subject_id
+        JOIN enrolment e ON e.subject_id = s.id
+        WHERE 1=1 ${sessionFilter} ${subjectIdNum ? 'AND s.id = ?' : ''}
+        GROUP BY s.code, s.name, qrss.id, qrss.week_number
+        ORDER BY s.code, qrss.week_number
+      `;
+    }
 
     const params = subjectIdNum ? [subjectIdNum] : [];
     const sessions = await rawQuery(query, params);
@@ -123,7 +154,9 @@ export async function GET(request: NextRequest) {
       sessions.map(async (session: SessionData) => {
         const attendanceRate = await calculateSessionAttendanceRate(
           session.qr_session_id,
-          subjectIdNum || 1 // If no subject specified, use a default (this is edge case)
+          subjectIdNum || 1, // If no subject specified, use a default (this is edge case)
+          sessionType,
+          tutorialSessionId ? parseInt(tutorialSessionId) : undefined
         );
 
         return {

@@ -67,30 +67,67 @@ export async function calculateStudentAttendancePercentage(
  */
 export async function calculateSessionAttendanceRate(
   qrSessionId: number,
-  subjectId: number
+  subjectId: number,
+  sessionType?: string,
+  tutorialSessionId?: number
 ): Promise<number> {
-  // Get all enrolled students and their checkin counts for this session
-  const checkinData = await rawQuery<{
-    student_id: string;
-    checkin_count: number;
-  }>(
-    `
-    SELECT
-      e.student_id,
-      COALESCE(checkin_data.checkin_count, 0) as checkin_count
-    FROM enrolment e
-    LEFT JOIN (
-      SELECT
-        student_id,
-        COUNT(*) as checkin_count
-      FROM checkin
-      WHERE qr_code_study_session_id = ?
-      GROUP BY student_id
-    ) checkin_data ON checkin_data.student_id = e.student_id
-    WHERE e.subject_id = ?
-    `,
-    [qrSessionId, subjectId]
+  // Get QR session to find its study session
+  const [qrSession] = await rawQuery<{ study_session_id: number }>(
+    `SELECT study_session_id FROM qr_code_study_session WHERE id = ?`,
+    [qrSessionId]
   );
+
+  if (!qrSession) return 0;
+
+  let checkinData;
+
+  // If tutorialSessionId is provided, get students from student_study_session
+  if (tutorialSessionId) {
+    checkinData = await rawQuery<{
+      student_id: string;
+      checkin_count: number;
+    }>(
+      `
+      SELECT
+        student_ss.student_id,
+        COALESCE(checkin_data.checkin_count, 0) as checkin_count
+      FROM student_study_session student_ss
+      LEFT JOIN (
+        SELECT
+          student_id,
+          COUNT(*) as checkin_count
+        FROM checkin
+        WHERE qr_code_study_session_id = ?
+        GROUP BY student_id
+      ) checkin_data ON checkin_data.student_id = student_ss.student_id
+      WHERE student_ss.study_session_id = ?
+      `,
+      [qrSessionId, tutorialSessionId]
+    );
+  } else {
+    // Otherwise, get all students enrolled in the subject
+    checkinData = await rawQuery<{
+      student_id: string;
+      checkin_count: number;
+    }>(
+      `
+      SELECT
+        e.student_id,
+        COALESCE(checkin_data.checkin_count, 0) as checkin_count
+      FROM enrolment e
+      LEFT JOIN (
+        SELECT
+          student_id,
+          COUNT(*) as checkin_count
+        FROM checkin
+        WHERE qr_code_study_session_id = ?
+        GROUP BY student_id
+      ) checkin_data ON checkin_data.student_id = e.student_id
+      WHERE e.subject_id = ?
+      `,
+      [qrSessionId, subjectId]
+    );
+  }
 
   // Apply email calculator scoring for each student
   let totalPoints = 0;
