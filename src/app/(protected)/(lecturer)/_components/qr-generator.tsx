@@ -1056,6 +1056,30 @@ export const QRGenerator = () => {
                             prevInfo?.dayOfWeek &&
                               selectedDayOfWeek !== prevInfo.dayOfWeek
                           );
+                          const prevDateLabel = (() => {
+                            try {
+                              if (prevInfo?.dayOfWeek && selectedCourse) {
+                                return getQrDateForWeek(
+                                  prevInfo.dayOfWeek as DayOfWeek,
+                                  selectedCourse.weekNumber,
+                                  anchorQr
+                                );
+                              }
+                            } catch {}
+                            return null;
+                          })();
+                          const nextDateLabel = (() => {
+                            try {
+                              if (selectedCourse && selectedDayOfWeek) {
+                                return getQrDateForWeek(
+                                  selectedDayOfWeek as DayOfWeek,
+                                  selectedCourse.weekNumber,
+                                  anchorQr
+                                );
+                              }
+                            } catch {}
+                            return null;
+                          })();
                           if (hasDayChange) {
                             rows.push(
                               <div
@@ -1067,10 +1091,20 @@ export const QRGenerator = () => {
                                   <span>Day of Week</span>
                                 </div>
                                 <div className="text-muted-foreground text-xs">
-                                  {prevInfo?.dayOfWeek}
+                                  <div>{prevInfo?.dayOfWeek}</div>
+                                  {prevDateLabel && (
+                                    <div className="text-muted-foreground/80 mt-0.5">
+                                      {prevDateLabel}
+                                    </div>
+                                  )}
                                 </div>
                                 <div className="text-primary text-xs font-medium">
-                                  {selectedDayOfWeek}
+                                  <div>{selectedDayOfWeek}</div>
+                                  {nextDateLabel && (
+                                    <div className="text-muted-foreground mt-0.5 font-normal">
+                                      {nextDateLabel}
+                                    </div>
+                                  )}
                                 </div>
                               </div>
                             );
