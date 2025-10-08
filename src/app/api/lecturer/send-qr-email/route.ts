@@ -108,20 +108,39 @@ export async function POST(req: NextRequest) {
     const qrUrl = `${APP_URL}/scan?qr_code_id=${qr_code_id}`;
     const qrDataUrl = await QRCode.toDataURL(qrUrl);
 
-    // Get all enrolled students for this study session
-    const students = await rawQuery<Student>(
-      `
-      SELECT DISTINCT
-        u.id as student_id,
-        u.name as student_name,
-        u.email as student_email
-      FROM enrolment e
-      JOIN user u ON u.id = e.student_id
-      JOIN subject_study_session sss ON sss.subject_id = e.subject_id
-      WHERE sss.study_session_id = ?
-      `,
-      [qrCodeData.study_session_id]
-    );
+    // Get enrolled students for this study session
+    // For tutorials, use student_study_session (students enrolled in specific tutorial)
+    // For lectures, use enrolment (all students enrolled in subject)
+    let students: Student[];
+
+    if (qrCodeData.session_type === 'tutorial') {
+      students = await rawQuery<Student>(
+        `
+        SELECT DISTINCT
+          u.id as student_id,
+          u.name as student_name,
+          u.email as student_email
+        FROM student_study_session sss
+        JOIN user u ON u.id = sss.student_id
+        WHERE sss.study_session_id = ?
+        `,
+        [qrCodeData.study_session_id]
+      );
+    } else {
+      students = await rawQuery<Student>(
+        `
+        SELECT DISTINCT
+          u.id as student_id,
+          u.name as student_name,
+          u.email as student_email
+        FROM enrolment e
+        JOIN user u ON u.id = e.student_id
+        JOIN subject_study_session sss ON sss.subject_id = e.subject_id
+        WHERE sss.study_session_id = ?
+        `,
+        [qrCodeData.study_session_id]
+      );
+    }
 
     if (students.length === 0) {
       return NextResponse.json(
