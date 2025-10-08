@@ -763,28 +763,6 @@ export async function PUT(
       );
     }
 
-    // Optional day_of_week update: Persist new day on the study_session itself if it changed.
-    // NOTE: day_of_week lives on study_session (not on qr_code). Previously the PUT endpoint
-    // only used the provided day_of_week to recompute validity window datetimes without
-    // persisting the change, so subsequent GETs still showed the old day. This block fixes that.
-    const currentDayRows = await rawQuery<{ day_of_week: string }>(
-      `SELECT day_of_week FROM study_session WHERE id = ? LIMIT 1`,
-      [studySessionId]
-    );
-    if (
-      currentDayRows.length === 1 &&
-      currentDayRows[0].day_of_week !== day_of_week
-    ) {
-      await rawQuery(
-        `UPDATE study_session SET day_of_week = ? WHERE id = ? LIMIT 1`,
-        [day_of_week, studySessionId]
-      );
-      // After changing the canonical day_of_week, subsequent anchor computations (earliest
-      // validity for week 1) may shift if this session's first-week QR windows moved.
-      // We recompute validity window datetimes below using the new day_of_week; if multiple
-      // week 1 QR codes exist, the earliest one (possibly old date) will still anchor future
-      // computations. Additional logic could normalize that, but we keep scope minimal here.
-    }
 
     // Step 4: Validate room
     const roomCheckSql = `SELECT id FROM room WHERE id = ? LIMIT 1`;
