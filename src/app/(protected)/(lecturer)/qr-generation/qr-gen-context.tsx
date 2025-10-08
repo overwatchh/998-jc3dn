@@ -106,42 +106,6 @@ export function QrGenProvider({
     }
   }, [currentCourse?.id, currentCourse?.dayOfWeek]);
 
-  // Initialize day-of-week from localStorage per session+week or fall back to course default
-  useEffect(() => {
-    if (!selectedCourse?.sessionId || !selectedCourse?.weekNumber) return;
-    const storageKey = `qrgen:dow:${selectedCourse.sessionId}:${selectedCourse.weekNumber}`;
-    try {
-      const saved = localStorage.getItem(storageKey);
-      const validDays: DayOfWeek[] = [
-        "Monday",
-        "Tuesday",
-        "Wednesday",
-        "Thursday",
-        "Friday",
-        "Saturday",
-        "Sunday",
-      ];
-      if (saved && (validDays as string[]).includes(saved)) {
-        setSelectedDayOfWeek(saved as DayOfWeek);
-      } else if (currentCourse?.dayOfWeek) {
-        setSelectedDayOfWeek(currentCourse.dayOfWeek as DayOfWeek);
-      }
-    } catch {
-      // ignore storage errors
-    }
-  }, [selectedCourse?.sessionId, selectedCourse?.weekNumber, currentCourse?.dayOfWeek]);
-
-  // Persist day-of-week changes per session+week
-  useEffect(() => {
-    if (!selectedCourse?.sessionId || !selectedCourse?.weekNumber) return;
-    const storageKey = `qrgen:dow:${selectedCourse.sessionId}:${selectedCourse.weekNumber}`;
-    try {
-      localStorage.setItem(storageKey, selectedDayOfWeek);
-    } catch {
-      // ignore storage errors
-    }
-  }, [selectedCourse?.sessionId, selectedCourse?.weekNumber, selectedDayOfWeek]);
-
   return (
     <QrGenContext.Provider
       value={{
