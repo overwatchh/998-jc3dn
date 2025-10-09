@@ -61,6 +61,7 @@ export const QRGenerator = () => {
     setWindowsConfigured,
     currentCourse,
     selectedDayOfWeek,
+    loadExistingDayOverride,
   } = useQrGenContext();
 
   const router = useRouter();
@@ -337,6 +338,16 @@ export const QRGenerator = () => {
 
       setQrUrl(response.qr_url);
       setQrGenerated(true);
+      
+      // Persist the day override so it doesn't reset when effects re-run
+      if (selectedCourse) {
+        loadExistingDayOverride(
+          selectedCourse.sessionId,
+          selectedCourse.weekNumber,
+          selectedDayOfWeek
+        );
+      }
+      
       setSuccessType("create");
       toast.success("QR code generated successfully!");
     } catch (error) {
@@ -378,6 +389,16 @@ export const QRGenerator = () => {
       if (refreshed.data?.qr_url) {
         setQrUrl(refreshed.data.qr_url);
       }
+      
+      // Persist the day override so it doesn't reset when effects re-run
+      if (selectedCourse) {
+        loadExistingDayOverride(
+          selectedCourse.sessionId,
+          selectedCourse.weekNumber,
+          selectedDayOfWeek
+        );
+      }
+      
       // Update prevInfo snapshot so further updates require actual new changes
       setPrevInfo(info => {
         if (!info) return info;
@@ -481,6 +502,12 @@ export const QRGenerator = () => {
             null
           : null;
 
+        // Extract the actual day-of-week from the validity window timestamp
+        // This is the real day that was used when the QR was generated
+        const actualDayOfWeek = first?.start_time 
+          ? (new Date(first.start_time).toLocaleDateString('en-US', { weekday: 'long' }) as DayOfWeek)
+          : null;
+
         if (!cancelled) {
           // Set previous info for comparison
           setPrevInfo({
@@ -499,7 +526,7 @@ export const QRGenerator = () => {
                   end: isoToHHMM(second.end_time),
                 }
               : null,
-            dayOfWeek: data.day_of_week || currentCourse?.dayOfWeek || null,
+            dayOfWeek: actualDayOfWeek || currentCourse?.dayOfWeek || null,
           });
 
           // Populate context state from existing QR data
@@ -509,6 +536,7 @@ export const QRGenerator = () => {
           if (data.radius != null) {
             setRadius(data.radius);
           }
+
 
           // Set time windows if both entry and exit windows exist
           if (first && second) {
@@ -634,6 +662,12 @@ export const QRGenerator = () => {
         const v = existingQrList?.data?.[0]?.validities ?? [];
         const first = v.find(x => x.count === 1);
         const second = v.find(x => x.count === 2);
+        
+        // Extract actual day from validity timestamp in fallback too
+        const actualDayOfWeek = first?.start_time 
+          ? (new Date(first.start_time).toLocaleDateString('en-US', { weekday: 'long' }) as DayOfWeek)
+          : null;
+        
         if (!cancelled) {
           setPrevInfo({
             roomLabel: null,
@@ -651,7 +685,7 @@ export const QRGenerator = () => {
                   end: isoToHHMM(second.end_time),
                 }
               : null,
-            dayOfWeek: currentCourse?.dayOfWeek || null,
+            dayOfWeek: actualDayOfWeek || currentCourse?.dayOfWeek || null,
           });
 
           // Try to populate context state from fallback data
@@ -723,6 +757,7 @@ export const QRGenerator = () => {
     existingQrId,
     existingQrList?.data,
     selectedCourse?.sessionId,
+    selectedCourse?.weekNumber,
     currentCourse?.dayOfWeek,
     setValidateGeo,
     setRadius,
@@ -1056,6 +1091,30 @@ export const QRGenerator = () => {
                             prevInfo?.dayOfWeek &&
                               selectedDayOfWeek !== prevInfo.dayOfWeek
                           );
+                          const prevDateLabel = (() => {
+                            try {
+                              if (prevInfo?.dayOfWeek && selectedCourse) {
+                                return getQrDateForWeek(
+                                  prevInfo.dayOfWeek as DayOfWeek,
+                                  selectedCourse.weekNumber,
+                                  anchorQr
+                                );
+                              }
+                            } catch {}
+                            return null;
+                          })();
+                          const nextDateLabel = (() => {
+                            try {
+                              if (selectedCourse && selectedDayOfWeek) {
+                                return getQrDateForWeek(
+                                  selectedDayOfWeek as DayOfWeek,
+                                  selectedCourse.weekNumber,
+                                  anchorQr
+                                );
+                              }
+                            } catch {}
+                            return null;
+                          })();
                           if (hasDayChange) {
                             rows.push(
                               <div
@@ -1067,10 +1126,20 @@ export const QRGenerator = () => {
                                   <span>Day of Week</span>
                                 </div>
                                 <div className="text-muted-foreground text-xs">
-                                  {prevInfo?.dayOfWeek}
+                                  <div>{prevInfo?.dayOfWeek}</div>
+                                  {prevDateLabel && (
+                                    <div className="text-muted-foreground/80 mt-0.5">
+                                      {prevDateLabel}
+                                    </div>
+                                  )}
                                 </div>
                                 <div className="text-primary text-xs font-medium">
-                                  {selectedDayOfWeek}
+                                  <div>{selectedDayOfWeek}</div>
+                                  {nextDateLabel && (
+                                    <div className="text-muted-foreground mt-0.5 font-normal">
+                                      {nextDateLabel}
+                                    </div>
+                                  )}
                                 </div>
                               </div>
                             );

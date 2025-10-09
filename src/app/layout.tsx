@@ -18,6 +18,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
       <head>
         {/* Add necessary head elements here, like meta tags, title, etc. */}
         <title>QR Attendance System</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
       </head>
       <body className="flex min-h-screen flex-col">
         <ReactQueryProvider>

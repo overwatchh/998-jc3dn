@@ -29,7 +29,7 @@ export function SessionSelector() {
     selectedCourse,
     setSelectedCourse,
     selectedDayOfWeek,
-    setSelectedDayOfWeek,
+    setWeekDayOverride,
   } = useQrGenContext();
   const { data: courses, isLoading: isCoursesLoading } = useGetCourses();
 
@@ -92,7 +92,7 @@ export function SessionSelector() {
       setPendingDay(nextDay);
       setShowConfirmDayDialog(true);
     } else {
-      setSelectedDayOfWeek(nextDay);
+      setWeekDayOverride(nextDay);
     }
   }
 
@@ -162,7 +162,7 @@ export function SessionSelector() {
           </div>
           <div className="mt-1 flex flex-wrap items-end gap-3">
             {/* Week */}
-            <div className="min-w-[9rem]">
+            <div className="w-[9rem]">
               <Select
                 value={selectedCourse ? String(selectedCourse.weekNumber) : ""}
                 onValueChange={value =>
@@ -173,7 +173,7 @@ export function SessionSelector() {
                 }
                 disabled={!selectedCourse}
               >
-                <SelectTrigger className="border-border bg-background text-foreground h-8 w-full gap-1 px-2 text-sm">
+                <SelectTrigger className="border-border bg-background text-foreground h-8 w-full gap-1 px-2 text-sm truncate whitespace-nowrap">
                   <SelectValue placeholder="Select week" />
                 </SelectTrigger>
                 <SelectContent className="border-border bg-popover">
@@ -197,14 +197,25 @@ export function SessionSelector() {
             </div>
 
             {/* Day of week */}
-            <div className="min-w-[11rem]">
+            <div className="w-[11rem]">
               <Select
                 value={selectedDayOfWeek}
                 onValueChange={value => handleDayChange(value as DayOfWeek)}
                 disabled={!selectedCourse}
               >
-                <SelectTrigger className="border-border bg-background text-foreground h-8 w-full gap-1 px-2 text-sm">
-                  <SelectValue placeholder="Select day" />
+                <SelectTrigger className="border-border bg-background text-foreground h-8 w-full gap-1 px-2 text-sm truncate whitespace-nowrap">
+                  <SelectValue placeholder="Select day">
+                    {selectedDayOfWeek && (
+                      <span className="flex items-center gap-1.5">
+                        {selectedDayOfWeek}
+                        {defaultDay && selectedDayOfWeek !== defaultDay && (
+                          <span className="text-[10px] rounded-full bg-amber-100 px-1.5 py-0.5 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
+                            Override
+                          </span>
+                        )}
+                      </span>
+                    )}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent className="border-border bg-popover">
                   {[
@@ -254,7 +265,7 @@ export function SessionSelector() {
                 <AlertDialogAction
                   onClick={() => {
                     if (pendingDay) {
-                      setSelectedDayOfWeek(pendingDay);
+                      setWeekDayOverride(pendingDay);
                     }
                     setPendingDay(null);
                   }}

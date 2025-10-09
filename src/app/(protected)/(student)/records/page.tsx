@@ -308,7 +308,7 @@ export default function AttendanceRecordsScreen() {
                   value={selectedCourse}
                   onValueChange={setSelectedCourse}
                 >
-                  <SelectTrigger className="w-56">
+                  <SelectTrigger className="w-full sm:w-56">
                     <SelectValue placeholder="Select course" />
                   </SelectTrigger>
                   <SelectContent>
@@ -324,7 +324,7 @@ export default function AttendanceRecordsScreen() {
                   value={selectedCourseId}
                   onValueChange={setSelectedCourseId}
                 >
-                  <SelectTrigger className="w-44">
+                  <SelectTrigger className="w-full sm:w-44">
                     <SelectValue placeholder="Course ID" />
                   </SelectTrigger>
                   <SelectContent>
@@ -337,7 +337,7 @@ export default function AttendanceRecordsScreen() {
                   </SelectContent>
                 </Select>
                 <Select value={selectedType} onValueChange={setSelectedType}>
-                  <SelectTrigger className="w-40">
+                  <SelectTrigger className="w-full sm:w-40">
                     <SelectValue placeholder="Select type" />
                   </SelectTrigger>
                   <SelectContent>
@@ -350,7 +350,7 @@ export default function AttendanceRecordsScreen() {
                   </SelectContent>
                 </Select>
                 <Select value={selectedWeek} onValueChange={setSelectedWeek}>
-                  <SelectTrigger className="w-28">
+                  <SelectTrigger className="w-full sm:w-28">
                     <SelectValue placeholder="Week" />
                   </SelectTrigger>
                   <SelectContent>
@@ -366,7 +366,7 @@ export default function AttendanceRecordsScreen() {
                   value={selectedCampus}
                   onValueChange={setSelectedCampus}
                 >
-                  <SelectTrigger className="w-40">
+                  <SelectTrigger className="w-full sm:w-40">
                     <SelectValue placeholder="Campus" />
                   </SelectTrigger>
                   <SelectContent>
@@ -382,7 +382,7 @@ export default function AttendanceRecordsScreen() {
                   value={selectedBuilding}
                   onValueChange={setSelectedBuilding}
                 >
-                  <SelectTrigger className="w-40">
+                  <SelectTrigger className="w-full sm:w-40">
                     <SelectValue placeholder="Building" />
                   </SelectTrigger>
                   <SelectContent>
@@ -395,7 +395,7 @@ export default function AttendanceRecordsScreen() {
                   </SelectContent>
                 </Select>
                 <Select value={selectedRoom} onValueChange={setSelectedRoom}>
-                  <SelectTrigger className="w-40">
+                  <SelectTrigger className="w-full sm:w-40">
                     <SelectValue placeholder="Room" />
                   </SelectTrigger>
                   <SelectContent>
@@ -452,46 +452,68 @@ export default function AttendanceRecordsScreen() {
               Failed to load attendance records
             </div>
           ) : filteredRecords.length > 0 ? (
-            <div className="overflow-hidden rounded-md border">
-              <table className="w-full text-sm">
-                <thead className="bg-muted/50">
-                  <tr className="border-b">
-                    <th className="px-3 py-2 text-left font-medium">Course</th>
-                    <th className="px-3 py-2 text-left font-medium">Week</th>
-                    <th className="px-3 py-2 text-left font-medium">Type</th>
-                    <th className="px-3 py-2 text-left font-medium">
-                      Location
-                    </th>
-                    <th className="px-3 py-2 text-left font-medium">Status</th>
-                    <th className="px-3 py-2 text-left font-medium">
-                      Check-in Time
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredRecords.map((r, idx) => (
-                    <tr key={idx} className="hover:bg-muted/40">
-                      <td className="px-3 py-2 font-medium">
-                        {r.subject_name} - {r.subject_code}
-                      </td>
-                      <td className="px-3 py-2">{r.week_number}</td>
-                      <td className="px-3 py-2">
-                        {capitalize(r.session_type)}
-                      </td>
-                      <td className="text-muted-foreground px-3 py-2 text-xs">
-                        {r.building_number}-{r.room_number} · {r.campus_name}
-                      </td>
-                      <td className="px-3 py-2">
+            <>
+              {/* Mobile: Card list */}
+              <div className="space-y-3 md:hidden">
+                {filteredRecords.map((r, idx) => (
+                  <div key={idx} className="rounded-md border p-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="truncate text-sm font-semibold">
+                          {r.subject_name} - {r.subject_code}
+                        </div>
+                        <div className="text-muted-foreground mt-0.5 text-xs">
+                          Week {r.week_number} · {capitalize(r.session_type)}
+                        </div>
+                      </div>
+                      <div className="shrink-0">
                         {getStatusBadge(r.attendance_status)}
-                      </td>
-                      <td className="px-3 py-2 text-xs">
-                        {getDisplayDate(r.latest_checkin_time)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                      </div>
+                    </div>
+                    <div className="text-muted-foreground mt-2 text-xs">
+                      {r.building_number}-{r.room_number} · {r.campus_name}
+                    </div>
+                    <div className="mt-2 text-xs">
+                      {getDisplayDate(r.latest_checkin_time)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Desktop/Tablets: Table with horizontal scroll */}
+              <div className="hidden md:block">
+                <div className="overflow-x-auto rounded-md border">
+                  <table className="w-full min-w-[720px] text-sm">
+                    <thead className="bg-muted/50">
+                      <tr className="border-b">
+                        <th className="px-3 py-2 text-left font-medium">Course</th>
+                        <th className="px-3 py-2 text-left font-medium">Week</th>
+                        <th className="px-3 py-2 text-left font-medium">Type</th>
+                        <th className="px-3 py-2 text-left font-medium">Location</th>
+                        <th className="px-3 py-2 text-left font-medium">Status</th>
+                        <th className="px-3 py-2 text-left font-medium">Check-in Time</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredRecords.map((r, idx) => (
+                        <tr key={idx} className="hover:bg-muted/40">
+                          <td className="px-3 py-2 font-medium">
+                            {r.subject_name} - {r.subject_code}
+                          </td>
+                          <td className="px-3 py-2">{r.week_number}</td>
+                          <td className="px-3 py-2">{capitalize(r.session_type)}</td>
+                          <td className="text-muted-foreground px-3 py-2 text-xs">
+                            {r.building_number}-{r.room_number} · {r.campus_name}
+                          </td>
+                          <td className="px-3 py-2">{getStatusBadge(r.attendance_status)}</td>
+                          <td className="px-3 py-2 text-xs">{getDisplayDate(r.latest_checkin_time)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </>
           ) : (
             <div className="py-12 text-center">
               <Calendar className="mx-auto mb-4 h-12 w-12 text-gray-400" />
