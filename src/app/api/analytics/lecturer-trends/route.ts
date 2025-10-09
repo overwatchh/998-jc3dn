@@ -1,4 +1,6 @@
+import { auth } from "@/lib/server/auth";
 import { rawQuery } from "@/lib/server/query";
+import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
 /**
@@ -128,47 +130,263 @@ import { NextRequest, NextResponse } from "next/server";
  */
 export async function GET(request: NextRequest) {
   try {
+    const session = await auth.api.getSession({ headers: await headers() });
+
+    if (!session || !session.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const searchParams = request.nextUrl.searchParams;
-    const courseId = searchParams.get('subjectId'); // This is actually a study_session_id
+    const courseId = searchParams.get('subjectId'); // This is actually a subject_id now
+    const sessionType = searchParams.get('sessionType') || 'lecture';
+    const tutorialSessionId = searchParams.get('tutorialSessionId');
 
-    // Get simple subject performance
-    const subjectPerformanceQuery = `
-      SELECT
-          s.code as subject_code,
-          s.name as subject_name,
-          COUNT(DISTINCT e.student_id) as total_students,
-          COUNT(DISTINCT qrss.week_number) as total_weeks,
-          ROUND((COUNT(DISTINCT CASE WHEN c.student_id IS NOT NULL THEN CONCAT(qrss.week_number, '-', e.student_id) END) /
-               (COUNT(DISTINCT qrss.week_number) * COUNT(DISTINCT e.student_id))) * 100, 1) as average_attendance
-      FROM subject s
-      JOIN enrolment e ON e.subject_id = s.id
-      JOIN subject_study_session sss ON sss.subject_id = s.id
-      JOIN study_session ss ON ss.id = sss.study_session_id
-      JOIN qr_code_study_session qrss ON qrss.study_session_id = ss.id
-      LEFT JOIN checkin c ON c.qr_code_study_session_id = qrss.id AND c.student_id = e.student_id
-      WHERE ss.type = 'lecture' ${courseId ? 'AND ss.id = ?' : ''}
-      GROUP BY s.id, s.code, s.name
-      ORDER BY average_attendance DESC
-    `;
+    // Build session filter - if tutorial session ID is provided, filter by that specific session
+    let sessionFilter = '';
+    if (tutorialSessionId) {
+      sessionFilter = `AND ss.id = ${parseInt(tutorialSessionId)}`;
+    } else {
+      sessionFilter = `AND ss.type = '${sessionType}'`;
+    }
 
-    // Get weekly trends
-    const weeklyTrendsQuery = `
-      SELECT
-          qrss.week_number,
-          CONCAT('Week ', qrss.week_number) as week_label,
-          ROUND((COUNT(DISTINCT c.student_id) / COUNT(DISTINCT e.student_id)) * 100, 1) as attendance_rate
-      FROM qr_code_study_session qrss
-      JOIN study_session ss ON ss.id = qrss.study_session_id
-      JOIN subject_study_session sss ON sss.study_session_id = ss.id
-      JOIN subject s ON s.id = sss.subject_id
-      JOIN enrolment e ON e.subject_id = s.id
-      LEFT JOIN checkin c ON c.qr_code_study_session_id = qrss.id AND c.student_id = e.student_id
-      WHERE ss.type = 'lecture' ${courseId ? 'AND ss.id = ?' : ''}
-      GROUP BY qrss.week_number
-      ORDER BY qrss.week_number
-    `;
+    // Build lecturer filter based on user role
+    let lecturerFilter = '';
+    const params: (string | number)[] = [];
 
-    const params = courseId ? [parseInt(courseId)] : [];
+    if (session.user.role === "lecturer") {
+      lecturerFilter = 'AND lss.lecturer_id = ?';
+      params.push(session.user.id);
+    }
+
+    if (courseId) {
+      params.push(courseId);
+    }
+
+    // Get subject performance using EMAIL CALCULATOR METHOD - only for subjects taught by this lecturer
+    let subjectPerformanceQuery = '';
+    if (sessionType === 'tutorial') {
+      // For tutorials, show each tutorial session separately (even if a specific tutorial is selected)
+      const tutorialFilter = tutorialSessionId ? `AND ss.id = ${parseInt(tutorialSessionId)}` : '';
+      subjectPerformanceQuery = `
+        SELECT
+            CONCAT(s.code, ' - Tutorial ', ss.id, ' (', r.building_number, '-', r.room_number, ')') as subject_code,
+            s.name as subject_name,
+            COUNT(DISTINCT student_ss.student_id) as total_students,
+            COUNT(DISTINCT qrss.id) as total_weeks,
+            ROUND(
+              (SUM(
+                CASE
+                  WHEN checkin_counts.checkin_count >= 2 THEN 100
+                  WHEN checkin_counts.checkin_count = 1 THEN 50
+                  ELSE 0
+                END
+              ) / (COUNT(DISTINCT qrss.id) * COUNT(DISTINCT student_ss.student_id) * 100)) * 100,
+              1
+            ) as average_attendance
+        FROM study_session ss
+        JOIN student_study_session student_ss ON student_ss.study_session_id = ss.id
+        JOIN lecturer_study_session lss ON lss.study_session_id = ss.id
+        JOIN subject_study_session sss ON sss.study_session_id = ss.id
+        JOIN subject s ON s.id = sss.subject_id
+        JOIN room r ON r.id = ss.room_id
+        JOIN qr_code_study_session qrss ON qrss.study_session_id = ss.id
+        LEFT JOIN (
+          SELECT
+            qr_code_study_session_id,
+            student_id,
+            COUNT(*) as checkin_count
+          FROM checkin
+          GROUP BY qr_code_study_session_id, student_id
+        ) checkin_counts ON checkin_counts.qr_code_study_session_id = qrss.id
+                         AND checkin_counts.student_id = student_ss.student_id
+        WHERE ss.type = 'tutorial' ${tutorialFilter} ${lecturerFilter} ${courseId ? 'AND s.id = ?' : ''}
+        GROUP BY ss.id, s.id, s.code, s.name, r.building_number, r.room_number
+        ORDER BY s.code, ss.id
+      `;
+    } else if (sessionType === 'lecture') {
+      // For lectures, show each lecture session separately
+      subjectPerformanceQuery = `
+        SELECT
+            CONCAT(s.code, ' - Lecture ', ss.id, ' (', r.building_number, '-', r.room_number, ')') as subject_code,
+            s.name as subject_name,
+            COUNT(DISTINCT e.student_id) as total_students,
+            COUNT(DISTINCT qrss.id) as total_weeks,
+            ROUND(
+              (SUM(
+                CASE
+                  WHEN checkin_counts.checkin_count >= 2 THEN 100
+                  WHEN checkin_counts.checkin_count = 1 THEN 50
+                  ELSE 0
+                END
+              ) / (COUNT(DISTINCT qrss.id) * COUNT(DISTINCT e.student_id) * 100)) * 100,
+              1
+            ) as average_attendance
+        FROM study_session ss
+        JOIN lecturer_study_session lss ON lss.study_session_id = ss.id
+        JOIN subject_study_session sss ON sss.study_session_id = ss.id
+        JOIN subject s ON s.id = sss.subject_id
+        JOIN room r ON r.id = ss.room_id
+        JOIN enrolment e ON e.subject_id = s.id
+        JOIN qr_code_study_session qrss ON qrss.study_session_id = ss.id
+        LEFT JOIN (
+          SELECT
+            qr_code_study_session_id,
+            student_id,
+            COUNT(*) as checkin_count
+          FROM checkin
+          GROUP BY qr_code_study_session_id, student_id
+        ) checkin_counts ON checkin_counts.qr_code_study_session_id = qrss.id
+                         AND checkin_counts.student_id = e.student_id
+        WHERE ss.type = 'lecture' ${lecturerFilter} ${courseId ? 'AND s.id = ?' : ''}
+        GROUP BY ss.id, s.id, s.code, s.name, r.building_number, r.room_number
+        ORDER BY s.code, ss.id
+      `;
+    } else {
+      // For 'both', group by subject
+      subjectPerformanceQuery = `
+        SELECT
+            s.code as subject_code,
+            s.name as subject_name,
+            COUNT(DISTINCT e.student_id) as total_students,
+            COUNT(DISTINCT qrss.id) as total_weeks,
+            ROUND(
+              (SUM(
+                CASE
+                  WHEN checkin_counts.checkin_count >= 2 THEN 100
+                  WHEN checkin_counts.checkin_count = 1 THEN 50
+                  ELSE 0
+                END
+              ) / (COUNT(DISTINCT qrss.id) * COUNT(DISTINCT e.student_id) * 100)) * 100,
+              1
+            ) as average_attendance
+        FROM subject s
+        JOIN enrolment e ON e.subject_id = s.id
+        JOIN subject_study_session sss ON sss.subject_id = s.id
+        JOIN study_session ss ON ss.id = sss.study_session_id
+        JOIN lecturer_study_session lss ON lss.study_session_id = ss.id
+        JOIN qr_code_study_session qrss ON qrss.study_session_id = ss.id
+        LEFT JOIN (
+          SELECT
+            qr_code_study_session_id,
+            student_id,
+            COUNT(*) as checkin_count
+          FROM checkin
+          GROUP BY qr_code_study_session_id, student_id
+        ) checkin_counts ON checkin_counts.qr_code_study_session_id = qrss.id
+                         AND checkin_counts.student_id = e.student_id
+        WHERE 1=1 ${sessionFilter} ${lecturerFilter} ${courseId ? 'AND s.id = ?' : ''}
+        GROUP BY s.id, s.code, s.name
+        ORDER BY average_attendance DESC
+      `;
+    }
+
+    // Get weekly trends using EMAIL CALCULATOR METHOD - only for subjects taught by this lecturer
+    let weeklyTrendsQuery = '';
+    if (tutorialSessionId) {
+      weeklyTrendsQuery = `
+        SELECT
+            qrss.week_number,
+            CONCAT('Week ', qrss.week_number) as week_label,
+            ROUND(
+              (SUM(
+                CASE
+                  WHEN checkin_counts.checkin_count >= 2 THEN 100
+                  WHEN checkin_counts.checkin_count = 1 THEN 50
+                  ELSE 0
+                END
+              ) / (COUNT(student_ss.student_id) * 100)) * 100,
+              1
+            ) as attendance_rate
+        FROM qr_code_study_session qrss
+        JOIN study_session ss ON ss.id = qrss.study_session_id
+        JOIN lecturer_study_session lss ON lss.study_session_id = ss.id
+        JOIN subject_study_session sss ON sss.study_session_id = ss.id
+        JOIN subject s ON s.id = sss.subject_id
+        JOIN student_study_session student_ss ON student_ss.study_session_id = ss.id
+        LEFT JOIN (
+          SELECT
+            qr_code_study_session_id,
+            student_id,
+            COUNT(*) as checkin_count
+          FROM checkin
+          GROUP BY qr_code_study_session_id, student_id
+        ) checkin_counts ON checkin_counts.qr_code_study_session_id = qrss.id
+                         AND checkin_counts.student_id = student_ss.student_id
+        WHERE 1=1 AND ss.id = ${parseInt(tutorialSessionId)} ${lecturerFilter} ${courseId ? 'AND s.id = ?' : ''}
+        GROUP BY qrss.week_number
+        ORDER BY qrss.week_number
+      `;
+    } else if (sessionType === 'tutorial') {
+      // For tutorials, use student_study_session to get correct counts
+      weeklyTrendsQuery = `
+        SELECT
+            qrss.week_number,
+            CONCAT('Week ', qrss.week_number) as week_label,
+            ROUND(
+              (SUM(
+                CASE
+                  WHEN checkin_counts.checkin_count >= 2 THEN 100
+                  WHEN checkin_counts.checkin_count = 1 THEN 50
+                  ELSE 0
+                END
+              ) / (COUNT(student_ss.student_id) * 100)) * 100,
+              1
+            ) as attendance_rate
+        FROM qr_code_study_session qrss
+        JOIN study_session ss ON ss.id = qrss.study_session_id
+        JOIN lecturer_study_session lss ON lss.study_session_id = ss.id
+        JOIN subject_study_session sss ON sss.study_session_id = ss.id
+        JOIN subject s ON s.id = sss.subject_id
+        JOIN student_study_session student_ss ON student_ss.study_session_id = ss.id
+        LEFT JOIN (
+          SELECT
+            qr_code_study_session_id,
+            student_id,
+            COUNT(*) as checkin_count
+          FROM checkin
+          GROUP BY qr_code_study_session_id, student_id
+        ) checkin_counts ON checkin_counts.qr_code_study_session_id = qrss.id
+                         AND checkin_counts.student_id = student_ss.student_id
+        WHERE ss.type = 'tutorial' ${lecturerFilter} ${courseId ? 'AND s.id = ?' : ''}
+        GROUP BY qrss.week_number
+        ORDER BY qrss.week_number
+      `;
+    } else {
+      // For lectures, use enrolment
+      weeklyTrendsQuery = `
+        SELECT
+            qrss.week_number,
+            CONCAT('Week ', qrss.week_number) as week_label,
+            ROUND(
+              (SUM(
+                CASE
+                  WHEN checkin_counts.checkin_count >= 2 THEN 100
+                  WHEN checkin_counts.checkin_count = 1 THEN 50
+                  ELSE 0
+                END
+              ) / (COUNT(e.student_id) * 100)) * 100,
+              1
+            ) as attendance_rate
+        FROM qr_code_study_session qrss
+        JOIN study_session ss ON ss.id = qrss.study_session_id
+        JOIN lecturer_study_session lss ON lss.study_session_id = ss.id
+        JOIN subject_study_session sss ON sss.study_session_id = ss.id
+        JOIN subject s ON s.id = sss.subject_id
+        JOIN enrolment e ON e.subject_id = s.id
+        LEFT JOIN (
+          SELECT
+            qr_code_study_session_id,
+            student_id,
+            COUNT(*) as checkin_count
+          FROM checkin
+          GROUP BY qr_code_study_session_id, student_id
+        ) checkin_counts ON checkin_counts.qr_code_study_session_id = qrss.id
+                         AND checkin_counts.student_id = e.student_id
+        WHERE 1=1 ${sessionFilter} ${lecturerFilter} ${courseId ? 'AND s.id = ?' : ''}
+        GROUP BY qrss.week_number
+        ORDER BY qrss.week_number
+      `;
+    }
 
     const [subjectPerformance, weeklyTrends] = await Promise.all([
       rawQuery(subjectPerformanceQuery, params),
@@ -179,13 +397,21 @@ export async function GET(request: NextRequest) {
 
     // Calculate summary statistics
     const totalSubjects = subjectPerformance.length;
-    const totalStudents = subjectPerformance.reduce((sum, subject) => sum + ((subject as any).total_students || 0), 0);
+    const totalStudents = (subjectPerformance as {
+      total_students: number;
+    }[]).reduce((sum, subject) => sum + (subject.total_students || 0), 0);
 
     // Convert string values to numbers and filter valid attendance values
-    const validAttendanceValues = subjectPerformance
-      .map((subject: any) => ({
+    const validAttendanceValues = (subjectPerformance as {
+      subject_code: string;
+      subject_name: string;
+      total_students: number;
+      total_weeks: number;
+      average_attendance: string | number;
+    }[])
+      .map(subject => ({
         ...subject,
-        average_attendance: parseFloat(subject.average_attendance) || 0
+        average_attendance: parseFloat(String(subject.average_attendance)) || 0
       }))
       .filter(subject => !isNaN(subject.average_attendance) && subject.average_attendance > 0);
 
@@ -194,8 +420,14 @@ export async function GET(request: NextRequest) {
       : 0;
 
     // Add performance levels to subjects
-    const subjectsWithPerformance = subjectPerformance.map((subject: any) => {
-      const attendance = parseFloat(subject.average_attendance) || 0;
+    const subjectsWithPerformance = (subjectPerformance as {
+      subject_code: string;
+      subject_name: string;
+      total_students: number;
+      total_weeks: number;
+      average_attendance: string | number;
+    }[]).map(subject => {
+      const attendance = parseFloat(String(subject.average_attendance)) || 0;
       return {
         ...subject,
         average_attendance: attendance, // Convert to number
@@ -214,9 +446,13 @@ export async function GET(request: NextRequest) {
     };
 
     // Convert weekly trends to numbers and calculate trend direction
-    const weeklyTrendsWithNumbers = weeklyTrends.map((week: any) => ({
+    const weeklyTrendsWithNumbers = (weeklyTrends as {
+      week_number: number;
+      week_label: string;
+      attendance_rate: string | number;
+    }[]).map(week => ({
       ...week,
-      attendance_rate: parseFloat(week.attendance_rate) || 0
+      attendance_rate: parseFloat(String(week.attendance_rate)) || 0
     }));
 
     const recentWeeks = weeklyTrendsWithNumbers.slice(-4);
@@ -245,7 +481,7 @@ export async function GET(request: NextRequest) {
     // console.log('Final API response:', responseData); // Removed for production
     return NextResponse.json(responseData);
   } catch (error) {
-    console.error('Lecturer trends API error:', error);
-    return NextResponse.json({ error: 'Failed to fetch lecturer trends data' }, { status: 500 });
+    console.error("Lecturer trends API error:", error);
+    return NextResponse.json({ error: "Failed to fetch lecturer trends data" }, { status: 500 });
   }
 }

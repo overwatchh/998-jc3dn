@@ -1,0 +1,298 @@
+// seed-static.ts
+
+export const CAMPUSES = [
+  { id: 1, name: "Wollongong" },
+  { id: 2, name: "Sydney" },
+];
+
+export const ROOMS = [
+  {
+    id: 1,
+    building_number: "17",
+    room_number: "101",
+    description: "Library",
+    latitude: -34.406735319735034,
+    longitude: 150.87855122064795,
+    campus_id: 1,
+  },
+  {
+    id: 2,
+    building_number: "20",
+    room_number: "102",
+    description: "Building 20",
+    latitude: -34.405756696459065,
+    longitude: 150.8784914211785,
+    campus_id: 1,
+  },
+  {
+    id: 3,
+    building_number: "14",
+    room_number: "201",
+    description: "Building 14",
+    latitude: -34.40637101770338,
+    longitude: 150.8801386108864,
+    campus_id: 1,
+  },
+  {
+    id: 4,
+    building_number: "17",
+    room_number: "202",
+    description: "Building 17",
+    latitude: -34.40689043969014,
+    longitude: 150.87804938559652,
+    campus_id: 1,
+  },
+  {
+    id: 5,
+    building_number: "2",
+    room_number: "103",
+    description: "Building 2",
+    latitude: -34.40661777021882,
+    longitude: 150.88137803896953,
+    campus_id: 1,
+  },
+  {
+    id: 6,
+    building_number: "3",
+    room_number: "213",
+    description: "Building 3",
+    latitude: -34.40620183243544,
+    longitude: 150.88242181118372,
+    campus_id: 1,
+  },
+  {
+    id: 7,
+    building_number: "22",
+    room_number: "103",
+    description: "Building 22",
+    latitude: -34.404630436746494,
+    longitude: 150.87661222539015,
+    campus_id: 1,
+  },
+  {
+    id: 8,
+    building_number: "40",
+    room_number: "103",
+    description: "Building 40",
+    latitude: -34.4062537916668,
+    longitude: 150.87683726956962,
+    campus_id: 1,
+  },
+  {
+    id: 9,
+    building_number: "35",
+    room_number: "103",
+    description: "Building 35",
+    latitude: -34.40582005010667,
+    longitude: 150.88081766767468,
+    campus_id: 1,
+  },
+  {
+    id: 10,
+    building_number: "12",
+    room_number: "2",
+    description: "Building 67",
+    latitude: -34.427031,
+    longitude: 150.885741,
+    campus_id: 1,
+  },
+];
+
+export const SEMESTEERS = [
+  { id: 1, name: "spring" as const, year: 2024 },
+  { id: 2, name: "autumn" as const, year: 2025 },
+  { id: 3, name: "spring" as const, year: 2025 },
+];
+
+export const SUBJECTS = [
+  {
+    id: 1,
+    name: "Project Capstone",
+    code: "CSIT998",
+    semester_id: 3,
+    status: "active" as const,
+  },
+  {
+    id: 2,
+    name: "Database management",
+    code: "CSIT882",
+    semester_id: 3,
+    status: "active" as const,
+  },
+  {
+    id: 3,
+    name: "Research methodology",
+    code: "CSIT940",
+    semester_id: 3,
+    status: "active" as const,
+  },
+  {
+    id: 4,
+    name: "Web server programming",
+    code: "MTS9307",
+    semester_id: 3,
+    status: "active" as const,
+  },
+];
+
+export const LECTURERS = [
+  {
+    name: "Khoa Nguyen",
+    email: "khoa@uow.edu.au",
+    password: "Abcd@1234",
+    role: "lecturer" as const,
+  },
+];
+
+export const JDC3DN_STUDENTS = [
+  {
+    name: "Justin James Quinn",
+    email: "jjq157@uowmail.edu.au",
+    password: "Abcd@1234",
+    role: "student" as const,
+  },
+  {
+    name: "Deepak Kumar Sunar",
+    email: "dks695@uowmail.edu.au",
+    password: "Abcd@1234",
+    role: "student" as const,
+  },
+  {
+    name: "Changu Doreen Chankie-Madoda",
+    email: "cdcm052@uowmail.edu.au",
+    password: "Abcd@1234",
+    role: "student" as const,
+  },
+  {
+    name: "Ngo Minh Thu Le",
+    email: "nmtl087@uowmail.edu.au",
+    password: "Abcd@1234",
+    role: "student" as const,
+  },
+  {
+    name: "Dai Duong Phan",
+    email: "ddp505@uowmail.edu.au",
+    password: "Abcd@1234",
+    role: "student" as const,
+  },
+  {
+    name: "Dang Tuan Nguyen",
+    email: "dtn939@uowmail.edu.au",
+    password: "Abcd@1234",
+    role: "student" as const,
+  },
+];
+
+export const STUDY_SESSIONS = [
+  {
+    id: 1,
+    type: "lecture",
+    day_of_week: "Thursday",
+    start_time: "13:40:00",
+    end_time: "14:40:00",
+    room_id: 1,
+  },
+  {
+    id: 2,
+    type: "tutorial",
+    day_of_week: "Wednesday",
+    start_time: "13:00:00",
+    end_time: "15:00:00",
+    room_id: 2,
+  },
+  {
+    id: 3,
+    type: "tutorial",
+    day_of_week: "Friday",
+    start_time: "10:00:00",
+    end_time: "12:00:00",
+    room_id: 3,
+  },
+  {
+    id: 4,
+    type: "lecture",
+    day_of_week: "Tuesday",
+    start_time: "22:55:00",
+    end_time: "23:55:00",
+    room_id: 4,
+  },
+  {
+    id: 5,
+    type: "tutorial",
+    day_of_week: "Thursday",
+    start_time: "14:00:00",
+    end_time: "16:00:00",
+    room_id: 5,
+  },
+  {
+    id: 6,
+    type: "tutorial",
+    day_of_week: "Friday",
+    start_time: "12:00:00",
+    end_time: "14:00:00",
+    room_id: 6,
+  },
+  {
+    id: 7,
+    type: "lecture",
+    day_of_week: "Wednesday",
+    start_time: "11:00:00",
+    end_time: "13:00:00",
+    room_id: 7,
+  },
+  {
+    id: 8,
+    type: "tutorial",
+    day_of_week: "Thursday",
+    start_time: "10:00:00",
+    end_time: "12:00:00",
+    room_id: 8,
+  },
+  {
+    id: 9,
+    type: "tutorial",
+    day_of_week: "Friday",
+    start_time: "14:00:00",
+    end_time: "16:00:00",
+    room_id: 9,
+  },
+  {
+    id: 10,
+    type: "lecture",
+    day_of_week: "Thursday",
+    start_time: "10:40:00",
+    end_time: "12:40:00",
+    room_id: 10,
+  },
+  {
+    id: 11,
+    type: "tutorial",
+    day_of_week: "Friday",
+    start_time: "13:00:00",
+    end_time: "15:00:00",
+    room_id: 1,
+  },
+  {
+    id: 12,
+    type: "tutorial",
+    day_of_week: "Thursday",
+    start_time: "08:00:00",
+    end_time: "10:00:00",
+    room_id: 2,
+  },
+];
+
+export const SUBJECT_STUDY_SESSIONS = [
+  { subject_id: 1, study_session_id: 1 },
+  { subject_id: 1, study_session_id: 2 },
+  { subject_id: 1, study_session_id: 3 },
+  { subject_id: 2, study_session_id: 4 },
+  { subject_id: 2, study_session_id: 5 },
+  { subject_id: 2, study_session_id: 6 },
+  { subject_id: 3, study_session_id: 7 },
+  { subject_id: 3, study_session_id: 8 },
+  { subject_id: 3, study_session_id: 9 },
+  { subject_id: 4, study_session_id: 10 },
+  { subject_id: 4, study_session_id: 11 },
+  { subject_id: 4, study_session_id: 12 },
+];

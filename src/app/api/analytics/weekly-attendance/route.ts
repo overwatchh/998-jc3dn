@@ -1,6 +1,17 @@
 import { rawQuery } from "@/lib/server/query";
 import { NextRequest, NextResponse } from "next/server";
 
+interface SessionData {
+  subject_code: string;
+  subject_name: string;
+  qr_session_id: number;
+  week_number: number;
+  total_enrolled: number;
+  week_label: string;
+  date_label: string;
+}
+import { calculateSessionAttendanceRate } from "@/lib/server/email-calculator";
+
 /**
  * @openapi
  * /api/analytics/weekly-attendance:
@@ -17,6 +28,14 @@ import { NextRequest, NextResponse } from "next/server";
  *           type: integer
  *           example: 101
  *         description: Study session ID to filter results (optional)
+ *       - in: query
+ *         name: sessionType
+ *         required: false
+ *         schema:
+ *           type: string
+ *           enum: [lecture, tutorial, both]
+ *           default: lecture
+ *         description: Type of sessions to include in analysis
  *     responses:
  *       200:
  *         description: Weekly attendance data retrieved successfully
@@ -66,35 +85,96 @@ import { NextRequest, NextResponse } from "next/server";
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
-    const courseId = searchParams.get('subjectId'); // This is actually a study_session_id
+    const subjectId = searchParams.get('subjectId'); // Now correctly using subject ID
+    const subjectIdNum = subjectId ? parseInt(subjectId) : null;
+    const sessionType = searchParams.get('sessionType') || 'lecture';
+    const tutorialSessionId = searchParams.get('tutorialSessionId');
 
-    const query = `
-      SELECT
-          s.code as subject_code,
-          s.name as subject_name,
-          qrss.week_number,
-          COUNT(DISTINCT e.student_id) as total_enrolled,
-          COUNT(DISTINCT c.student_id) as students_attended,
-          ROUND((COUNT(DISTINCT c.student_id) / COUNT(DISTINCT e.student_id)) * 100, 1) as attendance_rate,
-          CONCAT('Week ', qrss.week_number) as week_label,
-          DATE_FORMAT(MIN(ss.start_time), '%b %d') as date_label
-      FROM qr_code_study_session qrss
-      JOIN study_session ss ON ss.id = qrss.study_session_id
-      JOIN subject_study_session sss ON sss.study_session_id = ss.id
-      JOIN subject s ON s.id = sss.subject_id
-      JOIN enrolment e ON e.subject_id = s.id
-      LEFT JOIN checkin c ON c.qr_code_study_session_id = qrss.id AND c.student_id = e.student_id
-      WHERE ss.type = 'lecture' ${courseId ? 'AND ss.id = ?' : ''}
-      GROUP BY s.code, s.name, qrss.week_number
-      ORDER BY s.code, qrss.week_number
-    `;
+    // Build session filter - if tutorial session ID is provided, filter by that specific session
+    let sessionFilter = '';
+    if (tutorialSessionId) {
+      sessionFilter = `AND ss.id = ${parseInt(tutorialSessionId)}`;
+    } else {
+      sessionFilter = sessionType === 'both' ? '' : `AND ss.type = '${sessionType}'`;
+    }
 
-    const params = courseId ? [parseInt(courseId)] : [];
-    const data = await rawQuery(query, params);
+    // Get basic session info - use student_study_session when filtering by tutorial
+    let query = '';
+    if (tutorialSessionId) {
+      query = `
+        SELECT
+            s.code as subject_code,
+            s.name as subject_name,
+            qrss.id as qr_session_id,
+            qrss.week_number,
+            COUNT(DISTINCT student_ss.student_id) as total_enrolled,
+            CONCAT('Week ', qrss.week_number) as week_label,
+            DATE_FORMAT(
+              DATE_ADD('2025-07-07', INTERVAL (qrss.week_number - 1) * 7 DAY),
+              '%b %d'
+            ) as date_label
+        FROM qr_code_study_session qrss
+        JOIN study_session ss ON ss.id = qrss.study_session_id
+        JOIN subject_study_session sss ON sss.study_session_id = ss.id
+        JOIN subject s ON s.id = sss.subject_id
+        JOIN student_study_session student_ss ON student_ss.study_session_id = ss.id
+        WHERE 1=1 AND ss.id = ${parseInt(tutorialSessionId)} ${subjectIdNum ? 'AND s.id = ?' : ''}
+        GROUP BY s.code, s.name, qrss.id, qrss.week_number
+        ORDER BY s.code, qrss.week_number
+      `;
+    } else {
+      query = `
+        SELECT
+            s.code as subject_code,
+            s.name as subject_name,
+            qrss.id as qr_session_id,
+            qrss.week_number,
+            COUNT(DISTINCT e.student_id) as total_enrolled,
+            CONCAT('Week ', qrss.week_number) as week_label,
+            DATE_FORMAT(
+              DATE_ADD('2025-07-07', INTERVAL (qrss.week_number - 1) * 7 DAY),
+              '%b %d'
+            ) as date_label
+        FROM qr_code_study_session qrss
+        JOIN study_session ss ON ss.id = qrss.study_session_id
+        JOIN subject_study_session sss ON sss.study_session_id = ss.id
+        JOIN subject s ON s.id = sss.subject_id
+        JOIN enrolment e ON e.subject_id = s.id
+        WHERE 1=1 ${sessionFilter} ${subjectIdNum ? 'AND s.id = ?' : ''}
+        GROUP BY s.code, s.name, qrss.id, qrss.week_number
+        ORDER BY s.code, qrss.week_number
+      `;
+    }
 
-    return NextResponse.json(data);
+    const params = subjectIdNum ? [subjectIdNum] : [];
+    const sessions = await rawQuery(query, params);
+
+    // Calculate attendance using email calculator method for each session
+    const dataWithAttendance = await Promise.all(
+      sessions.map(async (session: SessionData) => {
+        const attendanceRate = await calculateSessionAttendanceRate(
+          session.qr_session_id,
+          subjectIdNum || 1, // If no subject specified, use a default (this is edge case)
+          sessionType,
+          tutorialSessionId ? parseInt(tutorialSessionId) : undefined
+        );
+
+        return {
+          subject_code: session.subject_code,
+          subject_name: session.subject_name,
+          week_number: session.week_number,
+          total_enrolled: session.total_enrolled,
+          students_attended: Math.round((attendanceRate * session.total_enrolled) / 100),
+          attendance_rate: Math.round(attendanceRate * 10) / 10,
+          week_label: session.week_label,
+          date_label: session.date_label
+        };
+      })
+    );
+
+    return NextResponse.json(dataWithAttendance);
   } catch (error) {
-    console.error('Weekly attendance API error:', error);
-    return NextResponse.json({ error: 'Failed to fetch weekly attendance data' }, { status: 500 });
+    console.error("Weekly attendance API error:", error);
+    return NextResponse.json({ error: "Failed to fetch weekly attendance data" }, { status: 500 });
   }
 }

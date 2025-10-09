@@ -64,6 +64,10 @@
  *                     - 2 → within second validity window
  *                     - 0 → not in any validity window
  *                   example: 0
+ *                 day_of_week:
+ *                   type: string
+ *                   description: Day of week associated with the QR's study session (e.g., Monday)
+ *                   example: Wednesday
  *                 radius:
  *                   type: integer
  *                   description: Allowed radius in meters for geolocation validation
@@ -103,7 +107,7 @@
 import { auth } from "@/lib/server/auth";
 import { rawQuery } from "@/lib/server/query";
 import { headers } from "next/headers";
-import { NextResponse, NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
   req: NextRequest,
@@ -124,13 +128,14 @@ export async function GET(
       // Allow unauthenticated access for basic QR info
     }
 
-    // Fetch validity count and optionally room location + radius
+    // Fetch QR + room info
     const sql = `
-      SELECT         
+      SELECT
         r.latitude AS latitude,
         r.longitude AS longitude,
         qc.valid_radius AS radius,
-        qc.validate_geo,        
+        qc.validate_geo,
+        ss.day_of_week AS day_of_week,
         r.building_number AS building_number,
         r.room_number AS room_number,
         r.id AS room_id
@@ -146,12 +151,12 @@ export async function GET(
       latitude: number | null;
       longitude: number | null;
       radius: number | null;
+      day_of_week: string | null;
       building_number: string | null;
       room_number: string | null;
       room_id: number;
     }>(sql, [qrId]);
 
-    // If no QR code found, return NOT_GENERATED status
     if (results.length === 0) {
       return NextResponse.json({
         message: "Fetched QR info successfully",
@@ -159,58 +164,66 @@ export async function GET(
         validities: [],
         validity_count: -1, // NOT_GENERATED
         radius: null,
+        day_of_week: null,
         location: null,
       });
     }
 
     const [result] = results;
-    // query validites information
+
+    // --- CHANGED: remove DB-side CASE; just return rows and compute in JS
     const validitiesSql = `
-        SELECT        
+      SELECT
         v.id AS validity_id,
         v.count,
-        start_time,
-        end_time,
-        (
-          CASE
-            WHEN EXISTS (
-              SELECT 1 FROM validity vx
-              WHERE vx.qr_code_id = v.qr_code_id
-                AND vx.count = 1
-                AND NOW() BETWEEN vx.start_time AND vx.end_time
-            ) THEN 1
-            WHEN EXISTS (
-              SELECT 1 FROM validity vx
-              WHERE vx.qr_code_id = v.qr_code_id
-                AND vx.count = 2
-                AND NOW() BETWEEN vx.start_time AND vx.end_time
-            ) THEN 2
-            ELSE 0
-          END
-        ) AS validity_count
+        v.start_time,
+        v.end_time
       FROM validity v
       WHERE v.qr_code_id = ?
-      ORDER BY v.count`;
+      ORDER BY v.count
+    `;
     const validities = await rawQuery<{
       validity_id: number;
-      count: number;
-      start_time: string;
-      end_time: string;
-      validity_count: number;
+      count: number;          // 1 or 2
+      start_time: string;     // ISO-ish datetime string from DB
+      end_time: string;       // ISO-ish datetime string from DB
     }>(validitiesSql, [qrId]);
+
+    // Compute the active validity window in JS using Date()
+    // Priority: if a count=1 window is active -> 1; else if count=2 active -> 2; else 0
+    const now = new Date();
+    let validityCount = 0;
+
+    // Check count=1 first
+    if (
+      validities.some(v => {
+        if (!v.start_time || !v.end_time) return false;
+        const start = new Date(v.start_time);
+        const end = new Date(v.end_time);
+        return v.count === 1 && now >= start && now <= end;
+      })
+    ) {
+      validityCount = 1;
+    } else if (
+      validities.some(v => {
+        if (!v.start_time || !v.end_time) return false;
+        const start = new Date(v.start_time);
+        const end = new Date(v.end_time);
+        return v.count === 2 && now >= start && now <= end;
+      })
+    ) {
+      validityCount = 2;
+    }
 
     // Fetch student check-in status if authenticated
     let studentCheckins: { validity_id: number; checkin_time: string }[] = [];
     if (studentId && validities.length > 0) {
-      // Get qr_code_study_session_id first
       const qrSessionSql = `
-        SELECT id FROM qr_code_study_session 
+        SELECT id FROM qr_code_study_session
         WHERE qr_code_id = ?
         LIMIT 1
       `;
-      const qrSessionResult = await rawQuery<{ id: number }>(qrSessionSql, [
-        qrId,
-      ]);
+      const qrSessionResult = await rawQuery<{ id: number }>(qrSessionSql, [qrId]);
 
       if (qrSessionResult.length > 0) {
         const qrSessionId = qrSessionResult[0].id;
@@ -230,14 +243,12 @@ export async function GET(
         }>(checkinSql, [studentId, qrSessionId, ...validityIds]);
       }
     }
-    // Create a map of validity_id to check-in status
-    const checkinMap = new Map(
-      studentCheckins.map(c => [c.validity_id, c.checkin_time])
-    );
+
+    const checkinMap = new Map(studentCheckins.map(c => [c.validity_id, c.checkin_time]));
 
     return NextResponse.json({
       message: "Fetched QR info successfully",
-      validate_geo: result.validate_geo ? true : false,
+      validate_geo: !!result.validate_geo,
       validities: validities.map(v => ({
         id: v.validity_id,
         count: v.count,
@@ -246,8 +257,9 @@ export async function GET(
         is_checked_in: checkinMap.has(v.validity_id),
         checkin_time: checkinMap.get(v.validity_id) || null,
       })),
-      validity_count: validities.length > 0 ? validities[0].validity_count : 0,
+      validity_count: validityCount,
       radius: result.radius !== null ? Number(result.radius) : null,
+      day_of_week: result.day_of_week || null,
       location:
         result && result.latitude !== null && result.longitude !== null
           ? {
@@ -261,9 +273,6 @@ export async function GET(
     });
   } catch (error) {
     console.error(error);
-    return NextResponse.json(
-      { message: "Internal Server Error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });
   }
 }

@@ -22,6 +22,21 @@ export const GenerateQrRequestSchema = z.object({
     required_error: "validate_geo is required",
     invalid_type_error: "validate_geo must be a boolean",
   }),
+  day_of_week: z.enum(
+    [
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+      "Saturday",
+      "Sunday",
+    ],
+    {
+      required_error: "day_of_week is required",
+      invalid_type_error: "day_of_week must be one of Monday–Sunday",
+    }
+  ),
   validities: z
     .array(
       z.object({

@@ -9,16 +9,17 @@ import {
 } from "@/components/ui/collapsible";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatHHMM } from "@/lib/utils";
+import { useTour } from "@reactour/tour";
 import {
   ArrowLeft,
-  MapPin,
-  Clock,
   ChevronDown,
   ChevronRight,
+  Clock,
   LayoutGrid,
   List,
+  MapPin,
 } from "lucide-react";
-import { useMemo, useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQrGenContext } from "../qr-generation/qr-gen-context";
 import { QRGenScreens } from "../qr-generation/types";
 import { QRGenerator } from "./qr-generator";
@@ -38,6 +39,7 @@ export function NewQrGeneration() {
     validateGeo,
     radius,
   } = useQrGenContext();
+  const { isOpen: tourOpen, currentStep, setCurrentStep } = useTour();
 
   // Track active tab and reset to location when week changes
   const [activeTab, setActiveTab] = useState("location");
@@ -153,17 +155,32 @@ export function NewQrGeneration() {
                     <MapPin className="h-4 w-4" />
                     Location
                   </TabsTrigger>
-                  <TabsTrigger value="time" className="flex items-center gap-2">
+                  <TabsTrigger
+                    value="time"
+                    className="time-tab-step flex items-center gap-2"
+                    onClick={() => {
+                      if (tourOpen && currentStep === 4) {
+                        // allow tab switch then move to next step (panel highlight) after slight delay
+                        setTimeout(() => setCurrentStep(5), 250);
+                      }
+                    }}
+                  >
                     <Clock className="h-4 w-4" />
                     Time Windows
                   </TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="location" className="mt-0">
+                <TabsContent
+                  value="location"
+                  className="location-panel-step mt-0"
+                >
                   <RoomSelector onNext={() => setActiveTab("time")} />
                 </TabsContent>
 
-                <TabsContent value="time" className="mt-0">
+                <TabsContent
+                  value="time"
+                  className="time-window-panel-step mt-0"
+                >
                   <TimeWindowSelector
                     classStartTime={classStartTime}
                     classEndTime={classEndTime}
@@ -175,7 +192,7 @@ export function NewQrGeneration() {
             </div>
 
             {/* Right: Sticky QR panel */}
-            <div className="order-1 lg:order-2 lg:col-span-5 xl:col-span-4">
+            <div className="qr-generator-panel-step order-1 lg:order-2 lg:col-span-5 xl:col-span-4">
               <div className="lg:sticky lg:top-16">
                 <QRGenerator />
               </div>
@@ -188,8 +205,11 @@ export function NewQrGeneration() {
               <div className="lg:col-span-7 xl:col-span-8">
                 <div className="space-y-3">
                   {/* Location Settings Section */}
-                  <Collapsible open={locationOpen} onOpenChange={setLocationOpen}>
-                    <Card className="border-border bg-card">
+                  <Collapsible
+                    open={locationOpen}
+                    onOpenChange={setLocationOpen}
+                  >
+                    <Card className="border-border bg-card location-panel-step">
                       <CollapsibleTrigger asChild>
                         <CardHeader className="hover:bg-accent/30 cursor-pointer py-2.5 transition-colors">
                           <CardTitle className="flex items-center justify-between text-[15px] font-semibold">
@@ -201,7 +221,9 @@ export function NewQrGeneration() {
                                 {/* Status indicator */}
                                 <div
                                   className={`absolute -top-1 -right-1 h-3 w-3 rounded-full border-2 border-white dark:border-gray-900 ${
-                                    selectedRoom ? "bg-green-500" : "bg-gray-300"
+                                    selectedRoom
+                                      ? "bg-green-500"
+                                      : "bg-gray-300"
                                   }`}
                                 ></div>
                               </div>
@@ -218,7 +240,8 @@ export function NewQrGeneration() {
                                       </div>
                                     )}
                                     <div className="text-muted-foreground text-xs font-normal">
-                                      Geo: {validateGeo ? "Enabled" : "Disabled"}
+                                      Geo:{" "}
+                                      {validateGeo ? "Enabled" : "Disabled"}
                                       {validateGeo && ` (${radius}m)`}
                                     </div>
                                   </div>
@@ -275,7 +298,7 @@ export function NewQrGeneration() {
                                 {windows && (
                                   <span className="text-muted-foreground font-mono text-xs font-normal">
                                     {formatHHMM(windows.entryWindow.start)}-
-                                    {formatHHMM(windows.entryWindow.end)} • {" "}
+                                    {formatHHMM(windows.entryWindow.end)} •{" "}
                                     {formatHHMM(windows.exitWindow.start)}-
                                     {formatHHMM(windows.exitWindow.end)}
                                   </span>
@@ -309,7 +332,7 @@ export function NewQrGeneration() {
               </div>
 
               {/* Right: QR panel (duplicate for comparison) */}
-              <div className="lg:col-span-5 xl:col-span-4">
+              <div className="qr-generator-panel-step lg:col-span-5 xl:col-span-4">
                 <div className="lg:sticky lg:top-16">
                   <QRGenerator />
                 </div>

@@ -13,6 +13,7 @@ interface QRStatusResponse {
   validity_count: QRStatusEnum;
   validate_geo: boolean;
   radius: number | null;
+  day_of_week: string | null;
   validities: {
     id: number;
     count: number;

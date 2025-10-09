@@ -289,9 +289,9 @@ const CheckinPage = () => {
     // Use the actual radius if set, otherwise use default 1m when geo validation is optional
     const effectiveRadius =
       checkinStatus.radius ?? (checkinStatus.validate_geo ? 0 : 50);
-    
+
     const isNearby = distance <= effectiveRadius;
-    
+
     return isNearby;
   };
 
@@ -313,26 +313,21 @@ const CheckinPage = () => {
     // If no specific checkin type is provided, determine it based on geo logic
     let finalCheckinType: CheckinType = checkinType || "In-person";
 
-    // For second check-in, use simpler logic - just default to In-person unless explicitly specified
-    if (!checkinType && screen === Screen.SECOND_CHECKIN) {
-      finalCheckinType = "In-person";
-    } else if (!checkinType && screen === Screen.FIRST_CHECKIN) {
-      // Only apply geo-validation logic for first check-in
+    if (!checkinType) {
       if (geoValidationEnabled) {
-        // Geo validation enabled: if not nearby, not allowed to check in
+        // Must be within radius otherwise show geo validation error
         if (!nearby) {
           setShowGeoValidationError(true);
           return;
         }
         finalCheckinType = "In-person";
       } else {
-        // Geo validation disabled
+        // Geo validation disabled: choose In-person if nearby otherwise prompt for Online
         if (nearby) {
           finalCheckinType = "In-person";
         } else {
-          // Show confirmation popup for online check-in
-          setShowOnlineDialog(true);
-          return; // Exit here, let the dialog handle the confirmation
+          setShowOnlineDialog(true); // dialog will confirm Online
+          return;
         }
       }
     }
@@ -463,14 +458,76 @@ const CheckinPage = () => {
 
     case Screen.SECOND_CHECKIN:
       return (
-        <SecondCheckinScreen
-          handleCheckin={handleCheckin}
-          isCheckingIn={isCheckinPending}
-          disabled={secondCheckedIn || isCurrentWindowCheckedIn()}
-          alreadyCheckedIn={isCurrentWindowCheckedIn()}
-          checkinTime={getCurrentWindowCheckinTime()}
-          isRefreshing={isRefreshing}
-        />
+        <>
+          <SecondCheckinScreen
+            handleCheckin={handleCheckin}
+            isCheckingIn={isCheckinPending}
+            disabled={secondCheckedIn || isCurrentWindowCheckedIn()}
+            alreadyCheckedIn={isCurrentWindowCheckedIn()}
+            checkinTime={getCurrentWindowCheckinTime()}
+            isRefreshing={isRefreshing}
+          />
+
+          {/* Online Check-in Confirmation Dialog (also for second check-in) */}
+          <OnlineCheckinDialog
+            open={showOnlineDialog}
+            onOpenChange={setShowOnlineDialog}
+            onConfirm={handleOnlineCheckinConfirm}
+            distanceMeters={
+              location.position && checkinStatus?.location
+                ? haversineDistance(
+                    location.position.latitude,
+                    location.position.longitude,
+                    checkinStatus.location.latitude,
+                    checkinStatus.location.longitude
+                  )
+                : 0
+            }
+            allowedRadiusMeters={checkinStatus?.radius ?? 0}
+            roomLabel={
+              checkinStatus?.location?.building_number &&
+              checkinStatus?.location?.room_number
+                ? `Building ${checkinStatus.location.building_number}, Room ${checkinStatus.location.room_number}`
+                : undefined
+            }
+          />
+
+          {/* Geo Validation Error Dialog (also for second check-in) */}
+          <GeoValidationErrorDialog
+            open={showGeoValidationError}
+            onOpenChange={setShowGeoValidationError}
+            onRetry={() => {
+              // Refresh location and try again
+              setLocationEnabled(false);
+              setTimeout(() => setLocationEnabled(true), 100);
+            }}
+            distanceMeters={
+              location.position && checkinStatus?.location
+                ? haversineDistance(
+                    location.position.latitude,
+                    location.position.longitude,
+                    checkinStatus.location.latitude,
+                    checkinStatus.location.longitude
+                  )
+                : 0
+            }
+            allowedRadiusMeters={checkinStatus?.radius ?? 0}
+            roomLabel={
+              checkinStatus?.location?.building_number &&
+              checkinStatus?.location?.room_number
+                ? `Building ${checkinStatus.location.building_number}, Room ${checkinStatus.location.room_number}`
+                : undefined
+            }
+            roomCoordinates={
+              checkinStatus?.location
+                ? {
+                    latitude: checkinStatus.location.latitude,
+                    longitude: checkinStatus.location.longitude,
+                  }
+                : undefined
+            }
+          />
+        </>
       );
 
     default:

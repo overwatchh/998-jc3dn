@@ -1,8 +1,11 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 import { CourseSessionResponse } from "@/types/course";
-import { ArrowLeft, Clock } from "lucide-react";
+import { useTour } from "@reactour/tour";
+import { ArrowLeft, Clock, HelpCircle } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useQrGenContext } from "../qr-generation/qr-gen-context";
 import { QRGenScreens } from "../qr-generation/types";
 
@@ -12,6 +15,9 @@ interface Props {
 
 export function CoursesList({ courses }: Props) {
   const { setCurrentScreen, setSelectedCourse } = useQrGenContext();
+  const { setIsOpen, currentStep, setCurrentStep, isOpen } = useTour();
+  const router = useRouter();
+
   function handleCourseSelection(course: {
     id: number;
     name: string;
@@ -22,6 +28,11 @@ export function CoursesList({ courses }: Props) {
       weekNumber: 1,
     });
     setCurrentScreen(QRGenScreens.QR_CODE_GENERATION);
+    // If tour is active on step 0 (first-step) and user clicked the highlighted course, move to step 1 (index 1)
+    if (isOpen && currentStep === 0 && course.id === courses[0]?.id) {
+      // slight timeout to allow screen transition to mount session selector
+      setTimeout(() => setCurrentStep(1), 300);
+    }
   }
 
   function getTypeBadgeClass(sessionType: string): string {
@@ -38,30 +49,54 @@ export function CoursesList({ courses }: Props) {
     }
   }
 
+  // setIsOpen already extracted above
+
   return (
     <div className="bg-background min-h-screen p-4 md:p-6 lg:p-8">
       <div className="mx-auto max-w-4xl">
-        {/* Header */}
-        <div className="mb-2 flex items-center gap-4">
-          <Button
-            variant="ghost"
-            onClick={() => setCurrentScreen(QRGenScreens.COURSE_SELECTION)}
-          >
-            <ArrowLeft />
-          </Button>
-          <h1 className="text-foreground text-3xl font-bold">My Courses</h1>
+        {/* Header + Actions */}
+        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex items-start gap-4">
+            <Button
+              variant="ghost"
+              aria-label="Go back to dashboard"
+              onClick={() => router.push("/")}
+            >
+              <ArrowLeft />
+            </Button>
+            <div className="space-y-1">
+              <h1 className="text-foreground text-3xl font-bold">My Courses</h1>
+              <p className="text-muted-foreground text-sm">
+                Manage and view your assigned courses
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <p className="text-muted-foreground hidden text-xs sm:block">
+              First time here?
+            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              aria-label="Start interactive tour"
+              className="gap-1"
+              onClick={() => setIsOpen(true)}
+            >
+              <HelpCircle className="h-4 w-4" /> Start Tour
+            </Button>
+          </div>
         </div>
-        <p className="text-muted-foreground mb-8">
-          Manage and view your assigned courses
-        </p>
 
         {/* Course Grid */}
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6 lg:grid-cols-3">
-          {courses.map(course => (
+          {courses.map((course, index) => (
             <Card
               key={course.code + course.id}
               onClick={() => handleCourseSelection(course)}
-              className="flex cursor-pointer flex-col transition-shadow duration-200 hover:brightness-90 dark:hover:brightness-125"
+              className={cn(
+                "flex cursor-pointer flex-col transition-shadow duration-200 hover:brightness-90 dark:hover:brightness-125",
+                index === 0 ? "first-step" : ""
+              )}
             >
               <CardHeader className="flex-grow pb-3">
                 <CardTitle className="mb-2 text-lg leading-tight">

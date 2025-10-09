@@ -1,6 +1,7 @@
 import mysql from "mysql2/promise";
 
 const isProd = process.env.NODE_ENV === "production";
+
 export const db = mysql.createPool(
   isProd
     ? {
@@ -8,11 +9,15 @@ export const db = mysql.createPool(
         user: process.env.DB_USER!,
         password: process.env.DB_PASS!,
         database: process.env.DB_NAME!,
+        timezone: "+11:00", // convert datetime to UTC when querying
+        dateStrings: false, // get JS Date objects; 
       }
     : {
         host: process.env.DB_HOST!,
         user: process.env.DB_USER!,
         password: process.env.DB_PASS!,
         database: process.env.DB_NAME!,
+        timezone: "+11:00", // convert datetime to UTC when querying
+        dateStrings: false, // get JS Date objects;
       }
 );

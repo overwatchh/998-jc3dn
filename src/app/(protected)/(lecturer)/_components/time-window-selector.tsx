@@ -1,7 +1,7 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -10,8 +10,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type React from "react";
 import { ChevronLeft } from "lucide-react";
+import type React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Windows, useQrGenContext } from "../qr-generation/qr-gen-context";
 
@@ -519,6 +519,7 @@ export function TimeWindowSelector({
         </p>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Removed Day of Week selection (now controlled in Schedule header) */}
         <div className="space-y-2">
           <div>
             <h4 className="text-foreground mb-1 text-sm font-medium">

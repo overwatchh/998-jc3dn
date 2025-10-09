@@ -10,12 +10,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Combobox, ComboboxOption } from "@/components/ui/combobox";
+import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { AlertTriangle, MapPin, Shield, ChevronRight } from "lucide-react";
+import { AlertTriangle, ChevronRight, MapPin, Shield } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useQrGenContext } from "../qr-generation/qr-gen-context";
 import {
@@ -184,7 +184,7 @@ export function RoomSelector({ onNext }: RoomSelectorProps) {
           />
 
           {/* Location Validation Settings */}
-          <div className="border-t pt-3">
+          <div className="geo-validation-toggle-step border-t pt-3">
             <div className="mb-2.5 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Shield className="text-muted-foreground h-4 w-4" />

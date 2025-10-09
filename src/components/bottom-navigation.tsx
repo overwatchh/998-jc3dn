@@ -1,7 +1,8 @@
+"use client";
+
 import { Button } from "@/components/ui/button";
 import { Role } from "@/types";
 import {
-  Bell,
   FileText,
   Home,
   QrCode,
@@ -9,6 +10,7 @@ import {
   UserCheck,
 } from "lucide-react";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
 interface NavItem {
   id: string;
@@ -26,7 +28,6 @@ interface NavItemProps {
 
 function NavItem({ item, className = "" }: NavItemProps) {
   const Icon = item.icon;
-
   return (
     <Button
       asChild
@@ -56,6 +57,11 @@ interface Props {
 }
 
 export function BottomNavigation({ role }: Props) {
+  const [isMounted, setIsMounted] = useState(false);
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+  if (!isMounted) return null;
   const navItems: NavItem[] = [
     {
       id: "home",
@@ -88,14 +94,6 @@ export function BottomNavigation({ role }: Props) {
       role: ["student"],
     },
     {
-      id: "notifications",
-      icon: Bell,
-      label: "Notifications",
-      shortLabel: "Notifications",
-      href: "/notifications",
-      role: ["student", "lecturer", "admin"],
-    },
-    {
       id: "settings",
       icon: Settings,
       label: "Settings",
@@ -104,7 +102,9 @@ export function BottomNavigation({ role }: Props) {
     },
   ];
 
-  const filteredNavItems = role ? navItems.filter(item => item.role.includes(role)) : [];
+  const filteredNavItems = role
+    ? navItems.filter(item => item.role.includes(role))
+    : [];
   const itemCount = filteredNavItems.length;
 
   if (!role || itemCount === 0) {
@@ -112,12 +112,7 @@ export function BottomNavigation({ role }: Props) {
   }
 
   return (
-    <div
-      className="bg-background border-border fixed right-0 bottom-0 left-0 z-50 border-t"
-      /* When Radix/shadcn locks body scroll, it adds padding-right: var(--removed-body-scroll-bar-size).
-         This inline style keeps the fixed bar aligned with the content width instead of viewport width. */
-      style={{ right: "var(--removed-body-scroll-bar-size, 0px)" }}
-    >
+    <div className={`bg-background border-border fixed right-0 bottom-0 left-0 z-50 border-t ${role === "lecturer" ? "md:hidden" : ""}`}>
       <div className="safe-area-pb">
         {/* For 5 or fewer items, use flex justify-around */}
         {itemCount <= 5 ? (

@@ -53,8 +53,8 @@ export const GeoValidationErrorDialog = ({
             <AlertDialogTitle>Location Required</AlertDialogTitle>
           </div>
           <AlertDialogDescription>
-            You must be physically present at the specified location to check in.
-            Your current location is outside the allowed radius.
+            You must be physically present at the specified location to check
+            in. Your current location is outside the allowed radius.
           </AlertDialogDescription>
         </AlertDialogHeader>
 
@@ -84,33 +84,32 @@ export const GeoValidationErrorDialog = ({
             </div>
 
             {roomCoordinates && (
-              <div className="text-xs text-muted-foreground">
-                Room coordinates: {roomCoordinates.latitude.toFixed(6)}, {roomCoordinates.longitude.toFixed(6)}
+              <div className="text-muted-foreground text-xs">
+                Room coordinates: {roomCoordinates.latitude.toFixed(6)},{" "}
+                {roomCoordinates.longitude.toFixed(6)}
               </div>
             )}
           </div>
 
-          <div className="bg-amber-50 dark:bg-amber-950/20 space-y-2 rounded-lg p-3">
+          <div className="space-y-2 rounded-lg bg-amber-50 p-3 dark:bg-amber-950/20">
             <div className="flex items-center gap-2 text-sm font-medium text-amber-800 dark:text-amber-200">
               <Navigation className="h-4 w-4" />
               <span>What to do:</span>
             </div>
-            <ul className="text-xs text-amber-700 dark:text-amber-300 space-y-1">
+            <ul className="space-y-1 text-xs text-amber-700 dark:text-amber-300">
               <li>• Move closer to the required room</li>
               <li>• Ensure location services are enabled</li>
               <li>• Try refreshing your location</li>
-              <li>• Contact your lecturer if you&apos;re in the correct room</li>
+              <li>
+                • Contact your lecturer if you&apos;re in the correct room
+              </li>
             </ul>
           </div>
         </div>
 
         <AlertDialogFooter>
-          <AlertDialogCancel onClick={handleCancel}>
-            Close
-          </AlertDialogCancel>
-          <AlertDialogAction onClick={handleRetry}>
-            Try Again
-          </AlertDialogAction>
+          <AlertDialogCancel onClick={handleCancel}>Close</AlertDialogCancel>
+          <AlertDialogAction onClick={handleRetry}>Try Again</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

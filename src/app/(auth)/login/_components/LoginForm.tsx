@@ -11,12 +11,13 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { authClient } from "@/lib/api/apiClient";
 import { useLogin } from "@/hooks/useAuth";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AxiosError } from "axios";
 import { ArrowRight, Eye, EyeOff, User } from "lucide-react";
 import Image from "next/image";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -65,11 +66,16 @@ export function LoginForm() {
     }
   };
 
-  const router = useRouter();
   const handleMicrosoftLogin = async () => {
-    router.push(
-      "/api/auth/microsoft?callbackURL=" + encodeURIComponent(callbackURL)
-    );
+    try {
+      await authClient.signIn.social({
+        provider: "microsoft",
+        callbackURL: callbackURL,
+      });
+    } catch (error) {
+      console.error("Microsoft login error:", error);
+      toast.error("Failed to initiate Microsoft login");
+    }
   };
 
   return (

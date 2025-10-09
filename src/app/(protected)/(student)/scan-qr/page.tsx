@@ -1,6 +1,6 @@
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { QrCode, Info } from "lucide-react";
+import { Info, QrCode } from "lucide-react";
 import { QRScanner } from "./_components/qr-scanner";
 
 const Page = () => {

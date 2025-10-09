@@ -3,21 +3,14 @@ import { db } from "./db";
 
 export const auth = betterAuth({
   database: db,
+  baseURL:
+    process.env.BASE_URL ||
+    "https://jc3dn-qr-attendance-kosgs4isma-ts.a.run.app",
+  secret: process.env.BETTER_AUTH_SECRET!,
   emailAndPassword: {
     enabled: true,
   },
   socialProviders: {
-    google: {
-      prompt: "select_account",
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-      mapProfileToUser: profile => {
-        return {
-          firstName: profile.given_name,
-          lastName: profile.family_name,
-        };
-      },
-    },
     microsoft: {
       clientId: process.env.MICROSOFT_CLIENT_ID as string,
       clientSecret: process.env.MICROSOFT_CLIENT_SECRET as string,
@@ -33,7 +26,7 @@ export const auth = betterAuth({
         type: "string",
         required: false,
         defaultValue: "student",
-        input: false, // don't allow user to set role
+        input: true,
       },
     },
   },

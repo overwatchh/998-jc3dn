@@ -435,8 +435,6 @@ Checkins &gt;</panel_attributes>
     <panel_attributes>
 --
 checkin_time
-latitude
-longitude
 checkin_type
 bg=#dddddd
 </panel_attributes>
@@ -601,5 +599,42 @@ r1=
 m2=1
 Valid at &gt;</panel_attributes>
     <additional_attributes>10.0;260.0;60.0;110.0;140.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>707</x>
+      <y>119</y>
+      <w>91</w>
+      <h>126</h>
+    </coordinates>
+    <panel_attributes>Email Log
+--
+id ID
+study_session_id
+week_number
+student_id
+student_email
+success
+error_message
+sent_at
+bg=#dddddd
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>623</x>
+      <y>161</y>
+      <w>98</w>
+      <h>105</h>
+    </coordinates>
+    <panel_attributes>lt=-
+m1=
+r1=
+m2=*
+Sent &gt;</panel_attributes>
+    <additional_attributes>10.0;130.0;120.0;10.0</additional_attributes>
   </element>
 </diagram>

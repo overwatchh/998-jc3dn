@@ -26,7 +26,7 @@ export default function ProtectedLayout({
   const role = session?.user?.role;
 
   return (
-    <div className="flex grow flex-col pb-20">
+    <div className="flex grow flex-col">
       {children}
       <BottomNavigation role={role} />
     </div>

@@ -12,24 +12,28 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import apiClient from "@/lib/api/apiClient";
-import { formatHHMM } from "@/lib/utils";
+import { DayOfWeek, formatHHMM, getQrDateForWeek } from "@/lib/utils";
 import { AxiosError } from "axios";
 import {
+  Bell,
+  Calendar,
   CheckSquare,
   Clock,
   Download,
   Loader2,
+  Mail,
   MapPin,
   QrCode,
   RadioIcon,
-  Share2,
   Shield,
   Square,
+  X,
 } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import type React from "react";
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { toast } from "sonner";
 import { useQrGenContext, Windows } from "../qr-generation/qr-gen-context";
 import {
@@ -56,6 +60,8 @@ export const QRGenerator = () => {
     setRadius,
     setWindowsConfigured,
     currentCourse,
+    selectedDayOfWeek,
+    loadExistingDayOverride,
   } = useQrGenContext();
 
   const router = useRouter();
@@ -77,6 +83,33 @@ export const QRGenerator = () => {
     { enabled: !!selectedCourse }
   );
   const existingQrId = existingQrList?.data?.[0]?.qr_code_id;
+  // Anchor for computing calendar date for selected week/day
+  const anchorQr = useMemo(() => {
+    const list = existingQrList?.data;
+    if (!list || list.length === 0) return null;
+    const earliest = [...list].sort((a, b) => a.week_number - b.week_number)[0];
+    const date =
+      (earliest.validities?.[0]?.start_time as string | undefined) ||
+      (earliest.createdAt as string);
+    return { week_number: earliest.week_number, date } as {
+      week_number: number;
+      date: string;
+    };
+  }, [existingQrList?.data]);
+
+  const dateLabel = useMemo(() => {
+    if (!selectedCourse) return null;
+    try {
+      const date = getQrDateForWeek(
+        selectedDayOfWeek as DayOfWeek,
+        selectedCourse.weekNumber,
+        anchorQr
+      );
+      return `${selectedDayOfWeek}, ${date}`;
+    } catch {
+      return null;
+    }
+  }, [selectedCourse, selectedDayOfWeek, anchorQr]);
   const {
     data: existingQrData,
     refetch: refetchExistingQr,
@@ -90,12 +123,17 @@ export const QRGenerator = () => {
   const [successType, setSuccessType] = useState<null | "create" | "update">(
     null
   );
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
+  const [isSendingReminders, setIsSendingReminders] = useState(false);
+  // Modal state for enlarged QR view
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [prevInfo, setPrevInfo] = useState<{
     roomLabel: string | null;
     validateGeo: boolean | null;
     radius: number | null;
     entryWindow: { start: string; end: string } | null;
     exitWindow: { start: string; end: string } | null;
+    dayOfWeek?: string | null;
   } | null>(null);
   // QR is considered generated for the CURRENTLY selected week only if we have a URL
   const qrGenerated = useMemo(() => Boolean(qrUrl), [qrUrl]);
@@ -155,8 +193,21 @@ export const QRGenerator = () => {
       }
     }
 
+    // Check day-of-week change
+    if (prevInfo?.dayOfWeek && selectedDayOfWeek !== prevInfo.dayOfWeek) {
+      return true;
+    }
+
     return false;
-  }, [prevInfo, selectedRoom, validateGeo, radius, windows, qrGenerated]);
+  }, [
+    prevInfo,
+    selectedRoom,
+    validateGeo,
+    radius,
+    windows,
+    qrGenerated,
+    selectedDayOfWeek,
+  ]);
 
   function handleDownload(): void {
     if (!qrUrl) return;
@@ -180,71 +231,75 @@ export const QRGenerator = () => {
   }
 
   async function handleShare(): Promise<void> {
-    if (!qrUrl) return;
-    // 1) Try native Web Share (mobile-friendly)
-    try {
-      const shareData = {
-        title: "Attendance QR",
-        text: selectedCourse
-          ? `Week ${selectedCourse.weekNumber} attendance QR`
-          : "Attendance QR",
-        url: qrUrl,
-      };
-      const navShare = navigator as Navigator & {
-        share?: (data: ShareData) => Promise<void>;
-        canShare?: (data?: ShareData) => boolean;
-      };
-      if (navShare?.canShare?.(shareData) || navShare?.share) {
-        await navShare.share?.(shareData);
-        return; // done if user shared
-      }
-    } catch {
-      // user cancelled or share failed; continue to email fallback
-    }
-
-    // 2) Email fallback (opens default mail client with prefilled content)
-    try {
-      const subject = `Attendance QR${selectedCourse ? ` - Week ${selectedCourse.weekNumber}` : ""}`;
-      const isHttp = /^https?:\/\//i.test(qrUrl);
-      const isData = qrUrl.startsWith("data:");
-      const bodyLines: string[] = ["Hello,", ""];
-      if (isHttp) {
-        bodyLines.push(
-          "Here is the attendance QR code link:",
-          qrUrl,
-          "",
-          "If the QR image doesn't load automatically, open the link above in a browser."
-        );
-      } else if (isData) {
-        // Don't include the giant data URL in the email body; instead prompt user to attach the PNG
-        // Proactively download so it's easy to attach
-        handleDownload();
-        bodyLines.push(
-          "The attendance QR code image has been downloaded as 'attendance-qr.png'.",
-          "Please attach it to this email before sending."
-        );
-      } else {
-        bodyLines.push("Attendance QR code");
-      }
-      const mailto = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyLines.join("\n"))}`;
-      // Use location.href so it works on mobile and desktop
-      window.location.href = mailto;
-      toast.success("Opening your email client…");
+    if (!qrUrl || !existingQrId) {
+      toast.error("No QR code to share");
       return;
-    } catch {
-      // ignore and try one last fallback
     }
 
-    // 3) Clipboard as last resort
+    setIsSendingEmail(true);
     try {
-      if (navigator.clipboard) {
-        await navigator.clipboard.writeText(qrUrl);
-        toast.success("QR link copied to clipboard");
+      const response = await fetch("/api/lecturer/send-qr-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ qr_code_id: existingQrId }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        toast.success(
+          `QR code sent to ${result.emails_sent} student${result.emails_sent !== 1 ? "s" : ""}!`
+        );
       } else {
-        toast.message("QR URL", { description: qrUrl });
+        toast.error(result.message || "Failed to send emails");
       }
-    } catch {
-      // swallow
+    } catch (error) {
+      console.error("Error sending QR emails:", error);
+      toast.error("Failed to send QR code emails");
+    } finally {
+      setIsSendingEmail(false);
+    }
+  }
+
+  async function handleSendAttendanceReminders(): Promise<void> {
+    if (!selectedCourse?.sessionId || !selectedCourse?.weekNumber) {
+      toast.error("No session or week selected");
+      return;
+    }
+
+    setIsSendingReminders(true);
+    try {
+      const response = await fetch("/api/lecturer/send-attendance-emails", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          study_session_id: selectedCourse.sessionId,
+          week_number: selectedCourse.weekNumber,
+          smtp_config: {
+            smtp_host: "smtp.gmail.com",
+            smtp_port: 587,
+            smtp_user: process.env.NEXT_PUBLIC_SMTP_USER || "qrattendancesystem2025@gmail.com",
+            smtp_pass: process.env.NEXT_PUBLIC_SMTP_PASS || "xjid lkdd adro kvrx",
+            from_email: process.env.NEXT_PUBLIC_SMTP_USER || "qrattendancesystem2025@gmail.com",
+            from_name: "QR Attendance System",
+          },
+        }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        toast.success(
+          `Attendance reminders sent to ${result.emails_sent} student${result.emails_sent !== 1 ? "s" : ""}!`
+        );
+      } else {
+        toast.error(result.message || "Failed to send attendance reminders");
+      }
+    } catch (error) {
+      console.error("Error sending attendance reminders:", error);
+      toast.error("Failed to send attendance reminders");
+    } finally {
+      setIsSendingReminders(false);
     }
   }
 
@@ -277,11 +332,22 @@ export const QRGenerator = () => {
         radius,
         valid_room_id: selectedRoomId,
         validate_geo: validateGeo,
+        day_of_week: selectedDayOfWeek,
         validities,
       });
 
       setQrUrl(response.qr_url);
       setQrGenerated(true);
+      
+      // Persist the day override so it doesn't reset when effects re-run
+      if (selectedCourse) {
+        loadExistingDayOverride(
+          selectedCourse.sessionId,
+          selectedCourse.weekNumber,
+          selectedDayOfWeek
+        );
+      }
+      
       setSuccessType("create");
       toast.success("QR code generated successfully!");
     } catch (error) {
@@ -315,6 +381,7 @@ export const QRGenerator = () => {
         radius,
         valid_room_id: selectedRoomId,
         validate_geo: validateGeo,
+        day_of_week: selectedDayOfWeek,
         validities,
       });
 
@@ -322,6 +389,42 @@ export const QRGenerator = () => {
       if (refreshed.data?.qr_url) {
         setQrUrl(refreshed.data.qr_url);
       }
+      
+      // Persist the day override so it doesn't reset when effects re-run
+      if (selectedCourse) {
+        loadExistingDayOverride(
+          selectedCourse.sessionId,
+          selectedCourse.weekNumber,
+          selectedDayOfWeek
+        );
+      }
+      
+      // Update prevInfo snapshot so further updates require actual new changes
+      setPrevInfo(info => {
+        if (!info) return info;
+        return {
+          ...info,
+          roomLabel: selectedRoom
+            ? `Building ${selectedRoom.building_number}, Room ${selectedRoom.room_number}`
+            : null,
+          validateGeo,
+          // radius and windows reflect current state
+          radius,
+          entryWindow: windows
+            ? {
+                start: formatHHMM(windows.entryWindow.start),
+                end: formatHHMM(windows.entryWindow.end),
+              }
+            : info.entryWindow,
+          exitWindow: windows
+            ? {
+                start: formatHHMM(windows.exitWindow.start),
+                end: formatHHMM(windows.exitWindow.end),
+              }
+            : info.exitWindow,
+          dayOfWeek: selectedDayOfWeek,
+        };
+      });
       setQrGenerated(true);
       setSuccessType("update");
       toast.success("QR code updated successfully!");
@@ -389,6 +492,7 @@ export const QRGenerator = () => {
             room_number: string | null;
             room_id: number | null;
           } | null;
+          day_of_week?: string;
         }>(`/qr/${existingQrId}`);
 
         const first = data.validities.find(v => v.count === 1);
@@ -396,6 +500,12 @@ export const QRGenerator = () => {
         const roomLabel = data.location
           ? `Building ${data.location.building_number ?? ""}, Room ${data.location.room_number ?? ""}`.trim() ||
             null
+          : null;
+
+        // Extract the actual day-of-week from the validity window timestamp
+        // This is the real day that was used when the QR was generated
+        const actualDayOfWeek = first?.start_time 
+          ? (new Date(first.start_time).toLocaleDateString('en-US', { weekday: 'long' }) as DayOfWeek)
           : null;
 
         if (!cancelled) {
@@ -416,6 +526,7 @@ export const QRGenerator = () => {
                   end: isoToHHMM(second.end_time),
                 }
               : null,
+            dayOfWeek: actualDayOfWeek || currentCourse?.dayOfWeek || null,
           });
 
           // Populate context state from existing QR data
@@ -425,6 +536,7 @@ export const QRGenerator = () => {
           if (data.radius != null) {
             setRadius(data.radius);
           }
+
 
           // Set time windows if both entry and exit windows exist
           if (first && second) {
@@ -479,10 +591,14 @@ export const QRGenerator = () => {
 
           // Set room if location data is available and room_id exists
           if (data.location?.room_id) {
-            // We need to fetch the complete room data from the rooms endpoint
-            // to get all the required room properties
+            // NOTE (bugfix): Previously we only looked up the room in the *session* rooms endpoint.
+            // If the lecturer updated the QR to use a non-default room (not tied to the study session),
+            // it wouldn't appear there, so the dropdown reset to empty on reload. We now:
+            // 1. Try session rooms (fast, smaller set) for defaults.
+            // 2. Fallback to all lecturer rooms if not found.
             try {
-              const roomsResponse = await apiClient.get<{
+              // First: session rooms
+              const sessionRoomsResp = await apiClient.get<{
                 message: string;
                 count: number;
                 data: {
@@ -497,14 +613,46 @@ export const QRGenerator = () => {
                 }[];
               }>(`/lecturer/study-session/${selectedCourse?.sessionId}/rooms`);
 
-              const roomData = roomsResponse.data.data.find(
+              let roomData = sessionRoomsResp.data.data.find(
                 room => room.id === data.location?.room_id
               );
+
+              // Fallback: all lecturer rooms if not found among session defaults
+              if (!roomData) {
+                try {
+                  const allRoomsResp = await apiClient.get<{
+                    message: string;
+                    count: number;
+                    data: {
+                      id: number;
+                      building_number: string;
+                      room_number: string;
+                      description: string | null;
+                      latitude: string | null;
+                      longitude: string | null;
+                      campus_id: number;
+                      campus_name: string;
+                    }[];
+                  }>(`/lecturer/rooms`);
+                  roomData = allRoomsResp.data.data.find(
+                    room => room.id === data.location?.room_id
+                  );
+                } catch (allRoomsErr) {
+                  console.error(
+                    "Failed to fetch all lecturer rooms for fallback:",
+                    allRoomsErr
+                  );
+                }
+              }
+
               if (roomData) {
                 setSelectedRoom(roomData);
               }
             } catch (roomErr) {
-              console.error("Failed to fetch room data:", roomErr);
+              console.error(
+                "Failed to fetch room data (session rooms):",
+                roomErr
+              );
             }
           }
         }
@@ -514,6 +662,12 @@ export const QRGenerator = () => {
         const v = existingQrList?.data?.[0]?.validities ?? [];
         const first = v.find(x => x.count === 1);
         const second = v.find(x => x.count === 2);
+        
+        // Extract actual day from validity timestamp in fallback too
+        const actualDayOfWeek = first?.start_time 
+          ? (new Date(first.start_time).toLocaleDateString('en-US', { weekday: 'long' }) as DayOfWeek)
+          : null;
+        
         if (!cancelled) {
           setPrevInfo({
             roomLabel: null,
@@ -531,6 +685,7 @@ export const QRGenerator = () => {
                   end: isoToHHMM(second.end_time),
                 }
               : null,
+            dayOfWeek: actualDayOfWeek || currentCourse?.dayOfWeek || null,
           });
 
           // Try to populate context state from fallback data
@@ -602,6 +757,8 @@ export const QRGenerator = () => {
     existingQrId,
     existingQrList?.data,
     selectedCourse?.sessionId,
+    selectedCourse?.weekNumber,
+    currentCourse?.dayOfWeek,
     setValidateGeo,
     setRadius,
     setWindows,
@@ -630,6 +787,17 @@ export const QRGenerator = () => {
     const t = setTimeout(() => setSuccessType(null), 1400);
     return () => clearTimeout(t);
   }, [successType]);
+
+  // Handle ESC key to close modal
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && isModalOpen) {
+        setIsModalOpen(false);
+      }
+    };
+    window.addEventListener("keydown", handleEsc);
+    return () => window.removeEventListener("keydown", handleEsc);
+  }, [isModalOpen]);
 
   return (
     <div className="w-full">
@@ -663,8 +831,18 @@ export const QRGenerator = () => {
                   </div>
                 ) : qrGenerated && qrUrl ? (
                   <div
-                    className="bg-card flex w-full items-center justify-center rounded-lg border p-3 shadow"
+                    className="bg-card flex w-full cursor-pointer items-center justify-center rounded-lg border p-3 shadow transition-transform hover:scale-[1.02]"
                     style={{ aspectRatio: "1.15/1" }}
+                    onClick={() => setIsModalOpen(true)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={e => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        setIsModalOpen(true);
+                      }
+                    }}
+                    title="Click to enlarge"
                   >
                     <Image
                       src={qrUrl}
@@ -862,6 +1040,12 @@ export const QRGenerator = () => {
                             <span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
                               Week {selectedCourse?.weekNumber}
                             </span>
+                            {dateLabel && (
+                              <span className="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
+                                <Calendar className="mr-1 h-3.5 w-3.5" />
+                                {dateLabel}
+                              </span>
+                            )}
                           </span>
                         </AlertDialogDescription>
                       </AlertDialogHeader>
@@ -903,6 +1087,63 @@ export const QRGenerator = () => {
                           );
 
                           const rows: React.ReactNode[] = [];
+                          const hasDayChange = Boolean(
+                            prevInfo?.dayOfWeek &&
+                              selectedDayOfWeek !== prevInfo.dayOfWeek
+                          );
+                          const prevDateLabel = (() => {
+                            try {
+                              if (prevInfo?.dayOfWeek && selectedCourse) {
+                                return getQrDateForWeek(
+                                  prevInfo.dayOfWeek as DayOfWeek,
+                                  selectedCourse.weekNumber,
+                                  anchorQr
+                                );
+                              }
+                            } catch {}
+                            return null;
+                          })();
+                          const nextDateLabel = (() => {
+                            try {
+                              if (selectedCourse && selectedDayOfWeek) {
+                                return getQrDateForWeek(
+                                  selectedDayOfWeek as DayOfWeek,
+                                  selectedCourse.weekNumber,
+                                  anchorQr
+                                );
+                              }
+                            } catch {}
+                            return null;
+                          })();
+                          if (hasDayChange) {
+                            rows.push(
+                              <div
+                                key="day"
+                                className="grid grid-cols-[160px_1fr_1fr] items-center gap-3 px-3 py-2"
+                              >
+                                <div className="text-foreground flex items-center gap-2 text-sm font-medium">
+                                  <Clock className="text-primary h-4 w-4" />
+                                  <span>Day of Week</span>
+                                </div>
+                                <div className="text-muted-foreground text-xs">
+                                  <div>{prevInfo?.dayOfWeek}</div>
+                                  {prevDateLabel && (
+                                    <div className="text-muted-foreground/80 mt-0.5">
+                                      {prevDateLabel}
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="text-primary text-xs font-medium">
+                                  <div>{selectedDayOfWeek}</div>
+                                  {nextDateLabel && (
+                                    <div className="text-muted-foreground mt-0.5 font-normal">
+                                      {nextDateLabel}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          }
                           if (hasRoomChange) {
                             rows.push(
                               <div
@@ -1056,22 +1297,33 @@ export const QRGenerator = () => {
                       variant="outline"
                       className="h-9 flex-1 bg-transparent"
                       onClick={handleShare}
-                      disabled={!qrUrl}
+                      disabled={!qrUrl || isSendingEmail || !existingQrId}
                     >
-                      <Share2 className="mr-2 h-4 w-4" />
-                      Share
+                      <Mail className="mr-2 h-4 w-4" />
+                      {isSendingEmail ? "Sending..." : "Share"}
                     </Button>
                   </div>
 
                   {/* Real-time Attendance Tracking Button */}
                   <Button
                     variant="default"
-                    className="bg-primary text-primary-foreground hover:bg-primary/90 mt-2 h-9 w-full"
+                    className="real-time-tracking-button-step bg-primary text-primary-foreground hover:bg-primary/90 mt-2 h-9 w-full"
                     onClick={handleNavigateToTracking}
                     disabled={!qrGenerated || !selectedCourse?.sessionId}
                   >
                     <RadioIcon className="mr-2 h-4 w-4" />
                     Real-time Attendance Tracking
+                  </Button>
+
+                  {/* Send Attendance Reminders Button */}
+                  <Button
+                    variant="outline"
+                    className="mt-2 h-9 w-full"
+                    onClick={handleSendAttendanceReminders}
+                    disabled={isSendingReminders || !selectedCourse?.sessionId || !selectedCourse?.weekNumber}
+                  >
+                    <Bell className="mr-2 h-4 w-4" />
+                    {isSendingReminders ? "Sending..." : "Send Attendance Reminders"}
                   </Button>
                 </>
               ) : (
@@ -1118,6 +1370,12 @@ export const QRGenerator = () => {
                             <span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
                               Week {selectedCourse?.weekNumber}
                             </span>
+                            {dateLabel && (
+                              <span className="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
+                                <Calendar className="mr-1 h-3.5 w-3.5" />
+                                {dateLabel}
+                              </span>
+                            )}
                           </span>
                           <span className="text-muted-foreground mt-1 block">
                             Review configuration before generating
@@ -1313,6 +1571,46 @@ export const QRGenerator = () => {
           </div>
         )}
       </div>
+
+      {/* Enlarged QR Modal (rendered via portal to avoid z-index/stacking issues) */}
+      {isModalOpen && qrUrl &&
+        typeof window !== "undefined" &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-[2147483647] flex items-center justify-center bg-black/70 backdrop-blur-sm"
+            onClick={() => setIsModalOpen(false)}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Enlarged QR Code"
+          >
+            <div
+              className="animate-in fade-in zoom-in-95 relative max-h-[90vh] max-w-[90vw] duration-200"
+              onClick={e => e.stopPropagation()}
+            >
+              {/* Close button */}
+              <button
+                onClick={() => setIsModalOpen(false)}
+                className="absolute -top-4 -right-4 z-[2147483647] rounded-full bg-white p-2 shadow-lg transition-transform hover:scale-110 dark:bg-gray-800"
+                aria-label="Close enlarged view"
+              >
+                <X className="h-5 w-5 text-gray-700 dark:text-gray-200" />
+              </button>
+
+              {/* Enlarged QR Code */}
+              <div className="rounded-lg bg-white p-4 shadow-2xl">
+                <Image
+                  src={qrUrl}
+                  alt="Enlarged QR Code"
+                  width={600}
+                  height={600}
+                  className="rounded object-contain"
+                  style={{ maxHeight: "80vh", maxWidth: "80vw" }}
+                />
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
     </div>
   );
 };

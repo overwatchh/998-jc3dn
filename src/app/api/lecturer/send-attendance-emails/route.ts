@@ -3,10 +3,9 @@ import { auth } from "@/lib/server/auth";
 import { headers } from "next/headers";
 import { z } from "zod";
 import { emailService, EmailConfig, AttendanceEmailData } from "@/lib/server/email";
-import { 
-  getLectureAttendanceData, 
-  calculateStudentOverallAttendance,
-  calculateLectureAttendance 
+import {
+  getLectureAttendanceData,
+  calculateStudentOverallAttendance
 } from "@/lib/server/attendance-calculator";
 
 /**
@@ -163,7 +162,7 @@ export async function POST(req: NextRequest) {
       fromName: smtp_config.from_name,
     };
 
-    emailService.initialize(emailConfig);
+    await emailService.initialize(emailConfig);
 
     // Test email connection first
     const connectionTest = await emailService.testConnection();

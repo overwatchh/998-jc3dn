@@ -1,5 +1,15 @@
 "use client";
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Card } from "@/components/ui/card";
 import {
   Select,
@@ -8,13 +18,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { DayOfWeek, getQrDateForWeek } from "@/lib/utils";
 import { Calendar } from "lucide-react";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQrGenContext } from "../qr-generation/qr-gen-context";
 import { useGetCourses, useGetQrCodes } from "../qr-generation/queries";
 
 export function SessionSelector() {
-  const { selectedCourse, setSelectedCourse } = useQrGenContext();
+  const {
+    selectedCourse,
+    setSelectedCourse,
+    selectedDayOfWeek,
+    setWeekDayOverride,
+  } = useQrGenContext();
   const { data: courses, isLoading: isCoursesLoading } = useGetCourses();
 
   // Get all existing QR codes for this session to determine used weeks
@@ -39,6 +55,20 @@ export function SessionSelector() {
     return 1; // Fallback
   }, [usedWeeks]);
 
+  // Derive anchor QR (earliest created week) for stable date computation
+  const anchorQr = useMemo(() => {
+    const list = allQrCodesData?.data;
+    if (!list || list.length === 0) return null;
+    const earliest = [...list].sort((a, b) => a.week_number - b.week_number)[0];
+    const date =
+      (earliest.validities?.[0]?.start_time as string | undefined) ||
+      earliest.createdAt;
+    return { week_number: earliest.week_number, date } as {
+      week_number: number;
+      date: string;
+    };
+  }, [allQrCodesData]);
+
   // Ensure a default course is selected if none
   useEffect(() => {
     if (!selectedCourse && courses && courses.length > 0) {
@@ -51,9 +81,23 @@ export function SessionSelector() {
 
   // Get current course info
   const currentCourse = courses?.find(c => c.id === selectedCourse?.sessionId);
+  const defaultDay = currentCourse?.dayOfWeek as DayOfWeek | undefined;
+
+  // Day override confirmation
+  const [pendingDay, setPendingDay] = useState<DayOfWeek | null>(null);
+  const [showConfirmDayDialog, setShowConfirmDayDialog] = useState(false);
+
+  function handleDayChange(nextDay: DayOfWeek) {
+    if (defaultDay && nextDay !== defaultDay) {
+      setPendingDay(nextDay);
+      setShowConfirmDayDialog(true);
+    } else {
+      setWeekDayOverride(nextDay);
+    }
+  }
 
   return (
-    <Card className="border-border bg-card mx-0 py-0">
+    <Card className="border-border bg-card session-selector-step mx-0 py-0">
       <div className="divide-border grid grid-cols-1 divide-y lg:grid-cols-3 lg:divide-x lg:divide-y-0">
         {/* Subject Section */}
         <div className="space-y-2 p-4 px-4 py-4">
@@ -92,43 +136,145 @@ export function SessionSelector() {
           </Select>
         </div>
 
-        {/* Week Section */}
+        {/* Week + Day (inline) */}
         <div className="space-y-2 p-4">
-          <div className="flex items-center gap-2">
-            <Calendar className="text-muted-foreground h-4 w-4" />
-            <h3 className="text-foreground text-sm font-medium">Week</h3>
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <Calendar className="text-muted-foreground h-4 w-4" />
+              <h3 className="text-foreground text-sm font-medium">Schedule</h3>
+            </div>
+            {selectedCourse && currentCourse && (
+              <div className="text-muted-foreground flex items-center text-xs sm:text-sm">
+                <span className="text-foreground/90">
+                  {(selectedDayOfWeek || currentCourse.dayOfWeek) &&
+                    `${selectedDayOfWeek || currentCourse.dayOfWeek}, ${currentCourse.startTime} - ${currentCourse.endTime}`}
+                </span>
+                <span className="mx-2">•</span>
+                <span className="text-foreground/90">
+                  {getQrDateForWeek(
+                    selectedDayOfWeek,
+                    selectedCourse.weekNumber,
+                    anchorQr
+                  )}
+                </span>
+              </div>
+            )}
           </div>
-          <Select
-            value={selectedCourse ? String(selectedCourse.weekNumber) : ""}
-            onValueChange={value =>
-              setSelectedCourse({
-                sessionId: selectedCourse?.sessionId ?? 0,
-                weekNumber: Number(value),
-              })
-            }
-            disabled={!selectedCourse}
+          <div className="mt-1 flex flex-wrap items-end gap-3">
+            {/* Week */}
+            <div className="w-[9rem]">
+              <Select
+                value={selectedCourse ? String(selectedCourse.weekNumber) : ""}
+                onValueChange={value =>
+                  setSelectedCourse({
+                    sessionId: selectedCourse?.sessionId ?? 0,
+                    weekNumber: Number(value),
+                  })
+                }
+                disabled={!selectedCourse}
+              >
+                <SelectTrigger className="border-border bg-background text-foreground h-8 w-full gap-1 px-2 text-sm truncate whitespace-nowrap">
+                  <SelectValue placeholder="Select week" />
+                </SelectTrigger>
+                <SelectContent className="border-border bg-popover">
+                  {Array.from({ length: 13 }, (_, i) => i + 1).map(week => {
+                    const isUsed = usedWeeks.has(week);
+                    const isNextAvailable = week === nextAvailableWeek;
+                    return (
+                      <SelectItem
+                        key={week}
+                        value={String(week)}
+                        className="hover:bg-accent hover:text-accent-foreground"
+                      >
+                        Week {week}
+                        {isUsed && " (Created)"}
+                        {isNextAvailable && !isUsed && " (Recommended)"}
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Day of week */}
+            <div className="w-[11rem]">
+              <Select
+                value={selectedDayOfWeek}
+                onValueChange={value => handleDayChange(value as DayOfWeek)}
+                disabled={!selectedCourse}
+              >
+                <SelectTrigger className="border-border bg-background text-foreground h-8 w-full gap-1 px-2 text-sm truncate whitespace-nowrap">
+                  <SelectValue placeholder="Select day">
+                    {selectedDayOfWeek && (
+                      <span className="flex items-center gap-1.5">
+                        {selectedDayOfWeek}
+                        {defaultDay && selectedDayOfWeek !== defaultDay && (
+                          <span className="text-[10px] rounded-full bg-amber-100 px-1.5 py-0.5 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
+                            Override
+                          </span>
+                        )}
+                      </span>
+                    )}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent className="border-border bg-popover">
+                  {[
+                    "Sunday",
+                    "Monday",
+                    "Tuesday",
+                    "Wednesday",
+                    "Thursday",
+                    "Friday",
+                    "Saturday",
+                  ].map(dow => (
+                    <SelectItem
+                      key={dow}
+                      value={dow}
+                      className="hover:bg-accent hover:text-accent-foreground"
+                    >
+                      {dow}
+                      {defaultDay === (dow as DayOfWeek) && " (Default)"}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Confirm non-default day selection */}
+          <AlertDialog
+            open={showConfirmDayDialog}
+            onOpenChange={setShowConfirmDayDialog}
           >
-            <SelectTrigger className="border-border bg-background text-foreground w-full">
-              <SelectValue placeholder="Select week" />
-            </SelectTrigger>
-            <SelectContent className="border-border bg-popover">
-              {Array.from({ length: 13 }, (_, i) => i + 1).map(week => {
-                const isUsed = usedWeeks.has(week);
-                const isNextAvailable = week === nextAvailableWeek;
-                return (
-                  <SelectItem
-                    key={week}
-                    value={String(week)}
-                    className="hover:bg-accent hover:text-accent-foreground"
-                  >
-                    Week {week}
-                    {isUsed && " (Created)"}
-                    {isNextAvailable && !isUsed && " (Recommended)"}
-                  </SelectItem>
-                );
-              })}
-            </SelectContent>
-          </Select>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Use a non-default day?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  The default day for this session is {defaultDay || "unknown"}.
+                  Using a different day will affect the QR date.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel
+                  onClick={() => {
+                    setPendingDay(null);
+                  }}
+                >
+                  Cancel
+                </AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => {
+                    if (pendingDay) {
+                      setWeekDayOverride(pendingDay);
+                    }
+                    setPendingDay(null);
+                  }}
+                >
+                  Yes, use {pendingDay || "this day"}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
 
         {/* Study Session Section */}
@@ -152,6 +298,7 @@ export function SessionSelector() {
                   ? `${currentCourse.dayOfWeek ? `${currentCourse.dayOfWeek}, ` : ""}${currentCourse.startTime} - ${currentCourse.endTime}`
                   : "No schedule"}
               </span>
+              {/* Date now shown in Schedule header */}
             </div>
           </div>
         </div>

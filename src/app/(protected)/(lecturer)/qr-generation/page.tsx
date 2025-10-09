@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { CoursesList } from "../_components/course-list";
 import { NewQrGeneration } from "../_components/new-qr-generation";
 import { QrGenProvider, useQrGenContext } from "./qr-gen-context";
+import { ReactTourProvider } from "./react-tour-provider";
 import { QRGenScreens } from "./types";
 
 export default function Page() {
@@ -47,7 +48,9 @@ export default function Page() {
 
   return (
     <QrGenProvider initialContext={initialContext}>
-      <ScreenRenderer />
+      <ReactTourProvider>
+        <ScreenRenderer />
+      </ReactTourProvider>
     </QrGenProvider>
   );
 }

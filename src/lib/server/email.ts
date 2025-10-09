@@ -1,4 +1,4 @@
-import nodemailer from 'nodemailer';
+// nodemailer will be imported dynamically to avoid webpack bundling issues
 
 export interface EmailConfig {
   smtpHost: string;
@@ -22,13 +22,25 @@ export interface AttendanceEmailData {
   isLowAttendance: boolean;
 }
 
+export interface QRCodeEmailData {
+  studentName: string;
+  studentEmail: string;
+  subjectName: string;
+  subjectCode: string;
+  sessionType: string;
+  weekNumber: number;
+  qrCodeUrl: string;
+  scanUrl?: string; // The actual URL to scan (not the data URL)
+}
+
 class EmailService {
-  private transporter: nodemailer.Transporter | null = null;
+  private transporter: unknown | null = null; // Transporter instance from nodemailer
   private config: EmailConfig | null = null;
 
-  initialize(config: EmailConfig) {
+  async initialize(config: EmailConfig) {
     this.config = config;
-    this.transporter = nodemailer.createTransport({
+    const nodemailer = await import('nodemailer');
+    this.transporter = nodemailer.default.createTransport({
       host: config.smtpHost,
       port: config.smtpPort,
       secure: config.smtpPort === 465,
@@ -217,7 +229,7 @@ QR Attendance System
     };
 
     try {
-      await this.transporter.sendMail(mailOptions);
+      await (this.transporter as any).sendMail(mailOptions);
       console.log(`Attendance reminder sent to ${data.studentEmail} for ${data.subjectCode} Week ${data.weekNumber}`);
     } catch (error) {
       console.error(`Failed to send attendance reminder to ${data.studentEmail}:`, error);
@@ -231,12 +243,183 @@ QR Attendance System
     }
 
     try {
-      await this.transporter.verify();
+      await (this.transporter as any).verify();
       console.log('SMTP connection verified successfully');
       return true;
     } catch (error) {
       console.error('SMTP connection failed:', error);
       return false;
+    }
+  }
+
+  isInitialized(): boolean {
+    return this.transporter !== null && this.config !== null;
+  }
+
+  private generateQRCodeEmailHtml(data: QRCodeEmailData): string {
+    return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QR Code for ${data.subjectName} - Week ${data.weekNumber}</title>
+  <style>
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background-color: #f5f5f5; }
+    .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; }
+    .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px 20px; text-align: center; }
+    .header h1 { margin: 0; font-size: 24px; font-weight: 600; }
+    .content { padding: 30px 20px; }
+    .qr-container { text-align: center; padding: 30px 20px; background-color: #f8fafc; border-radius: 12px; margin: 20px 0; }
+    .qr-image { max-width: 300px; width: 100%; height: auto; border: 4px solid #667eea; border-radius: 8px; background: white; padding: 10px; }
+    .info-card { background-color: #e0f2fe; border-radius: 8px; padding: 20px; margin: 20px 0; border-left: 4px solid #0284c7; }
+    .info-item { margin: 10px 0; }
+    .info-label { font-weight: 600; color: #0c4a6e; }
+    .info-value { color: #0369a1; }
+    .instructions { background: #fef3c7; padding: 20px; border-radius: 8px; border-left: 4px solid #f59e0b; margin: 20px 0; }
+    .instructions h3 { margin-top: 0; color: #92400e; }
+    .instructions ol { margin: 10px 0; padding-left: 20px; }
+    .instructions li { margin: 8px 0; color: #78350f; }
+    .button { display: inline-block; background: #667eea; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 10px 0; font-weight: 500; }
+    .button:hover { background: #5a67d8; }
+    .footer { background: #f9fafb; padding: 20px; text-align: center; font-size: 12px; color: #6b7280; }
+    @media (max-width: 600px) {
+      .header { padding: 20px 15px; }
+      .content { padding: 20px 15px; }
+      .qr-image { max-width: 250px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>📱 Attendance QR Code</h1>
+      <p>Scan to mark your attendance</p>
+    </div>
+
+    <div class="content">
+      <p>Hello <strong>${data.studentName}</strong>,</p>
+      <p>Here is your QR code for attendance check-in:</p>
+
+      <div class="info-card">
+        <div class="info-item">
+          <span class="info-label">Subject:</span>
+          <span class="info-value">${data.subjectCode} - ${data.subjectName}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Session Type:</span>
+          <span class="info-value">${data.sessionType.charAt(0).toUpperCase() + data.sessionType.slice(1)}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Week:</span>
+          <span class="info-value">Week ${data.weekNumber}</span>
+        </div>
+      </div>
+
+      <div class="qr-container">
+        <img src="${data.qrCodeUrl}" alt="QR Code" class="qr-image" />
+        <p style="margin-top: 15px; color: #64748b; font-size: 14px;">Scan the QR code above or use the link below</p>
+      </div>
+
+      <div class="instructions">
+        <h3>📋 How to Check In:</h3>
+        <ol>
+          <li>Open the QR code scanner on your phone</li>
+          <li>Scan the QR code above</li>
+          <li>Or click the "Check In Now" button below to open the link directly</li>
+          <li>Remember: There are 2 check-in windows per session</li>
+        </ol>
+        <p><strong>Note:</strong> Make sure you're within the designated location when scanning if geolocation validation is enabled.</p>
+      </div>
+
+      <div style="text-align: center; margin: 30px 0;">
+        <a href="${data.scanUrl || data.qrCodeUrl}" class="button">🔗 Check In Now</a>
+        <p style="margin-top: 10px; font-size: 12px; color: #64748b;">Click this button to open the check-in page directly</p>
+      </div>
+    </div>
+
+    <div class="footer">
+      <p>This is an automated message from the QR Attendance System.</p>
+      <p>Generated on ${new Date().toLocaleDateString('en-GB')} at ${new Date().toLocaleTimeString('en-GB')}</p>
+    </div>
+  </div>
+</body>
+</html>
+    `;
+  }
+
+  private generateQRCodeEmailText(data: QRCodeEmailData): string {
+    return `
+QR CODE FOR ATTENDANCE - ${data.subjectName}
+
+Hello ${data.studentName},
+
+Here is your QR code for attendance check-in:
+
+SUBJECT: ${data.subjectCode} - ${data.subjectName}
+SESSION TYPE: ${data.sessionType.charAt(0).toUpperCase() + data.sessionType.slice(1)}
+WEEK: Week ${data.weekNumber}
+
+CHECK-IN LINK: ${data.scanUrl || data.qrCodeUrl}
+
+HOW TO CHECK IN:
+1. Open the QR code scanner on your phone and scan the QR code in the email
+2. OR click the link above to check in directly
+3. Follow the prompts to complete your check-in
+4. Remember: There are 2 check-in windows per session
+
+NOTE: Make sure you're within the designated location when scanning if geolocation validation is enabled.
+
+Best regards,
+QR Attendance System
+    `.trim();
+  }
+
+  async sendQRCodeEmail(data: QRCodeEmailData): Promise<void> {
+    if (!this.transporter || !this.config) {
+      throw new Error('Email service not initialized');
+    }
+
+    const subject = `📱 QR Code: ${data.subjectCode} - ${data.sessionType.charAt(0).toUpperCase() + data.sessionType.slice(1)} Week ${data.weekNumber}`;
+
+    // If qrCodeUrl is a data URL, extract the base64 data and use CID attachment
+    let htmlContent = this.generateQRCodeEmailHtml(data);
+    const textContent = this.generateQRCodeEmailText(data);
+
+    const mailOptions: any = {
+      from: `"${this.config.fromName}" <${this.config.fromEmail}>`,
+      to: data.studentEmail,
+      subject: subject,
+      text: textContent,
+      html: htmlContent,
+    };
+
+    // If it's a data URL (base64 image), attach it as an inline image
+    if (data.qrCodeUrl.startsWith('data:image')) {
+      const base64Data = data.qrCodeUrl.split(',')[1];
+      const imageType = data.qrCodeUrl.match(/data:image\/(.*?);/)?.[1] || 'png';
+
+      mailOptions.attachments = [{
+        filename: 'qrcode.' + imageType,
+        content: base64Data,
+        encoding: 'base64',
+        cid: 'qrcode@attendance'
+      }];
+
+      // Replace the image src in HTML with CID reference
+      htmlContent = htmlContent.replace(
+        `src="${data.qrCodeUrl}"`,
+        'src="cid:qrcode@attendance"'
+      );
+      mailOptions.html = htmlContent;
+    }
+
+    try {
+      await (this.transporter as any).sendMail(mailOptions);
+      console.log(`QR code email sent to ${data.studentEmail} for ${data.subjectCode} Week ${data.weekNumber}`);
+    } catch (error) {
+      console.error(`Failed to send QR code email to ${data.studentEmail}:`, error);
+      throw error;
     }
   }
 }
