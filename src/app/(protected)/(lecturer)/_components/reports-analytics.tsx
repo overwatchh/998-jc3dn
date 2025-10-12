@@ -1327,11 +1327,11 @@ export default function ReportsAnalytics() {
                 <div className="flex items-center space-x-2">
                   <span className="text-xs text-muted-foreground">Low</span>
                   <div className="flex space-x-1">
-                    <div className="w-4 h-4 bg-red-200 dark:bg-red-900 rounded-sm"></div>
-                    <div className="w-4 h-4 bg-yellow-200 dark:bg-yellow-900 rounded-sm"></div>
-                    <div className="w-4 h-4 bg-green-200 dark:bg-green-900 rounded-sm"></div>
+                    <div className="w-4 h-4 bg-red-400 dark:bg-red-700 rounded-sm"></div>
+                    <div className="w-4 h-4 bg-orange-400 dark:bg-orange-700 rounded-sm"></div>
+                    <div className="w-4 h-4 bg-yellow-400 dark:bg-yellow-700 rounded-sm"></div>
                     <div className="w-4 h-4 bg-green-400 dark:bg-green-700 rounded-sm"></div>
-                    <div className="w-4 h-4 bg-green-600 dark:bg-green-500 rounded-sm"></div>
+                    <div className="w-4 h-4 bg-green-500 dark:bg-green-600 rounded-sm"></div>
                   </div>
                   <span className="text-xs text-muted-foreground">High</span>
                 </div>
@@ -2443,7 +2443,6 @@ export default function ReportsAnalytics() {
                   <SelectItem value="this_week">This Week</SelectItem>
                   <SelectItem value="this_month">This Month</SelectItem>
                   <SelectItem value="this_semester">This Semester</SelectItem>
-                  <SelectItem value="custom">Custom Range</SelectItem>
                 </SelectContent>
               </Select>
             </div>

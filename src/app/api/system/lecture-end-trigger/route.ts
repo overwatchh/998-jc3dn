@@ -265,7 +265,7 @@ export async function POST(req: NextRequest) {
     };
 
     // Initialize email service
-    emailService.initialize(emailConfig);
+    await emailService.initialize(emailConfig);
 
     // Test connection
     const connectionTest = await emailService.testConnection();
