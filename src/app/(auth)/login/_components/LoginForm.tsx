@@ -11,8 +11,8 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { authClient } from "@/lib/api/apiClient";
 import { useLogin } from "@/hooks/useAuth";
+import { authClient } from "@/lib/api/apiClient";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AxiosError } from "axios";
 import { ArrowRight, Eye, EyeOff, User } from "lucide-react";
@@ -193,7 +193,7 @@ export function LoginForm() {
                 }}
               />
               <a
-                href="#"
+                href="/forgot-password"
                 className="text-primary hover:text-primary/80 text-sm font-medium"
               >
                 Forgot password?
