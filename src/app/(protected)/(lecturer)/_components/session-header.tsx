@@ -173,7 +173,7 @@ export function SessionSelector() {
                 }
                 disabled={!selectedCourse}
               >
-                <SelectTrigger className="border-border bg-background text-foreground h-8 w-full gap-1 px-2 text-sm truncate whitespace-nowrap">
+                <SelectTrigger className="border-border bg-background text-foreground h-8 w-full gap-1 truncate px-2 text-sm whitespace-nowrap">
                   <SelectValue placeholder="Select week" />
                 </SelectTrigger>
                 <SelectContent className="border-border bg-popover">
@@ -203,13 +203,13 @@ export function SessionSelector() {
                 onValueChange={value => handleDayChange(value as DayOfWeek)}
                 disabled={!selectedCourse}
               >
-                <SelectTrigger className="border-border bg-background text-foreground h-8 w-full gap-1 px-2 text-sm truncate whitespace-nowrap">
+                <SelectTrigger className="border-border bg-background text-foreground h-8 w-full gap-1 truncate px-2 text-sm whitespace-nowrap">
                   <SelectValue placeholder="Select day">
                     {selectedDayOfWeek && (
                       <span className="flex items-center gap-1.5">
                         {selectedDayOfWeek}
                         {defaultDay && selectedDayOfWeek !== defaultDay && (
-                          <span className="text-[10px] rounded-full bg-amber-100 px-1.5 py-0.5 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
+                          <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
                             Override
                           </span>
                         )}

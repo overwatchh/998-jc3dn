@@ -15,9 +15,7 @@ export function NotificationIcon() {
         <div className="relative">
           <Bell className="h-[1.2rem] w-[1.2rem]" />
           {unreadCount > 0 && (
-            <Badge 
-              className="absolute -top-1 -right-1 h-3 w-3 flex items-center justify-center p-0 text-[8px] bg-red-500 hover:bg-red-500 min-w-3 rounded-full border-2 border-background"
-            >
+            <Badge className="border-background absolute -top-1 -right-1 flex h-3 w-3 min-w-3 items-center justify-center rounded-full border-2 bg-red-500 p-0 text-[8px] hover:bg-red-500">
               {unreadCount > 9 ? "9+" : unreadCount}
             </Badge>
           )}

@@ -87,13 +87,13 @@ import { NextRequest, NextResponse } from "next/server";
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
-    const subjectId = searchParams.get('subjectId');
-    const limit = searchParams.get('limit') || '50';
-    const sessionType = searchParams.get('sessionType') || 'lecture';
-    const tutorialSessionId = searchParams.get('tutorialSessionId');
+    const subjectId = searchParams.get("subjectId");
+    const limit = searchParams.get("limit") || "50";
+    const sessionType = searchParams.get("sessionType") || "lecture";
+    const tutorialSessionId = searchParams.get("tutorialSessionId");
 
     // Build session filter - if tutorial session ID is provided, filter by that specific session
-    let sessionFilter = '';
+    let sessionFilter = "";
     if (tutorialSessionId) {
       sessionFilter = `AND ss.id = ${parseInt(tutorialSessionId)}`;
     } else {
@@ -102,7 +102,7 @@ export async function GET(request: NextRequest) {
 
     // Using EMAIL CALCULATOR METHOD: 2+ checkins = 100 points, 1 checkin = 50 points, 0 checkins = 0 points
     // When filtering by tutorial, we need to get students from student_study_session, not enrolment
-    let query = '';
+    let query = "";
 
     if (tutorialSessionId) {
       // Tutorial-specific query: Start from student_study_session to get ONLY students in this tutorial
@@ -152,7 +152,7 @@ export async function GET(request: NextRequest) {
           GROUP BY qr_code_study_session_id, student_id
         ) checkin_counts ON checkin_counts.qr_code_study_session_id = qrss.id
                          AND checkin_counts.student_id = u.id
-        WHERE u.role = 'student' AND ss.id = ${parseInt(tutorialSessionId)} ${subjectId && subjectId !== 'all' ? 'AND s.id = ?' : ''}
+        WHERE u.role = 'student' AND ss.id = ${parseInt(tutorialSessionId)} ${subjectId && subjectId !== "all" ? "AND s.id = ?" : ""}
         GROUP BY u.id, u.name, u.email, s.code, s.name
         ORDER BY attendance_percentage DESC
         LIMIT ?
@@ -205,20 +205,26 @@ export async function GET(request: NextRequest) {
           GROUP BY qr_code_study_session_id, student_id
         ) checkin_counts ON checkin_counts.qr_code_study_session_id = qrss.id
                          AND checkin_counts.student_id = u.id
-        WHERE u.role = 'student' ${sessionFilter} ${subjectId && subjectId !== 'all' ? 'AND s.id = ?' : ''}
+        WHERE u.role = 'student' ${sessionFilter} ${subjectId && subjectId !== "all" ? "AND s.id = ?" : ""}
         GROUP BY u.id, u.name, u.email, s.code, s.name
-        ORDER BY ${subjectId && subjectId !== 'all' ? 'attendance_percentage DESC' : 's.code, attendance_percentage DESC'}
+        ORDER BY ${subjectId && subjectId !== "all" ? "attendance_percentage DESC" : "s.code, attendance_percentage DESC"}
         LIMIT ?
       `;
     }
 
-    const subjectIdNum = subjectId && subjectId !== 'all' ? parseInt(subjectId) : null;
-    const params = subjectIdNum ? [subjectIdNum, parseInt(limit)] : [parseInt(limit)];
+    const subjectIdNum =
+      subjectId && subjectId !== "all" ? parseInt(subjectId) : null;
+    const params = subjectIdNum
+      ? [subjectIdNum, parseInt(limit)]
+      : [parseInt(limit)];
     const data = await rawQuery(query, params);
 
     return NextResponse.json(data);
   } catch (error) {
     console.error("Student performance API error:", error);
-    return NextResponse.json({ error: "Failed to fetch student performance data" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to fetch student performance data" },
+      { status: 500 }
+    );
   }
 }

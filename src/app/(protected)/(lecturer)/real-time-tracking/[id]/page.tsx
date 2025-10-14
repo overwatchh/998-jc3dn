@@ -51,10 +51,10 @@ import {
   ChevronDown,
   QrCode,
 } from "lucide-react";
+import Image from "next/image";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import Image from "next/image";
 
 export default function Page() {
   const params = useParams<{ id: string }>();
@@ -552,8 +552,11 @@ export default function Page() {
           </CardHeader>
           <CardContent className="flex justify-center">
             {qrCodeImage?.qr_url ? (
-              <div className="bg-white p-4 rounded-lg border">
-                <div className="relative" style={{ width: "300px", height: "300px" }}>
+              <div className="rounded-lg border bg-white p-4">
+                <div
+                  className="relative"
+                  style={{ width: "300px", height: "300px" }}
+                >
                   <Image
                     src={qrCodeImage.qr_url}
                     alt={`QR Code for Week ${weekNumber}`}
@@ -562,14 +565,14 @@ export default function Page() {
                     sizes="300px"
                   />
                 </div>
-                <div className="text-center mt-2">
-                  <span className="text-sm text-muted-foreground">
+                <div className="mt-2 text-center">
+                  <span className="text-muted-foreground text-sm">
                     QR Code ID: {qrCodes?.data?.[0]?.qr_code_id || "N/A"}
                   </span>
                 </div>
               </div>
             ) : (
-              <div className="bg-white p-4 rounded-lg border">
+              <div className="rounded-lg border bg-white p-4">
                 <p className="text-muted-foreground text-center">
                   QR Code image will be displayed here when available.
                   <br />

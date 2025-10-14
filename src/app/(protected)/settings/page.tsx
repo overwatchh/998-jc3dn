@@ -8,6 +8,16 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { useCurrentUser, useLogout } from "@/hooks/useAuth";
@@ -27,8 +37,10 @@ import {
 import { useTheme } from "next-themes";
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import { ChangePasswordForm } from "./_components/ChangePasswordForm";
 
 export default function SettingsScreen() {
+  const [changePwdOpen, setChangePwdOpen] = useState(false);
   const { setTheme, resolvedTheme } = useTheme();
   const logout = useLogout();
 
@@ -250,13 +262,32 @@ export default function SettingsScreen() {
           <CardTitle>Account</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          <Button
-            variant="outline"
-            className="w-full justify-start bg-transparent"
-          >
-            <Lock className="mr-2 h-4 w-4" />
-            Change Password
-          </Button>
+          <Dialog open={changePwdOpen} onOpenChange={setChangePwdOpen}>
+            <DialogTrigger asChild>
+              <Button
+                variant="outline"
+                className="w-full justify-start bg-transparent"
+              >
+                <Lock className="mr-2 h-4 w-4" />
+                Change Password
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Change Password</DialogTitle>
+                <DialogDescription>
+                  Update your account password. You will need your current
+                  password to proceed.
+                </DialogDescription>
+              </DialogHeader>
+              <ChangePasswordForm onSuccess={() => setChangePwdOpen(false)} />
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button variant="ghost">Close</Button>
+                </DialogClose>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
           <Button
             variant="outline"
             className="w-full justify-start bg-transparent text-red-600 hover:bg-red-50 hover:text-red-700"

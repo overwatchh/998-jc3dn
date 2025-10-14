@@ -13,10 +13,13 @@ export async function GET(request: NextRequest) {
 
     const lecturerId = session.user.id;
     const searchParams = request.nextUrl.searchParams;
-    const subjectId = searchParams.get('subjectId');
+    const subjectId = searchParams.get("subjectId");
 
     if (!subjectId) {
-      return NextResponse.json({ error: "Subject ID required" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Subject ID required" },
+        { status: 400 }
+      );
     }
 
     // Get all tutorial sessions for this subject taught by this lecturer
@@ -34,10 +37,10 @@ export async function GET(request: NextRequest) {
       ORDER BY ss.id
     `;
 
-    const tutorials = await rawQuery<{id: number, name: string}>(
-      query,
-      [lecturerId, parseInt(subjectId)]
-    );
+    const tutorials = await rawQuery<{ id: number; name: string }>(query, [
+      lecturerId,
+      parseInt(subjectId),
+    ]);
 
     return NextResponse.json(tutorials);
   } catch (error) {

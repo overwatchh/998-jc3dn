@@ -1,9 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/server/auth";
-import { headers } from "next/headers";
-import { z } from "zod";
 import { rawQuery } from "@/lib/server/query";
+import { headers } from "next/headers";
+import { NextRequest, NextResponse } from "next/server";
 import QRCode from "qrcode";
+import { z } from "zod";
 
 const APP_URL = process.env.BASE_URL || "http://localhost:3000";
 
@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
     const { qr_code_id } = parsed.data;
 
     // Get QR code details and verify lecturer ownership
-    const [qrCodeData] = await rawQuery<Omit<QRCodeData, 'qr_url'>>(
+    const [qrCodeData] = await rawQuery<Omit<QRCodeData, "qr_url">>(
       `
       SELECT
         ss.id as study_session_id,
@@ -113,7 +113,7 @@ export async function POST(req: NextRequest) {
     // For lectures, use enrolment (all students enrolled in subject)
     let students: Student[];
 
-    if (qrCodeData.session_type === 'tutorial') {
+    if (qrCodeData.session_type === "tutorial") {
       students = await rawQuery<Student>(
         `
         SELECT DISTINCT
@@ -161,7 +161,10 @@ export async function POST(req: NextRequest) {
 
       if (!smtpUser || !smtpPass || !smtpPort) {
         return NextResponse.json(
-          { message: "Email service not configured. Please configure SMTP settings in environment variables." },
+          {
+            message:
+              "Email service not configured. Please configure SMTP settings in environment variables.",
+          },
           { status: 500 }
         );
       }
@@ -186,7 +189,7 @@ export async function POST(req: NextRequest) {
     for (let i = 0; i < students.length; i += BATCH_SIZE) {
       const batch = students.slice(i, i + BATCH_SIZE);
 
-      const batchPromises = batch.map(async (student) => {
+      const batchPromises = batch.map(async student => {
         try {
           await emailService.sendQRCodeEmail({
             studentName: student.student_name,
@@ -204,7 +207,10 @@ export async function POST(req: NextRequest) {
             success: true,
           };
         } catch (error) {
-          console.error(`Failed to send QR email to ${student.student_email}:`, error);
+          console.error(
+            `Failed to send QR email to ${student.student_email}:`,
+            error
+          );
 
           return {
             studentEmail: student.student_email,
@@ -242,13 +248,12 @@ export async function POST(req: NextRequest) {
       week_number: qrCodeData.week_number,
       results: emailResults,
     });
-
   } catch (error) {
     console.error("Error in send-qr-email:", error);
     return NextResponse.json(
       {
         message: "Internal server error",
-        error: error instanceof Error ? error.message : "Unknown error"
+        error: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 }
     );

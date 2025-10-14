@@ -1,7 +1,7 @@
 import { auth } from "@/lib/server/auth";
 import { rawQuery } from "@/lib/server/query";
-import { NextResponse } from "next/server";
 import { headers } from "next/headers";
+import { NextResponse } from "next/server";
 
 // Type definitions for query results
 interface StudySession {
@@ -95,7 +95,7 @@ export async function GET() {
       return NextResponse.json({
         message: "No study sessions found for this lecturer",
         count: 0,
-        data: []
+        data: [],
       });
     }
 
@@ -113,7 +113,9 @@ export async function GET() {
         ORDER BY qcss.week_number, v.count
       `;
 
-      const qrCodes = await rawQuery<QrCodeWithValidity>(qrCodesQuery, [session.study_session_id]);
+      const qrCodes = await rawQuery<QrCodeWithValidity>(qrCodesQuery, [
+        session.study_session_id,
+      ]);
 
       // Group QR codes by qr_code_id and organize validities
       const qrCodesMap = new Map();
@@ -125,7 +127,7 @@ export async function GET() {
             valid_radius: qr.valid_radius,
             createdAt: qr.createdAt,
             week_number: qr.week_number,
-            validities: []
+            validities: [],
           });
         }
 
@@ -134,7 +136,7 @@ export async function GET() {
             validity_id: qr.validity_id,
             count: qr.count,
             start_time: qr.start_time,
-            end_time: qr.end_time
+            end_time: qr.end_time,
           });
         }
       }
@@ -154,16 +156,15 @@ export async function GET() {
         subject_name: session.subject_name,
         subject_code: session.subject_code,
         session_type: session.session_type,
-        qr_codes: qrCodesArray
+        qr_codes: qrCodesArray,
       });
     }
 
     return NextResponse.json({
       message: "Successfully retrieved QR codes",
       count: result.length,
-      data: result
+      data: result,
     });
-
   } catch (err) {
     console.error("GET /lecturer/qr-codes/all error:", err);
     return NextResponse.json(

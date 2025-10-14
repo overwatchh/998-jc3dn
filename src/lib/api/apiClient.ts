@@ -11,15 +11,16 @@ const apiClient = axios.create({
 
 // Better Auth client for handling OAuth flows properly
 export const authClient = createAuthClient({
-  baseURL: process.env.NODE_ENV === "production"
-    ? process.env.NEXT_PUBLIC_APP_URL // Replace with your production domain
-    : "http://localhost:3000",
+  baseURL:
+    process.env.NODE_ENV === "production"
+      ? process.env.NEXT_PUBLIC_APP_URL // Replace with your production domain
+      : "http://localhost:3000",
   fetchOptions: {
-    onRequest: (context) => {
+    onRequest: context => {
       // Add any custom headers if needed
       return context;
     },
-    onResponse: (context) => {
+    onResponse: context => {
       // Handle response if needed
       return context;
     },

@@ -133,7 +133,7 @@ export async function POST(req: NextRequest) {
 
     // Send email
     await emailService.sendAttendanceReminder(emailData);
-    
+
     return NextResponse.json(
       { message: "Email sent successfully" },
       { status: 200 }

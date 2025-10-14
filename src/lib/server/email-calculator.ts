@@ -49,7 +49,7 @@ export async function calculateStudentAttendancePercentage(
   let totalAttendancePoints = 0;
   let totalPossiblePoints = 0;
 
-  attendanceData.forEach((session) => {
+  attendanceData.forEach(session => {
     const checkinCount = parseInt(String(session.checkin_count)) || 0;
     const sessionPoints = calculateSessionAttendance(checkinCount);
 
@@ -133,7 +133,7 @@ export async function calculateSessionAttendanceRate(
   let totalPoints = 0;
   let maxPoints = 0;
 
-  checkinData.forEach((student) => {
+  checkinData.forEach(student => {
     const checkinCount = parseInt(String(student.checkin_count)) || 0;
     const studentPoints = calculateSessionAttendance(checkinCount);
 
@@ -147,7 +147,9 @@ export async function calculateSessionAttendanceRate(
 /**
  * Get subject average attendance using EMAIL CALCULATOR METHOD (optimized batch query)
  */
-export async function getSubjectAverageAttendance(subjectId: number): Promise<number> {
+export async function getSubjectAverageAttendance(
+  subjectId: number
+): Promise<number> {
   // Single optimized query to calculate all session attendance rates at once
   const sessionRates = await rawQuery<{
     qr_session_id: number;
@@ -197,7 +199,10 @@ export async function getSubjectAverageAttendance(subjectId: number): Promise<nu
 
   if (sessionRates.length === 0) return 0;
 
-  const totalAttendance = sessionRates.reduce((sum, session) => sum + session.attendance_rate, 0);
+  const totalAttendance = sessionRates.reduce(
+    (sum, session) => sum + session.attendance_rate,
+    0
+  );
   return totalAttendance / sessionRates.length;
 }
 

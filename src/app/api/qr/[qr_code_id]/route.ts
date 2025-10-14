@@ -184,9 +184,9 @@ export async function GET(
     `;
     const validities = await rawQuery<{
       validity_id: number;
-      count: number;          // 1 or 2
-      start_time: string;     // ISO-ish datetime string from DB
-      end_time: string;       // ISO-ish datetime string from DB
+      count: number; // 1 or 2
+      start_time: string; // ISO-ish datetime string from DB
+      end_time: string; // ISO-ish datetime string from DB
     }>(validitiesSql, [qrId]);
 
     // Compute the active validity window in JS using Date()
@@ -223,7 +223,9 @@ export async function GET(
         WHERE qr_code_id = ?
         LIMIT 1
       `;
-      const qrSessionResult = await rawQuery<{ id: number }>(qrSessionSql, [qrId]);
+      const qrSessionResult = await rawQuery<{ id: number }>(qrSessionSql, [
+        qrId,
+      ]);
 
       if (qrSessionResult.length > 0) {
         const qrSessionId = qrSessionResult[0].id;
@@ -244,7 +246,9 @@ export async function GET(
       }
     }
 
-    const checkinMap = new Map(studentCheckins.map(c => [c.validity_id, c.checkin_time]));
+    const checkinMap = new Map(
+      studentCheckins.map(c => [c.validity_id, c.checkin_time])
+    );
 
     return NextResponse.json({
       message: "Fetched QR info successfully",
@@ -273,6 +277,9 @@ export async function GET(
     });
   } catch (error) {
     console.error(error);
-    return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { message: "Internal Server Error" },
+      { status: 500 }
+    );
   }
 }

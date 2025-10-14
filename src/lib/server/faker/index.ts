@@ -22,4 +22,3 @@ function createFakeUser() {
 
 const dummpyStudents = Array.from({ length: 150 }, () => createFakeUser());
 export const STUDENTS = dummpyStudents.concat(JDC3DN_STUDENTS);
-

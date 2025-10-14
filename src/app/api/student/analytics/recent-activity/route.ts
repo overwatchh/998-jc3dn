@@ -327,11 +327,24 @@ export async function GET(request: Request) {
       LIMIT ?;
     `;
 
-    const [recentCheckins, missedSessions, upcomingSessions] = await Promise.all([
-      rawQuery<RecentCheckinRow>(recentCheckinsSql, [studentId, sessionType, limit]),
-      rawQuery<MissedSessionRow>(missedSessionsSql, [studentId, sessionType, limit]),
-      rawQuery<UpcomingSessionRow>(upcomingSessionsSql, [studentId, sessionType, limit])
-    ]);
+    const [recentCheckins, missedSessions, upcomingSessions] =
+      await Promise.all([
+        rawQuery<RecentCheckinRow>(recentCheckinsSql, [
+          studentId,
+          sessionType,
+          limit,
+        ]),
+        rawQuery<MissedSessionRow>(missedSessionsSql, [
+          studentId,
+          sessionType,
+          limit,
+        ]),
+        rawQuery<UpcomingSessionRow>(upcomingSessionsSql, [
+          studentId,
+          sessionType,
+          limit,
+        ]),
+      ]);
 
     // Calculate activity summary
     // Count unique sessions attended this week (with 2+ checkins = fully attended)
@@ -366,8 +379,11 @@ export async function GET(request: Request) {
     `;
 
     const [thisWeekCheckins, thisWeekMissed] = await Promise.all([
-      rawQuery<{ count: number }>(thisWeekCheckinsSql, [studentId, sessionType]),
-      rawQuery<{ count: number }>(thisWeekMissedSql, [studentId, sessionType])
+      rawQuery<{ count: number }>(thisWeekCheckinsSql, [
+        studentId,
+        sessionType,
+      ]),
+      rawQuery<{ count: number }>(thisWeekMissedSql, [studentId, sessionType]),
     ]);
 
     // Calculate attendance streaks using email calculator method
@@ -397,10 +413,10 @@ export async function GET(request: Request) {
       ORDER BY week_number DESC;
     `;
 
-    const streakData = await rawQuery<{ week_number: number; week_attended: number }>(
-      streakSql,
-      [studentId, sessionType]
-    );
+    const streakData = await rawQuery<{
+      week_number: number;
+      week_attended: number;
+    }>(streakSql, [studentId, sessionType]);
 
     // Calculate current streak (consecutive weeks with at least one fully attended session)
     let currentStreak = 0;
@@ -417,7 +433,8 @@ export async function GET(request: Request) {
     // Calculate longest streak
     let longestStreak = 0;
     let tempStreak = 0;
-    for (const week of streakData.reverse()) { // Reverse to go from oldest to newest
+    for (const week of streakData.reverse()) {
+      // Reverse to go from oldest to newest
       const attended = parseInt(String(week.week_attended)) || 0;
       if (attended === 1) {
         tempStreak++;
@@ -439,8 +456,8 @@ export async function GET(request: Request) {
           location: {
             building_number: checkin.building_number,
             room_number: checkin.room_number,
-            campus_name: checkin.campus_name
-          }
+            campus_name: checkin.campus_name,
+          },
         })),
         missed_sessions: missedSessions.map(missed => ({
           subject_name: missed.subject_name,
@@ -453,8 +470,8 @@ export async function GET(request: Request) {
           location: {
             building_number: missed.building_number,
             room_number: missed.room_number,
-            campus_name: missed.campus_name
-          }
+            campus_name: missed.campus_name,
+          },
         })),
         upcoming_sessions: upcomingSessions.map(upcoming => ({
           subject_name: upcoming.subject_name,
@@ -467,17 +484,17 @@ export async function GET(request: Request) {
           location: {
             building_number: upcoming.building_number,
             room_number: upcoming.room_number,
-            campus_name: upcoming.campus_name
+            campus_name: upcoming.campus_name,
           },
-          days_until: upcoming.days_until
+          days_until: upcoming.days_until,
         })),
         activity_summary: {
           total_checkins_this_week: thisWeekCheckins[0]?.count || 0,
           total_missed_this_week: thisWeekMissed[0]?.count || 0,
           current_streak: currentStreak,
-          longest_streak: longestStreak
-        }
-      }
+          longest_streak: longestStreak,
+        },
+      },
     };
 
     return NextResponse.json(response);

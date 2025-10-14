@@ -183,7 +183,10 @@ export async function GET(request: Request) {
       ORDER BY s.name, ss.type;
     `;
 
-    const subjectDetails = await rawQuery<SubjectDetailRow>(subjectDetailSql, [studentId, sessionType]);
+    const subjectDetails = await rawQuery<SubjectDetailRow>(subjectDetailSql, [
+      studentId,
+      sessionType,
+    ]);
 
     // Get recent session trends (last 5 sessions per subject)
     const recentTrendSql = `
@@ -205,7 +208,9 @@ export async function GET(request: Request) {
       ORDER BY s.id, qcss.week_number DESC;
     `;
 
-    const recentTrends = await rawQuery<RecentSessionRow & { subject_id: number }>(recentTrendSql, [studentId, sessionType]);
+    const recentTrends = await rawQuery<
+      RecentSessionRow & { subject_id: number }
+    >(recentTrendSql, [studentId, sessionType]);
 
     // Group data by subject
     const subjectMap = new Map();
@@ -224,7 +229,7 @@ export async function GET(request: Request) {
           total_attendance_points: 0,
           total_attended: 0,
           total_sessions: 0,
-          recent_sessions: []
+          recent_sessions: [],
         });
       }
 
@@ -232,11 +237,13 @@ export async function GET(request: Request) {
       subject.sessions_by_type.set(row.session_type, {
         attended: row.attended_sessions,
         total: row.total_sessions,
-        percentage: parseFloat(String(row.attendance_percentage)) || 0
+        percentage: parseFloat(String(row.attendance_percentage)) || 0,
       });
 
       // Use the EMAIL CALCULATOR percentage for overall calculation
-      subject.total_attendance_points += (parseFloat(String(row.attendance_percentage)) || 0) * row.total_sessions;
+      subject.total_attendance_points +=
+        (parseFloat(String(row.attendance_percentage)) || 0) *
+        row.total_sessions;
       subject.total_sessions += row.total_sessions;
       subject.total_attended += row.attended_sessions;
     });
@@ -248,53 +255,62 @@ export async function GET(request: Request) {
         subject.recent_sessions.push({
           week_number: row.week_number,
           attended: row.attended === 1,
-          session_type: row.session_type
+          session_type: row.session_type,
         });
       }
     });
 
     // Convert to final format
     const subjectPerformance = Array.from(subjectMap.values()).map(subject => {
-      const overallPercentage = subject.total_sessions > 0
-        ? subject.total_attendance_points / subject.total_sessions
-        : 0;
+      const overallPercentage =
+        subject.total_sessions > 0
+          ? subject.total_attendance_points / subject.total_sessions
+          : 0;
 
       // Determine status based on overall percentage vs required threshold
-      let status = 'good';
+      let status = "good";
 
       // If attendance percentage is below the required threshold, it's at risk
       if (overallPercentage < subject.required_threshold) {
-        status = 'at_risk';
+        status = "at_risk";
       }
       // If meeting or exceeding the requirement, it's good
 
       // Calculate trend direction
       const recentAttended = subject.recent_sessions.slice(0, 5);
-      let trendDirection = 'stable';
+      let trendDirection = "stable";
       if (recentAttended.length >= 3) {
-        const recentRate = recentAttended.filter(s => s.attended).length / recentAttended.length;
+        const recentRate =
+          recentAttended.filter(s => s.attended).length / recentAttended.length;
         const subjectRate = overallPercentage / 100;
 
         if (recentRate > subjectRate + 0.1) {
-          trendDirection = 'improving';
+          trendDirection = "improving";
         } else if (recentRate < subjectRate - 0.1) {
-          trendDirection = 'declining';
+          trendDirection = "declining";
         }
       }
 
       // Generate recommendations
       const recommendations = [];
-      if (status === 'at_risk') {
-        const sessionsNeeded = Math.ceil((subject.required_threshold / 100) * subject.total_sessions) - subject.total_attended;
-        recommendations.push(`Attend next ${sessionsNeeded} sessions to meet minimum requirements`);
-      } else if (status === 'warning') {
-        recommendations.push(`Attend next 2 sessions to maintain good standing`);
+      if (status === "at_risk") {
+        const sessionsNeeded =
+          Math.ceil(
+            (subject.required_threshold / 100) * subject.total_sessions
+          ) - subject.total_attended;
+        recommendations.push(
+          `Attend next ${sessionsNeeded} sessions to meet minimum requirements`
+        );
+      } else if (status === "warning") {
+        recommendations.push(
+          `Attend next 2 sessions to maintain good standing`
+        );
       }
 
-      if (subject.sessions_by_type.has('tutorial')) {
-        const tutorialPerf = subject.sessions_by_type.get('tutorial');
+      if (subject.sessions_by_type.has("tutorial")) {
+        const tutorialPerf = subject.sessions_by_type.get("tutorial");
         if (tutorialPerf.percentage < overallPercentage - 10) {
-          recommendations.push('Focus on tutorial attendance');
+          recommendations.push("Focus on tutorial attendance");
         }
       }
 
@@ -307,25 +323,27 @@ export async function GET(request: Request) {
           sessions_attended: subject.total_attended,
           total_sessions: subject.total_sessions,
           required_threshold: subject.required_threshold,
-          status
+          status,
         },
-        session_breakdown: Array.from(subject.sessions_by_type.entries()).map(([type, data]) => ({
-          session_type: type,
-          attended: data.attended,
-          total: data.total,
-          percentage: Math.round(data.percentage * 100) / 100
-        })),
+        session_breakdown: Array.from(subject.sessions_by_type.entries()).map(
+          ([type, data]) => ({
+            session_type: type,
+            attended: data.attended,
+            total: data.total,
+            percentage: Math.round(data.percentage * 100) / 100,
+          })
+        ),
         recent_trend: {
           last_5_sessions: subject.recent_sessions.slice(0, 5),
-          trend_direction: trendDirection
+          trend_direction: trendDirection,
         },
-        recommendations
+        recommendations,
       };
     });
 
     return NextResponse.json({
       message: "Subject performance analysis retrieved successfully",
-      data: subjectPerformance
+      data: subjectPerformance,
     });
   } catch (err) {
     console.error("[GET_STUDENT_SUBJECT_PERFORMANCE]", err);

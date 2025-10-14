@@ -1,3 +1,4 @@
+import { calculateSessionAttendanceRate } from "@/lib/server/email-calculator";
 import { rawQuery } from "@/lib/server/query";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -10,7 +11,6 @@ interface SessionData {
   week_label: string;
   date_label: string;
 }
-import { calculateSessionAttendanceRate } from "@/lib/server/email-calculator";
 
 /**
  * @openapi
@@ -85,21 +85,22 @@ import { calculateSessionAttendanceRate } from "@/lib/server/email-calculator";
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
-    const subjectId = searchParams.get('subjectId'); // Now correctly using subject ID
+    const subjectId = searchParams.get("subjectId"); // Now correctly using subject ID
     const subjectIdNum = subjectId ? parseInt(subjectId) : null;
-    const sessionType = searchParams.get('sessionType') || 'lecture';
-    const tutorialSessionId = searchParams.get('tutorialSessionId');
+    const sessionType = searchParams.get("sessionType") || "lecture";
+    const tutorialSessionId = searchParams.get("tutorialSessionId");
 
     // Build session filter - if tutorial session ID is provided, filter by that specific session
-    let sessionFilter = '';
+    let sessionFilter = "";
     if (tutorialSessionId) {
       sessionFilter = `AND ss.id = ${parseInt(tutorialSessionId)}`;
     } else {
-      sessionFilter = sessionType === 'both' ? '' : `AND ss.type = '${sessionType}'`;
+      sessionFilter =
+        sessionType === "both" ? "" : `AND ss.type = '${sessionType}'`;
     }
 
     // Get basic session info - use student_study_session when filtering by tutorial
-    let query = '';
+    let query = "";
     if (tutorialSessionId) {
       query = `
         SELECT
@@ -118,7 +119,7 @@ export async function GET(request: NextRequest) {
         JOIN subject_study_session sss ON sss.study_session_id = ss.id
         JOIN subject s ON s.id = sss.subject_id
         JOIN student_study_session student_ss ON student_ss.study_session_id = ss.id
-        WHERE 1=1 AND ss.id = ${parseInt(tutorialSessionId)} ${subjectIdNum ? 'AND s.id = ?' : ''}
+        WHERE 1=1 AND ss.id = ${parseInt(tutorialSessionId)} ${subjectIdNum ? "AND s.id = ?" : ""}
         GROUP BY s.code, s.name, qrss.id, qrss.week_number
         ORDER BY s.code, qrss.week_number
       `;
@@ -140,7 +141,7 @@ export async function GET(request: NextRequest) {
         JOIN subject_study_session sss ON sss.study_session_id = ss.id
         JOIN subject s ON s.id = sss.subject_id
         JOIN enrolment e ON e.subject_id = s.id
-        WHERE 1=1 ${sessionFilter} ${subjectIdNum ? 'AND s.id = ?' : ''}
+        WHERE 1=1 ${sessionFilter} ${subjectIdNum ? "AND s.id = ?" : ""}
         GROUP BY s.code, s.name, qrss.id, qrss.week_number
         ORDER BY s.code, qrss.week_number
       `;
@@ -164,10 +165,12 @@ export async function GET(request: NextRequest) {
           subject_name: session.subject_name,
           week_number: session.week_number,
           total_enrolled: session.total_enrolled,
-          students_attended: Math.round((attendanceRate * session.total_enrolled) / 100),
+          students_attended: Math.round(
+            (attendanceRate * session.total_enrolled) / 100
+          ),
           attendance_rate: Math.round(attendanceRate * 10) / 10,
           week_label: session.week_label,
-          date_label: session.date_label
+          date_label: session.date_label,
         };
       })
     );
@@ -175,6 +178,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(dataWithAttendance);
   } catch (error) {
     console.error("Weekly attendance API error:", error);
-    return NextResponse.json({ error: "Failed to fetch weekly attendance data" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to fetch weekly attendance data" },
+      { status: 500 }
+    );
   }
 }
