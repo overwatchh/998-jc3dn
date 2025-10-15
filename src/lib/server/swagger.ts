@@ -62,12 +62,7 @@ export const getApiDocs = async () => {
           name: "Lecturer",
           description:
             "Endpoints for lecturers to manage sessions, generate QR codes, and view student attendance.",
-        },
-        {
-          name: "Admin",
-          description:
-            "Administrative endpoints for managing users, roles, courses, and system settings.",
-        },
+        },        
         {
           name: "Common",
           description:
