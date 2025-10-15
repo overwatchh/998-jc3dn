@@ -68,12 +68,12 @@ export async function GET() {
 
     return NextResponse.json({
       sessionTypes: types,
-      showSelector
+      showSelector,
     });
   } catch (error) {
-    console.error('Session types API error:', error);
+    console.error("Session types API error:", error);
     return NextResponse.json(
-      { error: 'Failed to fetch session types' },
+      { error: "Failed to fetch session types" },
       { status: 500 }
     );
   }

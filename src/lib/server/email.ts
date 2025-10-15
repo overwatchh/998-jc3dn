@@ -1,4 +1,5 @@
 // nodemailer will be imported dynamically to avoid webpack bundling issues
+import type { SendMailOptions, Transporter } from "nodemailer";
 
 export interface EmailConfig {
   smtpHost: string;
@@ -34,12 +35,12 @@ export interface QRCodeEmailData {
 }
 
 class EmailService {
-  private transporter: unknown | null = null; // Transporter instance from nodemailer
+  private transporter: Transporter | null = null; // Transporter instance from nodemailer
   private config: EmailConfig | null = null;
 
   async initialize(config: EmailConfig) {
     this.config = config;
-    const nodemailer = await import('nodemailer');
+    const nodemailer = await import("nodemailer");
     this.transporter = nodemailer.default.createTransport({
       host: config.smtpHost,
       port: config.smtpPort,
@@ -52,10 +53,12 @@ class EmailService {
   }
 
   private generateAttendanceEmailHtml(data: AttendanceEmailData): string {
-    const attendanceColor = data.totalAttendancePercentage >= 80 ? '#22c55e' : '#ef4444';
-    const statusMessage = data.totalAttendancePercentage >= 80 
-      ? 'Your attendance is satisfactory' 
-      : 'Your attendance is below the required threshold';
+    const attendanceColor =
+      data.totalAttendancePercentage >= 80 ? "#22c55e" : "#ef4444";
+    const statusMessage =
+      data.totalAttendancePercentage >= 80
+        ? "Your attendance is satisfactory"
+        : "Your attendance is below the required threshold";
 
     return `
 <!DOCTYPE html>
@@ -108,13 +111,19 @@ class EmailService {
         <p><strong>Subject:</strong> ${data.subjectName} (${data.subjectCode})</p>
         <p><strong>Your attendance for this lecture:</strong> 
           <span class="checkin-status ${
-            data.checkinCount === 2 ? 'checkin-full' : 
-            data.checkinCount === 1 ? 'checkin-partial' : 
-            'checkin-absent'
+            data.checkinCount === 2
+              ? "checkin-full"
+              : data.checkinCount === 1
+                ? "checkin-partial"
+                : "checkin-absent"
           }">
-            ${data.checkinCount === 2 ? 'Full Attendance (100%)' : 
-              data.checkinCount === 1 ? 'Partial Attendance (50%)' : 
-              'Absent (0%)'}
+            ${
+              data.checkinCount === 2
+                ? "Full Attendance (100%)"
+                : data.checkinCount === 1
+                  ? "Partial Attendance (50%)"
+                  : "Absent (0%)"
+            }
           </span>
         </p>
         <p><strong>Check-ins:</strong> ${data.checkinCount} out of 2 required</p>
@@ -136,18 +145,22 @@ class EmailService {
         </div>
       </div>
 
-      ${data.isLowAttendance ? `
+      ${
+        data.isLowAttendance
+          ? `
       <div class="warning">
         <h3>⚠️ Attendance Warning</h3>
         <p>Your attendance is below the required 80% threshold. Please ensure you attend the remaining classes to maintain the minimum attendance requirement.</p>
-        <p><strong>Action needed:</strong> You can miss at most ${data.classesCanMiss} more class${data.classesCanMiss === 1 ? '' : 'es'} this semester.</p>
+        <p><strong>Action needed:</strong> You can miss at most ${data.classesCanMiss} more class${data.classesCanMiss === 1 ? "" : "es"} this semester.</p>
       </div>
-      ` : `
+      `
+          : `
       <div style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 15px; border-radius: 6px; margin: 20px 0;">
         <h3 style="color: #166534; margin-top: 0;">✅ Good Attendance!</h3>
-        <p>Keep up the good work! You can still miss ${data.classesCanMiss} more class${data.classesCanMiss === 1 ? '' : 'es'} and maintain the 80% requirement.</p>
+        <p>Keep up the good work! You can still miss ${data.classesCanMiss} more class${data.classesCanMiss === 1 ? "" : "es"} and maintain the 80% requirement.</p>
       </div>
-      `}
+      `
+      }
 
       <div style="text-align: center; margin: 30px 0;">
         <a href="${process.env.BASE_URL}/dashboard" class="button">View Full Attendance Record</a>
@@ -167,7 +180,7 @@ class EmailService {
     
     <div class="footer">
       <p>This is an automated message from the QR Attendance System.</p>
-      <p>Generated on ${new Date().toLocaleDateString('en-GB')} at ${new Date().toLocaleTimeString('en-GB')}</p>
+      <p>Generated on ${new Date().toLocaleDateString("en-GB")} at ${new Date().toLocaleTimeString("en-GB")}</p>
     </div>
   </div>
 </body>
@@ -192,9 +205,10 @@ OVERALL ATTENDANCE:
 - Required minimum: 80%
 - Classes you can still miss: ${data.classesCanMiss}
 
-${data.isLowAttendance ? 
-  'WARNING: Your attendance is below the required 80% threshold. Please attend remaining classes to meet the minimum requirement.' :
-  'Good work! Your attendance is satisfactory.'
+${
+  data.isLowAttendance
+    ? "WARNING: Your attendance is below the required 80% threshold. Please attend remaining classes to meet the minimum requirement."
+    : "Good work! Your attendance is satisfactory."
 }
 
 ATTENDANCE SYSTEM REMINDER:
@@ -210,17 +224,17 @@ QR Attendance System
 
   async sendAttendanceReminder(data: AttendanceEmailData): Promise<void> {
     if (!this.transporter || !this.config) {
-      throw new Error('Email service not initialized');
+      throw new Error("Email service not initialized");
     }
 
     const subject = `📊 Attendance Update: ${data.subjectCode} - Week ${data.weekNumber} ${
-      data.isLowAttendance ? '⚠️ Action Required' : ''
+      data.isLowAttendance ? "⚠️ Action Required" : ""
     }`;
 
     const htmlContent = this.generateAttendanceEmailHtml(data);
     const textContent = this.generateAttendanceEmailText(data);
 
-    const mailOptions = {
+    const mailOptions: SendMailOptions = {
       from: `"${this.config.fromName}" <${this.config.fromEmail}>`,
       to: data.studentEmail,
       subject: subject,
@@ -229,31 +243,55 @@ QR Attendance System
     };
 
     try {
-      await (this.transporter as any).sendMail(mailOptions);
-      console.log(`Attendance reminder sent to ${data.studentEmail} for ${data.subjectCode} Week ${data.weekNumber}`);
+      await this.transporter.sendMail(mailOptions);
+      console.log(
+        `Attendance reminder sent to ${data.studentEmail} for ${data.subjectCode} Week ${data.weekNumber}`
+      );
     } catch (error) {
-      console.error(`Failed to send attendance reminder to ${data.studentEmail}:`, error);
+      console.error(
+        `Failed to send attendance reminder to ${data.studentEmail}:`,
+        error
+      );
       throw error;
     }
   }
 
   async testConnection(): Promise<boolean> {
     if (!this.transporter) {
-      throw new Error('Email service not initialized');
+      throw new Error("Email service not initialized");
     }
 
     try {
-      await (this.transporter as any).verify();
-      console.log('SMTP connection verified successfully');
+      await this.transporter.verify();
+      console.log("SMTP connection verified successfully");
       return true;
     } catch (error) {
-      console.error('SMTP connection failed:', error);
+      console.error("SMTP connection failed:", error);
       return false;
     }
   }
 
   isInitialized(): boolean {
     return this.transporter !== null && this.config !== null;
+  }
+
+  async sendBasicEmail(opts: {
+    to: string;
+    subject: string;
+    html?: string;
+    text?: string;
+  }): Promise<void> {
+    if (!this.transporter || !this.config) {
+      throw new Error("Email service not initialized");
+    }
+    const mailOptions: SendMailOptions = {
+      from: `"${this.config.fromName}" <${this.config.fromEmail}>`,
+      to: opts.to,
+      subject: opts.subject,
+      text: opts.text,
+      html: opts.html,
+    };
+    await this.transporter.sendMail(mailOptions);
   }
 
   private generateQRCodeEmailHtml(data: QRCodeEmailData): string {
@@ -340,7 +378,7 @@ QR Attendance System
 
     <div class="footer">
       <p>This is an automated message from the QR Attendance System.</p>
-      <p>Generated on ${new Date().toLocaleDateString('en-GB')} at ${new Date().toLocaleTimeString('en-GB')}</p>
+      <p>Generated on ${new Date().toLocaleDateString("en-GB")} at ${new Date().toLocaleTimeString("en-GB")}</p>
     </div>
   </div>
 </body>
@@ -377,7 +415,7 @@ QR Attendance System
 
   async sendQRCodeEmail(data: QRCodeEmailData): Promise<void> {
     if (!this.transporter || !this.config) {
-      throw new Error('Email service not initialized');
+      throw new Error("Email service not initialized");
     }
 
     const subject = `📱 QR Code: ${data.subjectCode} - ${data.sessionType.charAt(0).toUpperCase() + data.sessionType.slice(1)} Week ${data.weekNumber}`;
@@ -386,7 +424,7 @@ QR Attendance System
     let htmlContent = this.generateQRCodeEmailHtml(data);
     const textContent = this.generateQRCodeEmailText(data);
 
-    const mailOptions: any = {
+    const mailOptions: SendMailOptions = {
       from: `"${this.config.fromName}" <${this.config.fromEmail}>`,
       to: data.studentEmail,
       subject: subject,
@@ -395,16 +433,19 @@ QR Attendance System
     };
 
     // If it's a data URL (base64 image), attach it as an inline image
-    if (data.qrCodeUrl.startsWith('data:image')) {
-      const base64Data = data.qrCodeUrl.split(',')[1];
-      const imageType = data.qrCodeUrl.match(/data:image\/(.*?);/)?.[1] || 'png';
+    if (data.qrCodeUrl.startsWith("data:image")) {
+      const base64Data = data.qrCodeUrl.split(",")[1];
+      const imageType =
+        data.qrCodeUrl.match(/data:image\/(.*?);/)?.[1] || "png";
 
-      mailOptions.attachments = [{
-        filename: 'qrcode.' + imageType,
-        content: base64Data,
-        encoding: 'base64',
-        cid: 'qrcode@attendance'
-      }];
+      mailOptions.attachments = [
+        {
+          filename: "qrcode." + imageType,
+          content: base64Data,
+          encoding: "base64",
+          cid: "qrcode@attendance",
+        },
+      ];
 
       // Replace the image src in HTML with CID reference
       htmlContent = htmlContent.replace(
@@ -415,10 +456,15 @@ QR Attendance System
     }
 
     try {
-      await (this.transporter as any).sendMail(mailOptions);
-      console.log(`QR code email sent to ${data.studentEmail} for ${data.subjectCode} Week ${data.weekNumber}`);
+      await this.transporter.sendMail(mailOptions);
+      console.log(
+        `QR code email sent to ${data.studentEmail} for ${data.subjectCode} Week ${data.weekNumber}`
+      );
     } catch (error) {
-      console.error(`Failed to send QR code email to ${data.studentEmail}:`, error);
+      console.error(
+        `Failed to send QR code email to ${data.studentEmail}:`,
+        error
+      );
       throw error;
     }
   }

@@ -123,29 +123,34 @@ export async function GET(_request: NextRequest) {
     const courses = await rawQuery(query, params);
 
     // Transform to match the expected format
-    const transformedCourses = courses.map((course: {
-      id: number;
-      name: string;
-      code: string;
-      session_type: string;
-      start_time?: string;
-      end_time?: string;
-      day_of_week: string;
-    }) => ({
-      id: course.id, // Use subject ID for analytics API consistency
-      name: course.name,
-      code: course.code,
-      sessionType: course.session_type,
-      startTime: course.start_time?.slice(0, 5) || '',
-      endTime: course.end_time?.slice(0, 5) || '',
-      dayOfWeek: course.day_of_week,
-    }));
+    const transformedCourses = courses.map(
+      (course: {
+        id: number;
+        name: string;
+        code: string;
+        session_type: string;
+        start_time?: string;
+        end_time?: string;
+        day_of_week: string;
+      }) => ({
+        id: course.id, // Use subject ID for analytics API consistency
+        name: course.name,
+        code: course.code,
+        sessionType: course.session_type,
+        startTime: course.start_time?.slice(0, 5) || "",
+        endTime: course.end_time?.slice(0, 5) || "",
+        dayOfWeek: course.day_of_week,
+      })
+    );
 
     // console.log('Available courses for analytics:', transformedCourses); // Removed for production
 
     return NextResponse.json(transformedCourses);
   } catch (error) {
     console.error("Available courses API error:", error);
-    return NextResponse.json({ error: "Failed to fetch available courses" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to fetch available courses" },
+      { status: 500 }
+    );
   }
 }

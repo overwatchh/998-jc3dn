@@ -229,7 +229,7 @@ export function StudentAnalytics() {
         try {
           return JSON.parse(text);
         } catch (e) {
-          console.error('JSON parse error:', e, 'Response:', text);
+          console.error("JSON parse error:", e, "Response:", text);
           return null;
         }
       };
@@ -379,7 +379,7 @@ export function StudentAnalytics() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">My Analytics</h1>
-          <p className="text-xs text-muted-foreground mt-1">
+          <p className="text-muted-foreground mt-1 text-xs">
             Last updated: {lastRefresh.toLocaleTimeString()}
           </p>
         </div>
@@ -389,8 +389,10 @@ export function StudentAnalytics() {
           onClick={() => fetchAnalytics(true)}
           disabled={refreshing}
         >
-          <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-          {refreshing ? 'Refreshing...' : 'Refresh'}
+          <RefreshCw
+            className={`mr-2 h-4 w-4 ${refreshing ? "animate-spin" : ""}`}
+          />
+          {refreshing ? "Refreshing..." : "Refresh"}
         </Button>
       </div>
 
@@ -459,9 +461,7 @@ export function StudentAnalytics() {
                   {recentActivity?.activity_summary.total_checkins_this_week ||
                     0}
                 </p>
-                <p className="text-xs text-muted-foreground">
-                  sessions
-                </p>
+                <p className="text-muted-foreground text-xs">sessions</p>
               </div>
               <Calendar className="h-8 w-8 text-purple-600" />
             </div>

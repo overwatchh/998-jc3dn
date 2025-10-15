@@ -1,11 +1,24 @@
 "use client";
 
-import { mockNotifications } from "@/app/(protected)/notifications/_components/mockdata";
-import { INotification } from "@/app/(protected)/notifications/_components/mockdata";
+import {
+  INotification,
+  mockLecturerNotifications,
+  mockStudentNotifications,
+} from "@/app/(protected)/notifications/_components/mockdata";
 import { useState } from "react";
+import { useCurrentUser } from "./useAuth";
 
 export function useNotifications() {
-  const [notifications, setNotifications] = useState<INotification[]>(mockNotifications);
+  const { data } = useCurrentUser();
+  const role = data?.user?.role;
+
+  // Choose role-specific seed list (lecturer vs student). Admin currently reuses lecturer list.
+  const seed: INotification[] =
+    role === "lecturer" || role === "admin"
+      ? mockLecturerNotifications
+      : mockStudentNotifications;
+
+  const [notifications, setNotifications] = useState<INotification[]>(seed);
 
   const unreadCount = notifications.filter(n => n.unread).length;
 
@@ -14,14 +27,12 @@ export function useNotifications() {
   };
 
   const markAsRead = (id: number) => {
-    setNotifications(prev => 
-      prev.map(notif => 
-        notif.id === id ? { ...notif, unread: false } : notif
-      )
+    setNotifications(prev =>
+      prev.map(notif => (notif.id === id ? { ...notif, unread: false } : notif))
     );
   };
 
-  const addNotification = (notification: Omit<INotification, 'id'>) => {
+  const addNotification = (notification: Omit<INotification, "id">) => {
     const newId = Math.max(...notifications.map(n => n.id), 0) + 1;
     setNotifications(prev => [{ ...notification, id: newId }, ...prev]);
   };

@@ -28,17 +28,17 @@ export async function GET(request: NextRequest) {
     const conditions = [];
 
     if (sessionType && sessionType !== "both") {
-      conditions.push('ss.type = ?');
+      conditions.push("ss.type = ?");
       params.push(sessionType);
     }
 
-    if (subjectId && subjectId !== 'all') {
-      conditions.push('sss.subject_id = ?');
+    if (subjectId && subjectId !== "all") {
+      conditions.push("sss.subject_id = ?");
       params.push(parseInt(subjectId));
     }
 
     if (conditions.length > 0) {
-      query += ` WHERE ${conditions.join(' AND ')}`;
+      query += ` WHERE ${conditions.join(" AND ")}`;
     }
 
     query += `
@@ -59,13 +59,14 @@ export async function GET(request: NextRequest) {
     // Get peak hours for each day
     const peakConditions = [];
     if (sessionType && sessionType !== "both") {
-      peakConditions.push('ss.type = ?');
+      peakConditions.push("ss.type = ?");
     }
-    if (subjectId && subjectId !== 'all') {
-      peakConditions.push('sss.subject_id = ?');
+    if (subjectId && subjectId !== "all") {
+      peakConditions.push("sss.subject_id = ?");
     }
 
-    const whereClause = peakConditions.length > 0 ? `WHERE ${peakConditions.join(' AND ')}` : '';
+    const whereClause =
+      peakConditions.length > 0 ? `WHERE ${peakConditions.join(" AND ")}` : "";
 
     const peakHoursQuery = `
       SELECT
@@ -90,7 +91,7 @@ export async function GET(request: NextRequest) {
       }
       acc[row.day_name].push({
         hour: row.hour,
-        count: row.checkin_count
+        count: row.checkin_count,
       });
       return acc;
     }, {});
@@ -103,17 +104,25 @@ export async function GET(request: NextRequest) {
     // Add peak hours to day patterns
     const enhancedPatterns = dayPatterns.map(pattern => ({
       ...pattern,
-      peakHour: peakHoursByDay[pattern.day] || null
+      peakHour: peakHoursByDay[pattern.day] || null,
     }));
 
     // Calculate summary statistics
-    const totalCheckins = dayPatterns.reduce((sum, day) => sum + day.totalCheckins, 0);
+    const totalCheckins = dayPatterns.reduce(
+      (sum, day) => sum + day.totalCheckins,
+      0
+    );
 
-    const busiestDay = dayPatterns.reduce((max, day) =>
-      day.totalCheckins > max.totalCheckins ? day : max, dayPatterns[0] || { day: "N/A", totalCheckins: 0 });
+    const busiestDay = dayPatterns.reduce(
+      (max, day) => (day.totalCheckins > max.totalCheckins ? day : max),
+      dayPatterns[0] || { day: "N/A", totalCheckins: 0 }
+    );
 
-    const bestDistributionDay = dayPatterns.reduce((max, day) =>
-      day.distributionPercentage > max.distributionPercentage ? day : max, dayPatterns[0] || { day: "N/A", distributionPercentage: 0 });
+    const bestDistributionDay = dayPatterns.reduce(
+      (max, day) =>
+        day.distributionPercentage > max.distributionPercentage ? day : max,
+      dayPatterns[0] || { day: "N/A", distributionPercentage: 0 }
+    );
 
     return NextResponse.json({
       patterns: enhancedPatterns,
@@ -121,10 +130,9 @@ export async function GET(request: NextRequest) {
         totalCheckins,
         busiestDay: busiestDay.day,
         bestAttendanceDay: bestDistributionDay.day,
-        daysWithData: dayPatterns.length
-      }
+        daysWithData: dayPatterns.length,
+      },
     });
-
   } catch (error) {
     console.error("Error fetching day-of-week patterns:", error);
     return NextResponse.json(

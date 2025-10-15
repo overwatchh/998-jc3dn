@@ -177,34 +177,45 @@ export async function GET(request: Request) {
     // Calculate subject goals using email calculator percentages
     const subjectGoals = goalsData.map(row => {
       const requiredPercentage = row.required_attendance_thresh * 100;
-      const currentPercentage = parseFloat(String(row.current_attendance_percentage)) || 0;
+      const currentPercentage =
+        parseFloat(String(row.current_attendance_percentage)) || 0;
 
-      const remainingSessions = row.total_planned_sessions - row.total_sessions_so_far;
-      const requiredTotalAttended = Math.ceil((requiredPercentage / 100) * row.total_planned_sessions);
-      const sessionsNeeded = Math.max(0, requiredTotalAttended - row.attended_sessions);
+      const remainingSessions =
+        row.total_planned_sessions - row.total_sessions_so_far;
+      const requiredTotalAttended = Math.ceil(
+        (requiredPercentage / 100) * row.total_planned_sessions
+      );
+      const sessionsNeeded = Math.max(
+        0,
+        requiredTotalAttended - row.attended_sessions
+      );
 
       const canAchieveGoal = sessionsNeeded <= remainingSessions;
-      const projectedWithPerfect = row.total_planned_sessions > 0
-        ? ((row.attended_sessions + remainingSessions) / row.total_planned_sessions) * 100
-        : 0;
+      const projectedWithPerfect =
+        row.total_planned_sessions > 0
+          ? ((row.attended_sessions + remainingSessions) /
+              row.total_planned_sessions) *
+            100
+          : 0;
 
       // Determine status
-      let status = 'on_track';
+      let status = "on_track";
       if (currentPercentage >= requiredPercentage) {
-        status = 'achieved';
+        status = "achieved";
       } else if (!canAchieveGoal) {
-        status = 'impossible';
+        status = "impossible";
       } else if (sessionsNeeded >= remainingSessions * 0.8) {
-        status = 'at_risk';
+        status = "at_risk";
       }
 
       // Generate recommendation
-      let recommendation = 'Keep up the good work!';
-      if (status === 'achieved') {
-        recommendation = 'Goal achieved! Maintain current attendance level.';
-      } else if (status === 'impossible') {
-        recommendation = 'Required attendance cannot be achieved. Focus on future subjects.';
-      } else if (status === 'at_risk') {
+      let recommendation = "Keep up the good work!";
+      if (status === "achieved") {
+        recommendation = "Goal achieved! Maintain current attendance level.";
+      } else if (status === "impossible") {
+        recommendation =
+          "Required attendance cannot be achieved. Focus on future subjects.";
+      } else if (status === "at_risk") {
         recommendation = `Must attend at least ${sessionsNeeded} of the remaining ${remainingSessions} sessions`;
       } else {
         recommendation = `Attend ${sessionsNeeded} more sessions to meet the requirement`;
@@ -223,31 +234,43 @@ export async function GET(request: Request) {
         can_achieve_goal: canAchieveGoal,
         projection: {
           if_perfect_attendance: Math.round(projectedWithPerfect * 100) / 100,
-          minimum_sessions_needed: sessionsNeeded
+          minimum_sessions_needed: sessionsNeeded,
         },
         status,
-        recommendation
+        recommendation,
       };
     });
 
     // Calculate overall goal (average of all required thresholds)
-    const averageRequiredPercentage = goalsData.length > 0
-      ? goalsData.reduce((sum, row) => sum + (row.required_attendance_thresh * 100), 0) / goalsData.length
-      : 80;
+    const averageRequiredPercentage =
+      goalsData.length > 0
+        ? goalsData.reduce(
+            (sum, row) => sum + row.required_attendance_thresh * 100,
+            0
+          ) / goalsData.length
+        : 80;
 
-    const totalAttended = goalsData.reduce((sum, row) => sum + row.attended_sessions, 0);
-    const totalSessions = goalsData.reduce((sum, row) => sum + row.total_sessions_so_far, 0);
-    const overallCurrentPercentage = totalSessions > 0 ? (totalAttended / totalSessions) * 100 : 0;
+    const totalAttended = goalsData.reduce(
+      (sum, row) => sum + row.attended_sessions,
+      0
+    );
+    const totalSessions = goalsData.reduce(
+      (sum, row) => sum + row.total_sessions_so_far,
+      0
+    );
+    const overallCurrentPercentage =
+      totalSessions > 0 ? (totalAttended / totalSessions) * 100 : 0;
 
-    const overallProgress = averageRequiredPercentage > 0
-      ? (overallCurrentPercentage / averageRequiredPercentage) * 100
-      : 0;
+    const overallProgress =
+      averageRequiredPercentage > 0
+        ? (overallCurrentPercentage / averageRequiredPercentage) * 100
+        : 0;
 
-    let overallStatus = 'on_track';
+    let overallStatus = "on_track";
     if (overallCurrentPercentage >= averageRequiredPercentage) {
-      overallStatus = 'ahead';
+      overallStatus = "ahead";
     } else if (overallCurrentPercentage < averageRequiredPercentage - 5) {
-      overallStatus = 'behind';
+      overallStatus = "behind";
     }
 
     const response = {
@@ -257,10 +280,10 @@ export async function GET(request: Request) {
           target_percentage: Math.round(averageRequiredPercentage * 100) / 100,
           current_percentage: Math.round(overallCurrentPercentage * 100) / 100,
           progress: Math.round(overallProgress * 100) / 100,
-          status: overallStatus
+          status: overallStatus,
         },
-        subject_goals: subjectGoals
-      }
+        subject_goals: subjectGoals,
+      },
     };
 
     return NextResponse.json(response);

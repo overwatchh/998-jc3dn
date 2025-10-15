@@ -24,7 +24,6 @@ export function NotificationsScreen() {
     }
   }
 
-
   return (
     <div className="space-y-6 p-4">
       {/* Header */}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCurrentUser, useLogout } from "@/hooks/useAuth";
+import { Roles } from "@/types";
 import {
   Info,
   Loader2,
@@ -9,11 +10,12 @@ import {
   Users,
   Settings,
   LogOut,
-  HelpCircle
+  HelpCircle,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
+import { LecturerNavigationMenu } from "./lecturer-navigation-menu";
 import { NotificationIcon } from "./notification-icon";
 import { ThemeToggler } from "./theme-toggler";
 import { Button } from "./ui/button";
@@ -30,8 +32,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "./ui/tooltip";
-import { Roles } from "@/types";
-import { LecturerNavigationMenu } from "./lecturer-navigation-menu";
 
 export const Header = () => {
   const { data: session, isPending } = useCurrentUser();
@@ -69,36 +69,45 @@ export const Header = () => {
         >
           <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="flex items-center gap-3 px-3 py-2 hover:bg-transparent group">
+              <Button
+                variant="ghost"
+                className="group flex items-center gap-3 px-3 py-2 hover:bg-transparent"
+              >
                 <div className="relative">
                   <Image
                     src={session.user.image || "/placeholder.svg"}
                     alt={session.user.name}
                     width={32}
                     height={32}
-                    className="rounded-full border-2 border-primary/20 ring-1 ring-primary/5 group-hover:border-primary/30 group-hover:ring-primary/10 transition-all duration-200 shadow-sm"
+                    className="border-primary/20 ring-primary/5 group-hover:border-primary/30 group-hover:ring-primary/10 rounded-full border-2 shadow-sm ring-1 transition-all duration-200"
                   />
-                  <div className="absolute inset-0 rounded-full bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+                  <div className="from-primary/5 absolute inset-0 rounded-full bg-gradient-to-br to-transparent opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
                 </div>
-                <span className="text-sm font-medium group-hover:text-primary transition-colors duration-200">{session.user.name}</span>
+                <span className="group-hover:text-primary text-sm font-medium transition-colors duration-200">
+                  {session.user.name}
+                </span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
               {/* User Info Header */}
-              <div className="p-4 border-b border-border bg-background">
-                <div className="flex items-center gap-3 mb-3">
+              <div className="border-border bg-background border-b p-4">
+                <div className="mb-3 flex items-center gap-3">
                   <div className="relative">
                     <Image
                       src={session.user.image || "/placeholder.svg"}
                       alt={session.user.name}
                       width={32}
                       height={32}
-                      className="rounded-full border border-primary/20 shadow-sm"
+                      className="border-primary/20 rounded-full border shadow-sm"
                     />
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">{session.user.name}</p>
-                    <p className="text-xs text-muted-foreground truncate">{session.user.email}</p>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-foreground truncate text-sm font-medium">
+                      {session.user.name}
+                    </p>
+                    <p className="text-muted-foreground truncate text-xs">
+                      {session.user.email}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -113,14 +122,20 @@ export const Header = () => {
                 </DropdownMenuItem>
 
                 <DropdownMenuItem asChild>
-                  <Link href="/attendance-tracking" className="flex items-center gap-2">
+                  <Link
+                    href="/attendance-tracking"
+                    className="flex items-center gap-2"
+                  >
                     <Users className="h-4 w-4" />
                     <span>Attendance Tracking</span>
                   </Link>
                 </DropdownMenuItem>
 
                 <DropdownMenuItem asChild>
-                  <Link href="/qr-generation" className="flex items-center gap-2">
+                  <Link
+                    href="/qr-generation"
+                    className="flex items-center gap-2"
+                  >
                     <QrCode className="h-4 w-4" />
                     <span>QR Generation</span>
                   </Link>
@@ -141,7 +156,9 @@ export const Header = () => {
                 >
                   <div className="flex items-center gap-2">
                     <LogOut className="h-4 w-4" />
-                    <span>{logout.isPending ? "Signing Out..." : "Sign Out"}</span>
+                    <span>
+                      {logout.isPending ? "Signing Out..." : "Sign Out"}
+                    </span>
                   </div>
                 </DropdownMenuItem>
               </div>
@@ -153,18 +170,23 @@ export const Header = () => {
 
     // For students and other roles, show simple link to settings
     return (
-      <Link href={"/settings"} className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-accent/50 transition-colors group">
+      <Link
+        href={"/settings"}
+        className="hover:bg-accent/50 group flex items-center gap-3 rounded-md px-3 py-2 transition-colors"
+      >
         <div className="relative">
           <Image
             src={session.user.image || "/placeholder.svg"}
             alt={session.user.name}
             width={32}
             height={32}
-            className="rounded-full border-2 border-primary/20 ring-1 ring-primary/5 group-hover:border-primary/30 group-hover:ring-primary/10 transition-all duration-200 shadow-sm"
+            className="border-primary/20 ring-primary/5 group-hover:border-primary/30 group-hover:ring-primary/10 rounded-full border-2 shadow-sm ring-1 transition-all duration-200"
           />
-          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+          <div className="from-primary/5 absolute inset-0 rounded-full bg-gradient-to-br to-transparent opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
         </div>
-        <span className="text-sm font-medium group-hover:text-primary transition-colors duration-200">{session.user.name}</span>
+        <span className="group-hover:text-primary text-sm font-medium transition-colors duration-200">
+          {session.user.name}
+        </span>
       </Link>
     );
   }
@@ -189,7 +211,7 @@ export const Header = () => {
                 <Button
                   variant="default"
                   size="sm"
-                  className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm flex items-center gap-2"
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground flex items-center gap-2 shadow-sm"
                 >
                   <QrCode className="h-4 w-4" />
                   <span className="font-medium">Generate QR Code</span>
@@ -202,7 +224,11 @@ export const Header = () => {
           <Tooltip>
             <TooltipTrigger asChild>
               <Button variant="outline" size="sm" asChild>
-                <Link href="/support" className="flex items-center gap-2" aria-label="View support and help">
+                <Link
+                  href="/support"
+                  className="flex items-center gap-2"
+                  aria-label="View support and help"
+                >
                   <HelpCircle className="h-4 w-4" />
                   <span className="hidden sm:inline">Support</span>
                 </Link>

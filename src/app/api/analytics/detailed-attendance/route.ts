@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/server/auth';
-import { rawQuery } from '@/lib/server/query';
-import { headers } from 'next/headers';
+import { auth } from "@/lib/server/auth";
+import { rawQuery } from "@/lib/server/query";
+import { headers } from "next/headers";
+import { NextRequest, NextResponse } from "next/server";
 
 interface Student {
   student_id: number;
@@ -48,30 +48,47 @@ export async function GET(request: NextRequest) {
     }
 
     const searchParams = request.nextUrl.searchParams;
-    const subjectId = searchParams.get('subjectId');
-    const viewType = searchParams.get('viewType') || 'student';
-    const searchQuery = searchParams.get('search') || '';
-    const sessionType = searchParams.get('sessionType') || 'lecture';
-    const tutorialSessionId = searchParams.get('tutorialSessionId');
+    const subjectId = searchParams.get("subjectId");
+    const viewType = searchParams.get("viewType") || "student";
+    const searchQuery = searchParams.get("search") || "";
+    const sessionType = searchParams.get("sessionType") || "lecture";
+    const tutorialSessionId = searchParams.get("tutorialSessionId");
 
-    if (!subjectId || subjectId === 'all') {
-      return NextResponse.json({ error: "Specific Subject ID is required for detailed attendance" }, { status: 400 });
+    if (!subjectId || subjectId === "all") {
+      return NextResponse.json(
+        { error: "Specific Subject ID is required for detailed attendance" },
+        { status: 400 }
+      );
     }
 
     let data;
 
     switch (viewType) {
-      case 'student':
-        data = await getStudentAttendance(parseInt(subjectId), searchQuery, sessionType, tutorialSessionId ? parseInt(tutorialSessionId) : undefined);
+      case "student":
+        data = await getStudentAttendance(
+          parseInt(subjectId),
+          searchQuery,
+          sessionType,
+          tutorialSessionId ? parseInt(tutorialSessionId) : undefined
+        );
         break;
-      case 'session':
-        data = await getSessionAttendance(parseInt(subjectId), sessionType, tutorialSessionId ? parseInt(tutorialSessionId) : undefined);
+      case "session":
+        data = await getSessionAttendance(
+          parseInt(subjectId),
+          sessionType,
+          tutorialSessionId ? parseInt(tutorialSessionId) : undefined
+        );
         break;
-      case 'course':
+      case "course":
         data = await getCourseAttendance(session.user.id, sessionType);
         break;
       default:
-        data = await getStudentAttendance(parseInt(subjectId), searchQuery, sessionType, tutorialSessionId ? parseInt(tutorialSessionId) : undefined);
+        data = await getStudentAttendance(
+          parseInt(subjectId),
+          searchQuery,
+          sessionType,
+          tutorialSessionId ? parseInt(tutorialSessionId) : undefined
+        );
     }
 
     return NextResponse.json(data);
@@ -84,15 +101,22 @@ export async function GET(request: NextRequest) {
   }
 }
 
-async function getStudentAttendance(subjectId: number, searchQuery: string, sessionType: string, tutorialSessionId?: number) {
+async function getStudentAttendance(
+  subjectId: number,
+  searchQuery: string,
+  sessionType: string,
+  tutorialSessionId?: number
+) {
   // Build session type filter
-  const sessionFilter = tutorialSessionId ? `AND ss.id = ${tutorialSessionId}` : `AND ss.type = '${sessionType}'`;
+  const sessionFilter = tutorialSessionId
+    ? `AND ss.id = ${tutorialSessionId}`
+    : `AND ss.type = '${sessionType}'`;
 
   // Get all students with their attendance data using the EMAIL CALCULATOR METHOD
   // If tutorialSessionId is provided, get students from student_study_session
   // Otherwise, get students from enrolment
 
-  let baseQuery = '';
+  let baseQuery = "";
   const params: (number | string)[] = [];
 
   if (tutorialSessionId) {
@@ -146,9 +170,10 @@ async function getStudentAttendance(subjectId: number, searchQuery: string, sess
   const students = await rawQuery(baseQuery, params);
 
   // For each student, calculate attendance using EMAIL CALCULATOR METHOD
-  const studentsWithAttendance = await Promise.all(students.map(async (student: Student) => {
-    // Get all QR sessions for this subject and student's checkins
-    const attendanceQuery = `
+  const studentsWithAttendance = await Promise.all(
+    students.map(async (student: Student) => {
+      // Get all QR sessions for this subject and student's checkins
+      const attendanceQuery = `
       SELECT
         qrss.id as qr_session_id,
         qrss.week_number,
@@ -168,83 +193,107 @@ async function getStudentAttendance(subjectId: number, searchQuery: string, sess
       ORDER BY qrss.week_number
     `;
 
-    const attendanceData = await rawQuery(attendanceQuery, [student.student_id, subjectId]);
+      const attendanceData = await rawQuery(attendanceQuery, [
+        student.student_id,
+        subjectId,
+      ]);
 
-    // Calculate attendance using email calculator method
-    let totalAttendancePoints = 0;
-    let totalPossiblePoints = 0;
+      // Calculate attendance using email calculator method
+      let totalAttendancePoints = 0;
+      let totalPossiblePoints = 0;
 
-    attendanceData.forEach((session: AttendanceSession) => {
-      // Apply email calculator scoring: 2+ checkins = 100%, 1 checkin = 50%, 0 checkins = 0%
-      const checkinCount = parseInt(String(session.checkin_count)) || 0;
-      let sessionPoints = 0;
+      attendanceData.forEach((session: AttendanceSession) => {
+        // Apply email calculator scoring: 2+ checkins = 100%, 1 checkin = 50%, 0 checkins = 0%
+        const checkinCount = parseInt(String(session.checkin_count)) || 0;
+        let sessionPoints = 0;
 
-      if (checkinCount >= 2) {
-        sessionPoints = 100;
-      } else if (checkinCount === 1) {
-        sessionPoints = 50;
-      } else {
-        sessionPoints = 0;
+        if (checkinCount >= 2) {
+          sessionPoints = 100;
+        } else if (checkinCount === 1) {
+          sessionPoints = 50;
+        } else {
+          sessionPoints = 0;
+        }
+
+        totalAttendancePoints += sessionPoints;
+        totalPossiblePoints += 100; // Each session is worth 100 points max
+      });
+
+      const totalAttendancePercentage =
+        totalPossiblePoints > 0
+          ? (totalAttendancePoints / totalPossiblePoints) * 100
+          : 0;
+
+      // Calculate trend based on recent sessions
+      const recentSessions = attendanceData.slice(-6); // Last 6 sessions
+      let trend = "stable";
+
+      if (recentSessions.length >= 6) {
+        const recent = recentSessions.slice(-3); // Last 3
+        const earlier = recentSessions.slice(-6, -3); // Previous 3
+
+        const recentPoints = recent.reduce(
+          (sum: number, session: AttendanceSession): number => {
+            const checkinCount = parseInt(String(session.checkin_count)) || 0;
+            return (
+              sum + (checkinCount >= 2 ? 100 : checkinCount === 1 ? 50 : 0)
+            );
+          },
+          0 as number
+        );
+
+        const earlierPoints = earlier.reduce(
+          (sum: number, session: AttendanceSession): number => {
+            const checkinCount = parseInt(String(session.checkin_count)) || 0;
+            return (
+              sum + (checkinCount >= 2 ? 100 : checkinCount === 1 ? 50 : 0)
+            );
+          },
+          0 as number
+        );
+
+        const recentRate = Number(recentPoints) / (3 * 100);
+        const earlierRate = Number(earlierPoints) / (3 * 100);
+
+        if (recentRate > earlierRate + 0.1) trend = "up";
+        else if (recentRate < earlierRate - 0.1) trend = "down";
       }
 
-      totalAttendancePoints += sessionPoints;
-      totalPossiblePoints += 100; // Each session is worth 100 points max
-    });
+      const attendedSessions = attendanceData.filter(
+        (session: AttendanceSession) =>
+          parseInt(String(session.checkin_count)) > 0
+      ).length;
 
-    const totalAttendancePercentage = totalPossiblePoints > 0
-      ? (totalAttendancePoints / totalPossiblePoints) * 100
-      : 0;
-
-    // Calculate trend based on recent sessions
-    const recentSessions = attendanceData.slice(-6); // Last 6 sessions
-    let trend = 'stable';
-
-    if (recentSessions.length >= 6) {
-      const recent = recentSessions.slice(-3); // Last 3
-      const earlier = recentSessions.slice(-6, -3); // Previous 3
-
-      const recentPoints = recent.reduce((sum: number, session: AttendanceSession): number => {
-        const checkinCount = parseInt(String(session.checkin_count)) || 0;
-        return sum + (checkinCount >= 2 ? 100 : checkinCount === 1 ? 50 : 0);
-      }, 0 as number);
-
-      const earlierPoints = earlier.reduce((sum: number, session: AttendanceSession): number => {
-        const checkinCount = parseInt(String(session.checkin_count)) || 0;
-        return sum + (checkinCount >= 2 ? 100 : checkinCount === 1 ? 50 : 0);
-      }, 0 as number);
-
-      const recentRate = Number(recentPoints) / (3 * 100);
-      const earlierRate = Number(earlierPoints) / (3 * 100);
-
-      if (recentRate > earlierRate + 0.1) trend = 'up';
-      else if (recentRate < earlierRate - 0.1) trend = 'down';
-    }
-
-    const attendedSessions = attendanceData.filter((session: AttendanceSession) => parseInt(String(session.checkin_count)) > 0).length;
-
-    return {
-      id: student.student_id,
-      name: student.student_name || 'Unknown',
-      email: student.student_email || '',
-      initials: student.initials,
-      totalSessions: attendanceData.length,
-      attendedSessions: attendedSessions,
-      attendancePercentage: Math.round(totalAttendancePercentage * 10) / 10,
-      trend
-    };
-  }));
+      return {
+        id: student.student_id,
+        name: student.student_name || "Unknown",
+        email: student.student_email || "",
+        initials: student.initials,
+        totalSessions: attendanceData.length,
+        attendedSessions: attendedSessions,
+        attendancePercentage: Math.round(totalAttendancePercentage * 10) / 10,
+        trend,
+      };
+    })
+  );
 
   return studentsWithAttendance;
 }
 
-async function getSessionAttendance(subjectId: number, sessionType: string, tutorialSessionId?: number) {
+async function getSessionAttendance(
+  subjectId: number,
+  sessionType: string,
+  tutorialSessionId?: number
+) {
   // Build session type filter
-  const sessionFilter = tutorialSessionId ? `AND ss.id = ${tutorialSessionId}` : `AND ss.type = '${sessionType}'`;
+  const sessionFilter = tutorialSessionId
+    ? `AND ss.id = ${tutorialSessionId}`
+    : `AND ss.type = '${sessionType}'`;
 
   // Get session attendance using EMAIL CALCULATOR METHOD
   // Each QR session is scored individually using the 0/45/90 point system
   // Use student_study_session for tutorial-specific enrollment counts
-  let query = '';
+  let query = "";
   let queryParams: number[] = [];
 
   if (tutorialSessionId) {
@@ -310,15 +359,16 @@ async function getSessionAttendance(subjectId: number, sessionType: string, tuto
   const sessions = await rawQuery(query, queryParams);
 
   // For each session, calculate attendance using email calculator method
-  const sessionsWithAttendance = await Promise.all(sessions.map(async (session: SessionAttendanceData) => {
-    // Get checkin counts for each student for this specific QR session
-    // Use student_study_session for tutorials, enrolment for lectures
-    let checkinQuery = '';
-    let checkinParams: number[] = [];
+  const sessionsWithAttendance = await Promise.all(
+    sessions.map(async (session: SessionAttendanceData) => {
+      // Get checkin counts for each student for this specific QR session
+      // Use student_study_session for tutorials, enrolment for lectures
+      let checkinQuery = "";
+      let checkinParams: number[] = [];
 
-    if (tutorialSessionId) {
-      // For tutorials, get students from student_study_session
-      checkinQuery = `
+      if (tutorialSessionId) {
+        // For tutorials, get students from student_study_session
+        checkinQuery = `
         SELECT
           student_ss.student_id,
           COALESCE(checkin_data.checkin_count, 0) as checkin_count
@@ -333,10 +383,10 @@ async function getSessionAttendance(subjectId: number, sessionType: string, tuto
         ) checkin_data ON checkin_data.student_id = student_ss.student_id
         WHERE student_ss.study_session_id = ?
       `;
-      checkinParams = [session.qr_session_id, tutorialSessionId];
-    } else {
-      // For lectures, get students from enrolment
-      checkinQuery = `
+        checkinParams = [session.qr_session_id, tutorialSessionId];
+      } else {
+        // For lectures, get students from enrolment
+        checkinQuery = `
         SELECT
           e.student_id,
           COALESCE(checkin_data.checkin_count, 0) as checkin_count
@@ -351,49 +401,51 @@ async function getSessionAttendance(subjectId: number, sessionType: string, tuto
         ) checkin_data ON checkin_data.student_id = e.student_id
         WHERE e.subject_id = ?
       `;
-      checkinParams = [session.qr_session_id, subjectId];
-    }
-
-    const checkinData = await rawQuery(checkinQuery, checkinParams);
-
-    // Apply email calculator scoring for each student
-    let totalPoints = 0;
-    let maxPoints = 0;
-    let fullAttendanceCount = 0; // Students with 2+ checkins (100 points)
-    let partialAttendanceCount = 0; // Students with 1 checkin (50 points)
-    let absentCount = 0; // Students with 0 checkins
-
-    checkinData.forEach((student: CheckinData) => {
-      const checkinCount = parseInt(String(student.checkin_count)) || 0;
-      maxPoints += 100;
-
-      if (checkinCount >= 2) {
-        totalPoints += 100;
-        fullAttendanceCount++;
-      } else if (checkinCount === 1) {
-        totalPoints += 50;
-        partialAttendanceCount++;
-      } else {
-        absentCount++;
+        checkinParams = [session.qr_session_id, subjectId];
       }
-    });
 
-    const attendanceRate = maxPoints > 0 ? (totalPoints / maxPoints) * 100 : 0;
+      const checkinData = await rawQuery(checkinQuery, checkinParams);
 
-    return {
-      id: session.qr_session_id,
-      weekLabel: session.session_label,
-      date: session.formatted_date || 'TBD',
-      checkInType: session.primary_checkin_type || 'QR Code',
-      presentCount: fullAttendanceCount + partialAttendanceCount,
-      absentCount: absentCount,
-      totalCount: parseInt(String(session.total_enrolled)) || 0,
-      attendanceRate: Math.round(attendanceRate * 10) / 10,
-      // Additional breakdown for detailed view
-      fullAttendanceCount: fullAttendanceCount,
-      partialAttendanceCount: partialAttendanceCount
-    };
-  }));
+      // Apply email calculator scoring for each student
+      let totalPoints = 0;
+      let maxPoints = 0;
+      let fullAttendanceCount = 0; // Students with 2+ checkins (100 points)
+      let partialAttendanceCount = 0; // Students with 1 checkin (50 points)
+      let absentCount = 0; // Students with 0 checkins
+
+      checkinData.forEach((student: CheckinData) => {
+        const checkinCount = parseInt(String(student.checkin_count)) || 0;
+        maxPoints += 100;
+
+        if (checkinCount >= 2) {
+          totalPoints += 100;
+          fullAttendanceCount++;
+        } else if (checkinCount === 1) {
+          totalPoints += 50;
+          partialAttendanceCount++;
+        } else {
+          absentCount++;
+        }
+      });
+
+      const attendanceRate =
+        maxPoints > 0 ? (totalPoints / maxPoints) * 100 : 0;
+
+      return {
+        id: session.qr_session_id,
+        weekLabel: session.session_label,
+        date: session.formatted_date || "TBD",
+        checkInType: session.primary_checkin_type || "QR Code",
+        presentCount: fullAttendanceCount + partialAttendanceCount,
+        absentCount: absentCount,
+        totalCount: parseInt(String(session.total_enrolled)) || 0,
+        attendanceRate: Math.round(attendanceRate * 10) / 10,
+        // Additional breakdown for detailed view
+        fullAttendanceCount: fullAttendanceCount,
+        partialAttendanceCount: partialAttendanceCount,
+      };
+    })
+  );
 
   return sessionsWithAttendance;
 }
@@ -404,9 +456,9 @@ async function getCourseAttendance(lecturerId: string, sessionType: string) {
 
   // Using EMAIL CALCULATOR METHOD: 2+ checkins = 100 points, 1 checkin = 50 points, 0 checkins = 0 points
   // For tutorials, use student_study_session; for lectures, use enrolment
-  let query = '';
+  let query = "";
 
-  if (sessionType === 'tutorial') {
+  if (sessionType === "tutorial") {
     query = `
       SELECT
         s.id as subject_id,
@@ -493,6 +545,6 @@ async function getCourseAttendance(lecturerId: string, sessionType: string) {
     totalSessions: parseInt(String(course.total_sessions)) || 0,
     totalStudents: parseInt(String(course.total_students)) || 0,
     averageAttendance: parseFloat(String(course.average_attendance)) || 0,
-    lastSession: course.last_session
+    lastSession: course.last_session,
   }));
 }

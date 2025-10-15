@@ -486,12 +486,24 @@ export default function AttendanceRecordsScreen() {
                   <table className="w-full min-w-[720px] text-sm">
                     <thead className="bg-muted/50">
                       <tr className="border-b">
-                        <th className="px-3 py-2 text-left font-medium">Course</th>
-                        <th className="px-3 py-2 text-left font-medium">Week</th>
-                        <th className="px-3 py-2 text-left font-medium">Type</th>
-                        <th className="px-3 py-2 text-left font-medium">Location</th>
-                        <th className="px-3 py-2 text-left font-medium">Status</th>
-                        <th className="px-3 py-2 text-left font-medium">Check-in Time</th>
+                        <th className="px-3 py-2 text-left font-medium">
+                          Course
+                        </th>
+                        <th className="px-3 py-2 text-left font-medium">
+                          Week
+                        </th>
+                        <th className="px-3 py-2 text-left font-medium">
+                          Type
+                        </th>
+                        <th className="px-3 py-2 text-left font-medium">
+                          Location
+                        </th>
+                        <th className="px-3 py-2 text-left font-medium">
+                          Status
+                        </th>
+                        <th className="px-3 py-2 text-left font-medium">
+                          Check-in Time
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
@@ -501,12 +513,19 @@ export default function AttendanceRecordsScreen() {
                             {r.subject_name} - {r.subject_code}
                           </td>
                           <td className="px-3 py-2">{r.week_number}</td>
-                          <td className="px-3 py-2">{capitalize(r.session_type)}</td>
-                          <td className="text-muted-foreground px-3 py-2 text-xs">
-                            {r.building_number}-{r.room_number} · {r.campus_name}
+                          <td className="px-3 py-2">
+                            {capitalize(r.session_type)}
                           </td>
-                          <td className="px-3 py-2">{getStatusBadge(r.attendance_status)}</td>
-                          <td className="px-3 py-2 text-xs">{getDisplayDate(r.latest_checkin_time)}</td>
+                          <td className="text-muted-foreground px-3 py-2 text-xs">
+                            {r.building_number}-{r.room_number} ·{" "}
+                            {r.campus_name}
+                          </td>
+                          <td className="px-3 py-2">
+                            {getStatusBadge(r.attendance_status)}
+                          </td>
+                          <td className="px-3 py-2 text-xs">
+                            {getDisplayDate(r.latest_checkin_time)}
+                          </td>
                         </tr>
                       ))}
                     </tbody>

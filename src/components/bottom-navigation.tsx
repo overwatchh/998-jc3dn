@@ -2,13 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Role } from "@/types";
-import {
-  FileText,
-  Home,
-  QrCode,
-  Settings,
-  UserCheck,
-} from "lucide-react";
+import { FileText, Home, QrCode, Settings, UserCheck } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -112,7 +106,9 @@ export function BottomNavigation({ role }: Props) {
   }
 
   return (
-    <div className={`bg-background border-border fixed right-0 bottom-0 left-0 z-50 border-t ${role === "lecturer" ? "md:hidden" : ""}`}>
+    <div
+      className={`bg-background border-border fixed right-0 bottom-0 left-0 z-50 border-t ${role === "lecturer" ? "md:hidden" : ""}`}
+    >
       <div className="safe-area-pb">
         {/* For 5 or fewer items, use flex justify-around */}
         {itemCount <= 5 ? (

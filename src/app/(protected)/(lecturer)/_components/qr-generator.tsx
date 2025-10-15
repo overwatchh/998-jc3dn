@@ -278,9 +278,14 @@ export const QRGenerator = () => {
           smtp_config: {
             smtp_host: "smtp.gmail.com",
             smtp_port: 587,
-            smtp_user: process.env.NEXT_PUBLIC_SMTP_USER || "qrattendancesystem2025@gmail.com",
-            smtp_pass: process.env.NEXT_PUBLIC_SMTP_PASS || "xjid lkdd adro kvrx",
-            from_email: process.env.NEXT_PUBLIC_SMTP_USER || "qrattendancesystem2025@gmail.com",
+            smtp_user:
+              process.env.NEXT_PUBLIC_SMTP_USER ||
+              "qrattendancesystem2025@gmail.com",
+            smtp_pass:
+              process.env.NEXT_PUBLIC_SMTP_PASS || "xjid lkdd adro kvrx",
+            from_email:
+              process.env.NEXT_PUBLIC_SMTP_USER ||
+              "qrattendancesystem2025@gmail.com",
             from_name: "QR Attendance System",
           },
         }),
@@ -338,7 +343,7 @@ export const QRGenerator = () => {
 
       setQrUrl(response.qr_url);
       setQrGenerated(true);
-      
+
       // Persist the day override so it doesn't reset when effects re-run
       if (selectedCourse) {
         loadExistingDayOverride(
@@ -347,7 +352,7 @@ export const QRGenerator = () => {
           selectedDayOfWeek
         );
       }
-      
+
       setSuccessType("create");
       toast.success("QR code generated successfully!");
     } catch (error) {
@@ -389,7 +394,7 @@ export const QRGenerator = () => {
       if (refreshed.data?.qr_url) {
         setQrUrl(refreshed.data.qr_url);
       }
-      
+
       // Persist the day override so it doesn't reset when effects re-run
       if (selectedCourse) {
         loadExistingDayOverride(
@@ -398,7 +403,7 @@ export const QRGenerator = () => {
           selectedDayOfWeek
         );
       }
-      
+
       // Update prevInfo snapshot so further updates require actual new changes
       setPrevInfo(info => {
         if (!info) return info;
@@ -504,8 +509,10 @@ export const QRGenerator = () => {
 
         // Extract the actual day-of-week from the validity window timestamp
         // This is the real day that was used when the QR was generated
-        const actualDayOfWeek = first?.start_time 
-          ? (new Date(first.start_time).toLocaleDateString('en-US', { weekday: 'long' }) as DayOfWeek)
+        const actualDayOfWeek = first?.start_time
+          ? (new Date(first.start_time).toLocaleDateString("en-US", {
+              weekday: "long",
+            }) as DayOfWeek)
           : null;
 
         if (!cancelled) {
@@ -536,7 +543,6 @@ export const QRGenerator = () => {
           if (data.radius != null) {
             setRadius(data.radius);
           }
-
 
           // Set time windows if both entry and exit windows exist
           if (first && second) {
@@ -662,12 +668,14 @@ export const QRGenerator = () => {
         const v = existingQrList?.data?.[0]?.validities ?? [];
         const first = v.find(x => x.count === 1);
         const second = v.find(x => x.count === 2);
-        
+
         // Extract actual day from validity timestamp in fallback too
-        const actualDayOfWeek = first?.start_time 
-          ? (new Date(first.start_time).toLocaleDateString('en-US', { weekday: 'long' }) as DayOfWeek)
+        const actualDayOfWeek = first?.start_time
+          ? (new Date(first.start_time).toLocaleDateString("en-US", {
+              weekday: "long",
+            }) as DayOfWeek)
           : null;
-        
+
         if (!cancelled) {
           setPrevInfo({
             roomLabel: null,
@@ -1320,10 +1328,16 @@ export const QRGenerator = () => {
                     variant="outline"
                     className="mt-2 h-9 w-full"
                     onClick={handleSendAttendanceReminders}
-                    disabled={isSendingReminders || !selectedCourse?.sessionId || !selectedCourse?.weekNumber}
+                    disabled={
+                      isSendingReminders ||
+                      !selectedCourse?.sessionId ||
+                      !selectedCourse?.weekNumber
+                    }
                   >
                     <Bell className="mr-2 h-4 w-4" />
-                    {isSendingReminders ? "Sending..." : "Send Attendance Reminders"}
+                    {isSendingReminders
+                      ? "Sending..."
+                      : "Send Attendance Reminders"}
                   </Button>
                 </>
               ) : (
@@ -1573,7 +1587,8 @@ export const QRGenerator = () => {
       </div>
 
       {/* Enlarged QR Modal (rendered via portal to avoid z-index/stacking issues) */}
-      {isModalOpen && qrUrl &&
+      {isModalOpen &&
+        qrUrl &&
         typeof window !== "undefined" &&
         createPortal(
           <div

@@ -1,10 +1,14 @@
-import { NextRequest, NextResponse } from "next/server";
-import { rawQuery } from "@/lib/server/query";
-import { emailService, EmailConfig, AttendanceEmailData } from "@/lib/server/email";
-import { 
-  getLectureAttendanceData, 
-  calculateStudentOverallAttendance 
+import {
+  getLectureAttendanceData,
+  calculateStudentOverallAttendance,
 } from "@/lib/server/attendance-calculator";
+import {
+  emailService,
+  EmailConfig,
+  AttendanceEmailData,
+} from "@/lib/server/email";
+import { rawQuery } from "@/lib/server/query";
+import { NextRequest, NextResponse } from "next/server";
 
 /**
  * @openapi
@@ -15,25 +19,25 @@ import {
  *     summary: Trigger attendance emails when a lecture ends
  *     description: |
  *       **Automatic Email Reminder System**
- *       
+ *
  *       This endpoint is automatically called by the system scheduler when a lecture ends. It performs the following operations:
- *       
+ *
  *       1. **Validates lecture completion** - Ensures all QR codes have expired
  *       2. **Calculates multi-week attendance** - Aggregates current and historical attendance data
  *       3. **Sends personalized emails** - Delivers attendance reports to all enrolled students
  *       4. **Logs all activity** - Records email attempts in the database for auditing
- *       
+ *
  *       **Multi-Week Attendance Tracking:**
  *       - Current week: 0% (no QR), 45% (1 QR), 90% (2 QRs)
  *       - Historical data: Aggregated across all previous weeks
  *       - Risk assessment: Identifies students below attendance threshold
- *       
+ *
  *       **Email Content:**
  *       - Current week attendance percentage
  *       - Overall attendance across all weeks
  *       - Number of classes student can still miss
  *       - Warning messages for at-risk students
- *       
+ *
  *       **System Requirements:**
  *       - SMTP configuration must be properly set
  *       - System authentication key required
@@ -165,11 +169,12 @@ import {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    
+
     // System authentication
     const systemKey = body.system_key;
-    const expectedKey = process.env.SYSTEM_EMAIL_KEY || "attendance_email_system_2024";
-    
+    const expectedKey =
+      process.env.SYSTEM_EMAIL_KEY || "attendance_email_system_2024";
+
     if (systemKey !== expectedKey) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
@@ -177,12 +182,17 @@ export async function POST(req: NextRequest) {
     const { study_session_id, week_number } = body;
 
     if (!study_session_id || !week_number) {
-      return NextResponse.json({ 
-        message: "study_session_id and week_number are required" 
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          message: "study_session_id and week_number are required",
+        },
+        { status: 400 }
+      );
     }
 
-    console.log(`🎯 Lecture end triggered for session ${study_session_id}, week ${week_number}`);
+    console.log(
+      `🎯 Lecture end triggered for session ${study_session_id}, week ${week_number}`
+    );
 
     // Check if this is a lecture session
     const [sessionInfo] = await rawQuery<{
@@ -205,10 +215,13 @@ export async function POST(req: NextRequest) {
       [study_session_id]
     );
 
-    if (!sessionInfo || sessionInfo.type !== 'lecture') {
-      return NextResponse.json({ 
-        message: "Session not found or not a lecture" 
-      }, { status: 400 });
+    if (!sessionInfo || sessionInfo.type !== "lecture") {
+      return NextResponse.json(
+        {
+          message: "Session not found or not a lecture",
+        },
+        { status: 400 }
+      );
     }
 
     // Check if both QR validities are complete for this lecture
@@ -233,35 +246,45 @@ export async function POST(req: NextRequest) {
     console.log(`📊 Found ${qrValidities.length} QR codes for this lecture`);
 
     if (qrValidities.length === 0) {
-      return NextResponse.json({ 
-        message: "No QR codes found for this lecture" 
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          message: "No QR codes found for this lecture",
+        },
+        { status: 400 }
+      );
     }
 
     // Check if all QR codes have expired (lecture is complete)
     const allExpired = qrValidities.every(qr => qr.is_expired);
-    
+
     if (!allExpired) {
       const activeQRs = qrValidities.filter(qr => !qr.is_expired);
-      console.log(`⏳ Lecture not complete yet. ${activeQRs.length} QR codes still active`);
-      
-      return NextResponse.json({ 
-        message: "Lecture not complete yet - QR codes still active",
-        active_qr_codes: activeQRs.length,
-        total_qr_codes: qrValidities.length
-      }, { status: 400 });
+      console.log(
+        `⏳ Lecture not complete yet. ${activeQRs.length} QR codes still active`
+      );
+
+      return NextResponse.json(
+        {
+          message: "Lecture not complete yet - QR codes still active",
+          active_qr_codes: activeQRs.length,
+          total_qr_codes: qrValidities.length,
+        },
+        { status: 400 }
+      );
     }
 
-    console.log(`✅ All QR codes expired - lecture complete! Sending emails...`);
+    console.log(
+      `✅ All QR codes expired - lecture complete! Sending emails...`
+    );
 
     // Get SMTP configuration from environment
     const emailConfig: EmailConfig = {
-      smtpHost: process.env.SMTP_HOST || 'smtp.gmail.com',
-      smtpPort: parseInt(process.env.SMTP_PORT || '587'),
-      smtpUser: process.env.SMTP_USER || '',
-      smtpPass: process.env.SMTP_PASS || '',
-      fromEmail: process.env.FROM_EMAIL || '',
-      fromName: process.env.FROM_NAME || 'QR Attendance System',
+      smtpHost: process.env.SMTP_HOST || "smtp.gmail.com",
+      smtpPort: parseInt(process.env.SMTP_PORT || "587"),
+      smtpUser: process.env.SMTP_USER || "",
+      smtpPass: process.env.SMTP_PASS || "",
+      fromEmail: process.env.FROM_EMAIL || "",
+      fromName: process.env.FROM_NAME || "QR Attendance System",
     };
 
     // Initialize email service
@@ -277,17 +300,24 @@ export async function POST(req: NextRequest) {
     }
 
     // Get lecture attendance data
-    const lectureData = await getLectureAttendanceData(study_session_id, week_number);
-    
+    const lectureData = await getLectureAttendanceData(
+      study_session_id,
+      week_number
+    );
+
     let emailsSent = 0;
     let failedEmails = 0;
-    const emailResults: Array<{studentEmail: string; success: boolean; error?: string}> = [];
+    const emailResults: Array<{
+      studentEmail: string;
+      success: boolean;
+      error?: string;
+    }> = [];
 
     // Send emails to all students
     for (const student of lectureData.students) {
       let emailSuccess = false;
       let errorMessage = null;
-      
+
       try {
         // Get overall attendance for this student
         const overallAttendance = await calculateStudentOverallAttendance(
@@ -304,7 +334,8 @@ export async function POST(req: NextRequest) {
           weekNumber: student.weekNumber,
           attendancePercentage: student.attendancePercentage,
           checkinCount: student.checkinCount,
-          totalAttendancePercentage: overallAttendance.totalAttendancePercentage,
+          totalAttendancePercentage:
+            overallAttendance.totalAttendancePercentage,
           classesCanMiss: overallAttendance.classesCanMiss,
           isLowAttendance: overallAttendance.isLowAttendance,
         };
@@ -323,9 +354,11 @@ export async function POST(req: NextRequest) {
 
         // Small delay to prevent overwhelming SMTP server
         await new Promise(resolve => setTimeout(resolve, 200));
-
       } catch (error) {
-        console.error(`❌ Failed to send email to ${student.studentEmail}:`, error);
+        console.error(
+          `❌ Failed to send email to ${student.studentEmail}:`,
+          error
+        );
         failedEmails++;
         errorMessage = error instanceof Error ? error.message : "Unknown error";
 
@@ -335,20 +368,29 @@ export async function POST(req: NextRequest) {
           error: errorMessage,
         });
       }
-      
+
       // Log email attempt to database
       try {
         await rawQuery(
           `INSERT INTO email_log (study_session_id, week_number, student_id, student_email, success, error_message)
            VALUES (?, ?, ?, ?, ?, ?)`,
-          [study_session_id, week_number, student.studentId, student.studentEmail, emailSuccess ? 1 : 0, errorMessage]
+          [
+            study_session_id,
+            week_number,
+            student.studentId,
+            student.studentEmail,
+            emailSuccess ? 1 : 0,
+            errorMessage,
+          ]
         );
       } catch (logError) {
-        console.warn('Failed to log email attempt:', logError);
+        console.warn("Failed to log email attempt:", logError);
       }
     }
 
-    console.log(`✅ Lecture end processing complete: ${emailsSent} sent, ${failedEmails} failed`);
+    console.log(
+      `✅ Lecture end processing complete: ${emailsSent} sent, ${failedEmails} failed`
+    );
 
     return NextResponse.json({
       message: "Lecture end processing completed",
@@ -362,13 +404,12 @@ export async function POST(req: NextRequest) {
       results: emailResults,
       processed_at: new Date().toISOString(),
     });
-
   } catch (error) {
     console.error("Error in lecture-end-trigger:", error);
     return NextResponse.json(
-      { 
+      {
         message: "Internal server error",
-        error: error instanceof Error ? error.message : "Unknown error"
+        error: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 }
     );

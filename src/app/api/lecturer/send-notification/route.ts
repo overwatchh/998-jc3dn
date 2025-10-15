@@ -28,12 +28,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Send email notification
-    const nodemailer = await import('nodemailer');
+    const nodemailer = await import("nodemailer");
 
     const transporter = nodemailer.default.createTransport({
-      host: process.env.SMTP_HOST || 'smtp.gmail.com',
-      port: parseInt(process.env.SMTP_PORT || '587'),
-      secure: process.env.SMTP_PORT === '465',
+      host: process.env.SMTP_HOST || "smtp.gmail.com",
+      port: parseInt(process.env.SMTP_PORT || "587"),
+      secure: process.env.SMTP_PORT === "465",
       auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
@@ -42,8 +42,8 @@ export async function POST(request: NextRequest) {
 
     await transporter.verify();
 
-    const lecturerName = session.user.name || 'Your Lecturer';
-    const lecturerEmail = session.user.email || '';
+    const lecturerName = session.user.name || "Your Lecturer";
+    const lecturerEmail = session.user.email || "";
 
     const htmlContent = `
 <!DOCTYPE html>
@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
       </div>
 
       <div class="attendance-stat">
-        ${attendancePercentage !== undefined ? `${attendancePercentage.toFixed(1)}%` : 'Low'}
+        ${attendancePercentage !== undefined ? `${attendancePercentage.toFixed(1)}%` : "Low"}
       </div>
       <p style="text-align: center; color: #6b7280; margin-top: -10px;">Current Attendance Rate</p>
 
@@ -127,7 +127,7 @@ Dear ${studentName},
 
 We've noticed that your attendance has fallen below the expected level.
 
-Current Attendance Rate: ${attendancePercentage !== undefined ? `${attendancePercentage.toFixed(1)}%` : 'Low'}
+Current Attendance Rate: ${attendancePercentage !== undefined ? `${attendancePercentage.toFixed(1)}%` : "Low"}
 
 What You Should Do:
 - Review your schedule and prioritize attending classes
@@ -145,27 +145,29 @@ This is an automated notification from the QR Attendance System.
     `.trim();
 
     const mailOptions = {
-      from: `"${process.env.FROM_NAME || 'QR Attendance System'}" <${process.env.FROM_EMAIL || process.env.SMTP_USER}>`,
+      from: `"${process.env.FROM_NAME || "QR Attendance System"}" <${process.env.FROM_EMAIL || process.env.SMTP_USER}>`,
       to: studentEmail,
       subject: `⚠️ Attendance Alert - Action Required`,
       text: textContent,
       html: htmlContent,
     };
 
-    console.log('📧 Sending attendance notification to:', studentEmail);
+    console.log("📧 Sending attendance notification to:", studentEmail);
     const result = await transporter.sendMail(mailOptions);
-    console.log('✅ Notification sent successfully:', result.messageId);
+    console.log("✅ Notification sent successfully:", result.messageId);
 
     return NextResponse.json({
       success: true,
-      message: `Notification sent to ${studentName} at ${studentEmail}`
+      message: `Notification sent to ${studentName} at ${studentEmail}`,
     });
-
   } catch (error) {
-    console.error('❌ Error sending notification:', error);
-    return NextResponse.json({
-      error: 'Failed to send notification',
-      details: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 });
+    console.error("❌ Error sending notification:", error);
+    return NextResponse.json(
+      {
+        error: "Failed to send notification",
+        details: error instanceof Error ? error.message : "Unknown error",
+      },
+      { status: 500 }
+    );
   }
 }

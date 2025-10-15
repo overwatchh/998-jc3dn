@@ -65,7 +65,7 @@ import { NextRequest, NextResponse } from "next/server";
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
-    const sessionType = searchParams.get('sessionType') || 'lecture';
+    const sessionType = searchParams.get("sessionType") || "lecture";
 
     // Build session type filter
     const sessionFilter = `AND ss.type = '${sessionType}'`;
@@ -153,6 +153,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(data);
   } catch (error) {
     console.error("Subject summary API error:", error);
-    return NextResponse.json({ error: "Failed to fetch subject summary data" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to fetch subject summary data" },
+      { status: 500 }
+    );
   }
 }

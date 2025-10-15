@@ -53,12 +53,12 @@ import { NextRequest, NextResponse } from "next/server";
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
-    const subjectId = searchParams.get('subjectId'); // Now correctly using subject ID
-    const sessionType = searchParams.get('sessionType') || 'lecture';
-    const tutorialSessionId = searchParams.get('tutorialSessionId');
+    const subjectId = searchParams.get("subjectId"); // Now correctly using subject ID
+    const sessionType = searchParams.get("sessionType") || "lecture";
+    const tutorialSessionId = searchParams.get("tutorialSessionId");
 
     // Build session filter - if tutorial session ID is provided, filter by that specific session
-    let sessionFilter = '';
+    let sessionFilter = "";
     if (tutorialSessionId) {
       sessionFilter = `AND ss.id = ${parseInt(tutorialSessionId)}`;
     } else {
@@ -66,7 +66,7 @@ export async function GET(request: NextRequest) {
     }
 
     // When filtering by tutorial, start from student_study_session instead of enrolment
-    let query = '';
+    let query = "";
 
     if (tutorialSessionId) {
       query = `
@@ -101,7 +101,7 @@ export async function GET(request: NextRequest) {
               FROM checkin
               GROUP BY qr_code_study_session_id, student_id
             ) checkin_counts ON checkin_counts.qr_code_study_session_id = qrss.id AND checkin_counts.student_id = u.id
-            WHERE u.role = 'student' AND ss.id = ${parseInt(tutorialSessionId)} ${subjectId ? 'AND s.id = ?' : ''}
+            WHERE u.role = 'student' AND ss.id = ${parseInt(tutorialSessionId)} ${subjectId ? "AND s.id = ?" : ""}
             GROUP BY u.id, s.id
         ) student_performance
         GROUP BY performance_category
@@ -146,7 +146,7 @@ export async function GET(request: NextRequest) {
               FROM checkin
               GROUP BY qr_code_study_session_id, student_id
             ) checkin_counts ON checkin_counts.qr_code_study_session_id = qrss.id AND checkin_counts.student_id = u.id
-            WHERE u.role = 'student' ${sessionFilter} ${subjectId ? 'AND s.id = ?' : ''}
+            WHERE u.role = 'student' ${sessionFilter} ${subjectId ? "AND s.id = ?" : ""}
             GROUP BY u.id, s.id
         ) student_performance
         GROUP BY performance_category
@@ -160,13 +160,17 @@ export async function GET(request: NextRequest) {
       `;
     }
 
-    const subjectIdNum = subjectId && subjectId !== 'all' ? parseInt(subjectId) : null;
+    const subjectIdNum =
+      subjectId && subjectId !== "all" ? parseInt(subjectId) : null;
     const params = subjectIdNum ? [subjectIdNum] : [];
     const data = await rawQuery(query, params);
 
     return NextResponse.json(data);
   } catch (error) {
     console.error("Attendance distribution API error:", error);
-    return NextResponse.json({ error: "Failed to fetch attendance distribution data" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to fetch attendance distribution data" },
+      { status: 500 }
+    );
   }
 }

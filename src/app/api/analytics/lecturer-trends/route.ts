@@ -137,12 +137,12 @@ export async function GET(request: NextRequest) {
     }
 
     const searchParams = request.nextUrl.searchParams;
-    const courseId = searchParams.get('subjectId'); // This is actually a subject_id now
-    const sessionType = searchParams.get('sessionType') || 'lecture';
-    const tutorialSessionId = searchParams.get('tutorialSessionId');
+    const courseId = searchParams.get("subjectId"); // This is actually a subject_id now
+    const sessionType = searchParams.get("sessionType") || "lecture";
+    const tutorialSessionId = searchParams.get("tutorialSessionId");
 
     // Build session filter - if tutorial session ID is provided, filter by that specific session
-    let sessionFilter = '';
+    let sessionFilter = "";
     if (tutorialSessionId) {
       sessionFilter = `AND ss.id = ${parseInt(tutorialSessionId)}`;
     } else {
@@ -150,11 +150,11 @@ export async function GET(request: NextRequest) {
     }
 
     // Build lecturer filter based on user role
-    let lecturerFilter = '';
+    let lecturerFilter = "";
     const params: (string | number)[] = [];
 
     if (session.user.role === "lecturer") {
-      lecturerFilter = 'AND lss.lecturer_id = ?';
+      lecturerFilter = "AND lss.lecturer_id = ?";
       params.push(session.user.id);
     }
 
@@ -163,10 +163,12 @@ export async function GET(request: NextRequest) {
     }
 
     // Get subject performance using EMAIL CALCULATOR METHOD - only for subjects taught by this lecturer
-    let subjectPerformanceQuery = '';
-    if (sessionType === 'tutorial') {
+    let subjectPerformanceQuery = "";
+    if (sessionType === "tutorial") {
       // For tutorials, show each tutorial session separately (even if a specific tutorial is selected)
-      const tutorialFilter = tutorialSessionId ? `AND ss.id = ${parseInt(tutorialSessionId)}` : '';
+      const tutorialFilter = tutorialSessionId
+        ? `AND ss.id = ${parseInt(tutorialSessionId)}`
+        : "";
       subjectPerformanceQuery = `
         SELECT
             CONCAT(s.code, ' - Tutorial ', ss.id, ' (', r.building_number, '-', r.room_number, ')') as subject_code,
@@ -199,11 +201,11 @@ export async function GET(request: NextRequest) {
           GROUP BY qr_code_study_session_id, student_id
         ) checkin_counts ON checkin_counts.qr_code_study_session_id = qrss.id
                          AND checkin_counts.student_id = student_ss.student_id
-        WHERE ss.type = 'tutorial' ${tutorialFilter} ${lecturerFilter} ${courseId ? 'AND s.id = ?' : ''}
+        WHERE ss.type = 'tutorial' ${tutorialFilter} ${lecturerFilter} ${courseId ? "AND s.id = ?" : ""}
         GROUP BY ss.id, s.id, s.code, s.name, r.building_number, r.room_number
         ORDER BY s.code, ss.id
       `;
-    } else if (sessionType === 'lecture') {
+    } else if (sessionType === "lecture") {
       // For lectures, show each lecture session separately
       subjectPerformanceQuery = `
         SELECT
@@ -237,7 +239,7 @@ export async function GET(request: NextRequest) {
           GROUP BY qr_code_study_session_id, student_id
         ) checkin_counts ON checkin_counts.qr_code_study_session_id = qrss.id
                          AND checkin_counts.student_id = e.student_id
-        WHERE ss.type = 'lecture' ${lecturerFilter} ${courseId ? 'AND s.id = ?' : ''}
+        WHERE ss.type = 'lecture' ${lecturerFilter} ${courseId ? "AND s.id = ?" : ""}
         GROUP BY ss.id, s.id, s.code, s.name, r.building_number, r.room_number
         ORDER BY s.code, ss.id
       `;
@@ -274,14 +276,14 @@ export async function GET(request: NextRequest) {
           GROUP BY qr_code_study_session_id, student_id
         ) checkin_counts ON checkin_counts.qr_code_study_session_id = qrss.id
                          AND checkin_counts.student_id = e.student_id
-        WHERE 1=1 ${sessionFilter} ${lecturerFilter} ${courseId ? 'AND s.id = ?' : ''}
+        WHERE 1=1 ${sessionFilter} ${lecturerFilter} ${courseId ? "AND s.id = ?" : ""}
         GROUP BY s.id, s.code, s.name
         ORDER BY average_attendance DESC
       `;
     }
 
     // Get weekly trends using EMAIL CALCULATOR METHOD - only for subjects taught by this lecturer
-    let weeklyTrendsQuery = '';
+    let weeklyTrendsQuery = "";
     if (tutorialSessionId) {
       weeklyTrendsQuery = `
         SELECT
@@ -312,11 +314,11 @@ export async function GET(request: NextRequest) {
           GROUP BY qr_code_study_session_id, student_id
         ) checkin_counts ON checkin_counts.qr_code_study_session_id = qrss.id
                          AND checkin_counts.student_id = student_ss.student_id
-        WHERE 1=1 AND ss.id = ${parseInt(tutorialSessionId)} ${lecturerFilter} ${courseId ? 'AND s.id = ?' : ''}
+        WHERE 1=1 AND ss.id = ${parseInt(tutorialSessionId)} ${lecturerFilter} ${courseId ? "AND s.id = ?" : ""}
         GROUP BY qrss.week_number
         ORDER BY qrss.week_number
       `;
-    } else if (sessionType === 'tutorial') {
+    } else if (sessionType === "tutorial") {
       // For tutorials, use student_study_session to get correct counts
       weeklyTrendsQuery = `
         SELECT
@@ -347,7 +349,7 @@ export async function GET(request: NextRequest) {
           GROUP BY qr_code_study_session_id, student_id
         ) checkin_counts ON checkin_counts.qr_code_study_session_id = qrss.id
                          AND checkin_counts.student_id = student_ss.student_id
-        WHERE ss.type = 'tutorial' ${lecturerFilter} ${courseId ? 'AND s.id = ?' : ''}
+        WHERE ss.type = 'tutorial' ${lecturerFilter} ${courseId ? "AND s.id = ?" : ""}
         GROUP BY qrss.week_number
         ORDER BY qrss.week_number
       `;
@@ -382,7 +384,7 @@ export async function GET(request: NextRequest) {
           GROUP BY qr_code_study_session_id, student_id
         ) checkin_counts ON checkin_counts.qr_code_study_session_id = qrss.id
                          AND checkin_counts.student_id = e.student_id
-        WHERE 1=1 ${sessionFilter} ${lecturerFilter} ${courseId ? 'AND s.id = ?' : ''}
+        WHERE 1=1 ${sessionFilter} ${lecturerFilter} ${courseId ? "AND s.id = ?" : ""}
         GROUP BY qrss.week_number
         ORDER BY qrss.week_number
       `;
@@ -390,75 +392,108 @@ export async function GET(request: NextRequest) {
 
     const [subjectPerformance, weeklyTrends] = await Promise.all([
       rawQuery(subjectPerformanceQuery, params),
-      rawQuery(weeklyTrendsQuery, params)
+      rawQuery(weeklyTrendsQuery, params),
     ]);
 
     // Debug the raw data (removed for production)
 
     // Calculate summary statistics
     const totalSubjects = subjectPerformance.length;
-    const totalStudents = (subjectPerformance as {
-      total_students: number;
-    }[]).reduce((sum, subject) => sum + (subject.total_students || 0), 0);
+    const totalStudents = (
+      subjectPerformance as {
+        total_students: number;
+      }[]
+    ).reduce((sum, subject) => sum + (subject.total_students || 0), 0);
 
     // Convert string values to numbers and filter valid attendance values
-    const validAttendanceValues = (subjectPerformance as {
-      subject_code: string;
-      subject_name: string;
-      total_students: number;
-      total_weeks: number;
-      average_attendance: string | number;
-    }[])
+    const validAttendanceValues = (
+      subjectPerformance as {
+        subject_code: string;
+        subject_name: string;
+        total_students: number;
+        total_weeks: number;
+        average_attendance: string | number;
+      }[]
+    )
       .map(subject => ({
         ...subject,
-        average_attendance: parseFloat(String(subject.average_attendance)) || 0
+        average_attendance: parseFloat(String(subject.average_attendance)) || 0,
       }))
-      .filter(subject => !isNaN(subject.average_attendance) && subject.average_attendance > 0);
+      .filter(
+        subject =>
+          !isNaN(subject.average_attendance) && subject.average_attendance > 0
+      );
 
-    const overallAverage = validAttendanceValues.length > 0
-      ? Math.round(validAttendanceValues.reduce((sum, subject) => sum + subject.average_attendance, 0) / validAttendanceValues.length * 10) / 10
-      : 0;
+    const overallAverage =
+      validAttendanceValues.length > 0
+        ? Math.round(
+            (validAttendanceValues.reduce(
+              (sum, subject) => sum + subject.average_attendance,
+              0
+            ) /
+              validAttendanceValues.length) *
+              10
+          ) / 10
+        : 0;
 
     // Add performance levels to subjects
-    const subjectsWithPerformance = (subjectPerformance as {
-      subject_code: string;
-      subject_name: string;
-      total_students: number;
-      total_weeks: number;
-      average_attendance: string | number;
-    }[]).map(subject => {
+    const subjectsWithPerformance = (
+      subjectPerformance as {
+        subject_code: string;
+        subject_name: string;
+        total_students: number;
+        total_weeks: number;
+        average_attendance: string | number;
+      }[]
+    ).map(subject => {
       const attendance = parseFloat(String(subject.average_attendance)) || 0;
       return {
         ...subject,
         average_attendance: attendance, // Convert to number
         at_risk_count: Math.floor(subject.total_students * 0.2), // Estimate 20% might be at risk
-        performance_level: attendance >= 85 ? 'excellent' :
-                          attendance >= 75 ? 'good' :
-                          attendance >= 65 ? 'average' : 'needs_improvement'
+        performance_level:
+          attendance >= 85
+            ? "excellent"
+            : attendance >= 75
+              ? "good"
+              : attendance >= 65
+                ? "average"
+                : "needs_improvement",
       };
     });
 
     const performanceLevels = {
-      excellent: subjectsWithPerformance.filter(s => s.performance_level === 'excellent').length,
-      good: subjectsWithPerformance.filter(s => s.performance_level === 'good').length,
-      average: subjectsWithPerformance.filter(s => s.performance_level === 'average').length,
-      needs_improvement: subjectsWithPerformance.filter(s => s.performance_level === 'needs_improvement').length
+      excellent: subjectsWithPerformance.filter(
+        s => s.performance_level === "excellent"
+      ).length,
+      good: subjectsWithPerformance.filter(s => s.performance_level === "good")
+        .length,
+      average: subjectsWithPerformance.filter(
+        s => s.performance_level === "average"
+      ).length,
+      needs_improvement: subjectsWithPerformance.filter(
+        s => s.performance_level === "needs_improvement"
+      ).length,
     };
 
     // Convert weekly trends to numbers and calculate trend direction
-    const weeklyTrendsWithNumbers = (weeklyTrends as {
-      week_number: number;
-      week_label: string;
-      attendance_rate: string | number;
-    }[]).map(week => ({
+    const weeklyTrendsWithNumbers = (
+      weeklyTrends as {
+        week_number: number;
+        week_label: string;
+        attendance_rate: string | number;
+      }[]
+    ).map(week => ({
       ...week,
-      attendance_rate: parseFloat(String(week.attendance_rate)) || 0
+      attendance_rate: parseFloat(String(week.attendance_rate)) || 0,
     }));
 
     const recentWeeks = weeklyTrendsWithNumbers.slice(-4);
-    const trendDirection = recentWeeks.length >= 2
-      ? recentWeeks[recentWeeks.length - 1].attendance_rate - recentWeeks[0].attendance_rate
-      : 0;
+    const trendDirection =
+      recentWeeks.length >= 2
+        ? recentWeeks[recentWeeks.length - 1].attendance_rate -
+          recentWeeks[0].attendance_rate
+        : 0;
 
     const responseData = {
       summary: {
@@ -466,22 +501,36 @@ export async function GET(request: NextRequest) {
         totalStudents,
         overallAverage,
         performanceLevels,
-        trendDirection: trendDirection > 0 ? 'improving' : trendDirection < 0 ? 'declining' : 'stable'
+        trendDirection:
+          trendDirection > 0
+            ? "improving"
+            : trendDirection < 0
+              ? "declining"
+              : "stable",
       },
       subjectPerformance: subjectsWithPerformance,
       weeklyProgression: weeklyTrendsWithNumbers,
       engagementPatterns: [], // Simplified for now
       insights: {
-        bestPerformingSubject: subjectsWithPerformance.length > 0 ? subjectsWithPerformance[0] : null,
-        worstPerformingSubject: subjectsWithPerformance.length > 0 ? subjectsWithPerformance[subjectsWithPerformance.length - 1] : null,
-        peakEngagementDay: null
-      }
+        bestPerformingSubject:
+          subjectsWithPerformance.length > 0
+            ? subjectsWithPerformance[0]
+            : null,
+        worstPerformingSubject:
+          subjectsWithPerformance.length > 0
+            ? subjectsWithPerformance[subjectsWithPerformance.length - 1]
+            : null,
+        peakEngagementDay: null,
+      },
     };
 
     // console.log('Final API response:', responseData); // Removed for production
     return NextResponse.json(responseData);
   } catch (error) {
     console.error("Lecturer trends API error:", error);
-    return NextResponse.json({ error: "Failed to fetch lecturer trends data" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to fetch lecturer trends data" },
+      { status: 500 }
+    );
   }
 }

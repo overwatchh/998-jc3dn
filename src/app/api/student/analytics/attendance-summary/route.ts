@@ -143,23 +143,37 @@ export async function GET(request: Request) {
       ORDER BY s.name;
     `;
 
-    const attendanceData = await rawQuery<AttendanceRow>(sql, [studentId, sessionType]);
+    const attendanceData = await rawQuery<AttendanceRow>(sql, [
+      studentId,
+      sessionType,
+    ]);
 
     // Calculate overall statistics using the email calculator percentages
-    const totalSessions = attendanceData.reduce((sum, row) => sum + row.total_sessions, 0);
-    const totalAttended = attendanceData.reduce((sum, row) => sum + row.attended_sessions, 0);
-    const overallPercentage = attendanceData.length > 0
-      ? attendanceData.reduce((sum, row) => sum + parseFloat(String(row.attendance_percentage)), 0) / attendanceData.length
-      : 0;
+    const totalSessions = attendanceData.reduce(
+      (sum, row) => sum + row.total_sessions,
+      0
+    );
+    const totalAttended = attendanceData.reduce(
+      (sum, row) => sum + row.attended_sessions,
+      0
+    );
+    const overallPercentage =
+      attendanceData.length > 0
+        ? attendanceData.reduce(
+            (sum, row) => sum + parseFloat(String(row.attendance_percentage)),
+            0
+          ) / attendanceData.length
+        : 0;
 
     // Process subject breakdown
     const subjectBreakdown = attendanceData.map(row => {
-      const attendancePercentage = parseFloat(String(row.attendance_percentage)) || 0;
+      const attendancePercentage =
+        parseFloat(String(row.attendance_percentage)) || 0;
 
-      let status = 'good';
+      let status = "good";
       const requiredThresholdPercentage = row.required_attendance_thresh * 100; // Convert to percentage
       if (attendancePercentage < requiredThresholdPercentage) {
-        status = 'at_risk';
+        status = "at_risk";
       }
       // If meeting or exceeding the requirement, it's good (no warning zone needed)
 
@@ -170,7 +184,7 @@ export async function GET(request: Request) {
         sessions_attended: row.attended_sessions,
         total_sessions: row.total_sessions,
         required_threshold: row.required_attendance_thresh * 100,
-        status
+        status,
       };
     });
 
@@ -181,10 +195,10 @@ export async function GET(request: Request) {
           total_sessions: totalSessions,
           attended_sessions: totalAttended,
           attendance_percentage: Math.round(overallPercentage * 100) / 100,
-          total_subjects: attendanceData.length
+          total_subjects: attendanceData.length,
         },
-        subject_breakdown: subjectBreakdown
-      }
+        subject_breakdown: subjectBreakdown,
+      },
     };
 
     return NextResponse.json(response);
