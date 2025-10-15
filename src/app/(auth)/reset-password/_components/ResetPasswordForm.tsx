@@ -4,28 +4,28 @@ import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
-  FormDescription,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { authClient } from "@/lib/api/apiClient";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Eye, EyeOff } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import z from "zod/v4";
-import { Eye, EyeOff } from "lucide-react";
 
 const schema = z
   .object({
     password: z.string().min(8, "Password must be at least 8 characters"),
     confirmPassword: z.string().min(8),
   })
-  .refine((d) => d.password === d.confirmPassword, {
+  .refine(d => d.password === d.confirmPassword, {
     message: "Password doesn't match",
     path: ["confirmPassword"],
   });
@@ -142,7 +142,9 @@ export function ResetPasswordForm() {
                       />
                       <button
                         type="button"
-                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        onClick={() =>
+                          setShowConfirmPassword(!showConfirmPassword)
+                        }
                         className="text-muted-foreground hover:text-foreground absolute top-1/2 right-3 -translate-y-1/2 transition-colors"
                       >
                         {showConfirmPassword ? (

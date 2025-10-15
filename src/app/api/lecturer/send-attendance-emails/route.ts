@@ -1,12 +1,16 @@
-import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/server/auth";
-import { headers } from "next/headers";
-import { z } from "zod";
-import { emailService, EmailConfig, AttendanceEmailData } from "@/lib/server/email";
 import {
   getLectureAttendanceData,
-  calculateStudentOverallAttendance
+  calculateStudentOverallAttendance,
 } from "@/lib/server/attendance-calculator";
+import { auth } from "@/lib/server/auth";
+import {
+  emailService,
+  EmailConfig,
+  AttendanceEmailData,
+} from "@/lib/server/email";
+import { headers } from "next/headers";
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 
 /**
  * @openapi
@@ -123,7 +127,7 @@ export async function POST(req: NextRequest) {
     const parsed = schema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json(
-        { 
+        {
           message: "Invalid request body",
           errors: parsed.error.errors,
         },
@@ -168,7 +172,10 @@ export async function POST(req: NextRequest) {
     const connectionTest = await emailService.testConnection();
     if (!connectionTest) {
       return NextResponse.json(
-        { message: "Failed to connect to email server. Please check your SMTP configuration." },
+        {
+          message:
+            "Failed to connect to email server. Please check your SMTP configuration.",
+        },
         { status: 500 }
       );
     }
@@ -176,12 +183,15 @@ export async function POST(req: NextRequest) {
     // Get lecture attendance data
     let lectureData;
     try {
-      lectureData = await getLectureAttendanceData(study_session_id, week_number);
+      lectureData = await getLectureAttendanceData(
+        study_session_id,
+        week_number
+      );
     } catch (error) {
       return NextResponse.json(
-        { 
+        {
           message: "Failed to retrieve lecture attendance data",
-          error: error instanceof Error ? error.message : "Unknown error"
+          error: error instanceof Error ? error.message : "Unknown error",
         },
         { status: 400 }
       );
@@ -209,14 +219,15 @@ export async function POST(req: NextRequest) {
           weekNumber: student.weekNumber,
           attendancePercentage: student.attendancePercentage,
           checkinCount: student.checkinCount,
-          totalAttendancePercentage: overallAttendance.totalAttendancePercentage,
+          totalAttendancePercentage:
+            overallAttendance.totalAttendancePercentage,
           classesCanMiss: overallAttendance.classesCanMiss,
           isLowAttendance: overallAttendance.isLowAttendance,
         };
 
         // Send email
         await emailService.sendAttendanceReminder(emailData);
-        
+
         emailResults.push({
           studentEmail: student.studentEmail,
           success: true,
@@ -225,10 +236,12 @@ export async function POST(req: NextRequest) {
 
         // Small delay to prevent overwhelming the SMTP server
         await new Promise(resolve => setTimeout(resolve, 100));
-
       } catch (error) {
-        console.error(`Failed to send email to ${student.studentEmail}:`, error);
-        
+        console.error(
+          `Failed to send email to ${student.studentEmail}:`,
+          error
+        );
+
         emailResults.push({
           studentEmail: student.studentEmail,
           success: false,
@@ -247,13 +260,12 @@ export async function POST(req: NextRequest) {
       week_number: week_number,
       results: emailResults,
     });
-
   } catch (error) {
     console.error("Error in send-attendance-emails:", error);
     return NextResponse.json(
-      { 
+      {
         message: "Internal server error",
-        error: error instanceof Error ? error.message : "Unknown error"
+        error: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 }
     );

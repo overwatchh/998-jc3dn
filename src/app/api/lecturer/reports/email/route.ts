@@ -103,8 +103,8 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const {
-      reportType = 'overview',
-      dateRange = 'this_month',
+      reportType = "overview",
+      dateRange = "this_month",
       email,
       subjectIds = [],
     } = body;
@@ -131,14 +131,14 @@ export async function POST(request: NextRequest) {
     const now = new Date();
 
     switch (dateRange) {
-      case 'this_week':
+      case "this_week":
         const startOfWeek = new Date(now);
         startOfWeek.setDate(now.getDate() - now.getDay());
         startDate = startOfWeek;
         endDate = new Date(now);
         break;
 
-      case 'last_week':
+      case "last_week":
         const startOfLastWeek = new Date(now);
         startOfLastWeek.setDate(now.getDate() - now.getDay() - 7);
         startDate = startOfLastWeek;
@@ -146,19 +146,22 @@ export async function POST(request: NextRequest) {
         endDate.setDate(endDate.getDate() + 6);
         break;
 
-      case 'this_month':
+      case "this_month":
         startDate = new Date(now.getFullYear(), now.getMonth(), 1);
         endDate = new Date(now);
         break;
 
-      case 'last_month':
+      case "last_month":
         startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
         endDate = new Date(now.getFullYear(), now.getMonth(), 0);
         break;
 
-      case 'this_semester':
+      case "this_semester":
         // Assuming semester starts in February (adjust as needed)
-        const semesterStart = now.getMonth() >= 7 ? new Date(now.getFullYear(), 7, 1) : new Date(now.getFullYear(), 1, 1);
+        const semesterStart =
+          now.getMonth() >= 7
+            ? new Date(now.getFullYear(), 7, 1)
+            : new Date(now.getFullYear(), 1, 1);
         startDate = semesterStart;
         endDate = new Date(now);
         break;
@@ -176,7 +179,7 @@ export async function POST(request: NextRequest) {
       reportType,
       startDate,
       endDate,
-      subjectIds
+      subjectIds,
     });
 
     // Send email with report data using nodemailer
@@ -186,20 +189,22 @@ export async function POST(request: NextRequest) {
       lecturerEmail: session.user.email!,
       reportType,
       dateRange: `${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}`,
-      reportData
+      reportData,
     });
 
     return NextResponse.json({
       success: true,
-      message: "Report sent successfully to " + email
+      message: "Report sent successfully to " + email,
     });
-
   } catch (error) {
-    console.error('Email report generation error:', error);
-    return NextResponse.json({
-      error: 'Failed to send report email',
-      details: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 });
+    console.error("Email report generation error:", error);
+    return NextResponse.json(
+      {
+        error: "Failed to send report email",
+        details: error instanceof Error ? error.message : "Unknown error",
+      },
+      { status: 500 }
+    );
   }
 }
 
@@ -208,7 +213,7 @@ async function generateReportData({
   reportType,
   startDate,
   endDate,
-  subjectIds
+  subjectIds,
 }: {
   lecturerId: string;
   reportType: string;
@@ -216,36 +221,41 @@ async function generateReportData({
   endDate: Date;
   subjectIds: number[];
 }) {
-  const subjectFilter = subjectIds.length > 0
-    ? `AND s.id IN (${subjectIds.map(() => '?').join(',')})`
-    : '';
+  const subjectFilter =
+    subjectIds.length > 0
+      ? `AND s.id IN (${subjectIds.map(() => "?").join(",")})`
+      : "";
 
   const params = [
-    startDate.toISOString().split('T')[0],
-    endDate.toISOString().split('T')[0],
+    startDate.toISOString().split("T")[0],
+    endDate.toISOString().split("T")[0],
     lecturerId,
-    ...subjectIds
+    ...subjectIds,
   ];
 
   switch (reportType) {
-    case 'overview':
+    case "overview":
       return await generateOverviewReport(params, subjectFilter);
-    case 'student':
+    case "student":
       return await generateStudentReport(params, subjectFilter);
-    case 'session':
+    case "session":
       return await generateSessionReport(params, subjectFilter);
-    case 'detailed':
+    case "detailed":
       return await generateDetailedReport(params, subjectFilter);
     default:
-      throw new Error('Invalid report type');
+      throw new Error("Invalid report type");
   }
 }
 
-async function generateOverviewReport(params: (string | number)[], subjectFilter: string) {
-  console.log('📊 DEBUG: generateOverviewReport params:', params);
-  console.log('📊 DEBUG: subjectFilter:', subjectFilter);
+async function generateOverviewReport(
+  params: (string | number)[],
+  subjectFilter: string
+) {
+  console.log("📊 DEBUG: generateOverviewReport params:", params);
+  console.log("📊 DEBUG: subjectFilter:", subjectFilter);
   // Using EMAIL CALCULATOR METHOD: 2+ checkins = 100 points, 1 checkin = 50 points, 0 checkins = 0 points
-  const summaryData = await rawQuery(`
+  const summaryData = await rawQuery(
+    `
     SELECT
       s.name as subject_name,
       s.code as subject_code,
@@ -285,31 +295,40 @@ async function generateOverviewReport(params: (string | number)[], subjectFilter
     GROUP BY s.id, s.name, s.code
     HAVING COUNT(DISTINCT qrss.id) > 0
     ORDER BY average_attendance DESC
-  `, params);
+  `,
+    params
+  );
 
-  console.log('📊 DEBUG: summaryData result:', summaryData);
-  console.log('📊 DEBUG: summaryData length:', Array.isArray(summaryData) ? summaryData.length : 'not array');
+  console.log("📊 DEBUG: summaryData result:", summaryData);
+  console.log(
+    "📊 DEBUG: summaryData length:",
+    Array.isArray(summaryData) ? summaryData.length : "not array"
+  );
 
   // Ensure summaryData is always an array
   let summaryArray = [];
   if (Array.isArray(summaryData)) {
     summaryArray = summaryData;
-  } else if (summaryData && typeof summaryData === 'object') {
+  } else if (summaryData && typeof summaryData === "object") {
     // Single result, wrap in array
     summaryArray = [summaryData];
   }
 
   return {
-    type: 'overview',
+    type: "overview",
     summary: summaryArray,
     generatedAt: new Date().toISOString(),
-    dateRange: `${params[0]} to ${params[1]}`
+    dateRange: `${params[0]} to ${params[1]}`,
   };
 }
 
-async function generateStudentReport(params: (string | number)[], subjectFilter: string) {
+async function generateStudentReport(
+  params: (string | number)[],
+  subjectFilter: string
+) {
   // Using EMAIL CALCULATOR METHOD: 2+ checkins = 100 points, 1 checkin = 50 points, 0 checkins = 0 points
-  const studentData = await rawQuery(`
+  const studentData = await rawQuery(
+    `
     SELECT
       u.name as student_name,
       u.email as student_email,
@@ -353,27 +372,33 @@ async function generateStudentReport(params: (string | number)[], subjectFilter:
     GROUP BY u.id, u.name, u.email, s.id, s.name, s.code
     HAVING COUNT(DISTINCT qrss.id) > 0
     ORDER BY s.name, attendance_percentage DESC
-  `, params);
+  `,
+    params
+  );
 
   // Ensure studentData is always an array
   let studentsArray = [];
   if (Array.isArray(studentData)) {
     studentsArray = studentData;
-  } else if (studentData && typeof studentData === 'object') {
+  } else if (studentData && typeof studentData === "object") {
     studentsArray = [studentData];
   }
 
   return {
-    type: 'student',
+    type: "student",
     students: studentsArray,
     generatedAt: new Date().toISOString(),
-    dateRange: `${params[0]} to ${params[1]}`
+    dateRange: `${params[0]} to ${params[1]}`,
   };
 }
 
-async function generateSessionReport(params: (string | number)[], subjectFilter: string) {
+async function generateSessionReport(
+  params: (string | number)[],
+  subjectFilter: string
+) {
   // Using EMAIL CALCULATOR METHOD: 2+ checkins = 100 points, 1 checkin = 50 points, 0 checkins = 0 points
-  const sessionData = await rawQuery(`
+  const sessionData = await rawQuery(
+    `
     SELECT
       s.name as subject_name,
       s.code as subject_code,
@@ -417,36 +442,41 @@ async function generateSessionReport(params: (string | number)[], subjectFilter:
     GROUP BY s.id, s.name, s.code, ss.id, ss.day_of_week, ss.start_time, ss.end_time, ss.type, qrss.week_number, qrss.id
     HAVING COUNT(DISTINCT e.student_id) > 0
     ORDER BY s.name, qrss.week_number, ss.day_of_week
-  `, params);
+  `,
+    params
+  );
 
   // Ensure sessionData is always an array
   let sessionsArray = [];
   if (Array.isArray(sessionData)) {
     sessionsArray = sessionData;
-  } else if (sessionData && typeof sessionData === 'object') {
+  } else if (sessionData && typeof sessionData === "object") {
     sessionsArray = [sessionData];
   }
 
   return {
-    type: 'session',
+    type: "session",
     sessions: sessionsArray,
     generatedAt: new Date().toISOString(),
-    dateRange: `${params[0]} to ${params[1]}`
+    dateRange: `${params[0]} to ${params[1]}`,
   };
 }
 
-async function generateDetailedReport(params: (string | number)[], subjectFilter: string) {
+async function generateDetailedReport(
+  params: (string | number)[],
+  subjectFilter: string
+) {
   const overview = await generateOverviewReport(params, subjectFilter);
   const students = await generateStudentReport(params, subjectFilter);
   const sessions = await generateSessionReport(params, subjectFilter);
 
   return {
-    type: 'detailed',
+    type: "detailed",
     overview: overview.summary,
     students: students.students,
     sessions: sessions.sessions,
     generatedAt: new Date().toISOString(),
-    dateRange: `${params[0]} to ${params[1]}`
+    dateRange: `${params[0]} to ${params[1]}`,
   };
 }
 
@@ -465,41 +495,43 @@ async function sendReportEmail({
   lecturerEmail: _lecturerEmail,
   reportType,
   dateRange,
-  reportData
+  reportData,
 }: ReportEmailData) {
   const reportTypeNames = {
-    overview: 'Overview Report',
-    student: 'Student Performance Report',
-    session: 'Session Analysis Report',
-    detailed: 'Detailed Attendance Report'
+    overview: "Overview Report",
+    student: "Student Performance Report",
+    session: "Session Analysis Report",
+    detailed: "Detailed Attendance Report",
   };
 
-  const reportTypeName = reportTypeNames[reportType as keyof typeof reportTypeNames] || 'Attendance Report';
+  const reportTypeName =
+    reportTypeNames[reportType as keyof typeof reportTypeNames] ||
+    "Attendance Report";
   const subject = `📊 ${reportTypeName} - ${dateRange}`;
 
   const htmlContent = generateCompleteReportHtml(reportData, {
     lecturerName,
     reportTypeName,
-    dateRange
+    dateRange,
   });
 
   const textContent = generateReportEmailText({
     lecturerName,
     reportTypeName,
     dateRange,
-    reportData
+    reportData,
   });
 
   // Use nodemailer for sending emails
   try {
     // Import nodemailer dynamically to avoid potential client-side issues
-    const nodemailer = await import('nodemailer');
+    const nodemailer = await import("nodemailer");
 
     // Configure email transporter
     const transporter = nodemailer.default.createTransport({
-      host: process.env.SMTP_HOST || 'smtp.gmail.com',
-      port: parseInt(process.env.SMTP_PORT || '587'),
-      secure: process.env.SMTP_PORT === '465',
+      host: process.env.SMTP_HOST || "smtp.gmail.com",
+      port: parseInt(process.env.SMTP_PORT || "587"),
+      secure: process.env.SMTP_PORT === "465",
       auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
@@ -510,50 +542,55 @@ async function sendReportEmail({
     await transporter.verify();
 
     const mailOptions = {
-      from: `"${process.env.FROM_NAME || 'QR Attendance System'}" <${process.env.FROM_EMAIL || process.env.SMTP_USER}>`,
+      from: `"${process.env.FROM_NAME || "QR Attendance System"}" <${process.env.FROM_EMAIL || process.env.SMTP_USER}>`,
       to: recipientEmail,
       subject: subject,
       text: textContent,
       html: htmlContent,
     };
 
-    console.log('📧 Sending email report to:', recipientEmail);
-    console.log('📊 Subject:', subject);
-    console.log('📈 Data included:', {
+    console.log("📧 Sending email report to:", recipientEmail);
+    console.log("📊 Subject:", subject);
+    console.log("📈 Data included:", {
       summaryCount: reportData.summary?.length || 0,
       studentsCount: reportData.students?.length || 0,
-      sessionsCount: reportData.sessions?.length || 0
+      sessionsCount: reportData.sessions?.length || 0,
     });
 
     const result = await transporter.sendMail(mailOptions);
-    console.log('✅ Email sent successfully:', result.messageId);
+    console.log("✅ Email sent successfully:", result.messageId);
 
     return result;
   } catch (error) {
-    console.error('❌ Error sending email:', error);
-    throw new Error(`Failed to send email: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    console.error("❌ Error sending email:", error);
+    throw new Error(
+      `Failed to send email: ${error instanceof Error ? error.message : "Unknown error"}`
+    );
   }
 }
 
-function generateCompleteReportHtml(reportData: ReportData, {
-  lecturerName,
-  reportTypeName,
-  dateRange
-}: {
-  lecturerName: string;
-  reportTypeName: string;
-  dateRange: string;
-}) {
-  let reportContent = '';
+function generateCompleteReportHtml(
+  reportData: ReportData,
+  {
+    lecturerName,
+    reportTypeName,
+    dateRange,
+  }: {
+    lecturerName: string;
+    reportTypeName: string;
+    dateRange: string;
+  }
+) {
+  let reportContent = "";
 
   // Generate content based on report type
-  if (reportData.type === 'overview' && reportData.summary) {
+  if (reportData.type === "overview" && reportData.summary) {
     reportContent = generateOverviewHtml(reportData.summary);
-  } else if (reportData.type === 'student' && reportData.students) {
+  } else if (reportData.type === "student" && reportData.students) {
     reportContent = generateStudentHtml(reportData.students);
-  } else if (reportData.type === 'session' && reportData.sessions) {
+  } else if (reportData.type === "session" && reportData.sessions) {
     reportContent = generateSessionHtml(reportData.sessions);
-  } else if (reportData.type === 'detailed') {
+  } else if (reportData.type === "detailed") {
     reportContent = generateDetailedHtml(reportData);
   }
 
@@ -593,13 +630,13 @@ function generateCompleteReportHtml(reportData: ReportData, {
     <div class="content">
       <div class="report-info">
         <strong>Generated by:</strong> ${lecturerName}<br>
-        <strong>Generated on:</strong> ${new Date().toLocaleDateString('en-GB')} at ${new Date().toLocaleTimeString('en-GB')}
+        <strong>Generated on:</strong> ${new Date().toLocaleDateString("en-GB")} at ${new Date().toLocaleTimeString("en-GB")}
       </div>
 
       ${reportContent}
 
       <div style="text-align: center; margin: 30px 0;">
-        <a href="${process.env.BASE_URL || 'http://localhost:3000'}/lecturer/analytics" class="button">View Live Analytics Dashboard</a>
+        <a href="${process.env.BASE_URL || "http://localhost:3000"}/lecturer/analytics" class="button">View Live Analytics Dashboard</a>
       </div>
     </div>
 
@@ -627,12 +664,23 @@ function generateOverviewHtml(summary: SummaryData[]): string {
   }
 
   // Calculate overall statistics
-  const totalStudents = summary.reduce((sum, s) => sum + (parseInt(String(s.total_students)) || 0), 0);
-  const avgAttendanceOverall = summary.length > 0
-    ? summary.reduce((sum, s) => sum + (parseFloat(String(s.average_attendance)) || 0), 0) / summary.length
-    : 0;
-  const subjectsAbove80 = summary.filter(s => (parseFloat(String(s.average_attendance)) || 0) >= 80).length;
-  const subjectsBelow70 = summary.filter(s => (parseFloat(String(s.average_attendance)) || 0) < 70).length;
+  const totalStudents = summary.reduce(
+    (sum, s) => sum + (parseInt(String(s.total_students)) || 0),
+    0
+  );
+  const avgAttendanceOverall =
+    summary.length > 0
+      ? summary.reduce(
+          (sum, s) => sum + (parseFloat(String(s.average_attendance)) || 0),
+          0
+        ) / summary.length
+      : 0;
+  const subjectsAbove80 = summary.filter(
+    s => (parseFloat(String(s.average_attendance)) || 0) >= 80
+  ).length;
+  const subjectsBelow70 = summary.filter(
+    s => (parseFloat(String(s.average_attendance)) || 0) < 70
+  ).length;
 
   // Brief Analytics Summary - More concise format
   const briefSummary = `
@@ -660,12 +708,14 @@ function generateOverviewHtml(summary: SummaryData[]): string {
   `;
 
   // Compact subject performance list
-  const subjectsList = summary.map(subject => {
-    const attendance = parseFloat(String(subject.average_attendance || '0'));
-    const attendanceColor = attendance >= 80 ? '#22c55e' : attendance >= 70 ? '#f59e0b' : '#ef4444';
-    const status = attendance >= 80 ? '✅' : attendance >= 70 ? '⚠️' : '❌';
+  const subjectsList = summary
+    .map(subject => {
+      const attendance = parseFloat(String(subject.average_attendance || "0"));
+      const attendanceColor =
+        attendance >= 80 ? "#22c55e" : attendance >= 70 ? "#f59e0b" : "#ef4444";
+      const status = attendance >= 80 ? "✅" : attendance >= 70 ? "⚠️" : "❌";
 
-    return `
+      return `
       <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; margin: 8px 0; background: #f8fafc; border-radius: 8px; border-left: 4px solid ${attendanceColor};">
         <div>
           <strong style="color: #374151;">${subject.subject_code}</strong>
@@ -676,50 +726,67 @@ function generateOverviewHtml(summary: SummaryData[]): string {
         </div>
       </div>
     `;
-  }).join('');
+    })
+    .join("");
 
   return `
     ${briefSummary}
 
-    ${subjectsBelow70 > 0 ? `
+    ${
+      subjectsBelow70 > 0
+        ? `
     <div style="background: #fef2f2; border: 1px solid #ef4444; border-radius: 8px; padding: 15px; margin: 20px 0; text-align: center;">
-      <h4 style="color: #dc2626; margin: 0 0 8px 0;">⚠️ ${subjectsBelow70} Subject${subjectsBelow70 > 1 ? 's' : ''} Need Attention</h4>
+      <h4 style="color: #dc2626; margin: 0 0 8px 0;">⚠️ ${subjectsBelow70} Subject${subjectsBelow70 > 1 ? "s" : ""} Need Attention</h4>
       <p style="margin: 0; color: #dc2626; font-size: 14px;">Attendance below 70% - consider improvement strategies</p>
     </div>
-    ` : ''}
+    `
+        : ""
+    }
 
     <div style="margin: 20px 0;">
       <h3 style="color: #374151; margin: 0 0 15px 0; font-size: 18px;">📋 Subject Performance</h3>
       ${subjectsList}
     </div>
 
-    ${avgAttendanceOverall >= 80 ? `
+    ${
+      avgAttendanceOverall >= 80
+        ? `
     <div style="background: #f0fdf4; border: 1px solid #22c55e; border-radius: 8px; padding: 15px; margin: 20px 0; text-align: center;">
       <p style="margin: 0; color: #16a34a; font-weight: 500;">🎉 Excellent overall performance! Keep up the great work.</p>
     </div>
-    ` : avgAttendanceOverall < 70 ? `
+    `
+        : avgAttendanceOverall < 70
+          ? `
     <div style="background: #fef2f2; border: 1px solid #ef4444; border-radius: 8px; padding: 15px; margin: 20px 0; text-align: center;">
       <p style="margin: 0; color: #dc2626; font-weight: 500;">📈 Focus on boosting attendance with engagement strategies.</p>
     </div>
-    ` : `
+    `
+          : `
     <div style="background: #fffbeb; border: 1px solid #f59e0b; border-radius: 8px; padding: 15px; margin: 20px 0; text-align: center;">
       <p style="margin: 0; color: #d97706; font-weight: 500;">👍 Good progress! A few improvements could reach excellence.</p>
     </div>
-    `}
+    `
+    }
   `;
 }
 
 function generateStudentHtml(students: StudentData[]): string {
   if (!students || students.length === 0) {
-    return '<p>No student data available for the selected period.</p>';
+    return "<p>No student data available for the selected period.</p>";
   }
 
-  const tableRows = students.map(student => {
-    const attendance = parseFloat(String(student.attendance_percentage || '0'));
-    const attendanceClass = attendance >= 80 ? 'attendance-good' :
-                           attendance >= 70 ? 'attendance-warning' :
-                           'attendance-danger';
-    return `
+  const tableRows = students
+    .map(student => {
+      const attendance = parseFloat(
+        String(student.attendance_percentage || "0")
+      );
+      const attendanceClass =
+        attendance >= 80
+          ? "attendance-good"
+          : attendance >= 70
+            ? "attendance-warning"
+            : "attendance-danger";
+      return `
       <tr>
         <td>${student.student_name}</td>
         <td>${student.student_email}</td>
@@ -727,7 +794,8 @@ function generateStudentHtml(students: StudentData[]): string {
         <td style="text-align: center;" class="${attendanceClass}">${attendance.toFixed(1)}%</td>
       </tr>
     `;
-  }).join('');
+    })
+    .join("");
 
   return `
     <div class="section-title">Student Performance</div>
@@ -749,15 +817,21 @@ function generateStudentHtml(students: StudentData[]): string {
 
 function generateSessionHtml(sessions: unknown[]): string {
   if (!sessions || sessions.length === 0) {
-    return '<p>No session data available for the selected period.</p>';
+    return "<p>No session data available for the selected period.</p>";
   }
 
-  const tableRows = sessions.map(session => {
-    const attendanceRate = parseFloat(String((session as any).attendance_rate || '0'));
-    const attendanceClass = attendanceRate >= 80 ? 'attendance-good' :
-                           attendanceRate >= 70 ? 'attendance-warning' :
-                           'attendance-danger';
-    return `
+  const tableRows = sessions
+    .map(session => {
+      const attendanceRate = parseFloat(
+        String((session as any).attendance_rate || "0")
+      );
+      const attendanceClass =
+        attendanceRate >= 80
+          ? "attendance-good"
+          : attendanceRate >= 70
+            ? "attendance-warning"
+            : "attendance-danger";
+      return `
       <tr>
         <td><strong>${(session as any).subject_code}</strong></td>
         <td>Week ${(session as any).week_number}</td>
@@ -767,7 +841,8 @@ function generateSessionHtml(sessions: unknown[]): string {
         <td style="text-align: center;" class="${attendanceClass}">${attendanceRate.toFixed(1)}%</td>
       </tr>
     `;
-  }).join('');
+    })
+    .join("");
 
   return `
     <div class="section-title">Session Analysis</div>
@@ -790,7 +865,7 @@ function generateSessionHtml(sessions: unknown[]): string {
 }
 
 function generateDetailedHtml(reportData: ReportData): string {
-  let content = '';
+  let content = "";
 
   if (reportData.overview) {
     content += generateOverviewHtml(reportData.overview);
@@ -804,52 +879,76 @@ function generateDetailedHtml(reportData: ReportData): string {
     content += generateSessionHtml(reportData.sessions);
   }
 
-  return content || '<p>No data available for the selected period.</p>';
+  return content || "<p>No data available for the selected period.</p>";
 }
 
 function generateReportEmailText({
   lecturerName,
   reportTypeName,
   dateRange,
-  reportData
+  reportData,
 }: {
   lecturerName: string;
   reportTypeName: string;
   dateRange: string;
   reportData: ReportData;
 }) {
-  let detailedContent = '';
+  let detailedContent = "";
 
-  if (reportData.type === 'overview' && reportData.summary) {
+  if (reportData.type === "overview" && reportData.summary) {
     const totalSubjects = reportData.summary.length;
-    const totalStudents = reportData.summary.reduce((sum: number, s: SummaryData) => sum + (parseInt(String(s.total_students)) || 0), 0);
-    const avgAttendance = totalSubjects > 0
-      ? reportData.summary.reduce((sum: number, s: SummaryData) => sum + parseFloat(String(s.average_attendance) || '0'), 0) / totalSubjects
-      : 0;
-    const subjectsAbove80 = reportData.summary.filter((s: SummaryData) => (parseFloat(String(s.average_attendance)) || 0) >= 80).length;
-    const subjectsBelow70 = reportData.summary.filter((s: SummaryData) => (parseFloat(String(s.average_attendance)) || 0) < 70).length;
+    const totalStudents = reportData.summary.reduce(
+      (sum: number, s: SummaryData) =>
+        sum + (parseInt(String(s.total_students)) || 0),
+      0
+    );
+    const avgAttendance =
+      totalSubjects > 0
+        ? reportData.summary.reduce(
+            (sum: number, s: SummaryData) =>
+              sum + parseFloat(String(s.average_attendance) || "0"),
+            0
+          ) / totalSubjects
+        : 0;
+    const subjectsAbove80 = reportData.summary.filter(
+      (s: SummaryData) => (parseFloat(String(s.average_attendance)) || 0) >= 80
+    ).length;
+    const subjectsBelow70 = reportData.summary.filter(
+      (s: SummaryData) => (parseFloat(String(s.average_attendance)) || 0) < 70
+    ).length;
 
     detailedContent = `
 📊 ANALYTICS SUMMARY:
 • ${totalSubjects} Subjects | ${totalStudents} Students | ${avgAttendance.toFixed(1)}% Overall
 • ${subjectsAbove80}/${totalSubjects} subjects performing excellently (≥80%)
-${subjectsBelow70 > 0 ? `• ⚠️  ${subjectsBelow70} subjects need attention (<70%)` : ''}
+${subjectsBelow70 > 0 ? `• ⚠️  ${subjectsBelow70} subjects need attention (<70%)` : ""}
 
 📋 SUBJECT PERFORMANCE:
-${reportData.summary.map((subject: SummaryData) => {
-  const attendance = parseFloat(String(subject.average_attendance || '0'));
-  const status = attendance >= 80 ? '✅' : attendance >= 70 ? '⚠️' : '❌';
-  return `${status} ${subject.subject_code}: ${attendance.toFixed(1)}% (${subject.total_students} students)`;
-}).join('\n')}
+${reportData.summary
+  .map((subject: SummaryData) => {
+    const attendance = parseFloat(String(subject.average_attendance || "0"));
+    const status = attendance >= 80 ? "✅" : attendance >= 70 ? "⚠️" : "❌";
+    return `${status} ${subject.subject_code}: ${attendance.toFixed(1)}% (${subject.total_students} students)`;
+  })
+  .join("\n")}
 
-${avgAttendance >= 80 ? '🎉 EXCELLENT performance across all subjects!' :
-  avgAttendance < 70 ? '📈 FOCUS needed on attendance improvement strategies.' :
-  '👍 GOOD progress - a few improvements could reach excellence.'}`;
-
-  } else if (reportData.type === 'student' && reportData.students) {
+${
+  avgAttendance >= 80
+    ? "🎉 EXCELLENT performance across all subjects!"
+    : avgAttendance < 70
+      ? "📈 FOCUS needed on attendance improvement strategies."
+      : "👍 GOOD progress - a few improvements could reach excellence."
+}`;
+  } else if (reportData.type === "student" && reportData.students) {
     const totalStudents = reportData.students.length;
-    const studentsAbove80 = reportData.students.filter((s: StudentData) => (parseFloat(String(s.attendance_percentage)) || 0) >= 80).length;
-    const studentsBelow70 = reportData.students.filter((s: StudentData) => (parseFloat(String(s.attendance_percentage)) || 0) < 70).length;
+    const studentsAbove80 = reportData.students.filter(
+      (s: StudentData) =>
+        (parseFloat(String(s.attendance_percentage)) || 0) >= 80
+    ).length;
+    const studentsBelow70 = reportData.students.filter(
+      (s: StudentData) =>
+        (parseFloat(String(s.attendance_percentage)) || 0) < 70
+    ).length;
 
     detailedContent = `
 STUDENT PERFORMANCE SUMMARY:
@@ -859,18 +958,32 @@ STUDENT PERFORMANCE SUMMARY:
 
 TOP PERFORMERS:
 ${reportData.students
-  .sort((a: StudentData, b: StudentData) => parseFloat(String(b.attendance_percentage) || '0') - parseFloat(String(a.attendance_percentage) || '0'))
+  .sort(
+    (a: StudentData, b: StudentData) =>
+      parseFloat(String(b.attendance_percentage) || "0") -
+      parseFloat(String(a.attendance_percentage) || "0")
+  )
   .slice(0, 5)
-  .map((student: StudentData) => `- ${student.student_name}: ${parseFloat(String(student.attendance_percentage) || '0').toFixed(1)}%`)
-  .join('\n')}`;
-
-  } else if (reportData.type === 'session' && reportData.sessions) {
+  .map(
+    (student: StudentData) =>
+      `- ${student.student_name}: ${parseFloat(String(student.attendance_percentage) || "0").toFixed(1)}%`
+  )
+  .join("\n")}`;
+  } else if (reportData.type === "session" && reportData.sessions) {
     const totalSessions = reportData.sessions.length;
-    const totalRate: number = (reportData.sessions as unknown[]).reduce((sum: number, s: unknown) => {
-      const rate = parseFloat(String((s as { attendance_rate?: string | number })?.attendance_rate) || '0');
-      return sum + (isNaN(rate) ? 0 : rate);
-    }, 0) as number;
-    const avgSessionAttendance: number = totalSessions > 0 ? totalRate / totalSessions : 0;
+    const totalRate: number = (reportData.sessions as unknown[]).reduce(
+      (sum: number, s: unknown) => {
+        const rate = parseFloat(
+          String(
+            (s as { attendance_rate?: string | number })?.attendance_rate
+          ) || "0"
+        );
+        return sum + (isNaN(rate) ? 0 : rate);
+      },
+      0
+    ) as number;
+    const avgSessionAttendance: number =
+      totalSessions > 0 ? totalRate / totalSessions : 0;
 
     detailedContent = `
 SESSION ANALYSIS SUMMARY:
@@ -878,10 +991,13 @@ SESSION ANALYSIS SUMMARY:
 - Average Session Attendance: ${avgSessionAttendance.toFixed(1)}%
 
 RECENT SESSIONS:
-${reportData.sessions?.slice(0, 10).map((session: unknown) => {
-  const rate = parseFloat(String((session as any).attendance_rate || '0'));
-  return `- ${(session as any).subject_code} Week ${(session as any).week_number}: ${(session as any).present_students}/${(session as any).enrolled_students} (${rate.toFixed(1)}%)`;
-}).join('\n')}`;
+${reportData.sessions
+  ?.slice(0, 10)
+  .map((session: unknown) => {
+    const rate = parseFloat(String((session as any).attendance_rate || "0"));
+    return `- ${(session as any).subject_code} Week ${(session as any).week_number}: ${(session as any).present_students}/${(session as any).enrolled_students} (${rate.toFixed(1)}%)`;
+  })
+  .join("\n")}`;
   }
 
   return `
@@ -895,20 +1011,23 @@ REPORT DETAILS:
 - Report Type: ${reportTypeName}
 - Date Range: ${dateRange}
 - Generated By: ${lecturerName}
-- Generated On: ${new Date().toLocaleDateString('en-GB')} at ${new Date().toLocaleTimeString('en-GB')}
+- Generated On: ${new Date().toLocaleDateString("en-GB")} at ${new Date().toLocaleTimeString("en-GB")}
 
 ${detailedContent}
 
 QUICK ACCESS:
-📊 View Live Analytics Dashboard: ${process.env.BASE_URL || 'http://localhost:3000'}/lecturer/analytics
+📊 View Live Analytics Dashboard: ${process.env.BASE_URL || "http://localhost:3000"}/lecturer/analytics
 📧 This report includes detailed charts and visualizations in the HTML version
 
 NEXT STEPS:
-${reportData.type === 'overview' && reportData.summary ?
-  reportData.summary.some((s: SummaryData) => (parseFloat(String(s.average_attendance)) || 0) < 70) ?
-    '• Review subjects with low attendance and consider intervention strategies\n• Monitor student engagement and participation\n• Consider additional support for struggling subjects' :
-    '• Continue monitoring attendance trends\n• Maintain current engagement strategies\n• Celebrate good attendance with students'
-  : '• Review the detailed analytics for actionable insights\n• Consider scheduling follow-up discussions with relevant stakeholders'
+${
+  reportData.type === "overview" && reportData.summary
+    ? reportData.summary.some(
+        (s: SummaryData) => (parseFloat(String(s.average_attendance)) || 0) < 70
+      )
+      ? "• Review subjects with low attendance and consider intervention strategies\n• Monitor student engagement and participation\n• Consider additional support for struggling subjects"
+      : "• Continue monitoring attendance trends\n• Maintain current engagement strategies\n• Celebrate good attendance with students"
+    : "• Review the detailed analytics for actionable insights\n• Consider scheduling follow-up discussions with relevant stakeholders"
 }
 
 Best regards,

@@ -156,7 +156,11 @@ export async function GET(request: Request) {
       ORDER BY qcss.week_number;
     `;
 
-    const weeklyData = await rawQuery<WeeklyRow>(sql, [studentId, sessionType, weeks]);
+    const weeklyData = await rawQuery<WeeklyRow>(sql, [
+      studentId,
+      sessionType,
+      weeks,
+    ]);
 
     // Use attendance rates from email calculator method
     const weeklyStats = weeklyData.map(row => ({
@@ -164,38 +168,43 @@ export async function GET(request: Request) {
       week_start_date: row.week_start_date,
       total_sessions: row.total_sessions,
       attended_sessions: row.attended_sessions,
-      attendance_rate: parseFloat(String(row.attendance_rate)) || 0
+      attendance_rate: parseFloat(String(row.attendance_rate)) || 0,
     }));
 
     // Calculate trends
     const rates = weeklyStats.map(w => w.attendance_rate);
-    const averageWeeklyAttendance = rates.length > 0
-      ? rates.reduce((sum, rate) => sum + rate, 0) / rates.length
-      : 0;
+    const averageWeeklyAttendance =
+      rates.length > 0
+        ? rates.reduce((sum, rate) => sum + rate, 0) / rates.length
+        : 0;
 
     // Determine trend direction (comparing first half vs second half)
-    let trendDirection = 'stable';
+    let trendDirection = "stable";
     if (rates.length >= 4) {
       const firstHalf = rates.slice(0, Math.floor(rates.length / 2));
       const secondHalf = rates.slice(Math.ceil(rates.length / 2));
-      const firstAvg = firstHalf.reduce((sum, rate) => sum + rate, 0) / firstHalf.length;
-      const secondAvg = secondHalf.reduce((sum, rate) => sum + rate, 0) / secondHalf.length;
+      const firstAvg =
+        firstHalf.reduce((sum, rate) => sum + rate, 0) / firstHalf.length;
+      const secondAvg =
+        secondHalf.reduce((sum, rate) => sum + rate, 0) / secondHalf.length;
 
       if (secondAvg > firstAvg + 5) {
-        trendDirection = 'improving';
+        trendDirection = "improving";
       } else if (secondAvg < firstAvg - 5) {
-        trendDirection = 'declining';
+        trendDirection = "declining";
       }
     }
 
     // Find best and worst weeks
-    const bestWeek = weeklyStats.reduce((best, current) =>
-      current.attendance_rate > best.attendance_rate ? current : best,
+    const bestWeek = weeklyStats.reduce(
+      (best, current) =>
+        current.attendance_rate > best.attendance_rate ? current : best,
       weeklyStats[0] || { week_number: 0, attendance_rate: 0 }
     );
 
-    const worstWeek = weeklyStats.reduce((worst, current) =>
-      current.attendance_rate < worst.attendance_rate ? current : worst,
+    const worstWeek = weeklyStats.reduce(
+      (worst, current) =>
+        current.attendance_rate < worst.attendance_rate ? current : worst,
       weeklyStats[0] || { week_number: 0, attendance_rate: 0 }
     );
 
@@ -204,18 +213,19 @@ export async function GET(request: Request) {
       data: {
         weekly_stats: weeklyStats,
         trends: {
-          average_weekly_attendance: Math.round(averageWeeklyAttendance * 100) / 100,
+          average_weekly_attendance:
+            Math.round(averageWeeklyAttendance * 100) / 100,
           trend_direction: trendDirection,
           best_week: {
             week_number: bestWeek.week_number,
-            attendance_rate: bestWeek.attendance_rate
+            attendance_rate: bestWeek.attendance_rate,
           },
           worst_week: {
             week_number: worstWeek.week_number,
-            attendance_rate: worstWeek.attendance_rate
-          }
-        }
-      }
+            attendance_rate: worstWeek.attendance_rate,
+          },
+        },
+      },
     };
 
     return NextResponse.json(response);

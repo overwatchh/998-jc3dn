@@ -100,7 +100,10 @@ export async function POST(req: NextRequest) {
     }
 
     // Check if student is enrolled in the subject for this study session
-    const isStudentAttend = await verifyStudentInStudySession(study_session_id, student_id)
+    const isStudentAttend = await verifyStudentInStudySession(
+      study_session_id,
+      student_id
+    );
 
     if (!isStudentAttend) {
       return NextResponse.json(

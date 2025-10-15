@@ -39,15 +39,19 @@ export interface LectureAttendanceResult {
 /**
  * Calculate attendance percentage for a student based on their check-ins
  * - 2 check-ins = 90% attendance
- * - 1 check-in = 45% attendance  
+ * - 1 check-in = 45% attendance
  * - 0 check-ins = 0% attendance
  */
 export function calculateLectureAttendance(checkinCount: number): number {
   switch (checkinCount) {
-    case 2: return 90;
-    case 1: return 45;
-    case 0: return 0;
-    default: return 0;
+    case 2:
+      return 90;
+    case 1:
+      return 45;
+    case 0:
+      return 0;
+    default:
+      return 0;
   }
 }
 
@@ -55,7 +59,7 @@ export function calculateLectureAttendance(checkinCount: number): number {
  * Get attendance data for a specific lecture session and week
  */
 export async function getLectureAttendanceData(
-  studySessionId: number, 
+  studySessionId: number,
   weekNumber: number
 ): Promise<LectureAttendanceResult> {
   // First get the QR code study session info
@@ -81,7 +85,9 @@ export async function getLectureAttendanceData(
   );
 
   if (!qrSessionInfo) {
-    throw new Error(`No QR session found for study session ${studySessionId}, week ${weekNumber}`);
+    throw new Error(
+      `No QR session found for study session ${studySessionId}, week ${weekNumber}`
+    );
   }
 
   // Get all students enrolled in this subject
@@ -232,29 +238,36 @@ export async function calculateStudentOverallAttendance(
   let totalPossiblePoints = 0;
 
   lectureAttendance.forEach(lecture => {
-    const attendancePercentage = calculateLectureAttendance(lecture.checkin_count);
+    const attendancePercentage = calculateLectureAttendance(
+      lecture.checkin_count
+    );
     totalAttendancePoints += attendancePercentage;
     totalPossiblePoints += 90; // Each lecture is worth 90% if fully attended
   });
 
-  const totalAttendancePercentage = totalPossiblePoints > 0 
-    ? (totalAttendancePoints / totalPossiblePoints) * 100 
-    : 0;
+  const totalAttendancePercentage =
+    totalPossiblePoints > 0
+      ? (totalAttendancePoints / totalPossiblePoints) * 100
+      : 0;
 
   // Calculate how many classes can still be missed
   const requiredPercentage = subjectInfo.required_attendance_thresh * 100; // Convert to percentage
   const totalLectures = lectureAttendance.length;
   const remainingLectures = subjectInfo.required_lectures - totalLectures;
-  
+
   // Calculate minimum points needed for 80%
   const totalPossiblePointsAtEnd = (totalLectures + remainingLectures) * 90;
-  const minimumPointsNeeded = (totalPossiblePointsAtEnd * requiredPercentage) / 100;
+  const minimumPointsNeeded =
+    (totalPossiblePointsAtEnd * requiredPercentage) / 100;
   const pointsStillNeeded = minimumPointsNeeded - totalAttendancePoints;
-  
+
   // Each missed class = 0 points, each attended class = 90 points
-  const classesCanMiss = remainingLectures - Math.max(0, Math.ceil(pointsStillNeeded / 90));
-  
-  const attendedLectures = lectureAttendance.filter(l => l.checkin_count > 0).length;
+  const classesCanMiss =
+    remainingLectures - Math.max(0, Math.ceil(pointsStillNeeded / 90));
+
+  const attendedLectures = lectureAttendance.filter(
+    l => l.checkin_count > 0
+  ).length;
 
   return {
     studentId: studentId,

@@ -153,10 +153,7 @@ export async function GET(
     }>(detailsSql, [studySessionId]);
 
     if (!sessionDetails) {
-      return NextResponse.json(
-        { error: "Session not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Session not found" }, { status: 404 });
     }
 
     return NextResponse.json({

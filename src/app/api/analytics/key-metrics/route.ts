@@ -87,13 +87,13 @@ import { NextRequest, NextResponse } from "next/server";
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
-    const subjectId = searchParams.get('subjectId'); // Now correctly using subject ID
+    const subjectId = searchParams.get("subjectId"); // Now correctly using subject ID
     const subjectIdNum = subjectId ? parseInt(subjectId) : null;
-    const sessionType = searchParams.get('sessionType') || 'tutorial';
-    const tutorialSessionId = searchParams.get('tutorialSessionId');
+    const sessionType = searchParams.get("sessionType") || "tutorial";
+    const tutorialSessionId = searchParams.get("tutorialSessionId");
 
     // Build session filter - if tutorial session ID is provided, filter by that specific session
-    let sessionFilter = '';
+    let sessionFilter = "";
     if (tutorialSessionId) {
       sessionFilter = `AND ss.id = ${parseInt(tutorialSessionId)}`;
     } else {
@@ -105,7 +105,7 @@ export async function GET(request: NextRequest) {
     let atRiskStudents = 0;
 
     // Calculate average session attendance using EMAIL CALCULATOR METHOD
-    let avgQuery = '';
+    let avgQuery = "";
     if (tutorialSessionId) {
       avgQuery = `
         SELECT
@@ -136,7 +136,7 @@ export async function GET(request: NextRequest) {
             GROUP BY qr_code_study_session_id, student_id
           ) checkin_counts ON checkin_counts.qr_code_study_session_id = qrss.id
                            AND checkin_counts.student_id = student_ss.student_id
-          WHERE 1=1 AND ss.id = ${parseInt(tutorialSessionId)} ${subjectIdNum ? 'AND sss.subject_id = ?' : ''}
+          WHERE 1=1 AND ss.id = ${parseInt(tutorialSessionId)} ${subjectIdNum ? "AND sss.subject_id = ?" : ""}
           GROUP BY qrss.id
         ) session_stats
       `;
@@ -170,7 +170,7 @@ export async function GET(request: NextRequest) {
             GROUP BY qr_code_study_session_id, student_id
           ) checkin_counts ON checkin_counts.qr_code_study_session_id = qrss.id
                            AND checkin_counts.student_id = e.student_id
-          WHERE 1=1 ${sessionFilter} ${subjectIdNum ? 'AND sss.subject_id = ?' : ''}
+          WHERE 1=1 ${sessionFilter} ${subjectIdNum ? "AND sss.subject_id = ?" : ""}
           GROUP BY qrss.id
         ) session_stats
       `;
@@ -182,7 +182,7 @@ export async function GET(request: NextRequest) {
     );
 
     // Calculate at-risk students using EMAIL CALCULATOR METHOD (students with overall attendance < 80%)
-    let atRiskQuery = '';
+    let atRiskQuery = "";
     if (tutorialSessionId) {
       atRiskQuery = `
         SELECT
@@ -213,7 +213,7 @@ export async function GET(request: NextRequest) {
             GROUP BY qr_code_study_session_id, student_id
           ) checkin_counts ON checkin_counts.qr_code_study_session_id = qrss.id
                            AND checkin_counts.student_id = student_ss.student_id
-          WHERE 1=1 AND ss.id = ${parseInt(tutorialSessionId)} ${subjectIdNum ? 'AND sss.subject_id = ?' : ''}
+          WHERE 1=1 AND ss.id = ${parseInt(tutorialSessionId)} ${subjectIdNum ? "AND sss.subject_id = ?" : ""}
           GROUP BY student_ss.student_id
           HAVING student_attendance < 80
         ) at_risk_students
@@ -248,7 +248,7 @@ export async function GET(request: NextRequest) {
             GROUP BY qr_code_study_session_id, student_id
           ) checkin_counts ON checkin_counts.qr_code_study_session_id = qrss.id
                            AND checkin_counts.student_id = e.student_id
-          WHERE 1=1 ${sessionFilter} ${subjectIdNum ? 'AND e.subject_id = ?' : ''}
+          WHERE 1=1 ${sessionFilter} ${subjectIdNum ? "AND e.subject_id = ?" : ""}
           GROUP BY e.student_id
           HAVING student_attendance < 80
         ) at_risk_students
@@ -264,7 +264,7 @@ export async function GET(request: NextRequest) {
     atRiskStudents = atRiskData?.at_risk_count || 0;
 
     // Get basic counts
-    let countsQuery = '';
+    let countsQuery = "";
     if (tutorialSessionId) {
       countsQuery = `
         SELECT
@@ -275,7 +275,7 @@ export async function GET(request: NextRequest) {
         JOIN subject_study_session sss ON sss.study_session_id = ss.id
         JOIN subject s ON s.id = sss.subject_id
         JOIN qr_code_study_session qrss ON qrss.study_session_id = ss.id
-        WHERE 1=1 AND ss.id = ${parseInt(tutorialSessionId)} ${subjectIdNum ? 'AND s.id = ?' : ''}
+        WHERE 1=1 AND ss.id = ${parseInt(tutorialSessionId)} ${subjectIdNum ? "AND s.id = ?" : ""}
       `;
     } else {
       countsQuery = `
@@ -287,20 +287,20 @@ export async function GET(request: NextRequest) {
         JOIN subject_study_session sss ON sss.subject_id = s.id
         JOIN study_session ss ON ss.id = sss.study_session_id
         JOIN qr_code_study_session qrss ON qrss.study_session_id = ss.id
-        WHERE 1=1 ${sessionFilter} ${subjectIdNum ? 'AND s.id = ?' : ''}
+        WHERE 1=1 ${sessionFilter} ${subjectIdNum ? "AND s.id = ?" : ""}
       `;
     }
 
     const queryParams = subjectIdNum ? [subjectIdNum] : [];
 
-    const [countsData] = await rawQuery(countsQuery, queryParams) as {
+    const [countsData] = (await rawQuery(countsQuery, queryParams)) as {
       total_students: number;
       total_sessions: number;
     }[];
 
     // Best/worst sessions using EMAIL CALCULATOR METHOD
-    let bestQuery = '';
-    let worstQuery = '';
+    let bestQuery = "";
+    let worstQuery = "";
 
     if (tutorialSessionId) {
       bestQuery = `
@@ -331,7 +331,7 @@ export async function GET(request: NextRequest) {
           GROUP BY qr_code_study_session_id, student_id
         ) checkin_counts ON checkin_counts.qr_code_study_session_id = qrss.id
                          AND checkin_counts.student_id = student_ss.student_id
-        WHERE 1=1 AND ss.id = ${parseInt(tutorialSessionId)} ${subjectIdNum ? 'AND s.id = ?' : ''}
+        WHERE 1=1 AND ss.id = ${parseInt(tutorialSessionId)} ${subjectIdNum ? "AND s.id = ?" : ""}
         GROUP BY s.code, qrss.week_number, qrss.id
         ORDER BY attendance_rate DESC
         LIMIT 1
@@ -365,7 +365,7 @@ export async function GET(request: NextRequest) {
           GROUP BY qr_code_study_session_id, student_id
         ) checkin_counts ON checkin_counts.qr_code_study_session_id = qrss.id
                          AND checkin_counts.student_id = student_ss.student_id
-        WHERE 1=1 AND ss.id = ${parseInt(tutorialSessionId)} ${subjectIdNum ? 'AND s.id = ?' : ''}
+        WHERE 1=1 AND ss.id = ${parseInt(tutorialSessionId)} ${subjectIdNum ? "AND s.id = ?" : ""}
         GROUP BY s.code, qrss.week_number, qrss.id
         ORDER BY attendance_rate ASC
         LIMIT 1
@@ -399,7 +399,7 @@ export async function GET(request: NextRequest) {
           GROUP BY qr_code_study_session_id, student_id
         ) checkin_counts ON checkin_counts.qr_code_study_session_id = qrss.id
                          AND checkin_counts.student_id = e.student_id
-        WHERE 1=1 ${sessionFilter} ${subjectIdNum ? 'AND s.id = ?' : ''}
+        WHERE 1=1 ${sessionFilter} ${subjectIdNum ? "AND s.id = ?" : ""}
         GROUP BY s.code, qrss.week_number, qrss.id
         ORDER BY attendance_rate DESC
         LIMIT 1
@@ -433,19 +433,19 @@ export async function GET(request: NextRequest) {
           GROUP BY qr_code_study_session_id, student_id
         ) checkin_counts ON checkin_counts.qr_code_study_session_id = qrss.id
                          AND checkin_counts.student_id = e.student_id
-        WHERE 1=1 ${sessionFilter} ${subjectIdNum ? 'AND s.id = ?' : ''}
+        WHERE 1=1 ${sessionFilter} ${subjectIdNum ? "AND s.id = ?" : ""}
         GROUP BY s.code, qrss.week_number, qrss.id
         ORDER BY attendance_rate ASC
         LIMIT 1
       `;
     }
 
-    const [bestSession] = await rawQuery(bestQuery, queryParams) as {
+    const [bestSession] = (await rawQuery(bestQuery, queryParams)) as {
       week_label: string;
       subject_code: string;
       attendance_rate: number;
     }[];
-    const [worstSession] = await rawQuery(worstQuery, queryParams) as {
+    const [worstSession] = (await rawQuery(worstQuery, queryParams)) as {
       week_label: string;
       subject_code: string;
       attendance_rate: number;
@@ -457,18 +457,21 @@ export async function GET(request: NextRequest) {
       totalStudents: countsData?.total_students || 0,
       totalWeeks: countsData?.total_sessions || 0,
       mostAttended: {
-        week: bestSession?.week_label || 'N/A',
-        subject: bestSession?.subject_code || '',
-        attendance: bestSession?.attendance_rate || 0
+        week: bestSession?.week_label || "N/A",
+        subject: bestSession?.subject_code || "",
+        attendance: bestSession?.attendance_rate || 0,
       },
       leastAttended: {
-        week: worstSession?.week_label || 'N/A',
-        subject: worstSession?.subject_code || '',
-        attendance: worstSession?.attendance_rate || 0
-      }
+        week: worstSession?.week_label || "N/A",
+        subject: worstSession?.subject_code || "",
+        attendance: worstSession?.attendance_rate || 0,
+      },
     });
   } catch (error) {
     console.error("Key metrics API error:", error);
-    return NextResponse.json({ error: "Failed to fetch key metrics data" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to fetch key metrics data" },
+      { status: 500 }
+    );
   }
 }

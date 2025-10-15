@@ -28,8 +28,8 @@ const navItems: NavItem[] = [
 
 export function LecturerNavigationMenu() {
   return (
-    <nav className="hidden md:flex items-center gap-1">
-      {navItems.map((item) => {
+    <nav className="hidden items-center gap-1 md:flex">
+      {navItems.map(item => {
         return (
           <Button
             key={item.id}

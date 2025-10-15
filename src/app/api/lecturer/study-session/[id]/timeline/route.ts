@@ -100,7 +100,7 @@ export async function GET(
 
     // Get current week number if not provided
     let actualWeekNumber = week_number;
-    
+
     if (!actualWeekNumber) {
       // Get the current active week (most recent week with active QR)
       const currentWeekSql = `
@@ -112,8 +112,11 @@ export async function GET(
         ORDER BY qrss.week_number DESC
         LIMIT 1
       `;
-      const currentWeekRows = await rawQuery<{ week_number: number }>(currentWeekSql, [studySessionId]);
-      
+      const currentWeekRows = await rawQuery<{ week_number: number }>(
+        currentWeekSql,
+        [studySessionId]
+      );
+
       if (currentWeekRows.length === 0) {
         // Fallback: get the most recent week
         const recentWeekSql = `
@@ -123,7 +126,10 @@ export async function GET(
           ORDER BY week_number DESC
           LIMIT 1
         `;
-        const recentWeekRows = await rawQuery<{ week_number: number }>(recentWeekSql, [studySessionId]);
+        const recentWeekRows = await rawQuery<{ week_number: number }>(
+          recentWeekSql,
+          [studySessionId]
+        );
         actualWeekNumber = recentWeekRows[0]?.week_number || 1;
       } else {
         actualWeekNumber = currentWeekRows[0].week_number;
