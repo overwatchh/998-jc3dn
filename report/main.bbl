@@ -1,0 +1,97 @@
+\begin{thebibliography}{10}
+\providecommand{\url}[1]{\texttt{#1}}
+\providecommand{\urlprefix}{URL }
+\providecommand{\doi}[1]{https://doi.org/#1}
+
+\bibitem{bekavac2024qrcode}
+Bekavac, L., Mayer, S., Strecker, J.: Qr-code integrity by design. In: Extended
+  Abstracts of the CHI Conference on Human Factors in Computing Systems.
+  pp.~1--9. ACM (2024). \doi{10.1145/3613905.3651006}
+
+\bibitem{inproceedings}
+Benyó, B., Sodor, B., Doktor, T., Fordos, G.: Student attendance monitoring at
+  the university using nfc. In: Wireless Telecommunications Symposium (WTS),
+  2012. pp.~1--5 (04 2012). \doi{10.1109/WTS.2012.6266137}
+
+\bibitem{doi:10.3102/0034654310362998}
+Credé, M., Roch, S.G., Kieszczynka, U.M.: Class attendance in college: A
+  meta-analytic review of the relationship of class attendance with grades and
+  student characteristics. Review of Educational Research  \textbf{80}(2),
+  272--295 (2010). \doi{10.3102/0034654310362998},
+  \url{https://doi.org/10.3102/0034654310362998}
+
+\bibitem{Balakrishnan}
+Duraisamy, B.: Student attendance tracking management using face biometric
+  smart system (06 2024). \doi{10.1109/CONIT61985.2024.10626516}
+
+\bibitem{Fridman_2017}
+Fridman, L., Weber, S., Greenstadt, R., Kam, M.: Active authentication on
+  mobile devices via stylometry, application usage, web browsing, and gps
+  location. IEEE Systems Journal  \textbf{11}(2),  513–521 (Jun 2017).
+  \doi{10.1109/jsyst.2015.2472579},
+  \url{http://dx.doi.org/10.1109/JSYST.2015.2472579}
+
+\bibitem{9681472}
+Liew, K.J., Tan, T.H.: Qr code-based student attendance system. In: 2021 2nd
+  Asia Conference on Computers and Communications (ACCC). pp. 10--14 (2021).
+  \doi{10.1109/ACCC54619.2021.00009}
+
+\bibitem{Masalha2014}
+Masalha, F., Hirzallah, N.: A students attendance system using qr code.
+  International Journal of Advanced Computer Science and Applications
+  \textbf{5}(3) (2014). \doi{10.14569/IJACSA.2014.050310},
+  \url{http://dx.doi.org/10.14569/IJACSA.2014.050310}
+
+\bibitem{masih2022feasibility}
+Masih, E.A.: Feasibility of using qr code for registration \& evaluation of
+  training and its ability to increase response rate - the learners'
+  perception. Nurse Education Today  \textbf{111},  105305 (2022).
+  \doi{10.1016/j.nedt.2022.105305},
+  \url{https://doi.org/10.1016/j.nedt.2022.105305}
+
+\bibitem{9134225}
+Nuhi, A., Memeti, A., Imeri, F., Cico, B.: Smart attendance system using qr
+  code. In: 2020 9th Mediterranean Conference on Embedded Computing (MECO).
+  pp.~1--4 (2020). \doi{10.1109/MECO49872.2020.9134225}
+
+\bibitem{Orah2023}
+Orah: The hidden costs: How manual attendance tracking damages schools and
+  disrupts parent engagement (2023),
+  \url{https://www.orah.com/blog/hidden-costs-of-manual-attendance}, accessed:
+  02-05-11
+
+\bibitem{article}
+Patel, A., Joseph, A., Survase, S., Nair, R.: Smart student attendance system
+  using qr code. SSRN Electronic Journal  (01 2019). \doi{10.2139/ssrn.3370769}
+
+\bibitem{shene}
+Shene, A., Aldridge, J., Alamleh, H.: Privacy-preserving zero-effort class
+  attendance tracking system. pp.~1--4 (04 2021).
+  \doi{10.1109/IEMTRONICS52119.2021.9422481}
+
+\bibitem{Sunehra2016ChildrenLM}
+Sunehra, D., Priya, P.L., Bano, A.: Children location monitoring on google maps
+  using gps and gsm technologies. 2016 IEEE 6th International Conference on
+  Advanced Computing (IACC) pp. 711--715 (2016),
+  \url{https://api.semanticscholar.org/CorpusID:26875269}
+
+\bibitem{sweidan}
+Sweidan, S., Alshareef, S., Darabkh, K.: Sata: A new students attendance
+  tracking application. In: 2021 9th International Conference on Information
+  and Education Technology (ICIET). pp. 41--46 (03 2021).
+  \doi{10.1109/ICIET51873.2021.9419593}
+
+\bibitem{10.1001/jamanetworkopen.2021.30358}
+Varadaraj, V., Deal, J.A., Campanile, J., Reed, N.S., Swenor, B.K.: National
+  prevalence of disability and disability types among adults in the us, 2019.
+  JAMA Network Open  \textbf{4}(10),  e2130358--e2130358 (10 2021).
+  \doi{10.1001/jamanetworkopen.2021.30358},
+  \url{https://doi.org/10.1001/jamanetworkopen.2021.30358}
+
+\bibitem{7581583}
+Yang, S., Song, Y., Ren, H., Huang, X.: An automated student attendance
+  tracking system based on voiceprint and location. In: 2016 11th International
+  Conference on Computer Science \& Education (ICCSE). pp. 214--219 (2016).
+  \doi{10.1109/ICCSE.2016.7581583}
+
+\end{thebibliography}

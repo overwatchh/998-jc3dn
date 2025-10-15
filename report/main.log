@@ -1,0 +1,1405 @@
+This is pdfTeX, Version 3.141592653-2.6-1.40.27 (MiKTeX 25.4) (preloaded format=pdflatex 2025.10.12)  15 OCT 2025 00:05
+entering extended mode
+ restricted \write18 enabled.
+ file:line:error style messages enabled.
+ %&-line parsing enabled.
+**/home/nktn/pj/998-jc3dn/report/main.tex
+(/home/nktn/pj/998-jc3dn/report/main.tex
+LaTeX2e <2025-06-01> patch level 1
+L3 programming layer <2025-09-02>
+(/home/nktn/.miktex/texmfs/install/tex/latex/base/article.cls
+Document Class: article 2025/01/22 v1.4n Standard LaTeX document class
+(/home/nktn/.miktex/texmfs/install/tex/latex/base/size12.clo
+File: size12.clo 2025/01/22 v1.4n Standard LaTeX file (size option)
+)
+\c@part=\count275
+\c@section=\count276
+\c@subsection=\count277
+\c@subsubsection=\count278
+\c@paragraph=\count279
+\c@subparagraph=\count280
+\c@figure=\count281
+\c@table=\count282
+\abovecaptionskip=\skip49
+\belowcaptionskip=\skip50
+\bibindent=\dimen148
+) (/home/nktn/.miktex/texmfs/install/tex/latex/amsfonts/amsfonts.sty
+Package: amsfonts 2013/01/14 v3.01 Basic AMSFonts support
+\@emptytoks=\toks17
+\symAMSa=\mathgroup4
+\symAMSb=\mathgroup5
+LaTeX Font Info:    Redeclaring math symbol \hbar on input line 98.
+LaTeX Font Info:    Overwriting math alphabet `\mathfrak' in version `bold'
+(Font)                  U/euf/m/n --> U/euf/b/n on input line 106.
+) (/home/nktn/.miktex/texmfs/install/tex/latex/amsfonts/amssymb.sty
+Package: amssymb 2013/01/14 v3.01 AMS font symbols
+) (/home/nktn/.miktex/texmfs/install/tex/latex/carlisle/plain.sty
+Package: plain 1996/04/22 Plain TeX emulation (DPC)
+\tabs@latex=\box53
+\tabsyet@latex=\box54
+\tabsdone@latex=\box55
+) (/home/nktn/.miktex/texmfs/install/tex/latex/graphics/color.sty
+Package: color 2025/01/14 v1.3e Standard LaTeX Color (DPC)
+ (/home/nktn/.miktex/texmfs/install/tex/latex/graphics-cfg/color.cfg
+File: color.cfg 2016/01/02 v1.6 sample color configuration
+)
+Package color Info: Driver file: pdftex.def on input line 149.
+ (/home/nktn/.miktex/texmfs/install/tex/latex/graphics-def/pdftex.def
+File: pdftex.def 2024/04/13 v1.2c Graphics/color driver for pdftex
+) (/home/nktn/.miktex/texmfs/install/tex/latex/graphics/mathcolor.ltx)) (/home/nktn/.miktex/texmfs/install/tex/latex/mdframed/mdframed.sty
+Package: mdframed 2013/07/01 1.9b: mdframed
+ (/home/nktn/.miktex/texmfs/install/tex/latex/kvoptions/kvoptions.sty
+Package: kvoptions 2022-06-15 v3.15 Key value format for package options (HO)
+ (/home/nktn/.miktex/texmfs/install/tex/latex/graphics/keyval.sty
+Package: keyval 2022/05/29 v1.15 key=value parser (DPC)
+\KV@toks@=\toks18
+) (/home/nktn/.miktex/texmfs/install/tex/generic/ltxcmds/ltxcmds.sty
+Package: ltxcmds 2023-12-04 v1.26 LaTeX kernel commands for general use (HO)
+) (/home/nktn/.miktex/texmfs/install/tex/latex/kvsetkeys/kvsetkeys.sty
+Package: kvsetkeys 2022-10-05 v1.19 Key value parser (HO)
+)) (/home/nktn/.miktex/texmfs/install/tex/latex/l3packages/xparse/xparse.sty (/home/nktn/.miktex/texmfs/install/tex/latex/l3kernel/expl3.sty
+Package: expl3 2025-09-02 L3 programming layer (loader) 
+ (/home/nktn/.miktex/texmfs/install/tex/latex/l3backend/l3backend-pdftex.def
+File: l3backend-pdftex.def 2025-06-09 L3 backend support: PDF output (pdfTeX)
+\l__color_backend_stack_int=\count283
+))
+Package: xparse 2024-08-16 L3 Experimental document command parser
+) (/home/nktn/.miktex/texmfs/install/tex/latex/etoolbox/etoolbox.sty
+Package: etoolbox 2025/02/11 v2.5l e-TeX tools for LaTeX (JAW)
+\etb@tempcnta=\count284
+) (/home/nktn/.miktex/texmfs/install/tex/latex/zref/zref-abspage.sty
+Package: zref-abspage 2025-06-08 v2.36 Module abspage for zref (HO)
+ (/home/nktn/.miktex/texmfs/install/tex/latex/zref/zref-base.sty
+Package: zref-base 2025-06-08 v2.36 Module base for zref (HO)
+ (/home/nktn/.miktex/texmfs/install/tex/generic/infwarerr/infwarerr.sty
+Package: infwarerr 2019/12/03 v1.5 Providing info/warning/error messages (HO)
+) (/home/nktn/.miktex/texmfs/install/tex/generic/kvdefinekeys/kvdefinekeys.sty
+Package: kvdefinekeys 2019-12-19 v1.6 Define keys (HO)
+) (/home/nktn/.miktex/texmfs/install/tex/generic/pdftexcmds/pdftexcmds.sty
+Package: pdftexcmds 2020-06-27 v0.33 Utility functions of pdfTeX for LuaTeX (HO)
+ (/home/nktn/.miktex/texmfs/install/tex/generic/iftex/iftex.sty
+Package: iftex 2024/12/12 v1.0g TeX engine tests
+)
+Package pdftexcmds Info: \pdf@primitive is available.
+Package pdftexcmds Info: \pdf@ifprimitive is available.
+Package pdftexcmds Info: \pdfdraftmode found.
+) (/home/nktn/.miktex/texmfs/install/tex/generic/etexcmds/etexcmds.sty
+Package: etexcmds 2019/12/15 v1.7 Avoid name clashes with e-TeX commands (HO)
+) (/home/nktn/.miktex/texmfs/install/tex/latex/auxhook/auxhook.sty
+Package: auxhook 2019-12-17 v1.6 Hooks for auxiliary files (HO)
+)
+Package zref Info: New property list: main on input line 767.
+Package zref Info: New property: default on input line 768.
+Package zref Info: New property: page on input line 769.
+)
+\c@abspage=\count285
+Package zref Info: New property: abspage on input line 67.
+) (/home/nktn/.miktex/texmfs/install/tex/latex/needspace/needspace.sty
+Package: needspace 2025/03/13 v1.3e reserve vertical space
+)
+\mdf@templength=\skip51
+\c@mdf@globalstyle@cnt=\count286
+\mdf@skipabove@length=\skip52
+\mdf@skipbelow@length=\skip53
+\mdf@leftmargin@length=\skip54
+\mdf@rightmargin@length=\skip55
+\mdf@innerleftmargin@length=\skip56
+\mdf@innerrightmargin@length=\skip57
+\mdf@innertopmargin@length=\skip58
+\mdf@innerbottommargin@length=\skip59
+\mdf@splittopskip@length=\skip60
+\mdf@splitbottomskip@length=\skip61
+\mdf@outermargin@length=\skip62
+\mdf@innermargin@length=\skip63
+\mdf@linewidth@length=\skip64
+\mdf@innerlinewidth@length=\skip65
+\mdf@middlelinewidth@length=\skip66
+\mdf@outerlinewidth@length=\skip67
+\mdf@roundcorner@length=\skip68
+\mdf@footenotedistance@length=\skip69
+\mdf@userdefinedwidth@length=\skip70
+\mdf@needspace@length=\skip71
+\mdf@frametitleaboveskip@length=\skip72
+\mdf@frametitlebelowskip@length=\skip73
+\mdf@frametitlerulewidth@length=\skip74
+\mdf@frametitleleftmargin@length=\skip75
+\mdf@frametitlerightmargin@length=\skip76
+\mdf@shadowsize@length=\skip77
+\mdf@extratopheight@length=\skip78
+\mdf@subtitleabovelinewidth@length=\skip79
+\mdf@subtitlebelowlinewidth@length=\skip80
+\mdf@subtitleaboveskip@length=\skip81
+\mdf@subtitlebelowskip@length=\skip82
+\mdf@subtitleinneraboveskip@length=\skip83
+\mdf@subtitleinnerbelowskip@length=\skip84
+\mdf@subsubtitleabovelinewidth@length=\skip85
+\mdf@subsubtitlebelowlinewidth@length=\skip86
+\mdf@subsubtitleaboveskip@length=\skip87
+\mdf@subsubtitlebelowskip@length=\skip88
+\mdf@subsubtitleinneraboveskip@length=\skip89
+\mdf@subsubtitleinnerbelowskip@length=\skip90
+ (/home/nktn/.miktex/texmfs/install/tex/latex/mdframed/md-frame-0.mdf
+File: md-frame-0.mdf 2013/07/01\ 1.9b: md-frame-0
+)
+\mdf@frametitlebox=\box56
+\mdf@footnotebox=\box57
+\mdf@splitbox@one=\box58
+\mdf@splitbox@two=\box59
+\mdf@splitbox@save=\box60
+\mdfsplitboxwidth=\skip91
+\mdfsplitboxtotalwidth=\skip92
+\mdfsplitboxheight=\skip93
+\mdfsplitboxdepth=\skip94
+\mdfsplitboxtotalheight=\skip95
+\mdfframetitleboxwidth=\skip96
+\mdfframetitleboxtotalwidth=\skip97
+\mdfframetitleboxheight=\skip98
+\mdfframetitleboxdepth=\skip99
+\mdfframetitleboxtotalheight=\skip100
+\mdffootnoteboxwidth=\skip101
+\mdffootnoteboxtotalwidth=\skip102
+\mdffootnoteboxheight=\skip103
+\mdffootnoteboxdepth=\skip104
+\mdffootnoteboxtotalheight=\skip105
+\mdftotallinewidth=\skip106
+\mdfboundingboxwidth=\skip107
+\mdfboundingboxtotalwidth=\skip108
+\mdfboundingboxheight=\skip109
+\mdfboundingboxdepth=\skip110
+\mdfboundingboxtotalheight=\skip111
+\mdf@freevspace@length=\skip112
+\mdf@horizontalwidthofbox@length=\skip113
+\mdf@verticalmarginwhole@length=\skip114
+\mdf@horizontalspaceofbox=\skip115
+\mdfsubtitleheight=\skip116
+\mdfsubsubtitleheight=\skip117
+\c@mdfcountframes=\count287
+
+****** mdframed patching \endmdf@trivlist
+
+****** -- success******
+
+\mdf@envdepth=\count288
+\c@mdf@env@i=\count289
+\c@mdf@env@ii=\count290
+\c@mdf@zref@counter=\count291
+Package zref Info: New property: mdf@pagevalue on input line 895.
+) (/home/nktn/.miktex/texmfs/install/tex/latex/graphics/graphicx.sty
+Package: graphicx 2024/12/31 v1.2e Enhanced LaTeX Graphics (DPC,SPQR)
+ (/home/nktn/.miktex/texmfs/install/tex/latex/graphics/graphics.sty
+Package: graphics 2024/08/06 v1.4g Standard LaTeX Graphics (DPC,SPQR)
+ (/home/nktn/.miktex/texmfs/install/tex/latex/graphics/trig.sty
+Package: trig 2023/12/02 v1.11 sin cos tan (DPC)
+) (/home/nktn/.miktex/texmfs/install/tex/latex/graphics-cfg/graphics.cfg
+File: graphics.cfg 2016/06/04 v1.11 sample graphics configuration
+)
+Package graphics Info: Driver file: pdftex.def on input line 106.
+)
+\Gin@req@height=\dimen149
+\Gin@req@width=\dimen150
+) (/home/nktn/.miktex/texmfs/install/tex/latex/listings/listings.sty
+\lst@mode=\count292
+\lst@gtempboxa=\box61
+\lst@token=\toks19
+\lst@length=\count293
+\lst@currlwidth=\dimen151
+\lst@column=\count294
+\lst@pos=\count295
+\lst@lostspace=\dimen152
+\lst@width=\dimen153
+\lst@newlines=\count296
+\lst@lineno=\count297
+\lst@maxwidth=\dimen154
+ (/home/nktn/.miktex/texmfs/install/tex/latex/listings/lstpatch.sty
+File: lstpatch.sty 2024/09/23 1.10c (Carsten Heinz)
+) (/home/nktn/.miktex/texmfs/install/tex/latex/listings/lstmisc.sty
+File: lstmisc.sty 2024/09/23 1.10c (Carsten Heinz)
+\c@lstnumber=\count298
+\lst@skipnumbers=\count299
+\lst@framebox=\box62
+) (/home/nktn/.miktex/texmfs/install/tex/latex/listings/listings.cfg
+File: listings.cfg 2024/09/23 1.10c listings configuration
+))
+Package: listings 2024/09/23 1.10c (Carsten Heinz)
+ (/home/nktn/.miktex/texmfs/install/tex/latex/tools/multicol.sty
+Package: multicol 2025/05/25 v2.0a multicolumn formatting (FMi)
+\c@tracingmulticols=\count300
+\mult@box=\box63
+\multicol@leftmargin=\dimen155
+\c@unbalance=\count301
+\c@collectmore=\count302
+\doublecol@number=\count303
+\multicoltolerance=\count304
+\multicolpretolerance=\count305
+\full@width=\dimen156
+\page@free=\dimen157
+\premulticols=\dimen158
+\postmulticols=\dimen159
+\multicolsep=\skip118
+\multicolbaselineskip=\skip119
+\partial@page=\box64
+\last@line=\box65
+\mc@boxedresult=\box66
+\maxbalancingoverflow=\dimen160
+\mult@rightbox=\box67
+\mult@grightbox=\box68
+\mult@firstbox=\box69
+\mult@gfirstbox=\box70
+\@tempa=\box71
+\@tempa=\box72
+\@tempa=\box73
+\@tempa=\box74
+\@tempa=\box75
+\@tempa=\box76
+\@tempa=\box77
+\@tempa=\box78
+\@tempa=\box79
+\@tempa=\box80
+\@tempa=\box81
+\@tempa=\box82
+\@tempa=\box83
+\@tempa=\box84
+\@tempa=\box85
+\@tempa=\box86
+\@tempa=\box87
+\@tempa=\box88
+\@tempa=\box89
+\@tempa=\box90
+\@tempa=\box91
+\@tempa=\box92
+\@tempa=\box93
+\@tempa=\box94
+\@tempa=\box95
+\@tempa=\box96
+\@tempa=\box97
+\@tempa=\box98
+\@tempa=\box99
+\@tempa=\box100
+\@tempa=\box101
+\@tempa=\box102
+\@tempa=\box103
+\@tempa=\box104
+\@tempa=\box105
+\@tempa=\box106
+\c@minrows=\count306
+\c@columnbadness=\count307
+\c@finalcolumnbadness=\count308
+\last@try=\dimen161
+\multicolovershoot=\dimen162
+\multicolundershoot=\dimen163
+\mult@nat@firstbox=\box107
+\colbreak@box=\box108
+\mc@col@check@num=\count309
+\g__mc_curr_col_int=\count310
+) (/home/nktn/.miktex/texmfs/install/tex/latex/base/textcomp.sty
+Package: textcomp 2024/04/24 v2.1b Standard LaTeX package
+) (/home/nktn/.miktex/texmfs/install/tex/latex/booktabs/booktabs.sty
+Package: booktabs 2020/01/12 v1.61803398 Publication quality tables
+\heavyrulewidth=\dimen164
+\lightrulewidth=\dimen165
+\cmidrulewidth=\dimen166
+\belowrulesep=\dimen167
+\belowbottomsep=\dimen168
+\aboverulesep=\dimen169
+\abovetopsep=\dimen170
+\cmidrulesep=\dimen171
+\cmidrulekern=\dimen172
+\defaultaddspace=\dimen173
+\@cmidla=\count311
+\@cmidlb=\count312
+\@aboverulesep=\dimen174
+\@belowrulesep=\dimen175
+\@thisruleclass=\count313
+\@lastruleclass=\count314
+\@thisrulewidth=\dimen176
+) (/home/nktn/.miktex/texmfs/install/tex/latex/multirow/multirow.sty
+Package: multirow 2024/11/12 v2.9 Span multiple rows of a table
+\multirow@colwidth=\skip120
+\multirow@cntb=\count315
+\multirow@dima=\skip121
+\bigstrutjot=\dimen177
+)
+\tablebox=\box109
+ (/home/nktn/.miktex/texmfs/install/tex/latex/psnfss/times.sty
+Package: times 2020/03/25 PSNFSS-v9.3 (SPQR) 
+) (/home/nktn/.miktex/texmfs/install/tex/latex/ulem/ulem.sty
+\UL@box=\box110
+\UL@hyphenbox=\box111
+\UL@skip=\skip122
+\UL@hook=\toks20
+\UL@height=\dimen178
+\UL@pe=\count316
+\UL@pixel=\dimen179
+\ULC@box=\box112
+Package: ulem 2019/11/18
+\ULdepth=\dimen180
+) (/home/nktn/.miktex/texmfs/install/tex/latex/underscore/underscore.sty
+Package: underscore 2006/09/13
+LaTeX Info: Redefining \_ on input line 42.
+)
+==> First Aid for underscore.sty applied!
+(/home/nktn/.miktex/texmfs/install/tex/latex/firstaid/underscore-ltx.sty
+Package: underscore-ltx 2023/09/20 LaTeX firstaid to make underscore protected 
+) (/home/nktn/.miktex/texmfs/install/tex/latex/tools/tabularx.sty
+Package: tabularx 2023/12/11 v2.12a `tabularx' package (DPC)
+ (/home/nktn/.miktex/texmfs/install/tex/latex/tools/array.sty
+Package: array 2025/06/08 v2.6j Tabular extension package (FMi)
+\col@sep=\dimen181
+\ar@mcellbox=\box113
+\extrarowheight=\dimen182
+\NC@list=\toks21
+\extratabsurround=\skip123
+\backup@length=\skip124
+\ar@cellbox=\box114
+)
+\TX@col@width=\dimen183
+\TX@old@table=\dimen184
+\TX@old@col=\dimen185
+\TX@target=\dimen186
+\TX@delta=\dimen187
+\TX@cols=\count317
+\TX@ftn=\toks22
+) (/home/nktn/.miktex/texmfs/install/tex/latex/ragged2e/ragged2e.sty
+Package: ragged2e 2023/06/22 v3.6 ragged2e Package
+\CenteringLeftskip=\skip125
+\RaggedLeftLeftskip=\skip126
+\RaggedRightLeftskip=\skip127
+\CenteringRightskip=\skip128
+\RaggedLeftRightskip=\skip129
+\RaggedRightRightskip=\skip130
+\CenteringParfillskip=\skip131
+\RaggedLeftParfillskip=\skip132
+\RaggedRightParfillskip=\skip133
+\JustifyingParfillskip=\skip134
+\CenteringParindent=\skip135
+\RaggedLeftParindent=\skip136
+\RaggedRightParindent=\skip137
+\JustifyingParindent=\skip138
+) (/home/nktn/.miktex/texmfs/install/tex/latex/float/float.sty
+Package: float 2001/11/08 v1.3d Float enhancements (AL)
+\c@float@type=\count318
+\float@exts=\toks23
+\float@box=\box115
+\@float@everytoks=\toks24
+\@floatcapt=\box116
+) (/home/nktn/.miktex/texmfs/install/tex/latex/geometry/geometry.sty
+Package: geometry 2020/01/02 v5.9 Page Geometry
+ (/home/nktn/.miktex/texmfs/install/tex/generic/iftex/ifvtex.sty
+Package: ifvtex 2019/10/25 v1.7 ifvtex legacy package. Use iftex instead.
+)
+\Gm@cnth=\count319
+\Gm@cntv=\count320
+\c@Gm@tempcnt=\count321
+\Gm@bindingoffset=\dimen188
+\Gm@wd@mp=\dimen189
+\Gm@odd@mp=\dimen190
+\Gm@even@mp=\dimen191
+\Gm@layoutwidth=\dimen192
+\Gm@layoutheight=\dimen193
+\Gm@layouthoffset=\dimen194
+\Gm@layoutvoffset=\dimen195
+\Gm@dimlist=\toks25
+ (/home/nktn/.miktex/texmfs/install/tex/latex/geometry/geometry.cfg)) (/home/nktn/.miktex/texmfs/install/tex/latex/amsmath/amsmath.sty
+Package: amsmath 2025/06/16 v2.17y AMS math features
+\@mathmargin=\skip139
+
+For additional information on amsmath, use the `?' option.
+(/home/nktn/.miktex/texmfs/install/tex/latex/amsmath/amstext.sty
+Package: amstext 2024/11/17 v2.01 AMS text
+ (/home/nktn/.miktex/texmfs/install/tex/latex/amsmath/amsgen.sty
+File: amsgen.sty 1999/11/30 v2.0 generic functions
+\@emptytoks=\toks26
+\ex@=\dimen196
+)) (/home/nktn/.miktex/texmfs/install/tex/latex/amsmath/amsbsy.sty
+Package: amsbsy 1999/11/29 v1.2d Bold Symbols
+\pmbraise@=\dimen197
+) (/home/nktn/.miktex/texmfs/install/tex/latex/amsmath/amsopn.sty
+Package: amsopn 2022/04/08 v2.04 operator names
+)
+\inf@bad=\count322
+LaTeX Info: Redefining \frac on input line 233.
+\uproot@=\count323
+\leftroot@=\count324
+LaTeX Info: Redefining \overline on input line 398.
+LaTeX Info: Redefining \colon on input line 409.
+\classnum@=\count325
+\DOTSCASE@=\count326
+LaTeX Info: Redefining \ldots on input line 495.
+LaTeX Info: Redefining \dots on input line 498.
+LaTeX Info: Redefining \cdots on input line 619.
+\Mathstrutbox@=\box117
+\strutbox@=\box118
+LaTeX Info: Redefining \big on input line 721.
+LaTeX Info: Redefining \Big on input line 722.
+LaTeX Info: Redefining \bigg on input line 723.
+LaTeX Info: Redefining \Bigg on input line 724.
+\big@size=\dimen198
+LaTeX Font Info:    Redeclaring font encoding OML on input line 742.
+LaTeX Font Info:    Redeclaring font encoding OMS on input line 743.
+\macc@depth=\count327
+LaTeX Info: Redefining \bmod on input line 904.
+LaTeX Info: Redefining \pmod on input line 909.
+LaTeX Info: Redefining \smash on input line 939.
+LaTeX Info: Redefining \relbar on input line 969.
+LaTeX Info: Redefining \Relbar on input line 970.
+\c@MaxMatrixCols=\count328
+\dotsspace@=\muskip17
+\c@parentequation=\count329
+\dspbrk@lvl=\count330
+\tag@help=\toks27
+\row@=\count331
+\column@=\count332
+\maxfields@=\count333
+\andhelp@=\toks28
+\eqnshift@=\dimen199
+\alignsep@=\dimen256
+\tagshift@=\dimen257
+\tagwidth@=\dimen258
+\totwidth@=\dimen259
+\lineht@=\dimen260
+\@envbody=\toks29
+\multlinegap=\skip140
+\multlinetaggap=\skip141
+\mathdisplay@stack=\toks30
+LaTeX Info: Redefining \[ on input line 2949.
+LaTeX Info: Redefining \] on input line 2950.
+) (/home/nktn/.miktex/texmfs/install/tex/latex/algorithms/algorithmic.sty
+Package: algorithmic 2009/08/24 v0.1 Document Style `algorithmic'
+ (/home/nktn/.miktex/texmfs/install/tex/latex/base/ifthen.sty
+Package: ifthen 2024/03/16 v1.1e Standard LaTeX ifthen package (DPC)
+)
+\c@ALC@unique=\count334
+\c@ALC@line=\count335
+\c@ALC@rem=\count336
+\c@ALC@depth=\count337
+\ALC@tlm=\skip142
+\algorithmicindent=\skip143
+) (/home/nktn/.miktex/texmfs/install/tex/latex/algorithms/algorithm.sty
+Package: algorithm 2009/08/24 v0.1 Document Style `algorithm' - floating environment
+\@float@every@algorithm=\toks31
+\c@algorithm=\count338
+) (/home/nktn/.miktex/texmfs/install/tex/latex/subfig/subfig.sty
+Package: subfig 2005/06/28 ver: 1.3 subfig package
+ (/home/nktn/.miktex/texmfs/install/tex/latex/caption/caption3.sty
+Package: caption3 2023/07/31 v2.4d caption3 kernel (AR)
+\caption@tempdima=\dimen261
+\captionmargin=\dimen262
+\caption@leftmargin=\dimen263
+\caption@rightmargin=\dimen264
+\caption@width=\dimen265
+\caption@indent=\dimen266
+\caption@parindent=\dimen267
+\caption@hangindent=\dimen268
+Package caption Info: Standard document class detected.
+)
+\c@KVtest=\count339
+\sf@farskip=\skip144
+\sf@captopadj=\dimen269
+\sf@capskip=\skip145
+\sf@nearskip=\skip146
+\c@subfigure=\count340
+\c@subfigure@save=\count341
+\c@lofdepth=\count342
+\c@subtable=\count343
+\c@subtable@save=\count344
+\c@lotdepth=\count345
+\sf@top=\skip147
+\sf@bottom=\skip148
+) (/home/nktn/.miktex/texmfs/install/tex/latex/sttools/stfloats.sty
+Package: stfloats 2025/06/18 v3.4 Improve float mechanism and baselineskip settings
+\@dblbotnum=\count346
+\c@dblbotnumber=\count347
+) (/home/nktn/.miktex/texmfs/install/tex/latex/url/url.sty
+\Urlmuskip=\muskip18
+Package: url 2013/09/16  ver 3.4  Verb mode for urls, etc.
+) (/home/nktn/.miktex/texmfs/install/tex/latex/tools/verbatim.sty
+Package: verbatim 2024-01-22 v1.5x LaTeX2e package for verbatim enhancements
+\every@verbatim=\toks32
+\verbatim@line=\toks33
+\verbatim@in@stream=\read2
+) (/home/nktn/.miktex/texmfs/install/tex/latex/cite/cite.sty
+LaTeX Info: Redefining \cite on input line 302.
+LaTeX Info: Redefining \nocite on input line 332.
+Package: cite 2015/02/27  v 5.5
+) (/home/nktn/.miktex/texmfs/install/tex/latex/hyperref/hyperref.sty
+Package: hyperref 2025-07-12 v7.01o Hypertext links for LaTeX
+ (/home/nktn/.miktex/texmfs/install/tex/generic/pdfescape/pdfescape.sty
+Package: pdfescape 2019/12/09 v1.15 Implements pdfTeX's escape features (HO)
+) (/home/nktn/.miktex/texmfs/install/tex/latex/hycolor/hycolor.sty
+Package: hycolor 2020-01-27 v1.10 Color options for hyperref/bookmark (HO)
+) (/home/nktn/.miktex/texmfs/install/tex/latex/hyperref/nameref.sty
+Package: nameref 2025-06-21 v2.57 Cross-referencing by name of section
+ (/home/nktn/.miktex/texmfs/install/tex/latex/refcount/refcount.sty
+Package: refcount 2019/12/15 v3.6 Data extraction from label references (HO)
+) (/home/nktn/.miktex/texmfs/install/tex/generic/gettitlestring/gettitlestring.sty
+Package: gettitlestring 2019/12/15 v1.6 Cleanup title references (HO)
+)
+\c@section@level=\count348
+) (/home/nktn/.miktex/texmfs/install/tex/generic/stringenc/stringenc.sty
+Package: stringenc 2019/11/29 v1.12 Convert strings between diff. encodings (HO)
+)
+\@linkdim=\dimen270
+\Hy@linkcounter=\count349
+\Hy@pagecounter=\count350
+ (/home/nktn/.miktex/texmfs/install/tex/latex/hyperref/pd1enc.def
+File: pd1enc.def 2025-07-12 v7.01o Hyperref: PDFDocEncoding definition (HO)
+Now handling font encoding PD1 ...
+... no UTF-8 mapping file for font encoding PD1
+) (/home/nktn/.miktex/texmfs/install/tex/generic/intcalc/intcalc.sty
+Package: intcalc 2019/12/15 v1.3 Expandable calculations with integers (HO)
+)
+\Hy@SavedSpaceFactor=\count351
+ (/home/nktn/.miktex/texmfs/install/tex/latex/hyperref/puenc.def
+File: puenc.def 2025-07-12 v7.01o Hyperref: PDF Unicode definition (HO)
+Now handling font encoding PU ...
+... no UTF-8 mapping file for font encoding PU
+)
+Package hyperref Info: Hyper figures OFF on input line 4195.
+Package hyperref Info: Link nesting OFF on input line 4200.
+Package hyperref Info: Hyper index ON on input line 4203.
+Package hyperref Info: Plain pages OFF on input line 4210.
+Package hyperref Info: Backreferencing OFF on input line 4215.
+Package hyperref Info: Implicit mode ON; LaTeX internals redefined.
+Package hyperref Info: Bookmarks ON on input line 4462.
+\c@Hy@tempcnt=\count352
+LaTeX Info: Redefining \url on input line 4801.
+\XeTeXLinkMargin=\dimen271
+ (/home/nktn/.miktex/texmfs/install/tex/generic/bitset/bitset.sty
+Package: bitset 2019/12/09 v1.3 Handle bit-vector datatype (HO)
+ (/home/nktn/.miktex/texmfs/install/tex/generic/bigintcalc/bigintcalc.sty
+Package: bigintcalc 2019/12/15 v1.5 Expandable calculations on big integers (HO)
+))
+\Fld@menulength=\count353
+\Field@Width=\dimen272
+\Fld@charsize=\dimen273
+Package hyperref Info: Hyper figures OFF on input line 6078.
+Package hyperref Info: Link nesting OFF on input line 6083.
+Package hyperref Info: Hyper index ON on input line 6086.
+Package hyperref Info: backreferencing OFF on input line 6093.
+Package hyperref Info: Link coloring OFF on input line 6098.
+Package hyperref Info: Link coloring with OCG OFF on input line 6103.
+Package hyperref Info: PDF/A mode OFF on input line 6108.
+\Hy@abspage=\count354
+\c@Item=\count355
+\c@Hfootnote=\count356
+)
+Package hyperref Info: Driver (autodetected): hpdftex.
+ (/home/nktn/.miktex/texmfs/install/tex/latex/hyperref/hpdftex.def
+File: hpdftex.def 2025-07-12 v7.01o Hyperref driver for pdfTeX
+\HyAnn@Count=\count357
+\Fld@listcount=\count358
+\c@bookmark@seq@number=\count359
+ (/home/nktn/.miktex/texmfs/install/tex/latex/rerunfilecheck/rerunfilecheck.sty
+Package: rerunfilecheck 2025-06-21 v1.11 Rerun checks for auxiliary files (HO)
+ (/home/nktn/.miktex/texmfs/install/tex/generic/uniquecounter/uniquecounter.sty
+Package: uniquecounter 2019/12/15 v1.4 Provide unlimited unique counter (HO)
+)
+Package uniquecounter Info: New unique counter `rerunfilecheck' on input line 284.
+)
+\Hy@SectionHShift=\skip149
+)
+Package hyperref Info: Option `colorlinks' set `true' on input line 40.
+LaTeX Font Info:    Trying to load font information for OT1+ptm on input line 43.
+ (/home/nktn/.miktex/texmfs/install/tex/latex/psnfss/ot1ptm.fd
+File: ot1ptm.fd 2001/06/04 font definitions for OT1/ptm.
+) (main.aux)
+\openout1 = `main.aux'.
+
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 43.
+LaTeX Font Info:    ... okay on input line 43.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 43.
+LaTeX Font Info:    ... okay on input line 43.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 43.
+LaTeX Font Info:    ... okay on input line 43.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 43.
+LaTeX Font Info:    ... okay on input line 43.
+LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 43.
+LaTeX Font Info:    ... okay on input line 43.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 43.
+LaTeX Font Info:    ... okay on input line 43.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 43.
+LaTeX Font Info:    ... okay on input line 43.
+LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 43.
+LaTeX Font Info:    ... okay on input line 43.
+LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 43.
+LaTeX Font Info:    ... okay on input line 43.
+ (/home/nktn/.miktex/texmfs/install/tex/context/base/mkii/supp-pdf.mkii
+[Loading MPS to PDF converter (version 2006.09.02).]
+\scratchcounter=\count360
+\scratchdimen=\dimen274
+\scratchbox=\box119
+\nofMPsegments=\count361
+\nofMParguments=\count362
+\everyMPshowfont=\toks34
+\MPscratchCnt=\count363
+\MPscratchDim=\dimen275
+\MPnumerator=\count364
+\makeMPintoPDFobject=\count365
+\everyMPtoPDFconversion=\toks35
+) (/home/nktn/.miktex/texmfs/install/tex/latex/epstopdf-pkg/epstopdf-base.sty
+Package: epstopdf-base 2020-01-24 v2.11 Base part for package epstopdf
+Package epstopdf-base Info: Redefining graphics rule for `.eps' on input line 485.
+ (/home/nktn/.miktex/texmfs/install/tex/latex/00miktex/epstopdf-sys.cfg
+File: epstopdf-sys.cfg 2021/03/18 v2.0 Configuration of epstopdf for MiKTeX
+))
+\c@lstlisting=\count366
+
+*geometry* driver: auto-detecting
+*geometry* detected driver: pdftex
+*geometry* verbose mode - [ preamble ] result:
+* driver: pdftex
+* paper: <default>
+* layout: <same size as paper>
+* layoutoffset:(h,v)=(0.0pt,0.0pt)
+* modes: 
+* h-part:(L,W,R)=(56.9055pt, 500.484pt, 56.9055pt)
+* v-part:(T,H,B)=(56.9055pt, 681.15898pt, 56.9055pt)
+* \paperwidth=614.295pt
+* \paperheight=794.96999pt
+* \textwidth=500.484pt
+* \textheight=681.15898pt
+* \oddsidemargin=-15.36449pt
+* \evensidemargin=-15.36449pt
+* \topmargin=-52.36449pt
+* \headheight=12.0pt
+* \headsep=25.0pt
+* \topskip=12.0pt
+* \footskip=30.0pt
+* \marginparwidth=44.0pt
+* \marginparsep=10.0pt
+* \columnsep=10.0pt
+* \skip\footins=10.8pt plus 4.0pt minus 2.0pt
+* \hoffset=0.0pt
+* \voffset=0.0pt
+* \mag=1000
+* \@twocolumnfalse
+* \@twosidefalse
+* \@mparswitchfalse
+* \@reversemarginfalse
+* (1in=72.27pt=25.4mm, 1cm=28.453pt)
+
+Package caption Info: Begin \AtBeginDocument code.
+Package caption Info: subfig package v1.3 is loaded.
+Package caption Info: End \AtBeginDocument code.
+Package hyperref Info: Link coloring ON on input line 43.
+(main.out) (main.out)
+\@outlinefile=\write3
+\openout3 = `main.out'.
+
+LaTeX Font Info:    Trying to load font information for U+msa on input line 78.
+ (/home/nktn/.miktex/texmfs/install/tex/latex/amsfonts/umsa.fd
+File: umsa.fd 2013/01/14 v3.01 AMS symbols A
+)
+LaTeX Font Info:    Trying to load font information for U+msb on input line 78.
+ (/home/nktn/.miktex/texmfs/install/tex/latex/amsfonts/umsb.fd
+File: umsb.fd 2013/01/14 v3.01 AMS symbols B
+)
+
+[1
+
+{/home/nktn/.miktex/texmfs/data/fonts/map/pdftex/pdftex.map}{/home/nktn/.miktex/texmfs/install/fonts/enc/dvips/base/8r.enc}] (main.toc
+
+[2])
+\tf@toc=\write4
+\openout4 = `main.toc'.
+
+
+Overfull \hbox (17.47871pt too wide) in paragraph at lines 97--98
+\OT1/ptm/m/n/12 learning outcomes, and overall academic performance. Numerous studies highlight that consistent attendance
+ []
+
+
+Overfull \hbox (24.52228pt too wide) in paragraph at lines 97--98
+\OT1/ptm/m/n/12 contributes positively to student success, while irregular attendance correlates with poor academic achievement
+ []
+
+
+Overfull \hbox (9.69087pt too wide) in paragraph at lines 97--98
+\OT1/ptm/m/n/12 accurate attendance records provide important benefits in student welfare and safety. They allow institutions
+ []
+
+
+Overfull \hbox (10.21896pt too wide) in paragraph at lines 97--98
+\OT1/ptm/m/n/12 and support services. Furthermore, accurate records contribute to transparency and fairness in administering
+ []
+
+
+Overfull \hbox (3.69037pt too wide) in paragraph at lines 97--98
+\OT1/ptm/m/n/12 attendance-based assessments or participation marks, helping to build trust between students and academic
+ []
+
+
+
+[3]
+Overfull \hbox (4.42291pt too wide) in paragraph at lines 101--102
+\OT1/ptm/m/n/12 spreadsheets continues to undermine efficiency and data reliability. These approaches are time-consuming,
+ []
+
+
+Overfull \hbox (0.51065pt too wide) in paragraph at lines 103--104
+\OT1/ptm/m/n/12 and is only inconsistently recorded in tutorials and laboratory sessions, often at the discretion of individual
+ []
+
+
+
+[4]
+Overfull \hbox (19.9385pt too wide) in paragraph at lines 119--120
+\OT1/ptm/m/n/12 been associated with challenges such as time consumption, inaccuracy, data loss, compromised confidentiality
+ []
+
+
+
+[5]
+Overfull \hbox (5.33342pt too wide) in paragraph at lines 138--139
+\OT1/ptm/m/n/12 encryption, time-limited codes, and multifactor authentication, thereby minimising proxy attendance
+ []
+
+
+Overfull \hbox (12.79779pt too wide) in paragraph at lines 151--152
+\OT1/ptm/m/n/12 multi-factor authentication. To further strengthen data protection, the system implements HTTPS encryption
+ []
+
+
+
+[6]
+Overfull \hbox (39.25485pt too wide) in paragraph at lines 153--154
+[]\OT1/ptm/m/n/12 Real-time dashboards will provide lecturers with immediate insights into engagement, reducing administrative
+ []
+
+
+Overfull \hbox (1.51865pt too wide) in paragraph at lines 162--163
+\OT1/ptm/m/n/12 without access to devices can still be recorded, which is a major limitation of many other online attendance
+ []
+
+
+Overfull \hbox (1.51865pt too wide) in paragraph at lines 170--171
+\OT1/ptm/m/n/12 without access to devices can still be recorded, which is a major limitation of many other online attendance
+ []
+
+
+Overfull \hbox (13.66173pt too wide) in paragraph at lines 172--173
+\OT1/ptm/m/n/12 with actionable insights into attendance trends, participation patterns, and compliance statistics, empowering
+ []
+
+
+
+[7]
+Overfull \hbox (13.71072pt too wide) in paragraph at lines 176--177
+\OT1/ptm/m/n/12 encryption protocols, token expiration policies, and secure data storage practices that comply with applicable
+ []
+
+
+Overfull \hbox (22.02673pt too wide) in paragraph at lines 180--181
+\OT1/ptm/m/n/12 components with a structured database and RESTful APIs, enabling dynamic QR code generation, geolocation
+ []
+
+
+
+[8]
+LaTeX Font Info:    Trying to load font information for TS1+ptm on input line 184.
+ (/home/nktn/.miktex/texmfs/install/tex/latex/psnfss/ts1ptm.fd
+File: ts1ptm.fd 2001/06/04 font definitions for TS1/ptm.
+)
+Overfull \hbox (5.00977pt too wide) in paragraph at lines 210--211
+[]\OT1/ptm/m/n/12 Hybrid Attendance Compatibility: Supports both in-person and online learners through QR scanning
+ []
+
+
+
+[9]
+Overfull \hbox (3.27007pt too wide) in paragraph at lines 218--219
+[]\OT1/ptm/m/n/12 Interactive User Manual: Offers step-by-step guidance, helping users understand how to use features
+ []
+
+
+Overfull \hbox (11.78845pt too wide) in paragraph at lines 219--220
+[]\OT1/ptm/m/n/12 Smart FAQ Section: Includes a searchable, categorised FAQ module that addresses common questions
+ []
+
+
+Overfull \hbox (3.01912pt too wide) in paragraph at lines 224--225
+\OT1/ptm/m/n/12 with the system. The diagram serves to clarify the diverse expectations and dependencies among technical,
+ []
+
+<images/stakeholders_identification.png, id=525, 1075.01625pt x 594.22pt>
+File: images/stakeholders_identification.png Graphic file (type png)
+<use images/stakeholders_identification.png>
+Package pdftex.def Info: images/stakeholders_identification.png  used on input line 228.
+(pdftex.def)             Requested size: 425.41444pt x 235.145pt.
+
+
+[10]
+Overfull \hbox (6.63014pt too wide) in paragraph at lines 240--241
+[]\OT1/ptm/b/n/12 Development Team: \OT1/ptm/m/n/12 This team is responsible for building and maintaining the AttendEase platform.
+ []
+
+
+Overfull \hbox (1.90211pt too wide) in paragraph at lines 242--243
+\OT1/ptm/m/n/12 analyzing attendance patterns, generating insights, and contributing to data-driven decision-making. 
+ []
+
+
+Overfull \hbox (0.46104pt too wide) in paragraph at lines 248--249
+[]\OT1/ptm/b/n/12 Universities: \OT1/ptm/m/n/12 As institutional stakeholders, universities expect both students and lecturers to benefit
+ []
+
+<images/usecase.png, id=533, 819.8128pt x 813.0375pt>
+File: images/usecase.png Graphic file (type png)
+<use images/usecase.png>
+Package pdftex.def Info: images/usecase.png  used on input line 259.
+(pdftex.def)             Requested size: 250.24199pt x 248.16837pt.
+
+
+[11 <./images/stakeholders_identification.png>]
+
+[12 <./images/usecase.png>]
+Overfull \hbox (2.27554pt too wide) in paragraph at lines 281--282
+[]\OT1/ptm/m/it/12 Generate reports: \OT1/ptm/m/n/12 Lecturers can produce attendance reports summarizing student participation
+ []
+
+
+
+[13]
+Overfull \hbox (3.83495pt too wide) in paragraph at lines 308--309
+\OT1/ptm/m/n/12 different features, which after testing changes were committed to individual branches, and merged together
+ []
+
+
+Overfull \hbox (22.95978pt too wide) in paragraph at lines 314--315
+[]\OT1/ptm/m/n/12 UMLet software was used for conceptual database design to facilitate better cooperation and understanding
+ []
+
+
+Overfull \hbox (2.21436pt too wide) in paragraph at lines 316--317
+\OT1/ptm/m/n/12 ready environment. Additionally, a CI/CD pipeline was integrated via GitHub Actions to trigger automatic
+ []
+
+
+Overfull \hbox (9.39125pt too wide) in paragraph at lines 316--317
+\OT1/ptm/m/n/12 deployment of the latest code or new features, ensuring they could be tested seamlessly in a live, production-
+ []
+
+
+Overfull \hbox (0.16304pt too wide) in paragraph at lines 323--324
+\OT1/ptm/m/n/12 student/staff IDs, and course details. This data was used to test login, attendance recording, and dashboard
+ []
+
+
+Overfull \hbox (13.95888pt too wide) in paragraph at lines 325--326
+[]\OT1/ptm/m/n/12 Accurate GPS coordinates were manually collected from lecture halls and buildings across the University
+ []
+
+
+
+[14]
+<images/login.png, id=571, 1155.31625pt x 201.75375pt>
+File: images/login.png Graphic file (type png)
+<use images/login.png>
+Package pdftex.def Info: images/login.png  used on input line 350.
+(pdftex.def)             Requested size: 250.24199pt x 43.69945pt.
+<images/qrcreate.png, id=573, 924.45375pt x 61.22874pt>
+File: images/qrcreate.png Graphic file (type png)
+<use images/qrcreate.png>
+Package pdftex.def Info: images/qrcreate.png  used on input line 360.
+(pdftex.def)             Requested size: 250.24199pt x 16.574pt.
+
+
+[15 <./images/login.png>]
+<images/conceptual_design.png, id=582, 1184.425pt x 792.9625pt>
+File: images/conceptual_design.png Graphic file (type png)
+<use images/conceptual_design.png>
+Package pdftex.def Info: images/conceptual_design.png  used on input line 381.
+(pdftex.def)             Requested size: 250.24199pt x 167.5313pt.
+
+Overfull \hbox (6.60583pt too wide) in paragraph at lines 387--388
+\OT1/ptm/m/n/12 attendance management ecosystem that spans multiple operational domains within educational institutions.
+ []
+
+
+Overfull \hbox (17.90993pt too wide) in paragraph at lines 387--388
+\OT1/ptm/m/n/12 user management capabilities that support role-based access control for students, lecturers, and administrative
+ []
+
+
+
+[16 <./images/qrcreate.png> <./images/conceptual_design.png (PNG copy)>]
+Overfull \hbox (4.98618pt too wide) in paragraph at lines 398--399
+\OT1/ptm/m/n/12 The system uses a hierarchical analytics design which allows lecturers to filter through high-level semester-
+ []
+
+
+Overfull \hbox (2.89705pt too wide) in paragraph at lines 401--402
+[]\OT1/ptm/m/n/12 Session-Type Analysis: Taking into consideration the dissimilarity in attendance, specific to lectures
+ []
+
+
+
+[17]
+
+[18]
+
+[19]
+Overfull \hbox (2.41946pt too wide) in paragraph at lines 461--462
+\OT1/ptm/m/n/12 Throughout development and after feature completion, we executed layered testing to validate correctness,
+ []
+
+
+Overfull \hbox (17.16652pt too wide) in paragraph at lines 461--462
+\OT1/ptm/m/n/12 reliability, security, and usability across student and lecturer workflows. This section details the methodology,
+ []
+
+LaTeX Font Info:    Trying to load font information for OT1+pcr on input line 466.
+(/home/nktn/.miktex/texmfs/install/tex/latex/psnfss/ot1pcr.fd
+File: ot1pcr.fd 2001/06/04 font definitions for OT1/pcr.
+)
+Overfull \hbox (30.92282pt too wide) in paragraph at lines 466--467
+\OT1/pcr/m/n/12 utils.test.ts\OT1/ptm/m/n/12 , \OT1/pcr/m/n/12 attendance-calculator.test.ts\OT1/ptm/m/n/12 , \OT1/pcr/m/n/12 useGeolocation.test.ts\OT1/ptm/m/n/12 ) to facilitate
+ []
+
+
+Overfull \hbox (12.9286pt too wide) in paragraph at lines 468--469
+[]\OT1/ptm/b/n/12 Manual Acceptance Testing: \OT1/ptm/m/n/12 The team maintained a structured manual test plan (\OT1/pcr/m/n/12 manual-test.md\OT1/ptm/m/n/12 )
+ []
+
+
+Overfull \hbox (25.52113pt too wide) in paragraph at lines 470--471
+\OT1/ptm/m/n/12 parameters, generating the QR code via \OT1/pcr/m/n/12 POST /api/lecturer/study-session/[id]/qr\OT1/ptm/m/n/12 , verifying
+ []
+
+
+Overfull \hbox (128.53952pt too wide) in paragraph at lines 470--471
+\OT1/ptm/m/n/12 interface. Similarly, student check-in flows were tested from QR scan through \OT1/pcr/m/n/12 POST /api/student/attendance/checkin
+ []
+
+
+
+[20]
+Overfull \hbox (58.38861pt too wide) in paragraph at lines 479--480
+[]\OT1/ptm/m/it/12 Date and Time Utilities \OT1/ptm/m/n/12 (\OT1/pcr/m/n/12 utils.test.ts\OT1/ptm/m/n/12 ): Tests for \OT1/pcr/m/n/12 formatHHMM\OT1/ptm/m/n/12 , \OT1/pcr/m/n/12 formatDate\OT1/ptm/m/n/12 , \OT1/pcr/m/n/12 parseTimeToDate\OT1/ptm/m/n/12 ,
+ []
+
+
+Overfull \hbox (0.16411pt too wide) in paragraph at lines 479--480
+\OT1/pcr/m/n/12 computeQrDateForWeek\OT1/ptm/m/n/12 , and \OT1/pcr/m/n/12 getQrDateForWeek \OT1/ptm/m/n/12 validated correct date arithmetic across
+ []
+
+
+Overfull \hbox (55.29071pt too wide) in paragraph at lines 480--481
+[]\OT1/ptm/m/it/12 Geospatial Calculations \OT1/ptm/m/n/12 (\OT1/pcr/m/n/12 util.test.ts\OT1/ptm/m/n/12 , \OT1/pcr/m/n/12 utils.test.ts\OT1/ptm/m/n/12 ): Haversine distance formula implementation
+ []
+
+LaTeX Info: Symbol \textrightarrow not provided by
+            font family ptm in TS1 encoding.
+            Default family used instead on input line 481.
+LaTeX Info: Symbol \textrightarrow not provided by
+            font family ptm in TS1 encoding.
+            Default family used instead on input line 481.
+LaTeX Info: Symbol \textrightarrow not provided by
+            font family ptm in TS1 encoding.
+            Default family used instead on input line 481.
+
+Overfull \hbox (132.21216pt too wide) in paragraph at lines 481--482
+[]\OT1/ptm/m/it/12 Attendance Calculations \OT1/ptm/m/n/12 (\OT1/pcr/m/n/12 attendance-calculator.test.ts\OT1/ptm/m/n/12 ): Tests validated \OT1/pcr/m/n/12 calculateLectureAttendance
+ []
+
+
+Overfull \hbox (35.62206pt too wide) in paragraph at lines 481--482
+\OT1/ptm/m/n/12 (mapping check-in counts to percentages: 0\TS1/cmr/m/n/12 ^^Y\OT1/ptm/m/n/12 0%, 1\TS1/cmr/m/n/12 ^^Y\OT1/ptm/m/n/12 45%, 2\TS1/cmr/m/n/12 ^^Y\OT1/ptm/m/n/12 90%), \OT1/pcr/m/n/12 getLectureAttendanceData
+ []
+
+
+Overfull \hbox (52.80989pt too wide) in paragraph at lines 482--483
+[]\OT1/ptm/m/it/12 React Hooks \OT1/ptm/m/n/12 (\OT1/pcr/m/n/12 useGeolocation.test.ts\OT1/ptm/m/n/12 , \OT1/pcr/m/n/12 useAuth.test.ts\OT1/ptm/m/n/12 , \OT1/pcr/m/n/12 useNotifications.test.ts\OT1/ptm/m/n/12 ):
+ []
+
+
+Overfull \hbox (11.20142pt too wide) in paragraph at lines 483--484
+[]\OT1/ptm/m/it/12 API Client \OT1/ptm/m/n/12 (\OT1/pcr/m/n/12 apiClient.test.ts\OT1/ptm/m/n/12 ): HTTP client wrapper tests verified request/response handling,
+ []
+
+
+Overfull \hbox (17.61316pt too wide) in paragraph at lines 488--489
+\OT1/ptm/m/n/12 insertion of \OT1/pcr/m/n/12 qr_-code\OT1/ptm/m/n/12 , \OT1/pcr/m/n/12 qr_-code_-study_-session\OT1/ptm/m/n/12 , and \OT1/pcr/m/n/12 validity_-window \OT1/ptm/m/n/12 records; confirmed
+ []
+
+
+Overfull \hbox (2.67273pt too wide) in paragraph at lines 491--492
+[]\OT1/ptm/m/it/12 Real-Time Tracking\OT1/ptm/m/n/12 : GET \OT1/pcr/m/n/12 /api/lecturer/study-session/[id]/checkin-list \OT1/ptm/m/n/12 with
+ []
+
+
+Overfull \hbox (13.31126pt too wide) in paragraph at lines 494--495
+[]\OT1/ptm/b/n/12 System/Acceptance Tests: \OT1/ptm/m/n/12 Scenario-driven manual tests simulated realistic user workflows documented
+ []
+
+
+Overfull \hbox (5.20428pt too wide) in paragraph at lines 494--495
+\OT1/ptm/m/n/12 in \OT1/pcr/m/n/12 manual-test.md \OT1/ptm/m/n/12 and formalized in Appendix A. These tests covered 27 distinct scenarios including:
+ []
+
+
+Overfull \hbox (16.55563pt too wide) in paragraph at lines 494--495
+\OT1/ptm/m/n/12 lecturer QR generation with varying parameters (TC[]-QR[]-GEN[]-001, TC[]-QR[]-UPD[]-001, TC[]-QR[]-ANCHOR[]-
+ []
+
+
+Overfull \hbox (23.21597pt too wide) in paragraph at lines 494--495
+\OT1/ptm/m/n/12 001); student check-ins at validity boundaries (TC[]-QR[]-EXP[]-001, TC[]-QR[]-EXP[]-002); geofencing enforcement
+ []
+
+
+Overfull \hbox (14.48053pt too wide) in paragraph at lines 494--495
+\OT1/ptm/m/n/12 (TC[]-CHECKIN[]-001, TC[]-CHECKIN[]-006); online check-in path (TC[]-CHECKIN[]-004); duplicate prevention
+ []
+
+
+Overfull \hbox (30.96826pt too wide) in paragraph at lines 494--495
+\OT1/ptm/m/n/12 manual attendance entry (TC[]-MANUAL[]-001); analytics rendering (TC[]-ANALYTICS[]-001, TC[]-ANALYTICS[]-
+ []
+
+
+
+[21]
+Overfull \hbox (20.65639pt too wide) in paragraph at lines 499--500
+[]\OT1/ptm/m/it/12 Performance\OT1/ptm/m/n/12 : Lightweight performance checks in staging measured API response times (QR generation
+ []
+
+
+Overfull \hbox (7.36194pt too wide) in paragraph at lines 500--501
+[]\OT1/ptm/m/it/12 Compatibility\OT1/ptm/m/n/12 : Cross-browser testing on Chrome (desktop/Android), Safari (iOS), and Edge; mobile-
+ []
+
+
+Overfull \hbox (1.67241pt too wide) in paragraph at lines 507--508
+[]\OT1/ptm/b/n/12 Local Development Environment: \OT1/ptm/m/n/12 Each developer maintained a local testing environment consisting
+ []
+
+
+Overfull \hbox (5.52798pt too wide) in paragraph at lines 510--511
+[]\OT1/ptm/m/it/12 Runtime\OT1/ptm/m/n/12 : Node.js v20.x with Next.js 14 development server (\OT1/pcr/m/n/12 npm run dev\OT1/ptm/m/n/12 ) providing hot module
+ []
+
+
+
+[22]
+Overfull \hbox (15.38988pt too wide) in paragraph at lines 518--519
+[]\OT1/ptm/m/it/12 Application Server\OT1/ptm/m/n/12 : Google Cloud Run with containerized Next.js application; auto-scaling configured
+ []
+
+
+Overfull \hbox (1.05016pt too wide) in paragraph at lines 535--536
+\OT1/ptm/m/n/12 A comprehensive suite of development and testing tools was employed to facilitate efficient test execution,
+ []
+
+
+
+[23]
+Overfull \hbox (4.94934pt too wide) in paragraph at lines 552--553
+[]\OT1/ptm/m/it/12 Chrome DevTools Sensors Panel\OT1/ptm/m/n/12 : Overrode device geolocation to simulate specific GPS coordinates;
+ []
+
+
+Overfull \hbox (5.98541pt too wide) in paragraph at lines 558--559
+\OT1/ptm/m/n/12 inspected \OT1/pcr/m/n/12 checkin\OT1/ptm/m/n/12 , \OT1/pcr/m/n/12 qr_-code\OT1/ptm/m/n/12 , \OT1/pcr/m/n/12 validity_-window\OT1/ptm/m/n/12 , and \OT1/pcr/m/n/12 qr_-code_-study_-session \OT1/ptm/m/n/12 tables;
+ []
+
+
+
+[24]
+Underfull \hbox (badness 8151) in paragraph at lines 592--592
+[]|\OT1/ptm/m/n/12 Lecturer generates QR for a
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 592--592
+\OT1/ptm/m/n/12 session (sets room, radius,
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 593--593
+[]|\OT1/ptm/m/n/12 Update existing QR
+ []
+
+
+Underfull \hbox (badness 8038) in paragraph at lines 594--594
+[]|\OT1/pcr/m/n/12 getQrDateForWeek() \OT1/ptm/m/n/12 and anchor rules
+ []
+
+
+Underfull \hbox (badness 1648) in paragraph at lines 595--595
+[]|\OT1/ptm/m/n/12 Detect live session on tracking
+ []
+
+
+Underfull \hbox (badness 1803) in paragraph at lines 596--596
+[]|\OT1/ptm/m/n/12 Student in-person first check-in
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 600--600
+[]|\OT1/ptm/m/n/12 Already checked in in same
+ []
+
+
+Underfull \hbox (badness 5217) in paragraph at lines 605--605
+[]|\OT1/ptm/m/n/12 Email attendance summary (if
+ []
+
+
+Overfull \hbox (10.97424pt too wide) in paragraph at lines 588--608
+ [][] 
+ []
+
+
+Overfull \hbox (38.25018pt too wide) in paragraph at lines 612--613
+\OT1/ptm/m/n/12 Comprehensive security testing validated the system's defense-in-depth approach across transport, authentication,
+ []
+
+
+Overfull \hbox (41.83849pt too wide) in paragraph at lines 614--615
+\OT1/ptm/m/n/12 suite. HTTP Strict Transport Security (HSTS) headers enforced HTTPS-only access with \OT1/pcr/m/n/12 max-age=31536000\OT1/ptm/m/n/12 .
+ []
+
+
+
+[25]
+Overfull \hbox (82.9879pt too wide) in paragraph at lines 618--619
+\OT1/ptm/m/n/12 attendance records. Direct URL manipulation to protected routes (e.g., \OT1/pcr/m/n/12 /qr-generation\OT1/ptm/m/n/12 , \OT1/pcr/m/n/12 /real-time-tracking\OT1/ptm/m/n/12 )
+ []
+
+
+Overfull \hbox (25.85515pt too wide) in paragraph at lines 621--622
+\OT1/ptm/m/n/12 never persisted in the database, confirmed via \OT1/pcr/m/n/12 checkin \OT1/ptm/m/n/12 table schema inspection showing no latitude/longitude
+ []
+
+
+Overfull \hbox (3.43843pt too wide) in paragraph at lines 630--631
+\OT1/ptm/m/n/12 online-only sessions or accessibility accommodations), distance checks bypassed entirely, allowing check-
+ []
+
+
+Overfull \hbox (15.37953pt too wide) in paragraph at lines 630--631
+\OT1/ptm/m/n/12 ins from any location. This feature tested by generating QR with \OT1/pcr/m/n/12 validate_-geo=false \OT1/ptm/m/n/12 and successfully
+ []
+
+
+Overfull \hbox (9.8821pt too wide) in paragraph at lines 635--636
+\OT1/ptm/m/n/12 dashboards, and real-time tracking performed identically across browsers. Minor CSS rendering differences
+ []
+
+
+
+[26]
+Overfull \hbox (13.22983pt too wide) in paragraph at lines 644--645
+\OT1/ptm/m/n/12 Testing across all phases yielded comprehensive validation of system correctness, with all critical acceptance
+ []
+
+
+Overfull \hbox (13.93785pt too wide) in paragraph at lines 649--650
+[]\OT1/ptm/m/it/12 Integration Tests\OT1/ptm/m/n/12 : 14 end-to-end scenarios tested manually; 14 passed (100%); covered QR generation,
+ []
+
+
+Overfull \hbox (122.35791pt too wide) in paragraph at lines 656--657
+[]\OT1/ptm/m/it/12 Date/Time Utilities: \OT1/ptm/m/n/12 All tests passed for \OT1/pcr/m/n/12 formatHHMM\OT1/ptm/m/n/12 , \OT1/pcr/m/n/12 formatDate\OT1/ptm/m/n/12 , \OT1/pcr/m/n/12 parseTimeToDate\OT1/ptm/m/n/12 , \OT1/pcr/m/n/12 computeQrDateForWeek\OT1/ptm/m/n/12 ,
+ []
+
+LaTeX Info: Symbol \textrightarrow not provided by
+            font family ptm in TS1 encoding.
+            Default family used instead on input line 660.
+LaTeX Info: Symbol \textrightarrow not provided by
+            font family ptm in TS1 encoding.
+            Default family used instead on input line 660.
+LaTeX Info: Symbol \textrightarrow not provided by
+            font family ptm in TS1 encoding.
+            Default family used instead on input line 660.
+LaTeX Info: Symbol \textrightarrow not provided by
+            font family ptm in TS1 encoding.
+            Default family used instead on input line 660.
+
+Overfull \hbox (16.85486pt too wide) in paragraph at lines 660--661
+\OT1/ptm/m/n/12 to percentages (0\TS1/cmr/m/n/12 ^^Y\OT1/ptm/m/n/12 0%, 1\TS1/cmr/m/n/12 ^^Y\OT1/ptm/m/n/12 45%, 2\TS1/cmr/m/n/12 ^^Y\OT1/ptm/m/n/12 90%, 3+\TS1/cmr/m/n/12 ^^Y\OT1/ptm/m/n/12 0% invalid). \OT1/pcr/m/n/12 getLectureAttendanceData \OT1/ptm/m/n/12 aggregated
+ []
+
+
+Overfull \hbox (6.82341pt too wide) in paragraph at lines 667--668
+\OT1/ptm/m/n/12 End-to-end integration tests validated complete user workflows from frontend interactions through backend
+ []
+
+
+
+[27]
+Overfull \hbox (6.32027pt too wide) in paragraph at lines 669--670
+\OT1/pcr/m/n/12 study_-session\OT1/ptm/m/n/12 , and \OT1/pcr/m/n/12 validity_-window \OT1/ptm/m/n/12 tables; QR URLs contained unique randomized identifiers;
+ []
+
+
+Overfull \hbox (156.08844pt too wide) in paragraph at lines 673--674
+[]\OT1/ptm/m/it/12 Manual Check-In by Lecturer: \OT1/ptm/m/n/12 Tested lecturer-initiated manual attendance entry via \OT1/pcr/m/n/12 POST /api/lecturer/manual-checkin\OT1/ptm/m/n/12 ;
+ []
+
+
+Overfull \hbox (1.84242pt too wide) in paragraph at lines 677--678
+\OT1/ptm/m/n/12 state displayed when no data matched filters; attendance percentage calculations matched expected values;
+ []
+
+
+Overfull \hbox (7.0379pt too wide) in paragraph at lines 687--688
+\OT1/ptm/m/n/12 duplicate records before first request completed. Fixed by: (1) disabling check-in button immediately
+ []
+
+
+Overfull \hbox (19.91689pt too wide) in paragraph at lines 687--688
+\OT1/ptm/m/n/12 on click (frontend), (2) adding unique constraint on (\OT1/pcr/m/n/12 student_-id\OT1/ptm/m/n/12 , \OT1/pcr/m/n/12 qr_-code_-study_-session_-
+ []
+
+
+
+[28]
+
+[29]
+
+[30]
+
+[31]
+Overfull \hbox (4.12247pt too wide) in paragraph at lines 749--750
+\OT1/ptm/m/n/12 statistics more meaningful by ensuring that online those who access the online lecture can mark themselves
+ []
+
+
+
+[32]
+Overfull \hbox (13.44554pt too wide) in paragraph at lines 764--765
+[]\OT1/ptm/m/n/12 During testing and examinations: by utilising this check-in system at the start and end of examinations,
+ []
+
+
+Overfull \hbox (17.04631pt too wide) in paragraph at lines 765--766
+\OT1/ptm/m/n/12 seminars, career fairs, and student development workshops, providing insights into student engagement
+ []
+
+
+
+[33]
+Overfull \hbox (0.75046pt too wide) in paragraph at lines 767--768
+\OT1/ptm/m/n/12 system can be adapted to log attendance and engagement during off-campus placements, integrating
+ []
+
+
+Overfull \hbox (13.49548pt too wide) in paragraph at lines 772--773
+\OT1/ptm/m/n/12 through QR codes that accounts for both online and offline students in a modern mixed delivery environment.
+ []
+
+
+Overfull \hbox (6.9545pt too wide) in paragraph at lines 772--773
+\OT1/ptm/m/n/12 tracking student attendance and engagement. Implementing this system could ensure that students maintain
+ []
+
+
+
+[34]
+Package mdframed Info: Not enough space on this page on input line 841.
+
+
+[35]
+Package mdframed Info: Not enough space on this page on input line 841.
+
+
+[36]
+LaTeX Info: Symbol \textrightarrow not provided by
+            font family ptm in TS1 encoding.
+            Default family used instead on input line 909.
+
+
+[37]
+
+[38]
+
+[39]
+Package mdframed Info: Not enough space on this page on input line 985.
+
+
+[40]
+
+[41]
+
+[42]
+
+[43]
+Package mdframed Info: Not enough space on this page on input line 1189.
+
+
+[44]
+Package mdframed Info: Not enough space on this page on input line 1189.
+ (main.bbl
+Underfull \hbox (badness 6961) in paragraph at lines 35--38
+[]\OT1/ptm/m/n/12 Liew, K.J., Tan, T.H.: Qr code-based student attendance system. In: 2021 2nd
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 35--38
+\OT1/ptm/m/n/12 Asia Conference on Computers and Communications (ACCC). pp. 10--14 (2021).
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 40--44
+[]\OT1/ptm/m/n/12 Masalha, F., Hirzallah, N.: A students attendance system using qr code.
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 40--44
+\OT1/ptm/m/n/12 International Journal of Advanced Computer Science and Applications \OT1/ptm/b/n/12 5\OT1/ptm/m/n/12 (3) (2014).
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 40--44
+\OT1/ptm/m/n/12 https://doi.org/10.14569/IJACSA.2014.050310, [][]$\OT1/pcr/m/n/12 http : / / dx . doi . org / 10 . 14569 /
+ []
+
+
+
+[45]
+Underfull \hbox (badness 1057) in paragraph at lines 53--56
+[]\OT1/ptm/m/n/12 Nuhi, A., Memeti, A., Imeri, F., Cico, B.: Smart attendance system using qr code. In:
+ []
+
+
+Underfull \hbox (badness 2012) in paragraph at lines 53--56
+\OT1/ptm/m/n/12 2020 9th Mediterranean Conference on Embedded Computing (MECO). pp. 1--4 (2020).
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 58--62
+[]\OT1/ptm/m/n/12 Orah: The hidden costs: How manual attendance tracking damages schools
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 58--62
+\OT1/ptm/m/n/12 and disrupts parent engagement (2023), [][]$\OT1/pcr/m/n/12 https : / / www . orah . com / blog /
+ []
+
+)
+
+[46] (main.aux)
+ ***********
+LaTeX2e <2025-06-01> patch level 1
+L3 programming layer <2025-09-02>
+ ***********
+Package rerunfilecheck Info: File `main.out' has not changed.
+(rerunfilecheck)             Checksum: CC188CC3E8793A82AC382A6A61C9E6EC;14251.
+ ) 
+Here is how much of TeX's memory you used:
+ 15222 strings out of 470067
+ 242401 string characters out of 5482737
+ 667300 words of memory out of 5000000
+ 43102 multiletter control sequences out of 15000+600000
+ 650376 words of font info for 93 fonts, out of 8000000 for 9000
+ 4 hyphenation exceptions out of 8191
+ 84i,10n,93p,1555b,605s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ </home/nktn/.miktex/texmfs/data/fonts/pk/ljfour/jknappen/ec/dpi600/tcrm1200.pk></home/nktn/.miktex/texmfs/install/fonts/type1/public/amsfonts/cm/cmsy10.pfb></home/nktn/.miktex/texmfs/install/fonts/type1/urw/courier/ucrr8a.pfb></home/nktn/.miktex/texmfs/install/fonts/type1/urw/times/utmb8a.pfb></home/nktn/.miktex/texmfs/install/fonts/type1/urw/times/utmr8a.pfb></home/nktn/.miktex/texmfs/install/fonts/type1/urw/times/utmri8a.pfb>
+Output written on main.pdf (46 pages, 557258 bytes).
+PDF statistics:
+ 880 PDF objects out of 1000 (max. 8388607)
+ 235 named destinations out of 1000 (max. 500000)
+ 682 words of extra memory for PDF output out of 10000 (max. 10000000)
+

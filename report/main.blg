@@ -1,0 +1,51 @@
+This is BibTeX, Version 0.99d
+Capacity: max_strings=200000, hash_size=200000, hash_prime=170003
+The top-level auxiliary file: main.aux
+Reallocating 'name_of_file' (item size: 1) to 9 items.
+The style file: splncs04.bst
+Reallocating 'name_of_file' (item size: 1) to 5 items.
+Database file #1: refs.bib
+Warning--empty booktitle in Balakrishnan
+Warning--empty booktitle in shene
+You've used 16 entries,
+            2850 wiz_defined-function locations,
+            712 strings with 8283 characters,
+and the built_in function-call counts, 9750 in all, are:
+= -- 834
+> -- 267
+< -- 17
++ -- 113
+- -- 94
+* -- 625
+:= -- 1235
+add.period$ -- 35
+call.type$ -- 16
+change.case$ -- 108
+chr.to.int$ -- 0
+cite$ -- 18
+duplicate$ -- 868
+empty$ -- 882
+format.name$ -- 107
+if$ -- 2177
+int.to.chr$ -- 0
+int.to.str$ -- 16
+missing$ -- 159
+newline$ -- 54
+num.names$ -- 32
+pop$ -- 297
+preamble$ -- 1
+purify$ -- 79
+quote$ -- 0
+skip$ -- 291
+stack$ -- 0
+substring$ -- 578
+swap$ -- 479
+text.length$ -- 17
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 64
+warning$ -- 2
+while$ -- 73
+width$ -- 18
+write$ -- 194
+(There were 2 warnings)

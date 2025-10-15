@@ -32,7 +32,7 @@ interface DayOfWeekPatternsProps {
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D', '#FFC658'];
 
-const formatTime = (hour: number | null) => {
+export const formatTime = (hour: number | null) => {
   if (hour === null) return "N/A";
   const ampm = hour >= 12 ? 'PM' : 'AM';
   const displayHour = hour % 12 || 12;
