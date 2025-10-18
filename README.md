@@ -14,7 +14,7 @@ Before running the project, make sure you have the following installed:
 
 ---
 
-## ⚙️ Local Development Setup
+## Local Development Setup
 
 Follow the steps below to set up and run the project on your local machine.
 
@@ -75,3 +75,11 @@ Run the following command in your terminal:
 
 ```bash
 npm run dev
+```
+### API Documentation
+
+Once the development server has started, you can view the **Swagger API documentation** at:
+
+[http://localhost:3000/swagger](http://localhost:3000/swagger)
+
+This documentation provides details for all available API endpoints for students, lecturers.
