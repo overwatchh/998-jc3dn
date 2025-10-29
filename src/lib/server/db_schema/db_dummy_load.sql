@@ -13121,7 +13121,7 @@ INSERT INTO `qr_code_study_session` (`id`, `study_session_id`, `qr_code_id`, `we
 --
 
 INSERT INTO `room` (`id`, `building_number`, `room_number`, `description`, `latitude`, `longitude`, `campus_id`) VALUES
-(1, '17', '101', 'Library', -34.40673531973503, 150.87855122064795, 1),
+(1, '3', '124', 'Building 3', -34.40640291044103, 150.88241737626169, 1),
 (2, '20', '102', 'Building 20', -34.40575669645907, 150.87849142117850, 1),
 (3, '14', '201', 'Building 14', -34.40637101770338, 150.88013861088640, 1),
 (4, '17', '202', 'Building 17', -34.40689043969014, 150.87804938559650, 1),
@@ -13713,9 +13713,9 @@ INSERT INTO `student_study_session` (`student_id`, `study_session_id`) VALUES
 --
 
 INSERT INTO `study_session` (`id`, `day_of_week`, `start_time`, `end_time`, `type`, `room_id`) VALUES
-(1, 'Thursday', '13:40:00', '14:40:00', 'lecture', 1),
-(2, 'Wednesday', '13:00:00', '15:00:00', 'tutorial', 2),
-(3, 'Friday', '10:00:00', '12:00:00', 'tutorial', 3),
+(1, 'Thursday', '10:30:00', '12:30:00', 'lecture', 1),
+(2, 'Thursday', '10:30:00', '12:30:00', 'tutorial', 2),
+(3, 'Thursday', '10:30:00', '12:30:00', 'tutorial', 3),
 (4, 'Tuesday', '22:55:00', '23:55:00', 'lecture', 4),
 (5, 'Thursday', '14:00:00', '16:00:00', 'tutorial', 5),
 (6, 'Friday', '12:00:00', '14:00:00', 'tutorial', 6),
